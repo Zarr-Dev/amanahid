@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amanah ID - Sistem Presensi Wajah</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Face API untuk AI Recognition -->
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script defer src="script.js"></script>
+</head>
+
+<body>
+    <!-- Background Grid -->
+    <div class="bg-grid"></div>
+
+    <!-- Container Aplikasi -->
+    <div id="app">
+
+        <!-- ================= SCREEN 1: LOGIN / DAFTAR ================= -->
+        <div id="auth-screen" class="screen active">
+            <div class="auth-card">
+                <div class="logo-area">
+                    <div class="logo-icon">🛡️</div>
+                    <h1>Amanah ID</h1>
+                    <p class="subtitle">Sistem Presensi Wajah</p>
+                </div>
+
+                <div class="tab-switcher">
+                    <button class="tab-btn active" id="tab-login">Masuk</button>
+                    <button class="tab-btn" id="tab-register">Daftar</button>
+                </div>
+
+                <div class="lang-switcher">
+                    <button class="lang-btn active">Indonesia</button>
+                    <button class="lang-btn">English</button>
+                    <button class="lang-btn">العربية</button>
+                </div>
+
+                <!-- Form Login -->
+                <form id="login-form" class="auth-form active">
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" placeholder="admin@amanahid.sch.id" value="admin@amanahid.sch.id" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Kata Sandi</label>
+                        <input type="password" placeholder="Masukkan kata sandi" value="AmanahDemo!2026#ID" required>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="terms-login" checked>
+                        <label for="terms-login">Saya setuju dengan <a href="#">Syarat & Ketentuan</a></label>
+                    </div>
+                    <button type="submit" class="btn-primary">Masuk</button>
+                    <div class="demo-info">Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID</div>
+                </form>
+
+                <!-- Form Register -->
+                <form id="register-form" class="auth-form">
+                    <div class="input-group">
+                        <label>Nama Lengkap</label>
+                        <input type="text" placeholder="Masukkan nama lengkap" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" placeholder="email@anda.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Kata Sandi</label>
+                        <input type="password" placeholder="Minimal 6 karakter" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Konfirmasi Sandi</label>
+                        <input type="password" placeholder="Ulangi kata sandi" required>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="terms-reg" required>
+                        <label for="terms-reg">Saya setuju dengan <a href="#">Syarat & Ketentuan</a></label>
+                    </div>
+                    <button type="submit" class="btn-primary" disabled id="btn-register-submit">Daftar</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= SCREEN 2: DASHBOARD ================= -->
+        <div id="dashboard-screen" class="screen">
+            <!-- Navbar -->
+            <nav class="navbar">
+                <div class="nav-brand">
+                    <div class="logo-icon-small">🛡️</div>
+                    <span>Amanah ID</span>
+                </div>
+                <div class="nav-links">
+                    <button class="nav-link active" data-target="presensi">Presensi</button>
+                    <button class="nav-link" data-target="database">Database</button>
+                    <button class="nav-link" data-target="formulir">Formulir</button>
+                    <button class="nav-link profile-trigger" data-target="profile">
+                        <span class="avatar-small">A</span> Profil
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+
+                <!-- View: Presensi -->
+                <div id="view-presensi" class="view active">
+                    <div class="camera-container">
+                        <video id="video-presensi" autoplay muted playsinline></video>
+                        <canvas id="overlay-presensi"></canvas>
+                        <div id="loading-ai" class="loading-overlay">
+                            <div class="spinner"></div>
+                            <p>Memuat Model AI...</p>
+                        </div>
+                        <div class="camera-controls">
+                            <button class="btn-icon" id="btn-capture-presensi" title="Ambil Gambar">📸</button>
+                            <button class="btn-icon" title="Fullscreen">⛶</button>
+                        </div>
+                        <div id="status-presensi" class="status-badge">Mendeteksi Wajah...</div>
+                    </div>
+                </div>
+
+                <!-- View: Database -->
+                <div id="view-database" class="view">
+                    <div class="view-header">
+                        <h2>Database Presensi</h2>
+                        <p>Kelola riwayat presensi, filter tanggal, & ekspor laporan.</p>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Siswa</h3>
+                            <p>0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Hadir Hari Ini</h3>
+                            <p>0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Persentase</h3>
+                            <p>0%</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Riwayat</h3>
+                            <p>0</p>
+                        </div>
+                    </div>
+                    <div class="table-controls">
+                        <input type="text" placeholder="Cari nama, NISN, atau kelas...">
+                        <input type="date" value="2026-09-21">
+                        <span>→</span>
+                        <input type="date" value="2026-09-28">
+                        <button class="btn-primary">Export</button>
+                        <button class="btn-danger">Hapus Semua</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>NISN</th>
+                                    <th>NAMA</th>
+                                    <th>KELAS</th>
+                                    <th>STATUS</th>
+                                    <th>TANGGAL</th>
+                                    <th>WAKTU</th>
+                                    <th>METODE</th>
+                                    <th>CONFIDENCE</th>
+                                    <th>AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="db-tbody">
+                                <tr>
+                                    <td colspan="10" class="empty-state">Belum ada data presensi<br><small>Data akan
+                                            muncul setelah siswa melakukan verifikasi wajah.</small></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- View: Formulir -->
+                <div id="view-formulir" class="view">
+                    <div class="view-header">
+                        <h2>Formulir Siswa</h2>
+                        <p>Daftarkan identitas dan wajah siswa untuk presensi.</p>
+                    </div>
+                    <div class="form-layout">
+                        <div class="card form-card">
+                            <h3>Identitas Siswa</h3>
+                            <div class="input-group"><label>NISN</label><input type="text" id="input-nisn"
+                                    placeholder="Masukkan NISN"></div>
+                            <div class="input-group"><label>Nama Lengkap</label><input type="text" id="input-nama"
+                                    placeholder="Masukkan nama lengkap"></div>
+                            <div class="input-group"><label>Kelas</label><input type="text" id="input-kelas"
+                                    placeholder="Contoh: XI IPA 1"></div>
+                            <button class="btn-primary" id="btn-save-siswa">Simpan Data Siswa</button>
+                        </div>
+                        <div class="card camera-card">
+                            <h3>Verifikasi Wajah</h3>
+                            <p>Ambil wajah dari depan, kiri, kanan, atas, dan bawah agar presensi tetap akurat.</p>
+                            <div class="camera-container small">
+                                <video id="video-formulir" autoplay muted playsinline></video>
+                                <canvas id="overlay-formulir"></canvas>
+                                <div id="loading-ai-form" class="loading-overlay">
+                                    <div class="spinner"></div>
+                                    <p>Memuat Model AI...</p>
+                                </div>
+                            </div>
+                            <div class="analysis-bar">
+                                <span>Analisis AI</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="ai-progress"></div>
+                                </div>
+                                <span id="ai-percent">0%</span>
+                            </div>
+                            <p class="hint-text">Posisikan wajah dari depan</p>
+                            <div class="camera-actions">
+                                <button class="btn-secondary" id="btn-upload">Upload Foto</button>
+                                <button class="btn-dark" id="btn-camera">Gunakan Kamera</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- ================= MODAL: PROFILE ================= -->
+        <div id="profile-modal" class="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <div>
+                        <h4>Amanah ID</h4>
+                        <h2>Profil</h2>
+                    </div>
+                    <button class="btn-close" id="close-profile">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="avatar-large">A</div>
+                    <button class="btn-text">Ganti foto</button>
+                    <div class="input-group"><label>Nama Lengkap</label><input type="text" value="Admin" readonly></div>
+                    <div class="input-group"><label>Email</label><input type="email" value="admin@amanahid.sch.id"
+                            readonly></div>
+                    <div class="input-group"><label>Kata Sandi</label><input type="password" value="************"
+                            readonly></div>
+                    <div class="input-group">
+                        <label>Bahasa</label>
+                        <div class="lang-switcher" style="margin:0; justify-content:flex-start;">
+                            <button class="lang-btn active">Indonesia</button>
+                            <button class="lang-btn">English</button>
+                            <button class="lang-btn">العربية</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" id="btn-save-profile">Simpan Profil</button>
+                    <button class="btn-danger-outline" id="btn-logout">Keluar</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Pesan Notifikasi</div>
+</body>
+
+</html>
