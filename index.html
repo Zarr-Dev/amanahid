@@ -6,79 +6,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Amanah ID - Sistem Presensi Wajah</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Face API untuk AI Recognition -->
+    <!-- Face API untuk AI Recognition (CDN) -->
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script defer src="script.js"></script>
 </head>
 
 <body>
-    <!-- Background Grid -->
+    <!-- Background Grid Futuristik -->
     <div class="bg-grid"></div>
 
-    <!-- Container Aplikasi -->
+    <!-- Container Utama -->
     <div id="app">
 
-        <!-- ================= SCREEN 1: LOGIN / DAFTAR ================= -->
+        <!-- ================= SCREEN 1: AUTH (LOGIN/DAFTAR) ================= -->
         <div id="auth-screen" class="screen active">
             <div class="auth-card">
                 <div class="logo-area">
                     <div class="logo-icon">🛡️</div>
                     <h1>Amanah ID</h1>
-                    <p class="subtitle">Sistem Presensi Wajah</p>
+                    <p class="subtitle" data-i18n="subtitle">Sistem Presensi Wajah</p>
                 </div>
 
+                <!-- Tab Login/Daftar -->
                 <div class="tab-switcher">
-                    <button class="tab-btn active" id="tab-login">Masuk</button>
-                    <button class="tab-btn" id="tab-register">Daftar</button>
+                    <button class="tab-btn active" id="tab-login" data-i18n="login">Masuk</button>
+                    <button class="tab-btn" id="tab-register" data-i18n="register">Daftar</button>
                 </div>
 
-                <div class="lang-switcher">
-                    <button class="lang-btn active">Indonesia</button>
-                    <button class="lang-btn">English</button>
-                    <button class="lang-btn">العربية</button>
+                <!-- Pemilih Bahasa Utama (Login/Register) -->
+                <div class="lang-switcher" id="lang-switcher-auth">
+                    <button class="lang-btn active" data-lang="id">Indonesia</button>
+                    <button class="lang-btn" data-lang="en">English</button>
+                    <button class="lang-btn" data-lang="ar">العربية</button>
                 </div>
 
                 <!-- Form Login -->
                 <form id="login-form" class="auth-form active">
                     <div class="input-group">
-                        <label>Email</label>
+                        <label data-i18n="email">Email</label>
                         <input type="email" placeholder="admin@amanahid.sch.id" value="admin@amanahid.sch.id" required>
                     </div>
                     <div class="input-group">
-                        <label>Kata Sandi</label>
+                        <label data-i18n="password">Kata Sandi</label>
                         <input type="password" placeholder="Masukkan kata sandi" value="AmanahDemo!2026#ID" required>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="terms-login" checked>
-                        <label for="terms-login">Saya setuju dengan <a href="#">Syarat & Ketentuan</a></label>
+                        <label for="terms-login" data-i18n="terms_agree">Saya setuju dengan <a href="#">Syarat &
+                                Ketentuan</a></label>
                     </div>
-                    <button type="submit" class="btn-primary">Masuk</button>
-                    <div class="demo-info">Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID</div>
+                    <button type="submit" class="btn-primary" data-i18n="login_btn">Masuk</button>
+                    <div class="demo-info" data-i18n="demo_info">Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID</div>
                 </form>
 
                 <!-- Form Register -->
                 <form id="register-form" class="auth-form">
                     <div class="input-group">
-                        <label>Nama Lengkap</label>
+                        <label data-i18n="full_name">Nama Lengkap</label>
                         <input type="text" placeholder="Masukkan nama lengkap" required>
                     </div>
                     <div class="input-group">
-                        <label>Email</label>
+                        <label data-i18n="email">Email</label>
                         <input type="email" placeholder="email@anda.com" required>
                     </div>
                     <div class="input-group">
-                        <label>Kata Sandi</label>
+                        <label data-i18n="password">Kata Sandi</label>
                         <input type="password" placeholder="Minimal 6 karakter" required>
                     </div>
                     <div class="input-group">
-                        <label>Konfirmasi Sandi</label>
+                        <label data-i18n="confirm_password">Konfirmasi Sandi</label>
                         <input type="password" placeholder="Ulangi kata sandi" required>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="terms-reg" required>
-                        <label for="terms-reg">Saya setuju dengan <a href="#">Syarat & Ketentuan</a></label>
+                        <label for="terms-reg" data-i18n="terms_agree_reg">Saya setuju dengan <a href="#">Syarat &
+                                Ketentuan</a></label>
                     </div>
-                    <button type="submit" class="btn-primary" disabled id="btn-register-submit">Daftar</button>
+                    <button type="submit" class="btn-primary" disabled id="btn-register-submit"
+                        data-i18n="register_btn">Daftar</button>
                 </form>
             </div>
         </div>
@@ -92,16 +97,16 @@
                     <span>Amanah ID</span>
                 </div>
                 <div class="nav-links">
-                    <button class="nav-link active" data-target="presensi">Presensi</button>
-                    <button class="nav-link" data-target="database">Database</button>
-                    <button class="nav-link" data-target="formulir">Formulir</button>
+                    <button class="nav-link active" data-target="presensi" data-i18n="nav_presensi">Presensi</button>
+                    <button class="nav-link" data-target="database" data-i18n="nav_database">Database</button>
+                    <button class="nav-link" data-target="formulir" data-i18n="nav_formulir">Formulir</button>
                     <button class="nav-link profile-trigger" data-target="profile">
-                        <span class="avatar-small">A</span> Profil
+                        <span class="avatar-small">A</span> <span data-i18n="nav_profile">Profil</span>
                     </button>
                 </div>
             </nav>
 
-            <!-- Main Content Area -->
+            <!-- Konten Utama -->
             <main class="main-content">
 
                 <!-- View: Presensi -->
@@ -111,68 +116,71 @@
                         <canvas id="overlay-presensi"></canvas>
                         <div id="loading-ai" class="loading-overlay">
                             <div class="spinner"></div>
-                            <p>Memuat Model AI...</p>
+                            <p data-i18n="loading_ai">Memuat Model AI...</p>
                         </div>
                         <div class="camera-controls">
                             <button class="btn-icon" id="btn-capture-presensi" title="Ambil Gambar">📸</button>
                             <button class="btn-icon" title="Fullscreen">⛶</button>
                         </div>
-                        <div id="status-presensi" class="status-badge">Mendeteksi Wajah...</div>
+                        <div id="status-presensi" class="status-badge" data-i18n="detecting_face">Mendeteksi Wajah...
+                        </div>
                     </div>
                 </div>
 
                 <!-- View: Database -->
                 <div id="view-database" class="view">
                     <div class="view-header">
-                        <h2>Database Presensi</h2>
-                        <p>Kelola riwayat presensi, filter tanggal, & ekspor laporan.</p>
+                        <h2 data-i18n="db_title">Database Presensi</h2>
+                        <p data-i18n="db_desc">Kelola riwayat presensi, filter tanggal, & ekspor laporan.</p>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <h3>Total Siswa</h3>
+                            <h3 data-i18n="total_students">Total Siswa</h3>
                             <p>0</p>
                         </div>
                         <div class="stat-card">
-                            <h3>Hadir Hari Ini</h3>
+                            <h3 data-i18n="present_today">Hadir Hari Ini</h3>
                             <p>0</p>
                         </div>
                         <div class="stat-card">
-                            <h3>Persentase</h3>
+                            <h3 data-i18n="percentage">Persentase</h3>
                             <p>0%</p>
                         </div>
                         <div class="stat-card">
-                            <h3>Total Riwayat</h3>
+                            <h3 data-i18n="total_history">Total Riwayat</h3>
                             <p>0</p>
                         </div>
                     </div>
                     <div class="table-controls">
-                        <input type="text" placeholder="Cari nama, NISN, atau kelas...">
+                        <input type="text" placeholder="Cari nama, NISN, atau kelas..."
+                            data-i18n-placeholder="search_placeholder">
                         <input type="date" value="2026-09-21">
                         <span>→</span>
                         <input type="date" value="2026-09-28">
-                        <button class="btn-primary">Export</button>
-                        <button class="btn-danger">Hapus Semua</button>
+                        <button class="btn-primary" data-i18n="export">Export</button>
+                        <button class="btn-danger" data-i18n="delete_all">Hapus Semua</button>
                     </div>
                     <div class="table-wrapper">
                         <table>
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>NISN</th>
-                                    <th>NAMA</th>
-                                    <th>KELAS</th>
-                                    <th>STATUS</th>
-                                    <th>TANGGAL</th>
-                                    <th>WAKTU</th>
-                                    <th>METODE</th>
-                                    <th>CONFIDENCE</th>
-                                    <th>AKSI</th>
+                                    <th data-i18n="nisn">NISN</th>
+                                    <th data-i18n="name">NAMA</th>
+                                    <th data-i18n="class">KELAS</th>
+                                    <th data-i18n="status">STATUS</th>
+                                    <th data-i18n="date">TANGGAL</th>
+                                    <th data-i18n="time">WAKTU</th>
+                                    <th data-i18n="method">METODE</th>
+                                    <th data-i18n="confidence">CONFIDENCE</th>
+                                    <th data-i18n="action">AKSI</th>
                                 </tr>
                             </thead>
                             <tbody id="db-tbody">
                                 <tr>
-                                    <td colspan="10" class="empty-state">Belum ada data presensi<br><small>Data akan
-                                            muncul setelah siswa melakukan verifikasi wajah.</small></td>
+                                    <td colspan="10" class="empty-state" data-i18n="no_data">Belum ada data
+                                        presensi<br><small>Data akan muncul setelah siswa melakukan verifikasi
+                                            wajah.</small></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -182,42 +190,45 @@
                 <!-- View: Formulir -->
                 <div id="view-formulir" class="view">
                     <div class="view-header">
-                        <h2>Formulir Siswa</h2>
-                        <p>Daftarkan identitas dan wajah siswa untuk presensi.</p>
+                        <h2 data-i18n="form_title">Formulir Siswa</h2>
+                        <p data-i18n="form_desc">Daftarkan identitas dan wajah siswa untuk presensi.</p>
                     </div>
                     <div class="form-layout">
                         <div class="card form-card">
-                            <h3>Identitas Siswa</h3>
-                            <div class="input-group"><label>NISN</label><input type="text" id="input-nisn"
-                                    placeholder="Masukkan NISN"></div>
-                            <div class="input-group"><label>Nama Lengkap</label><input type="text" id="input-nama"
-                                    placeholder="Masukkan nama lengkap"></div>
-                            <div class="input-group"><label>Kelas</label><input type="text" id="input-kelas"
-                                    placeholder="Contoh: XI IPA 1"></div>
-                            <button class="btn-primary" id="btn-save-siswa">Simpan Data Siswa</button>
+                            <h3 data-i18n="student_identity">Identitas Siswa</h3>
+                            <div class="input-group"><label data-i18n="nisn">NISN</label><input type="text"
+                                    id="input-nisn" placeholder="Masukkan NISN"></div>
+                            <div class="input-group"><label data-i18n="full_name">Nama Lengkap</label><input type="text"
+                                    id="input-nama" placeholder="Masukkan nama lengkap"></div>
+                            <div class="input-group"><label data-i18n="class">Kelas</label><input type="text"
+                                    id="input-kelas" placeholder="Contoh: XI IPA 1"></div>
+                            <button class="btn-primary" id="btn-save-siswa" data-i18n="save_student">Simpan Data
+                                Siswa</button>
                         </div>
                         <div class="card camera-card">
-                            <h3>Verifikasi Wajah</h3>
-                            <p>Ambil wajah dari depan, kiri, kanan, atas, dan bawah agar presensi tetap akurat.</p>
+                            <h3 data-i18n="face_verification">Verifikasi Wajah</h3>
+                            <p data-i18n="face_verification_desc">Ambil wajah dari depan, kiri, kanan, atas, dan bawah
+                                agar presensi tetap akurat.</p>
                             <div class="camera-container small">
                                 <video id="video-formulir" autoplay muted playsinline></video>
                                 <canvas id="overlay-formulir"></canvas>
                                 <div id="loading-ai-form" class="loading-overlay">
                                     <div class="spinner"></div>
-                                    <p>Memuat Model AI...</p>
+                                    <p data-i18n="loading_ai">Memuat Model AI...</p>
                                 </div>
                             </div>
                             <div class="analysis-bar">
-                                <span>Analisis AI</span>
+                                <span data-i18n="ai_analysis">Analisis AI</span>
                                 <div class="progress-bar">
                                     <div class="progress-fill" id="ai-progress"></div>
                                 </div>
                                 <span id="ai-percent">0%</span>
                             </div>
-                            <p class="hint-text">Posisikan wajah dari depan</p>
+                            <p class="hint-text" data-i18n="position_hint">Posisikan wajah dari depan</p>
                             <div class="camera-actions">
-                                <button class="btn-secondary" id="btn-upload">Upload Foto</button>
-                                <button class="btn-dark" id="btn-camera">Gunakan Kamera</button>
+                                <button class="btn-secondary" id="btn-upload" data-i18n="upload_photo">Upload
+                                    Foto</button>
+                                <button class="btn-dark" id="btn-camera" data-i18n="use_camera">Gunakan Kamera</button>
                             </div>
                         </div>
                     </div>
@@ -232,30 +243,33 @@
                 <div class="modal-header">
                     <div>
                         <h4>Amanah ID</h4>
-                        <h2>Profil</h2>
+                        <h2 data-i18n="profile_title">Profil</h2>
                     </div>
                     <button class="btn-close" id="close-profile">✕</button>
                 </div>
                 <div class="modal-body">
                     <div class="avatar-large">A</div>
-                    <button class="btn-text">Ganti foto</button>
-                    <div class="input-group"><label>Nama Lengkap</label><input type="text" value="Admin" readonly></div>
-                    <div class="input-group"><label>Email</label><input type="email" value="admin@amanahid.sch.id"
-                            readonly></div>
-                    <div class="input-group"><label>Kata Sandi</label><input type="password" value="************"
-                            readonly></div>
+                    <button class="btn-text" data-i18n="change_photo">Ganti foto</button>
+                    <div class="input-group"><label data-i18n="full_name">Nama Lengkap</label><input type="text"
+                            value="Admin" readonly></div>
+                    <div class="input-group"><label data-i18n="email">Email</label><input type="email"
+                            value="admin@amanahid.sch.id" readonly></div>
+                    <div class="input-group"><label data-i18n="password">Kata Sandi</label><input type="password"
+                            value="************" readonly></div>
                     <div class="input-group">
-                        <label>Bahasa</label>
-                        <div class="lang-switcher" style="margin:0; justify-content:flex-start;">
-                            <button class="lang-btn active">Indonesia</button>
-                            <button class="lang-btn">English</button>
-                            <button class="lang-btn">العربية</button>
+                        <label data-i18n="language">Bahasa</label>
+                        <!-- Pemilih Bahasa di Profil -->
+                        <div class="lang-switcher" id="lang-switcher-profile"
+                            style="margin:0; justify-content:flex-start;">
+                            <button class="lang-btn active" data-lang="id">Indonesia</button>
+                            <button class="lang-btn" data-lang="en">English</button>
+                            <button class="lang-btn" data-lang="ar">العربية</button>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-primary" id="btn-save-profile">Simpan Profil</button>
-                    <button class="btn-danger-outline" id="btn-logout">Keluar</button>
+                    <button class="btn-primary" id="btn-save-profile" data-i18n="save_profile">Simpan Profil</button>
+                    <button class="btn-danger-outline" id="btn-logout" data-i18n="logout">Keluar</button>
                 </div>
             </div>
         </div>

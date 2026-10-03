@@ -1,4 +1,4 @@
-/* ================= RESET & VARIABEL ================= */
+/* ================= VARIABEL & RESET ================= */
 :root {
     --primary: #2563EB;
     --primary-light: #EFF6FF;
@@ -28,6 +28,32 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    transition: direction 0.3s ease;
+}
+
+/* Dukungan RTL untuk Bahasa Arab */
+body[dir="rtl"] {
+    direction: rtl;
+}
+
+body[dir="rtl"] .nav-links {
+    flex-direction: row-reverse;
+}
+
+body[dir="rtl"] .input-group input {
+    text-align: right;
+}
+
+body[dir="rtl"] .table-controls {
+    flex-direction: row-reverse;
+}
+
+body[dir="rtl"] table {
+    text-align: right;
+}
+
+body[dir="rtl"] .camera-controls {
+    flex-direction: row-reverse;
 }
 
 /* Background Grid Pattern */
@@ -145,6 +171,7 @@ body {
     justify-content: center;
     gap: 10px;
     margin-bottom: 25px;
+    flex-wrap: wrap;
 }
 
 .lang-btn {
@@ -355,7 +382,7 @@ body {
     font-size: 14px;
 }
 
-/* Camera Container (Presensi & Formulir) */
+/* Camera Container */
 .camera-container {
     position: relative;
     width: 100%;
