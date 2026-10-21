@@ -1,6 +1,7 @@
 
 "use strict";
 
+// School configuration and in-memory state
 const SCHOOL_LOCATION = {
     lat: -6.253590517740096,
     lng: 106.60299502682263,
@@ -8,12 +9,102 @@ const SCHOOL_LOCATION = {
     name: "Al Fityan School"
 };
 
+const ROLE_T = {
+    id: {
+        roleTeacher: "Guru", roleStudent: "Siswa", teacherDashboard: "Dashboard Guru",
+        studentWorkspace: "MENU SISWA", studentAttendance: "Presensi Saya", studentHistory: "Riwayat Saya",
+        studentCheckinTitle: "Catat kehadiran Anda",
+        studentCheckinDesc: "Pastikan Anda berada di area sekolah. Lokasi akan diperiksa sebelum kamera dinyalakan.",
+        studentCameraOff: "Kamera belum aktif",
+        studentCameraOffDesc: "Tekan Absen Sekarang untuk memeriksa lokasi dan memulai verifikasi.",
+        checkInNow: "Absen Sekarang", studentHistoryTitle: "Riwayat presensi saya",
+        studentHistoryDesc: "Hanya catatan presensi akun Anda yang ditampilkan.",
+        studentHistoryEmpty: "Riwayat presensi Anda akan tampil di sini.",
+        parentWhatsApp: "WhatsApp orang tua",
+        whatsappPlaceholder: "08xxxxxxxxxx atau 628xxxxxxxxxx",
+        invalidWhatsApp: "Nomor WhatsApp orang tua harus dimulai dengan 08 atau 628 dan berisi nomor yang valid.",
+        whatsappSuccess: "Notifikasi WhatsApp berhasil dikirim ke orang tua.",
+        whatsappFailed: "Presensi tercatat, tetapi notifikasi WhatsApp gagal dikirim.",
+        roleTeacherMismatch: "Akun ini bukan akun guru. Silakan pilih peran Siswa.",
+        roleStudentMismatch: "Akun ini bukan akun siswa. Silakan pilih peran Guru.",
+        studentNeedsNisn: "Masukkan NISN yang didaftarkan oleh guru.",
+        studentUnlinked: "Akun sudah dibuat tetapi belum terhubung dengan data wajah. Minta guru mendaftarkan NISN Anda sebelum presensi.",
+        studentMatched: "Data wajah Anda sudah terhubung.",
+        studentAlreadyPresent: "Presensi hari ini sudah tercatat untuk Anda.",
+        studentAttendanceSuccess: "Presensi berhasil dicatat.",
+        gpsAccuracyStatus: "Akurasi GPS ±{accuracy} m",
+        studentMissingWa: "Nomor WhatsApp orang tua belum tersedia pada data siswa.",
+        parentAttendanceMessage: "Assalamu'alaikum, presensi {name} ({nisn}) tercatat pada {date} pukul {time} di Al Fityan School."
+    },
+    en: {
+        roleTeacher: "Teacher", roleStudent: "Student", teacherDashboard: "Teacher dashboard",
+        studentWorkspace: "STUDENT MENU", studentAttendance: "My attendance", studentHistory: "My history",
+        studentCheckinTitle: "Record your attendance",
+        studentCheckinDesc: "Make sure you are within the school area. Your location is checked before the camera starts.",
+        studentCameraOff: "Camera is off",
+        studentCameraOffDesc: "Select Check in now to verify your location and start face verification.",
+        checkInNow: "Check in now", studentHistoryTitle: "My attendance history",
+        studentHistoryDesc: "Only attendance records belonging to your account are shown.",
+        studentHistoryEmpty: "Your attendance history will appear here.",
+        parentWhatsApp: "Parent's WhatsApp",
+        whatsappPlaceholder: "08xxxxxxxxxx or 628xxxxxxxxxx",
+        invalidWhatsApp: "The parent's WhatsApp number must start with 08 or 628 and be a valid number.",
+        whatsappSuccess: "WhatsApp notification sent to the parent.",
+        whatsappFailed: "Attendance was recorded, but the WhatsApp notification could not be sent.",
+        roleTeacherMismatch: "This is not a teacher account. Please select Student.",
+        roleStudentMismatch: "This is not a student account. Please select Teacher.",
+        studentNeedsNisn: "Enter the NISN registered by your teacher.",
+        studentUnlinked: "Your account was created but is not linked to a face record. Ask your teacher to register your NISN before checking in.",
+        studentMatched: "Your face record is linked.",
+        studentAlreadyPresent: "Your attendance has already been recorded today.",
+        studentAttendanceSuccess: "Attendance recorded successfully.",
+        gpsAccuracyStatus: "GPS accuracy ±{accuracy} m",
+        studentMissingWa: "The student record does not have a parent's WhatsApp number.",
+        parentAttendanceMessage: "Attendance for {name} ({nisn}) was recorded on {date} at {time} at Al Fityan School."
+    },
+    ar: {
+        roleTeacher: "معلّم", roleStudent: "طالب", teacherDashboard: "لوحة المعلّم",
+        studentWorkspace: "قائمة الطالب", studentAttendance: "حضوري", studentHistory: "سجلي",
+        studentCheckinTitle: "تسجيل الحضور",
+        studentCheckinDesc: "تأكد من وجودك داخل منطقة المدرسة. سيتم التحقق من الموقع قبل تشغيل الكاميرا.",
+        studentCameraOff: "الكاميرا متوقفة",
+        studentCameraOffDesc: "اضغط على تسجيل الحضور للتحقق من الموقع وبدء التحقق من الوجه.",
+        checkInNow: "تسجيل الحضور", studentHistoryTitle: "سجل حضوري",
+        studentHistoryDesc: "تظهر هنا سجلات الحضور الخاصة بحسابك فقط.",
+        studentHistoryEmpty: "سيظهر سجل حضورك هنا.",
+        parentWhatsApp: "واتساب ولي الأمر",
+        whatsappPlaceholder: "08xxxxxxxxxx أو 628xxxxxxxxxx",
+        invalidWhatsApp: "يجب أن يبدأ رقم واتساب ولي الأمر بـ 08 أو 628 وأن يكون صالحاً.",
+        whatsappSuccess: "تم إرسال إشعار واتساب إلى ولي الأمر.",
+        whatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب.",
+        roleTeacherMismatch: "هذا ليس حساب معلّم. يرجى اختيار الطالب.",
+        roleStudentMismatch: "هذا ليس حساب طالب. يرجى اختيار المعلّم.",
+        studentNeedsNisn: "أدخل رقم NISN المسجل لدى المعلّم.",
+        studentUnlinked: "تم إنشاء الحساب لكنه غير مرتبط ببيانات الوجه. اطلب من المعلّم تسجيل رقم NISN قبل الحضور.",
+        studentMatched: "تم ربط بيانات وجهك.",
+        studentAlreadyPresent: "تم تسجيل حضورك اليوم بالفعل.",
+        studentAttendanceSuccess: "تم تسجيل الحضور بنجاح.",
+        gpsAccuracyStatus: "دقة GPS ±{accuracy} م",
+        studentMissingWa: "لا يوجد رقم واتساب لولي الأمر في سجل الطالب.",
+        parentAttendanceMessage: "تم تسجيل حضور {name} ({nisn}) بتاريخ {date} الساعة {time} في مدرسة الفتيان."
+    }
+};
+
 const $ = id => document.getElementById(id);
 const state = {
     lang: "id",
     theme: "light",
     user: null,
-    accounts: [],
+    accounts: [
+        {
+            name: "Admin Amanah", email: "admin@amanahid.sch.id",
+            password: "AmanahDemo!2026#ID", role: "guru"
+        },
+        {
+            name: "Siswa Demo", email: "siswa@amanahid.sch.id",
+            password: "SiswaDemo!2026#ID", role: "siswa", nisn: "0091234567"
+        }
+    ],
     students: [],
     attendance: [],
     modelReady: false,
@@ -35,9 +126,12 @@ const state = {
     pendingDelete: null,
     lastNose: null,
     movementFrames: 0,
-    attendanceRecorded: false
+    attendanceRecorded: false,
+    attendanceMode: "guru",
+    selectedRoles: { login: "guru", register: "siswa" }
 };
 
+// Three-language dictionary
 const T = {
     id: {
         authEyebrow: "PRESENSI DIGITAL SEKOLAH", welcomeTitle: "Presensi yang lebih aman.", welcomeDesc: "Masuk untuk mengelola presensi dan data siswa.", login: "Masuk", signup: "Daftar", email: "Email", password: "Kata sandi", demoAccount: "Akun demo", fullName: "Nama lengkap", confirmPassword: "Konfirmasi kata sandi", terms: "Saya menyetujui ketentuan penggunaan demo.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Formulir", geofenceEnabled: "GPS geofencing aktif", viewProfile: "Lihat profil", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "PRESENSI HARIAN", cameraTitle: "Kamera presensi", cameraDesc: "Periksa lokasi sekolah, lalu verifikasi wajah untuk mencatat kehadiran.", viewMap: "Lihat peta", secureCamera: "Kamera presensi", modelLoading: "Memuat AI...", cameraOff: "Kamera belum aktif", cameraOffDesc: "Aktifkan sakelar setelah lokasi terverifikasi.", cameraReady: "Kamera siap", fullscreen: "Layar penuh", locationVerification: "Verifikasi lokasi", locationNotChecked: "Lokasi belum diperiksa", locationPending: "Belum diperiksa", attendanceSwitch: "Sakelar presensi", switchOffHint: "Kamera mati. Lokasi akan diperiksa saat diaktifkan.", off: "MATI", on: "AKTIF", waitingFace: "Menunggu kamera", livenessWaiting: "Verifikasi wajah dan gerakan dimulai setelah lokasi lolos.", recordsCenter: "PUSAT DATA", attendanceDatabase: "Database presensi", databaseDesc: "Cari, saring, dan ekspor riwayat kehadiran serta data siswa.", exportCsv: "Ekspor CSV", registeredStudents: "Siswa terdaftar", registeredStudentsHint: "Data wajah dalam sesi ini", todayAttendance: "Presensi hari ini", todayAttendanceHint: "Catatan kehadiran hari ini", totalRecords: "Total catatan", totalRecordsHint: "Semua catatan dalam sesi ini", attendanceHistory: "Riwayat presensi", historyDesc: "Data demo tersimpan selama halaman ini terbuka.", deleteAll: "Hapus semua data", searchPlaceholder: "Cari nama, NISN, atau kelas...", fromDate: "Dari", toDate: "Sampai", number: "No.", nisn: "NISN", name: "Nama", class: "Kelas", status: "Status", date: "Tanggal", time: "Waktu", method: "Metode", confidence: "Keyakinan", action: "Aksi", noRecords: "Belum ada catatan", noRecordsDesc: "Riwayat presensi muncul di sini setelah verifikasi berhasil.", studentRegistry: "Data siswa", studentRegistryDesc: "Daftar siswa dengan sampel wajah terdaftar.", registeredAt: "Waktu daftar", noStudents: "Belum ada siswa terdaftar", registerFromForm: "Tambahkan siswa melalui menu Formulir.", studentManagement: "MANAJEMEN SISWA", studentRegistration: "Formulir pendaftaran siswa", formDesc: "Daftarkan identitas dan sampel wajah untuk pengenalan presensi.", studentIdentity: "Identitas siswa", studentIdentityDesc: "Isi data dengan benar sebelum menyimpan.", faceSample: "Sampel wajah", faceSampleDesc: "Gunakan kamera atau unggah foto dengan satu wajah yang terlihat jelas.", openCamera: "Buka kamera", closeCamera: "Tutup kamera", uploadPhoto: "Unggah foto wajah", noFaceSample: "Belum ada sampel wajah.", saveStudent: "Simpan siswa", clearFace: "Wajah harus jelas", clearFaceDesc: "Pastikan hanya satu wajah terlihat, pencahayaan cukup, dan wajah tidak tertutup.", privacyFirst: "Data bersifat sementara", privacyDesc: "Demo menyimpan descriptor wajah di memori browser. Data hilang setelah halaman dimuat ulang.", accountSettings: "PENGATURAN AKUN", myProfile: "Profil saya", appearance: "Tampilan", lightTheme: "Terang", darkTheme: "Gelap", language: "Bahasa", saveSettings: "Simpan pengaturan", logout: "Keluar", locationSecurity: "KEAMANAN LOKASI", schoolMap: "Peta area sekolah", mapDesc: "Titik sekolah dan posisi perangkat Anda.", schoolPoint: "Titik sekolah", yourLocation: "Lokasi Anda", allowedRadius: "Radius diizinkan: 50 m", mapLocationPending: "Periksa lokasi untuk menampilkan posisi perangkat.", refreshLocation: "Periksa lokasi lagi", confirmDeleteTitle: "Hapus semua data?", confirmDeleteDesc: "Semua catatan presensi dan siswa dalam sesi ini akan dihapus.", cancel: "Batal", locationChecking: "Memeriksa lokasi...", locationInside: "Di dalam area sekolah", locationOutside: "Di luar area sekolah", locationError: "Lokasi gagal diperiksa", gpsDenied: "Izin lokasi ditolak. Aktifkan izin lokasi/GPS pada browser lalu coba lagi.", gpsUnavailable: "Posisi tidak tersedia. Aktifkan GPS dan pastikan perangkat mendapat sinyal lokasi.", gpsTimeout: "Waktu pemeriksaan lokasi habis. Coba lagi di area dengan sinyal GPS yang lebih baik.", gpsUnsupported: "Browser ini tidak mendukung geolocation. Gunakan browser modern dengan izin lokasi.", gpsFailed: "Lokasi gagal diperiksa. Periksa pengaturan lokasi perangkat lalu coba lagi.", outsideMessage: "Presensi ditolak. Jarak Anda dari sekolah {distance} m, sedangkan radius maksimum yang diizinkan {radius} m.", insideMessage: "Lokasi lolos: {distance} m dari sekolah, akurasi GPS ±{accuracy} m.", accuracyWarning: "Lokasi berada di dalam radius, tetapi akurasi GPS terlalu rendah ({accuracy} m). Coba lagi di area terbuka.", checkingBeforeCamera: "Memeriksa GPS sebelum kamera dinyalakan...", cameraPermission: "Izin kamera ditolak. Izinkan akses kamera di pengaturan browser.", cameraUnavailable: "Kamera tidak tersedia atau sedang digunakan aplikasi lain.", cameraUnsupported: "Browser tidak mendukung akses kamera.", modelFailed: "Model AI gagal dimuat. Periksa koneksi internet lalu tekan muat ulang halaman.", retryModel: "Muat ulang halaman untuk mencoba kembali.", faceNoMatch: "Wajah belum cocok dengan siswa terdaftar.", faceTooMany: "Terdeteksi lebih dari satu wajah. Pastikan hanya satu orang di depan kamera.", faceNotFound: "Wajah tidak terdeteksi. Posisikan wajah di dalam bingkai.", livenessMove: "Gerakkan kepala sedikit agar pemeriksaan keaktifan selesai.", attendanceSuccess: "Presensi berhasil dicatat untuk {name}.", alreadyPresent: "Presensi hari ini sudah tercatat untuk siswa ini.", cameraStopped: "Kamera dimatikan.", locationRequired: "Lokasi belum terverifikasi. Kamera tetap mati.", fullscreenError: "Mode layar penuh tidak tersedia pada perangkat ini.", mapFailed: "Peta gagal dimuat. Periksa koneksi internet.", mapLocationFailed: "Posisi Anda belum tersedia. Periksa lokasi terlebih dahulu.", studentExists: "NISN sudah terdaftar.", invalidNisn: "NISN harus diisi dengan benar.", needFace: "Ambil atau unggah sampel wajah terlebih dahulu.", studentSaved: "Data siswa berhasil didaftarkan.", studentDeleted: "Data siswa berhasil dihapus.", attendanceDeleted: "Catatan presensi berhasil dihapus.", allDeleted: "Semua data presensi dan siswa berhasil dihapus.", settingsSaved: "Pengaturan berhasil disimpan.", loginFailed: "Email atau kata sandi tidak sesuai.", signupSuccess: "Akun demo dibuat. Silakan masuk.", passwordMismatch: "Konfirmasi kata sandi tidak cocok.", termsRequired: "Setujui ketentuan sebelum mendaftar.", emailExists: "Email sudah terdaftar.", loggedOut: "Anda telah keluar.", emptyCsv: "Tidak ada data untuk diekspor.", csvSaved: "File CSV berhasil disiapkan.", cameraFormReady: "Kamera formulir aktif.", cameraFormOff: "Kamera formulir dimatikan.", faceSampleReady: "Sampel wajah siap digunakan.", modelReady: "AI siap", modelLoadingLong: "Menyiapkan model AI...", faceDetected: "Wajah terdeteksi", faceRegistered: "Wajah terdaftar", faceNotRegistered: "Wajah belum terdaftar", attendanceInProgress: "Memverifikasi wajah...", attendanceWaiting: "Menunggu wajah terdaftar...", attendanceReady: "Lokasi terverifikasi. Kamera siap.", methodFaceGps: "Wajah + GPS", delete: "Hapus", recordsCount: "{count} catatan", studentsCount: "{count} siswa", unknownClass: "Belum diisi", mapSchoolPopup: "Al Fityan School · Radius 50 m", mapUserPopup: "Posisi perangkat Anda", mapDistance: "Jarak dari sekolah: {distance} m", mapAccuracy: "Akurasi GPS: ±{accuracy} m", registeredAlready: "NISN tersebut sudah terdaftar.", locationMapReady: "Peta siap. Posisi perangkat akan muncul setelah GPS berhasil diperiksa.", noLocationForMap: "Periksa lokasi terlebih dahulu untuk menampilkan titik perangkat.", faceUploadError: "Foto tidak dapat diproses. Gunakan JPG, PNG, atau WebP yang valid.", faceSampleCapture: "Wajah terdeteksi. Sampel dapat digunakan.", cameraStartFailed: "Kamera gagal dimulai. Periksa izin browser dan koneksi aman HTTPS.", cameraStarting: "Memulai kamera...", locationVerified: "Lokasi terverifikasi.", confidenceLabel: "Keyakinan", student: "Siswa", attendance: "Hadir"
@@ -50,6 +144,9 @@ const T = {
     }
 };
 
+Object.keys(ROLE_T).forEach(lang => Object.assign(T[lang], ROLE_T[lang]));
+
+// Text, theme, and basic UI helpers
 function tr(key, vars = {}) {
     let text = T[state.lang]?.[key] ?? T.id[key] ?? key;
     for (const [name, value] of Object.entries(vars)) {
@@ -93,6 +190,8 @@ function setLanguage(lang) {
     renderStudentList();
     updateStats();
     updateCameraTexts();
+    renderStudentHistory();
+    updateStudentProfile();
     if (state.map) updateMapText();
 }
 
@@ -100,56 +199,98 @@ function setTheme(theme) {
     state.theme = theme === "dark" ? "dark" : "light";
     document.body.classList.toggle("theme-dark", state.theme === "dark");
     $("theme-select").value = state.theme;
+    if ($("student-theme-select")) $("student-theme-select").value = state.theme;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = state.theme === "dark" ? "#111827" : "#f5f8ff";
 }
 
+// Authentication and single-page role routing
 function showView(target) {
-    if (state.attendanceStream) stopAttendanceCamera();
-    if (state.formStream) stopFormCamera();
+    stopAllCameras();
 
     document.querySelectorAll(".view").forEach(v => {
         v.classList.toggle("active", v.id === target);
         v.classList.toggle("hidden", v.id !== target);
     });
-    document.querySelectorAll(".nav-link").forEach(btn => {
+    document.querySelectorAll("#dashboard-guru .nav-link, #dashboard-siswa .nav-link").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.target === target);
     });
 
-    const titleKey = target === "view-database" ? "database" : target === "view-formulir" ? "formulir" : "dashboard";
-    $("page-title").textContent = tr(titleKey);
+    const titles = {
+        "view-presensi": "teacherDashboard", "view-database": "database", "view-formulir": "formulir",
+        "view-s-presensi": "studentAttendance", "view-s-history": "studentHistory", "view-s-profile": "myProfile"
+    };
+    if (target.startsWith("view-s-")) $("student-page-title").textContent = tr(titles[target]);
+    else $("page-title").textContent = tr(titles[target] || "dashboard");
     if (target === "view-database") {
         renderDatabase();
         renderStudentList();
         updateStats();
     }
+    if (target === "view-s-history") renderStudentHistory();
 }
 
 function showAuth() {
     stopAllCameras();
-    $("dashboard-screen").classList.add("hidden");
+    $("dashboard-guru").classList.add("hidden");
+    $("dashboard-siswa").classList.add("hidden");
     $("auth-screen").classList.remove("hidden");
     $("profile-modal").classList.add("hidden");
     $("map-modal").classList.add("hidden");
+    if (location.hash) history.replaceState(null, "", `${location.pathname}${location.search}`);
+}
+
+// Option A (implemented/recommended): one index.html with #guru/#siswa, preserving
+// in-memory login state across menu changes. Option B: index.html plus guru.html
+// and siswa.html, requiring sessionStorage, role guards, and camera shutdown on navigation.
+function handleHashRoute() {
+    if (!location.hash) return;
+    if (!state.user) {
+        history.replaceState(null, "", `${location.pathname}${location.search}`);
+        return;
+    }
+    const expected = state.user.role === "siswa" ? "#siswa" : "#guru";
+    if (location.hash !== expected) {
+        state.user = null;
+        showAuth();
+    }
 }
 
 function showApp(user) {
     state.user = user;
     $("auth-screen").classList.add("hidden");
-    $("dashboard-screen").classList.remove("hidden");
-    $("header-user").textContent = user.name;
-    $("header-avatar").textContent = user.name.trim().charAt(0).toUpperCase() || "A";
-    $("profile-name").textContent = user.name;
-    $("profile-email").textContent = user.email;
-    $("profile-avatar").textContent = user.name.trim().charAt(0).toUpperCase() || "A";
-    $("profile-modal-avatar").textContent = user.name.trim().charAt(0).toUpperCase() || "A";
-    showView("view-presensi");
+    const isStudent = user.role === "siswa";
+    $("dashboard-guru").classList.toggle("hidden", isStudent);
+    $("dashboard-siswa").classList.toggle("hidden", !isStudent);
+    const initial = user.name.trim().charAt(0).toUpperCase() || (isStudent ? "S" : "A");
+    if (isStudent) {
+        $("student-header-user").textContent = user.name;
+        $("student-header-avatar").textContent = initial;
+        $("student-profile-name").textContent = user.name;
+        $("student-profile-email").textContent = user.email;
+        $("student-profile-avatar").textContent = initial;
+        updateStudentProfile();
+        location.hash = "siswa";
+        showView("view-s-presensi");
+    } else {
+        $("header-user").textContent = user.name;
+        $("header-avatar").textContent = initial;
+        $("profile-name").textContent = user.name;
+        $("profile-email").textContent = user.email;
+        $("profile-modal-avatar").textContent = initial;
+        location.hash = "guru";
+        showView("view-presensi");
+    }
     loadModels();
 }
 
 function openProfile() {
     stopAllCameras();
-    $("profile-modal").classList.remove("hidden");
+    if (state.user?.role === "siswa") {
+        showView("view-s-profile");
+    } else {
+        $("profile-modal").classList.remove("hidden");
+    }
 }
 
 function closeProfile() {
@@ -183,17 +324,41 @@ function safeText(value) {
     })[c]);
 }
 
+// Teacher database and student-owned history
 function updateStats() {
     const today = localDateKey();
     const todayCount = state.attendance.filter(a => a.date === today).length;
-    $("stat-students").textContent = state.students.length;
-    $("registered-count").textContent = state.students.length;
-    $("stat-today").textContent = todayCount;
-    $("stat-rate").textContent = state.students.length ? `${Math.round(todayCount / state.students.length * 100)}%` : "0%";
     $("stat-history").textContent = state.attendance.length;
     $("db-stat-students").textContent = state.students.length;
     $("db-stat-today").textContent = todayCount;
     $("student-count-badge").textContent = state.students.length;
+}
+
+function updateStudentProfile() {
+    const user = state.user;
+    if (!user || user.role !== "siswa") return;
+    const student = state.students.find(item => item.nisn === user.nisn);
+    $("student-profile-nisn").textContent = user.nisn || "—";
+    $("student-profile-class").textContent = student?.className || "—";
+}
+
+function renderStudentHistory() {
+    const user = state.user;
+    const from = $("student-date-start").value;
+    const to = $("student-date-end").value;
+    const rows = user?.role === "siswa"
+        ? state.attendance.filter(item => item.nisn === user.nisn && (!from || item.date >= from) && (!to || item.date <= to))
+        : [];
+    $("student-history-tbody").innerHTML = rows.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${safeText(formatDate(item.date))}</td>
+            <td>${safeText(item.time)}</td>
+            <td><span class="status-pill">${safeText(tr("attendance"))}</span></td>
+            <td>${safeText(tr("methodFaceGps"))}</td>
+            <td>${Math.round(item.confidence * 100)}%</td>
+        </tr>`).join("");
+    $("student-history-empty").classList.toggle("hidden", rows.length > 0);
 }
 
 function renderDatabase() {
@@ -232,6 +397,7 @@ function renderStudentList() {
       <td>${safeText(s.nisn)}</td>
       <td>${safeText(s.name)}</td>
       <td>${safeText(s.className)}</td>
+      <td>${safeText(s.parentWhatsApp || "—")}</td>
       <td>${safeText(s.registeredDate)}</td>
       <td><button class="row-action" type="button" data-delete-student="${safeText(s.nisn)}">${safeText(tr("delete"))}</button></td>
     </tr>`).join("");
@@ -261,6 +427,7 @@ function exportCsv() {
     toast(tr("csvSaved"), "success");
 }
 
+// GPS geofencing
 function calculateDistance(lat1, lng1, lat2, lng2) {
     const earthRadius = 6371000;
     const toRad = degrees => degrees * Math.PI / 180;
@@ -282,9 +449,21 @@ function geolocationErrorMessage(error) {
     return tr("gpsFailed");
 }
 
+function geolocationErrorKey(error) {
+    if (!navigator.geolocation) return "gpsUnsupported";
+    if (error?.code === 1) return "gpsDenied";
+    if (error?.code === 2) return "gpsUnavailable";
+    if (error?.code === 3) return "gpsTimeout";
+    return "gpsFailed";
+}
+
 async function checkGeofence() {
     if (!("geolocation" in navigator)) {
-        return { inside: false, distance: NaN, accuracy: NaN, error: tr("gpsUnsupported") };
+        const error = tr("gpsUnsupported");
+        state.lastLocation = { error, errorKey: "gpsUnsupported", checkedAt: Date.now() };
+        renderLocationBadge();
+        updateMapText();
+        return { inside: false, distance: NaN, accuracy: NaN, error };
     }
 
     return new Promise(resolve => {
@@ -313,7 +492,8 @@ async function checkGeofence() {
             });
         }, error => {
             const message = geolocationErrorMessage(error);
-            state.lastLocation = { error: message, checkedAt: Date.now() };
+            const errorKey = geolocationErrorKey(error);
+            state.lastLocation = { error: message, errorKey, checkedAt: Date.now() };
             renderLocationBadge();
             updateMapText();
             resolve({ inside: false, distance: NaN, accuracy: NaN, error: message });
@@ -326,46 +506,55 @@ async function checkGeofence() {
 }
 
 function renderLocationBadge() {
-    const badge = $("location-badge");
-    const detail = $("location-detail");
-    badge.className = "location-badge pending";
+    const badges = [$("location-badge"), $("student-location-badge")].filter(Boolean);
+    const details = [$("location-detail"), $("student-location-detail")].filter(Boolean);
+    const setStatus = (className, label, description) => {
+        badges.forEach(badge => {
+            badge.className = `location-badge ${className}`;
+            badge.textContent = label;
+        });
+        details.forEach(detail => { detail.textContent = description; });
+    };
 
     if (!state.lastLocation) {
-        badge.textContent = tr("locationPending");
-        detail.textContent = tr("locationNotChecked");
+        setStatus("pending", tr("locationPending"), tr("locationNotChecked"));
         return;
     }
 
     if (state.lastLocation.error) {
-        badge.classList.add("outside");
-        badge.textContent = tr("locationError");
-        detail.textContent = state.lastLocation.error;
+        setStatus("outside", tr("locationError"),
+            state.lastLocation.errorKey ? tr(state.lastLocation.errorKey) : state.lastLocation.error);
         return;
     }
 
     if (state.lastLocation.checking) {
-        badge.textContent = tr("locationChecking");
-        detail.textContent = tr("checkingBeforeCamera");
+        setStatus("pending", tr("locationChecking"), tr("checkingBeforeCamera"));
         return;
     }
 
-    if (state.lastLocation.inside) {
-        badge.classList.add("inside");
-        badge.textContent = `${tr("locationInside")} · ${state.lastLocation.distance} m`;
-    } else {
-        badge.classList.add("outside");
-        badge.textContent = `${tr("locationOutside")} · ${state.lastLocation.distance} m`;
-    }
-    detail.textContent = tr("insideMessage", {
-        distance: state.lastLocation.distance,
-        accuracy: state.lastLocation.accuracy
-    });
-    if (!state.lastLocation.inside) {
-        detail.textContent = tr("outsideMessage", {
+    const badgeLabel = `${tr(state.lastLocation.inside ? "locationInside" : "locationOutside")} · ${state.lastLocation.distance} m`;
+    const description = state.lastLocation.accuracy > 35
+        ? tr("accuracyWarning", { accuracy: state.lastLocation.accuracy })
+        : state.lastLocation.inside
+            ? tr("insideMessage", {
+                distance: state.lastLocation.distance,
+                accuracy: state.lastLocation.accuracy
+            })
+            : tr("outsideMessage", {
             distance: state.lastLocation.distance,
             radius: SCHOOL_LOCATION.radius
         });
-    }
+    setStatus(state.lastLocation.inside ? "inside" : "outside", badgeLabel, description);
+}
+
+// Camera lifecycle and face recognition
+function displayModelError(error) {
+    console.error("AI model error:", error);
+    state.modelReady = false;
+    $("model-status").className = "model-badge error";
+    $("model-status").textContent = tr("modelFailed");
+    $("model-error-text").textContent = tr("modelFailed");
+    $("model-error").classList.remove("hidden");
 }
 
 async function loadModels() {
@@ -376,7 +565,7 @@ async function loadModels() {
 
     try {
         if (!window.faceapi) throw new Error("face-api.js unavailable");
-        const base = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights";
+        const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
         await Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri(base),
             faceapi.nets.faceLandmark68Net.loadFromUri(base),
@@ -387,11 +576,7 @@ async function loadModels() {
         $("model-status").textContent = tr("modelReady");
         $("model-error").classList.add("hidden");
     } catch (error) {
-        console.error("Model loading error:", error);
-        $("model-status").className = "model-badge error";
-        $("model-status").textContent = tr("modelFailed");
-        $("model-error").textContent = `${tr("modelFailed")} ${tr("retryModel")}`;
-        $("model-error").classList.remove("hidden");
+        displayModelError(error);
     } finally {
         state.modelLoading = false;
     }
@@ -412,6 +597,23 @@ function setSwitch(on) {
     $("btn-attendance-switch").querySelector(".switch-text").textContent = tr(on ? "on" : "off");
 }
 
+function attendanceVideo() {
+    return $(state.user?.role === "siswa" ? "video-student-attendance" : "video-presensi");
+}
+
+function attendanceCanvas() {
+    return $(state.user?.role === "siswa" ? "overlay-student-attendance" : "overlay-presensi");
+}
+
+function attendancePlaceholder() {
+    return $(state.user?.role === "siswa" ? "student-camera-placeholder" : "camera-placeholder");
+}
+
+function attendanceViewActive() {
+    const viewId = state.user?.role === "siswa" ? "view-s-presensi" : "view-presensi";
+    return !$(viewId).classList.contains("hidden") && $(viewId).classList.contains("active");
+}
+
 function stopStream(stream) {
     if (stream) stream.getTracks().forEach(track => track.stop());
 }
@@ -421,9 +623,11 @@ function stopAttendanceCamera() {
     state.attendanceTimer = null;
     stopStream(state.attendanceStream);
     state.attendanceStream = null;
-    $("video-presensi").srcObject = null;
-    $("overlay-presensi").getContext("2d").clearRect(0, 0, $("overlay-presensi").width, $("overlay-presensi").height);
-    $("camera-placeholder").classList.remove("hidden");
+    const video = attendanceVideo();
+    const canvas = attendanceCanvas();
+    if (video) video.srcObject = null;
+    if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    attendancePlaceholder()?.classList.remove("hidden");
     $("ai-progress").style.width = "0%";
     $("ai-percent").textContent = "0%";
     $("status-presensi").textContent = tr("waitingFace");
@@ -482,36 +686,54 @@ function cameraErrorText(error) {
 async function startAttendanceCamera() {
     if (state.attendanceStream) return;
     if (!state.user) return;
+    const requestUser = state.user;
+    state.attendanceMode = requestUser.role;
+
+    if (state.user.role === "siswa" && !state.students.some(student =>
+        student.nisn === state.user.nisn && student.descriptor?.length
+    )) {
+        toast(tr("studentUnlinked"), "error");
+        return;
+    }
 
     state.lastLocation = { checking: true };
     renderLocationBadge();
-    $("camera-status").textContent = tr("checkingBeforeCamera");
-    $("switch-hint").textContent = tr("checkingBeforeCamera");
-    setSwitch(false);
+    const status = state.user.role === "siswa" ? $("student-attendance-status") : $("camera-status");
+    const hint = $("switch-hint");
+    if (status) status.textContent = tr("checkingBeforeCamera");
+    if (hint) hint.textContent = tr("checkingBeforeCamera");
+    if (state.user.role === "guru") setSwitch(false);
 
     const result = await checkGeofence();
+    if (state.user !== requestUser || !attendanceViewActive() || document.hidden) return;
 
     if (!result.inside || result.error) {
         stopAttendanceCamera();
         renderLocationBadge();
-        toast(result.error || tr("outsideMessage", {
+        const message = result.error || tr("outsideMessage", {
             distance: result.distance,
             radius: SCHOOL_LOCATION.radius
-        }), "error");
+        });
+        if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
+        toast(message, "error");
         return;
     }
 
     if (result.accuracy > 35) {
         stopAttendanceCamera();
-        toast(tr("accuracyWarning", { accuracy: result.accuracy }), "error");
+        const message = tr("accuracyWarning", { accuracy: result.accuracy });
+        if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
+        toast(message, "error");
         return;
     }
 
     if (!state.modelReady && !(await loadModels())) {
+        if (state.user.role === "siswa") $("student-attendance-status").textContent = tr("modelFailed");
         toast(tr("modelFailed"), "error");
         stopAttendanceCamera();
         return;
     }
+    if (state.user !== requestUser || !attendanceViewActive() || document.hidden) return;
 
     $("camera-status").textContent = tr("cameraStarting");
 
@@ -519,20 +741,25 @@ async function startAttendanceCamera() {
         const stream = await getCameraStream();
 
         // Do not keep a stream alive if the user left the attendance view meanwhile.
-        if (!$("view-presensi").classList.contains("active") || document.hidden) {
+        if (!attendanceViewActive() || document.hidden) {
             stopStream(stream);
             return;
         }
 
         state.attendanceStream = stream;
-        $("video-presensi").srcObject = stream;
-        await $("video-presensi").play();
-        $("camera-placeholder").classList.add("hidden");
-        $("camera-status").textContent = tr("attendanceReady");
-        $("switch-hint").textContent = tr("attendanceReady");
-        $("status-presensi").textContent = tr("attendanceWaiting");
-        $("liveness-status").textContent = tr("livenessMove");
-        setSwitch(true);
+        const video = attendanceVideo();
+        video.srcObject = stream;
+        await video.play();
+        attendancePlaceholder().classList.add("hidden");
+        if (state.user.role === "siswa") {
+            $("student-attendance-status").textContent = tr("livenessMove");
+        } else {
+            $("camera-status").textContent = tr("attendanceReady");
+            $("switch-hint").textContent = tr("attendanceReady");
+            $("status-presensi").textContent = tr("attendanceWaiting");
+            $("liveness-status").textContent = tr("livenessMove");
+            setSwitch(true);
+        }
         state.attendanceRecorded = false;
         state.lastNose = null;
         state.movementFrames = 0;
@@ -540,7 +767,9 @@ async function startAttendanceCamera() {
         state.attendanceTimer = setInterval(() => processAttendanceFrame(), 250);
     } catch (error) {
         stopAttendanceCamera();
-        toast(cameraErrorText(error), "error");
+        const message = cameraErrorText(error);
+        if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
+        toast(message, "error");
     }
 }
 
@@ -577,26 +806,65 @@ function updateProgress(percent, label) {
     $("status-presensi").textContent = label;
 }
 
+// Parent WhatsApp notifications use the protected Vercel Function.
+async function notifyParent(student, date, time) {
+    if (!student.parentWhatsApp) {
+        toast(tr("studentMissingWa"), "error");
+        return;
+    }
+    const normalizedTarget = student.parentWhatsApp.replace(/\D/g, "")
+        .replace(/^08/, "628");
+    const message = tr("parentAttendanceMessage", {
+        name: student.name,
+        nisn: student.nisn,
+        date: formatDate(date),
+        time
+    });
+
+    try {
+        const response = await fetch("/api/send-wa", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target: normalizedTarget, message })
+        });
+        if (!response.ok) {
+            console.error("WhatsApp notification failed:", response.status);
+            toast(tr("whatsappFailed"), "error");
+            return;
+        }
+        toast(tr("whatsappSuccess"), "success");
+    } catch (error) {
+        console.error("WhatsApp notification request failed:", error);
+        toast(tr("whatsappFailed"), "error");
+    }
+}
+
 async function processAttendanceFrame() {
     if (!state.attendanceStream || state.attendanceBusy || state.attendanceRecorded) return;
     state.attendanceBusy = true;
 
     try {
-        const video = $("video-presensi");
+        const video = attendanceVideo();
         const detections = await detectFaces(video);
-        drawDetections(video, $("overlay-presensi"), detections);
+        drawDetections(video, attendanceCanvas(), detections);
 
         if (!detections.length) {
-            updateProgress(0, tr("faceNotFound"));
-            $("liveness-status").textContent = tr("faceNotFound");
+            if (state.user.role === "siswa") $("student-attendance-status").textContent = tr("faceNotFound");
+            else {
+                updateProgress(0, tr("faceNotFound"));
+                $("liveness-status").textContent = tr("faceNotFound");
+            }
             state.lastNose = null;
             state.movementFrames = 0;
             return;
         }
 
         if (detections.length > 1) {
-            updateProgress(0, tr("faceTooMany"));
-            $("liveness-status").textContent = tr("faceTooMany");
+            if (state.user.role === "siswa") $("student-attendance-status").textContent = tr("faceTooMany");
+            else {
+                updateProgress(0, tr("faceTooMany"));
+                $("liveness-status").textContent = tr("faceTooMany");
+            }
             return;
         }
 
@@ -608,62 +876,100 @@ async function processAttendanceFrame() {
         }
         state.lastNose = { x: nose.x, y: nose.y };
 
-        updateProgress(Math.min(100, 30 + state.movementFrames * 12), tr("attendanceInProgress"));
+        if (state.user.role === "guru") {
+            updateProgress(Math.min(100, 30 + state.movementFrames * 12), tr("attendanceInProgress"));
+        }
 
         if (state.movementFrames < 3) {
-            $("liveness-status").textContent = tr("livenessMove");
+            if (state.user.role === "siswa") $("student-attendance-status").textContent = tr("livenessMove");
+            else $("liveness-status").textContent = tr("livenessMove");
             return;
         }
 
-        if (!state.students.length) {
-            $("liveness-status").textContent = tr("faceNotRegistered");
-            updateProgress(0, tr("faceNotRegistered"));
-            return;
+        let student;
+        let confidence;
+        if (state.user.role === "siswa") {
+            student = state.students.find(item => item.nisn === state.user.nisn);
+            if (!student?.descriptor?.length) {
+                $("student-attendance-status").textContent = tr("studentUnlinked");
+                return;
+            }
+            const distance = faceapi.euclideanDistance(
+                detection.descriptor, new Float32Array(student.descriptor)
+            );
+            if (distance > 0.45) {
+                $("student-attendance-status").textContent = tr("faceNoMatch");
+                return;
+            }
+            confidence = Math.max(0, Math.min(1, 1 - distance));
+        } else {
+            if (!state.students.length) {
+                $("liveness-status").textContent = tr("faceNotRegistered");
+                updateProgress(0, tr("faceNotRegistered"));
+                return;
+            }
+            const labeled = state.students.map(item => new faceapi.LabeledFaceDescriptors(
+                item.nisn, [new Float32Array(item.descriptor)]
+            ));
+            const matcher = new faceapi.FaceMatcher(labeled, 0.45);
+            const best = matcher.findBestMatch(detection.descriptor);
+            if (best.label === "unknown") {
+                $("liveness-status").textContent = tr("faceNoMatch");
+                updateProgress(0, tr("faceNoMatch"));
+                return;
+            }
+            student = state.students.find(item => item.nisn === best.label);
+            confidence = Math.max(0, Math.min(1, 1 - best.distance));
         }
-
-        const labeled = state.students.map(s => new faceapi.LabeledFaceDescriptors(
-            s.nisn,
-            [new Float32Array(s.descriptor)]
-        ));
-        const matcher = new faceapi.FaceMatcher(labeled, 0.45);
-        const best = matcher.findBestMatch(detection.descriptor);
-        if (best.label === "unknown") {
-            $("liveness-status").textContent = tr("faceNoMatch");
-            updateProgress(0, tr("faceNoMatch"));
-            return;
-        }
-
-        const student = state.students.find(s => s.nisn === best.label);
         if (!student) return;
 
         const today = localDateKey();
         if (state.attendance.some(a => a.nisn === student.nisn && a.date === today)) {
             state.attendanceRecorded = true;
-            updateProgress(100, tr("alreadyPresent"));
-            $("liveness-status").textContent = tr("alreadyPresent");
-            toast(tr("alreadyPresent"), "info");
+            const message = state.user.role === "siswa" ? tr("studentAlreadyPresent") : tr("alreadyPresent");
+            if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
+            else {
+                updateProgress(100, message);
+                $("liveness-status").textContent = message;
+            }
+            toast(message, "info");
             return;
         }
 
+        const attendanceTime = localTime();
         state.attendance.push({
             id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
             nisn: student.nisn,
             name: student.name,
             className: student.className,
             date: today,
-            time: localTime(),
-            confidence: Math.max(0, Math.min(1, 1 - best.distance)),
+            time: attendanceTime,
+            confidence,
             method: "face-gps"
         });
 
         state.attendanceRecorded = true;
-        updateProgress(100, tr("attendanceSuccess", { name: student.name }));
-        $("liveness-status").textContent = tr("locationVerified");
+        const successMessage = state.user.role === "siswa"
+            ? tr("studentAttendanceSuccess")
+            : tr("attendanceSuccess", { name: student.name });
+        if (state.user.role === "siswa") $("student-attendance-status").textContent = successMessage;
+        else {
+            updateProgress(100, successMessage);
+            $("liveness-status").textContent = tr("locationVerified");
+        }
         renderDatabase();
+        renderStudentHistory();
         updateStats();
-        toast(tr("attendanceSuccess", { name: student.name }), "success");
+        toast(successMessage, "success");
+        if (state.user.role === "siswa") {
+            stopAttendanceCamera();
+            $("student-attendance-status").textContent = successMessage;
+        }
+        await notifyParent(student, today, attendanceTime);
     } catch (error) {
-        console.error("Face recognition error:", error);
+        displayModelError(error);
+        stopAttendanceCamera();
+        toast(tr("modelFailed"), "error");
     } finally {
         state.attendanceBusy = false;
     }
@@ -708,7 +1014,9 @@ async function processFormFrame() {
             $("form-face-status").textContent = tr("faceNotFound");
         }
     } catch (error) {
-        console.error("Form face detection error:", error);
+        displayModelError(error);
+        stopFormCamera();
+        toast(tr("modelFailed"), "error");
     } finally {
         state.formBusy = false;
     }
@@ -747,14 +1055,22 @@ async function readUploadedFace(file) {
     }
 }
 
+// Teacher student registration and map
 function registerStudent(event) {
     event.preventDefault();
+    stopFormCamera();
     const nisn = $("input-nisn").value.trim();
     const name = $("input-nama").value.trim();
     const className = $("input-kelas").value.trim();
+    const parentWhatsApp = $("input-parent-wa").value.trim();
+    const waDigits = parentWhatsApp.replace(/\D/g, "");
 
     if (!nisn || !name || !className) {
         toast(tr("invalidNisn"), "error");
+        return;
+    }
+    if (!/^(08|628)\d{8,13}$/.test(waDigits)) {
+        toast(tr("invalidWhatsApp"), "error");
         return;
     }
     if (state.students.some(s => s.nisn === nisn)) {
@@ -768,15 +1084,19 @@ function registerStudent(event) {
 
     state.students.push({
         nisn, name, className,
+        parentWhatsApp: waDigits.replace(/^08/, "628"),
         descriptor: [...state.faceSample],
         registeredDate: new Date().toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID")
     });
+    state.accounts.filter(account => account.role === "siswa" && account.nisn === nisn)
+        .forEach(account => { account.linked = true; });
 
     state.faceSample = null;
     $("student-form").reset();
     $("form-face-status").textContent = tr("noFaceSample");
     renderStudentList();
     renderDatabase();
+    updateStudentProfile();
     updateStats();
     toast(tr("studentSaved"), "success");
 }
@@ -784,6 +1104,8 @@ function registerStudent(event) {
 function removeStudent(nisn) {
     state.students = state.students.filter(s => s.nisn !== nisn);
     state.attendance = state.attendance.filter(a => a.nisn !== nisn);
+    state.accounts.filter(account => account.role === "siswa" && account.nisn === nisn)
+        .forEach(account => { account.linked = false; });
     renderStudentList();
     renderDatabase();
     updateStats();
@@ -864,7 +1186,8 @@ function updateMapText() {
             accuracy: state.lastLocation.accuracy,
             radius: SCHOOL_LOCATION.radius
         })
-        : state.lastLocation?.error || tr("locationMapReady");
+        : state.lastLocation?.errorKey ? tr(state.lastLocation.errorKey)
+            : state.lastLocation?.error || tr("locationMapReady");
 
     if (state.schoolMarker) state.schoolMarker.setPopupContent(tr("mapSchoolPopup"));
     if (state.userMarker && state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking) {
@@ -890,6 +1213,7 @@ async function refreshMapLocation() {
     updateMapText();
 }
 
+// Event listener setup
 function switchAuthTab(tab) {
     const login = tab === "login";
     $("tab-login").classList.toggle("active", login);
@@ -898,21 +1222,54 @@ function switchAuthTab(tab) {
     $("register-form").classList.toggle("hidden", login);
 }
 
+function selectAuthRole(formName, role) {
+    state.selectedRoles[formName] = role;
+    const inputId = formName === "login" ? "login-role" : "register-role";
+    $(inputId).value = role;
+    document.querySelectorAll(`[data-role-form="${formName}"]`).forEach(button => {
+        button.classList.toggle("active", button.dataset.roleChoice === role);
+        button.setAttribute("aria-pressed", String(button.dataset.roleChoice === role));
+    });
+    if (formName === "register") {
+        const studentRole = role === "siswa";
+        $("register-nisn-field").classList.toggle("hidden", !studentRole);
+        $("register-nisn").required = studentRole;
+    }
+}
+
 function setupEvents() {
+    document.addEventListener("click", event => {
+        const button = event.target instanceof Element ? event.target.closest("button") : null;
+        if (!button || button.id === "btn-attendance-switch" || button.id === "btn-student-attendance") return;
+        if (state.attendanceStream || state.formStream) stopAllCameras();
+    }, true);
+
     $("tab-login").addEventListener("click", () => switchAuthTab("login"));
     $("tab-register").addEventListener("click", () => switchAuthTab("register"));
+    $("model-retry").addEventListener("click", () => location.reload());
+    document.querySelectorAll("[data-role-choice]").forEach(button => {
+        button.addEventListener("click", () => selectAuthRole(button.dataset.roleForm, button.dataset.roleChoice));
+    });
+    selectAuthRole("login", "guru");
+    selectAuthRole("register", "siswa");
 
     $("login-form").addEventListener("submit", event => {
         event.preventDefault();
         const email = $("login-email").value.trim().toLowerCase();
         const password = $("login-password").value;
-        const demo = email === "admin@amanahid.sch.id" && password === "AmanahDemo!2026#ID";
         const account = state.accounts.find(a => a.email === email && a.password === password);
-        if (!demo && !account) {
+        if (!account) {
             toast(tr("loginFailed"), "error");
             return;
         }
-        showApp(demo ? { name: "Admin Amanah", email } : { name: account.name, email });
+        const selectedRole = $("login-role").value;
+        if (account.role !== selectedRole) {
+            toast(tr(selectedRole === "guru" ? "roleTeacherMismatch" : "roleStudentMismatch"), "error");
+            return;
+        }
+        showApp({
+            name: account.name, email: account.email, role: account.role, nisn: account.nisn || ""
+        });
     });
 
     $("terms-reg").addEventListener("change", () => {
@@ -929,22 +1286,30 @@ function setupEvents() {
         const email = $("register-email").value.trim().toLowerCase();
         const password = $("register-password").value;
         const confirm = $("register-confirm").value;
+        const role = $("register-role").value;
+        const nisn = $("register-nisn").value.trim();
 
         if (password !== confirm) {
             toast(tr("passwordMismatch"), "error");
             return;
         }
-        if (state.accounts.some(a => a.email === email) || email === "admin@amanahid.sch.id") {
+        if (role === "siswa" && !nisn) {
+            toast(tr("studentNeedsNisn"), "error");
+            return;
+        }
+        if (state.accounts.some(a => a.email === email)) {
             toast(tr("emailExists"), "error");
             return;
         }
 
-        state.accounts.push({ name, email, password });
+        state.accounts.push({ name, email, password, role, ...(role === "siswa" ? { nisn } : {}) });
         $("register-form").reset();
         $("btn-register-submit").disabled = true;
+        selectAuthRole("register", "siswa");
         switchAuthTab("login");
         $("login-email").value = email;
-        toast(tr("signupSuccess"), "success");
+        selectAuthRole("login", role);
+        toast(role === "siswa" ? tr("studentUnlinked") : tr("signupSuccess"), role === "siswa" ? "info" : "success");
     });
 
     document.querySelectorAll(".lang-btn").forEach(btn => {
@@ -958,6 +1323,10 @@ function setupEvents() {
     $("brand-home").addEventListener("click", event => {
         event.preventDefault();
         showView("view-presensi");
+    });
+    $("student-brand-home").addEventListener("click", event => {
+        event.preventDefault();
+        showView("view-s-presensi");
     });
 
     $("open-profile").addEventListener("click", openProfile);
@@ -983,6 +1352,29 @@ function setupEvents() {
         state.user = null;
         showAuth();
         toast(tr("loggedOut"), "info");
+    });
+    const logoutStudent = () => {
+        stopAllCameras();
+        state.user = null;
+        showAuth();
+        toast(tr("loggedOut"), "info");
+    };
+    $("student-open-profile").addEventListener("click", openProfile);
+    $("student-top-profile").addEventListener("click", openProfile);
+    $("btn-student-logout").addEventListener("click", logoutStudent);
+    $("btn-student-save-profile").addEventListener("click", () => {
+        setTheme($("student-theme-select").value);
+        setLanguage($("student-profile-language").value);
+        toast(tr("settingsSaved"), "success");
+    });
+    $("student-theme-select").addEventListener("change", () => setTheme($("student-theme-select").value));
+    $("student-profile-language").addEventListener("change", () => setLanguage($("student-profile-language").value));
+    $("btn-student-attendance").addEventListener("click", async () => {
+        if (state.attendanceStream) {
+            stopAttendanceCamera();
+            return;
+        }
+        await startAttendanceCamera();
     });
 
     $("btn-attendance-switch").addEventListener("click", async () => {
@@ -1021,9 +1413,15 @@ function setupEvents() {
     });
 
     $("student-form").addEventListener("submit", registerStudent);
+    $("input-parent-wa").addEventListener("invalid", event => {
+        event.preventDefault();
+        toast(tr("invalidWhatsApp"), "error");
+    });
     $("db-search").addEventListener("input", renderDatabase);
     $("date-start").addEventListener("change", renderDatabase);
     $("date-end").addEventListener("change", renderDatabase);
+    $("student-date-start").addEventListener("change", renderStudentHistory);
+    $("student-date-end").addEventListener("change", renderStudentHistory);
     $("btn-export").addEventListener("click", exportCsv);
 
     $("db-tbody").addEventListener("click", event => {
@@ -1052,6 +1450,8 @@ function setupEvents() {
     $("confirm-delete").addEventListener("click", () => {
         state.attendance = [];
         state.students = [];
+        state.accounts.filter(account => account.role === "siswa")
+            .forEach(account => { account.linked = false; });
         state.faceSample = null;
         $("confirm-dialog").classList.add("hidden");
         renderDatabase();
@@ -1076,14 +1476,17 @@ function setupEvents() {
     });
     window.addEventListener("pagehide", stopAllCameras);
     window.addEventListener("beforeunload", stopAllCameras);
+    window.addEventListener("hashchange", handleHashRoute);
 }
 
 function initialize() {
     setTheme("light");
     setLanguage("id");
+    showAuth();
     setupEvents();
     renderDatabase();
     renderStudentList();
+    renderStudentHistory();
     updateStats();
     setSwitch(false);
     $("model-status").textContent = tr("modelLoading");

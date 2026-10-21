@@ -18,6 +18,7 @@
 <body>
     <div class="background-grid"></div>
 
+    <!-- Single-page auth screen; role routing uses the URL hash. -->
     <main id="auth-screen" class="auth-screen">
         <section class="auth-card">
             <a class="brand brand-auth" href="#" aria-label="Amanah.id">
@@ -34,19 +35,41 @@
             </div>
 
             <form id="login-form" class="form-stack">
+                <div class="role-picker" role="group" aria-label="Account role">
+                    <button class="role-button active" type="button" data-role-choice="guru" data-role-form="login"
+                        data-i18n="roleTeacher">Guru</button>
+                    <button class="role-button" type="button" data-role-choice="siswa" data-role-form="login"
+                        data-i18n="roleStudent">Siswa</button>
+                </div>
+                <input id="login-role" type="hidden" value="guru">
                 <label for="login-email" data-i18n="email">Email</label>
                 <input id="login-email" type="email" autocomplete="username" placeholder="nama@sekolah.sch.id" required>
                 <label for="login-password" data-i18n="password">Kata sandi</label>
                 <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••"
                     required>
                 <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
-                <p class="demo-note"><span data-i18n="demoAccount">Akun
-                        demo</span><br><code>admin@amanahid.sch.id</code><br><code>AmanahDemo!2026#ID</code></p>
+                <p class="demo-note"><span data-i18n="demoAccount">Akun demo</span><br>
+                    <strong data-i18n="roleTeacher">Guru</strong>: <code>admin@amanahid.sch.id</code> /
+                    <code>AmanahDemo!2026#ID</code><br>
+                    <strong data-i18n="roleStudent">Siswa</strong>: <code>siswa@amanahid.sch.id</code> /
+                    <code>SiswaDemo!2026#ID</code>
+                </p>
             </form>
 
             <form id="register-form" class="form-stack hidden">
+                <div class="role-picker" role="group" aria-label="Account role">
+                    <button class="role-button" type="button" data-role-choice="guru" data-role-form="register"
+                        data-i18n="roleTeacher">Guru</button>
+                    <button class="role-button active" type="button" data-role-choice="siswa"
+                        data-role-form="register" data-i18n="roleStudent">Siswa</button>
+                </div>
+                <input id="register-role" type="hidden" value="siswa">
                 <label for="register-name" data-i18n="fullName">Nama lengkap</label>
                 <input id="register-name" type="text" autocomplete="name" required>
+                <div id="register-nisn-field">
+                    <label for="register-nisn" data-i18n="nisn">NISN</label>
+                    <input id="register-nisn" inputmode="numeric" maxlength="20" autocomplete="off">
+                </div>
                 <label for="register-email" data-i18n="email">Email</label>
                 <input id="register-email" type="email" autocomplete="email" required>
                 <label for="register-password" data-i18n="password">Kata sandi</label>
@@ -68,7 +91,8 @@
         </section>
     </main>
 
-    <main id="dashboard-screen" class="app-shell hidden">
+    <!-- Teacher dashboard -->
+    <main id="dashboard-guru" class="app-shell hidden">
         <aside class="sidebar">
             <a class="brand" id="brand-home" href="#">
                 <span class="brand-mark">A</span>
@@ -162,7 +186,12 @@
                             diperiksa</span>
                     </div>
 
-                    <div id="model-error" class="inline-error hidden" role="status"></div>
+                    <div id="model-error" class="inline-error hidden" role="status">
+                        <span id="model-error-text"></span>
+                        <button id="model-retry" class="button subtle" type="button" data-i18n="retryModel">
+                            Muat ulang halaman
+                        </button>
+                    </div>
                     <div class="camera-controls">
                         <div class="switch-copy">
                             <strong data-i18n="attendanceSwitch">Sakelar presensi</strong>
@@ -264,6 +293,7 @@
                                     <th data-i18n="nisn">NISN</th>
                                     <th data-i18n="name">Nama</th>
                                     <th data-i18n="class">Kelas</th>
+                                    <th data-i18n="parentWhatsApp">WhatsApp orang tua</th>
                                     <th data-i18n="registeredAt">Waktu daftar</th>
                                     <th data-i18n="action">Aksi</th>
                                 </tr>
@@ -301,6 +331,10 @@
                             maxlength="100">
                         <label for="input-kelas" data-i18n="class">Kelas</label><input id="input-kelas" required
                             maxlength="40" placeholder="Contoh: XI IPA 1">
+                        <label for="input-parent-wa" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
+                        <input id="input-parent-wa" type="tel" inputmode="tel" autocomplete="tel"
+                            data-i18n-placeholder="whatsappPlaceholder"
+                            placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx" pattern="(?:08|628)[0-9]{8,13}" required>
                         <label data-i18n="faceSample">Sampel wajah</label>
                         <div class="form-camera-stage">
                             <video id="video-formulir" autoplay muted playsinline></video><canvas
@@ -333,6 +367,122 @@
                                 tidak bertahan setelah halaman dimuat ulang.</p>
                         </div>
                     </aside>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- Student dashboard; no teacher data controls are rendered in this section. -->
+    <main id="dashboard-siswa" class="app-shell hidden">
+        <aside class="sidebar">
+            <a class="brand" id="student-brand-home" href="#">
+                <span class="brand-mark">A</span><span>Amanah<span class="brand-dot">.id</span></span>
+            </a>
+            <p class="sidebar-caption" data-i18n="studentWorkspace">MENU SISWA</p>
+            <nav class="main-nav" aria-label="Student navigation">
+                <button class="nav-link active" type="button" data-target="view-s-presensi">
+                    <span class="nav-symbol">◉</span><span data-i18n="studentAttendance">Presensi Saya</span>
+                </button>
+                <button class="nav-link" type="button" data-target="view-s-history">
+                    <span class="nav-symbol">▤</span><span data-i18n="studentHistory">Riwayat Saya</span>
+                </button>
+                <button class="nav-link" type="button" data-target="view-s-profile">
+                    <span class="nav-symbol">○</span><span data-i18n="myProfile">Profil</span>
+                </button>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="school-mini"><span class="school-dot"></span>
+                    <div><strong>Al Fityan School</strong><small data-i18n="geofenceEnabled">GPS geofencing aktif</small></div>
+                </div>
+                <button id="student-open-profile" class="profile-shortcut" type="button">
+                    <span id="student-header-avatar" class="avatar">S</span>
+                    <span class="profile-short-text"><strong id="student-header-user">Siswa</strong>
+                        <small data-i18n="viewProfile">Lihat profil</small></span><span class="more-dots">···</span>
+                </button>
+            </div>
+        </aside>
+        <section class="main-area">
+            <header class="topbar">
+                <div><p class="eyebrow" data-i18n="schoolWorkspace">AL FITYAN SCHOOL</p>
+                    <h1 id="student-page-title" data-i18n="studentAttendance">Presensi Saya</h1></div>
+                <div class="top-actions">
+                    <div class="language-row compact">
+                        <button class="lang-btn" type="button" data-lang="id">ID</button>
+                        <button class="lang-btn" type="button" data-lang="en">EN</button>
+                        <button class="lang-btn" type="button" data-lang="ar">ع</button>
+                    </div>
+                    <button id="student-top-profile" class="icon-button" type="button"
+                        data-i18n-title="myProfile" title="Profil" aria-label="Profile">☰</button>
+                </div>
+            </header>
+            <section id="view-s-presensi" class="view active">
+                <div class="student-attendance-card">
+                    <span class="section-kicker" data-i18n="studentAttendance">Presensi Saya</span>
+                    <h2 data-i18n="studentCheckinTitle">Catat kehadiran Anda</h2>
+                    <p class="muted" data-i18n="studentCheckinDesc">Pastikan Anda berada di area sekolah. Lokasi akan diperiksa sebelum kamera dinyalakan.</p>
+                    <div class="location-strip">
+                        <div class="location-info"><span class="location-icon">⌖</span>
+                            <div><strong data-i18n="locationVerification">Verifikasi lokasi</strong>
+                                <small id="student-location-detail" data-i18n="locationNotChecked">Lokasi belum diperiksa</small>
+                            </div>
+                        </div>
+                        <span id="student-location-badge" class="location-badge pending" data-i18n="locationPending">Belum diperiksa</span>
+                    </div>
+                    <div id="student-camera-stage" class="camera-stage student-camera-stage">
+                        <video id="video-student-attendance" autoplay muted playsinline></video>
+                        <canvas id="overlay-student-attendance"></canvas>
+                        <div id="student-camera-placeholder" class="camera-placeholder">
+                            <div class="camera-placeholder-icon"><span></span></div>
+                            <strong data-i18n="studentCameraOff">Kamera belum aktif</strong>
+                            <p data-i18n="studentCameraOffDesc">Tekan Absen Sekarang untuk memeriksa lokasi dan memulai verifikasi.</p>
+                        </div>
+                    </div>
+                    <p id="student-attendance-status" class="camera-footnote" data-i18n="studentCheckinDesc">Pastikan Anda berada di area sekolah.</p>
+                    <button id="btn-student-attendance" class="button primary student-checkin-button" type="button"
+                        data-i18n="checkInNow">Absen Sekarang</button>
+                </div>
+            </section>
+            <section id="view-s-history" class="view hidden">
+                <div class="page-intro"><div><span class="section-kicker" data-i18n="studentHistory">Riwayat Saya</span>
+                    <h2 data-i18n="studentHistoryTitle">Riwayat presensi saya</h2>
+                    <p class="muted" data-i18n="studentHistoryDesc">Hanya catatan presensi akun Anda yang ditampilkan.</p>
+                </div></div>
+                <div class="panel">
+                    <div class="filters student-filters">
+                        <label><span data-i18n="fromDate">Dari</span><input id="student-date-start" type="date"></label>
+                        <label><span data-i18n="toDate">Sampai</span><input id="student-date-end" type="date"></label>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr>
+                            <th data-i18n="number">No.</th><th data-i18n="date">Tanggal</th>
+                            <th data-i18n="time">Waktu</th><th data-i18n="status">Status</th>
+                            <th data-i18n="method">Metode</th><th data-i18n="confidence">Keyakinan</th>
+                        </tr></thead><tbody id="student-history-tbody"></tbody></table>
+                    </div>
+                    <div id="student-history-empty" class="empty-state"><strong data-i18n="noRecords">Belum ada catatan</strong>
+                        <p data-i18n="studentHistoryEmpty">Riwayat presensi Anda akan tampil di sini.</p>
+                    </div>
+                </div>
+            </section>
+            <section id="view-s-profile" class="view hidden">
+                <div class="page-intro"><div><span class="section-kicker" data-i18n="accountSettings">PENGATURAN AKUN</span>
+                    <h2 data-i18n="myProfile">Profil saya</h2></div></div>
+                <div class="panel student-profile-panel">
+                    <div class="profile-identity"><span id="student-profile-avatar" class="avatar large">S</span>
+                        <div><strong id="student-profile-name">Siswa</strong><small id="student-profile-email"></small></div>
+                    </div>
+                    <p><strong data-i18n="nisn">NISN</strong>: <span id="student-profile-nisn">—</span></p>
+                    <p><strong data-i18n="class">Kelas</strong>: <span id="student-profile-class">—</span></p>
+                    <label for="student-theme-select" data-i18n="appearance">Tampilan</label>
+                    <select id="student-theme-select"><option value="light" data-i18n="lightTheme">Terang</option>
+                        <option value="dark" data-i18n="darkTheme">Gelap</option></select>
+                    <label for="student-profile-language" data-i18n="language">Bahasa</label>
+                    <select id="student-profile-language"><option value="id">Indonesia</option>
+                        <option value="en">English</option><option value="ar">العربية</option></select>
+                    <button id="btn-student-save-profile" class="button primary full" type="button"
+                        data-i18n="saveSettings">Simpan pengaturan</button>
+                    <button id="btn-student-logout" class="button danger-outline full" type="button"
+                        data-i18n="logout">Keluar</button>
                 </div>
             </section>
         </section>
