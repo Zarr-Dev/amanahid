@@ -125,10 +125,6 @@ p {
     display: none !important;
 }
 
-.active {
-    /* State aktif diatur oleh komponen masing-masing. */
-}
-
 /* ==================== 3. BRAND ==================== */
 
 .brand {
