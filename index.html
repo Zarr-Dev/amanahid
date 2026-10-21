@@ -60,8 +60,8 @@
                 <div class="role-picker" role="group" aria-label="Account role">
                     <button class="role-button" type="button" data-role-choice="guru" data-role-form="register"
                         data-i18n="roleTeacher">Guru</button>
-                    <button class="role-button active" type="button" data-role-choice="siswa"
-                        data-role-form="register" data-i18n="roleStudent">Siswa</button>
+                    <button class="role-button active" type="button" data-role-choice="siswa" data-role-form="register"
+                        data-i18n="roleStudent">Siswa</button>
                 </div>
                 <input id="register-role" type="hidden" value="siswa">
                 <label for="register-name" data-i18n="fullName">Nama lengkap</label>
@@ -333,8 +333,8 @@
                             maxlength="40" placeholder="Contoh: XI IPA 1">
                         <label for="input-parent-wa" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
                         <input id="input-parent-wa" type="tel" inputmode="tel" autocomplete="tel"
-                            data-i18n-placeholder="whatsappPlaceholder"
-                            placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx" pattern="(?:08|628)[0-9]{8,13}" required>
+                            data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
+                            pattern="(?:08|628)[0-9]{8,13}" required>
                         <label data-i18n="faceSample">Sampel wajah</label>
                         <div class="form-camera-stage">
                             <video id="video-formulir" autoplay muted playsinline></video><canvas
@@ -392,7 +392,8 @@
             </nav>
             <div class="sidebar-bottom">
                 <div class="school-mini"><span class="school-dot"></span>
-                    <div><strong>Al Fityan School</strong><small data-i18n="geofenceEnabled">GPS geofencing aktif</small></div>
+                    <div><strong>Al Fityan School</strong><small data-i18n="geofenceEnabled">GPS geofencing
+                            aktif</small></div>
                 </div>
                 <button id="student-open-profile" class="profile-shortcut" type="button">
                     <span id="student-header-avatar" class="avatar">S</span>
@@ -403,30 +404,35 @@
         </aside>
         <section class="main-area">
             <header class="topbar">
-                <div><p class="eyebrow" data-i18n="schoolWorkspace">AL FITYAN SCHOOL</p>
-                    <h1 id="student-page-title" data-i18n="studentAttendance">Presensi Saya</h1></div>
+                <div>
+                    <p class="eyebrow" data-i18n="schoolWorkspace">AL FITYAN SCHOOL</p>
+                    <h1 id="student-page-title" data-i18n="studentAttendance">Presensi Saya</h1>
+                </div>
                 <div class="top-actions">
                     <div class="language-row compact">
                         <button class="lang-btn" type="button" data-lang="id">ID</button>
                         <button class="lang-btn" type="button" data-lang="en">EN</button>
                         <button class="lang-btn" type="button" data-lang="ar">ع</button>
                     </div>
-                    <button id="student-top-profile" class="icon-button" type="button"
-                        data-i18n-title="myProfile" title="Profil" aria-label="Profile">☰</button>
+                    <button id="student-top-profile" class="icon-button" type="button" data-i18n-title="myProfile"
+                        title="Profil" aria-label="Profile">☰</button>
                 </div>
             </header>
             <section id="view-s-presensi" class="view active">
                 <div class="student-attendance-card">
                     <span class="section-kicker" data-i18n="studentAttendance">Presensi Saya</span>
                     <h2 data-i18n="studentCheckinTitle">Catat kehadiran Anda</h2>
-                    <p class="muted" data-i18n="studentCheckinDesc">Pastikan Anda berada di area sekolah. Lokasi akan diperiksa sebelum kamera dinyalakan.</p>
+                    <p class="muted" data-i18n="studentCheckinDesc">Pastikan Anda berada di area sekolah. Lokasi akan
+                        diperiksa sebelum kamera dinyalakan.</p>
                     <div class="location-strip">
                         <div class="location-info"><span class="location-icon">⌖</span>
                             <div><strong data-i18n="locationVerification">Verifikasi lokasi</strong>
-                                <small id="student-location-detail" data-i18n="locationNotChecked">Lokasi belum diperiksa</small>
+                                <small id="student-location-detail" data-i18n="locationNotChecked">Lokasi belum
+                                    diperiksa</small>
                             </div>
                         </div>
-                        <span id="student-location-badge" class="location-badge pending" data-i18n="locationPending">Belum diperiksa</span>
+                        <span id="student-location-badge" class="location-badge pending"
+                            data-i18n="locationPending">Belum diperiksa</span>
                     </div>
                     <div id="student-camera-stage" class="camera-stage student-camera-stage">
                         <video id="video-student-attendance" autoplay muted playsinline></video>
@@ -434,51 +440,74 @@
                         <div id="student-camera-placeholder" class="camera-placeholder">
                             <div class="camera-placeholder-icon"><span></span></div>
                             <strong data-i18n="studentCameraOff">Kamera belum aktif</strong>
-                            <p data-i18n="studentCameraOffDesc">Tekan Absen Sekarang untuk memeriksa lokasi dan memulai verifikasi.</p>
+                            <p data-i18n="studentCameraOffDesc">Tekan Absen Sekarang untuk memeriksa lokasi dan memulai
+                                verifikasi.</p>
                         </div>
                     </div>
-                    <p id="student-attendance-status" class="camera-footnote" data-i18n="studentCheckinDesc">Pastikan Anda berada di area sekolah.</p>
+                    <p id="student-attendance-status" class="camera-footnote" data-i18n="studentCheckinDesc">Pastikan
+                        Anda berada di area sekolah.</p>
                     <button id="btn-student-attendance" class="button primary student-checkin-button" type="button"
                         data-i18n="checkInNow">Absen Sekarang</button>
                 </div>
             </section>
             <section id="view-s-history" class="view hidden">
-                <div class="page-intro"><div><span class="section-kicker" data-i18n="studentHistory">Riwayat Saya</span>
-                    <h2 data-i18n="studentHistoryTitle">Riwayat presensi saya</h2>
-                    <p class="muted" data-i18n="studentHistoryDesc">Hanya catatan presensi akun Anda yang ditampilkan.</p>
-                </div></div>
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="studentHistory">Riwayat Saya</span>
+                        <h2 data-i18n="studentHistoryTitle">Riwayat presensi saya</h2>
+                        <p class="muted" data-i18n="studentHistoryDesc">Hanya catatan presensi akun Anda yang
+                            ditampilkan.</p>
+                    </div>
+                </div>
                 <div class="panel">
                     <div class="filters student-filters">
                         <label><span data-i18n="fromDate">Dari</span><input id="student-date-start" type="date"></label>
                         <label><span data-i18n="toDate">Sampai</span><input id="student-date-end" type="date"></label>
                     </div>
                     <div class="table-wrap">
-                        <table><thead><tr>
-                            <th data-i18n="number">No.</th><th data-i18n="date">Tanggal</th>
-                            <th data-i18n="time">Waktu</th><th data-i18n="status">Status</th>
-                            <th data-i18n="method">Metode</th><th data-i18n="confidence">Keyakinan</th>
-                        </tr></thead><tbody id="student-history-tbody"></tbody></table>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-i18n="number">No.</th>
+                                    <th data-i18n="date">Tanggal</th>
+                                    <th data-i18n="time">Waktu</th>
+                                    <th data-i18n="status">Status</th>
+                                    <th data-i18n="method">Metode</th>
+                                    <th data-i18n="confidence">Keyakinan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-history-tbody"></tbody>
+                        </table>
                     </div>
-                    <div id="student-history-empty" class="empty-state"><strong data-i18n="noRecords">Belum ada catatan</strong>
+                    <div id="student-history-empty" class="empty-state"><strong data-i18n="noRecords">Belum ada
+                            catatan</strong>
                         <p data-i18n="studentHistoryEmpty">Riwayat presensi Anda akan tampil di sini.</p>
                     </div>
                 </div>
             </section>
             <section id="view-s-profile" class="view hidden">
-                <div class="page-intro"><div><span class="section-kicker" data-i18n="accountSettings">PENGATURAN AKUN</span>
-                    <h2 data-i18n="myProfile">Profil saya</h2></div></div>
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="accountSettings">PENGATURAN AKUN</span>
+                        <h2 data-i18n="myProfile">Profil saya</h2>
+                    </div>
+                </div>
                 <div class="panel student-profile-panel">
                     <div class="profile-identity"><span id="student-profile-avatar" class="avatar large">S</span>
-                        <div><strong id="student-profile-name">Siswa</strong><small id="student-profile-email"></small></div>
+                        <div><strong id="student-profile-name">Siswa</strong><small id="student-profile-email"></small>
+                        </div>
                     </div>
                     <p><strong data-i18n="nisn">NISN</strong>: <span id="student-profile-nisn">—</span></p>
                     <p><strong data-i18n="class">Kelas</strong>: <span id="student-profile-class">—</span></p>
                     <label for="student-theme-select" data-i18n="appearance">Tampilan</label>
-                    <select id="student-theme-select"><option value="light" data-i18n="lightTheme">Terang</option>
-                        <option value="dark" data-i18n="darkTheme">Gelap</option></select>
+                    <select id="student-theme-select">
+                        <option value="light" data-i18n="lightTheme">Terang</option>
+                        <option value="dark" data-i18n="darkTheme">Gelap</option>
+                    </select>
                     <label for="student-profile-language" data-i18n="language">Bahasa</label>
-                    <select id="student-profile-language"><option value="id">Indonesia</option>
-                        <option value="en">English</option><option value="ar">العربية</option></select>
+                    <select id="student-profile-language">
+                        <option value="id">Indonesia</option>
+                        <option value="en">English</option>
+                        <option value="ar">العربية</option>
+                    </select>
                     <button id="btn-student-save-profile" class="button primary full" type="button"
                         data-i18n="saveSettings">Simpan pengaturan</button>
                     <button id="btn-student-logout" class="button danger-outline full" type="button"
