@@ -1,1891 +1,334 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" dir="ltr">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amanah ID - Sistem Presensi Wajah</title>
-
-    <!-- Google Fonts: Inter -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#2563eb">
+    <title>Amanah.id | Presensi Digital</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Face API untuk AI Recognition -->
+    <link rel="stylesheet" href="style.css">
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-
-    <style>
-        /* ================= VARIABEL TEMA (LIGHT & DARK) ================= */
-        :root {
-            /* Tema Terang (Default) */
-            --bg-body: #F8FAFC;
-            --bg-grid-line: #E2E8F0;
-            --bg-card: #FFFFFF;
-            --bg-input: #FFFFFF;
-            --bg-table-header: #F1F5F9;
-            --text-primary: #0F172A;
-            --text-secondary: #64748B;
-            --text-inverse: #FFFFFF;
-            --border-color: #E2E8F0;
-            --primary: #2563EB;
-            --primary-hover: #1D4ED8;
-            --primary-light: #EFF6FF;
-            --danger: #EF4444;
-            --success: #10B981;
-            --warning: #F59E0B;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-            --radius: 12px;
-            --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body[data-theme="dark"] {
-            /* Tema Gelap */
-            --bg-body: #0F172A;
-            --bg-grid-line: #1E293B;
-            --bg-card: #1E293B;
-            --bg-input: #0F172A;
-            --bg-table-header: #1E293B;
-            --text-primary: #F8FAFC;
-            --text-secondary: #94A3B8;
-            --text-inverse: #0F172A;
-            --border-color: #334155;
-            --primary: #3B82F6;
-            --primary-hover: #2563EB;
-            --primary-light: #1E3A8A;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: var(--font);
-        }
-
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            transition: background-color 0.4s ease, color 0.4s ease;
-        }
-
-        /* Dukungan RTL untuk Bahasa Arab */
-        body[dir="rtl"] {
-            direction: rtl;
-        }
-
-        body[dir="rtl"] .nav-links {
-            flex-direction: row-reverse;
-        }
-
-        body[dir="rtl"] .input-group input {
-            text-align: right;
-        }
-
-        body[dir="rtl"] .table-controls {
-            flex-direction: row-reverse;
-        }
-
-        body[dir="rtl"] table {
-            text-align: right;
-        }
-
-        body[dir="rtl"] .camera-controls {
-            flex-direction: row-reverse;
-        }
-
-        /* Background Grid Futuristik */
-        .bg-grid {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: linear-gradient(to right, var(--bg-grid-line) 1px, transparent 1px),
-                linear-gradient(to bottom, var(--bg-grid-line) 1px, transparent 1px);
-            background-size: 40px 40px;
-            z-index: -1;
-            transition: background-image 0.4s ease;
-        }
-
-        #app {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .screen {
-            display: none;
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-        }
-
-        .screen.active {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* ================= LOGO HTML MURNI (TANPA EMOJI) ================= */
-        .logo-shield {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 48px;
-            height: 48px;
-            background: var(--primary);
-            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            position: relative;
-        }
-
-        .logo-shield::after {
-            content: '';
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            border: 3px solid white;
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .logo-shield-small {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: var(--primary);
-            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            position: relative;
-        }
-
-        .logo-shield-small::after {
-            content: '';
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            border: 2px solid white;
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* ================= AUTH SCREEN ================= */
-        #auth-screen {
-            justify-content: center;
-            align-items: center;
-        }
-
-        .auth-card {
-            background: var(--bg-card);
-            padding: 40px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 420px;
-            border-top: 4px solid var(--primary);
-            animation: slideUp 0.5s ease;
-            transition: background-color 0.4s ease, border-color 0.4s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .logo-area {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .logo-area .logo-shield {
-            margin-bottom: 15px;
-        }
-
-        .logo-area h1 {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--text-primary);
-        }
-
-        .subtitle {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .tab-switcher {
-            display: flex;
-            background: var(--bg-input);
-            padding: 4px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: transparent;
-            font-weight: 600;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-radius: 6px;
-            transition: 0.3s;
-        }
-
-        .tab-btn.active {
-            background: var(--bg-card);
-            color: var(--primary);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .lang-switcher {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-
-        .lang-btn {
-            padding: 6px 14px;
-            border: 1px solid var(--border-color);
-            background: transparent;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: 0.3s;
-        }
-
-        .lang-btn.active {
-            background: var(--primary);
-            color: var(--text-inverse);
-            border-color: var(--primary);
-        }
-
-        .auth-form {
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .auth-form.active {
-            display: flex;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .input-group label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .input-group input {
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            transition: 0.3s;
-            background: var(--bg-input);
-            color: var(--text-primary);
-        }
-
-        .input-group input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .checkbox-group a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: var(--text-inverse);
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-            width: 100%;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .demo-info {
-            text-align: center;
-            font-size: 11px;
-            color: var(--text-secondary);
-            background: var(--bg-input);
-            padding: 8px;
-            border-radius: 6px;
-            margin-top: 10px;
-            border: 1px solid var(--border-color);
-        }
-
-        /* ================= DASHBOARD NAVBAR ================= */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border-color);
-            transition: background-color 0.4s ease, border-color 0.4s ease;
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 800;
-            font-size: 18px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 10px;
-        }
-
-        .nav-link {
-            padding: 8px 16px;
-            border: none;
-            background: transparent;
-            font-weight: 600;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-radius: 8px;
-            transition: 0.2s;
-            font-size: 14px;
-        }
-
-        .nav-link.active {
-            background: var(--primary-light);
-            color: var(--primary);
-        }
-
-        .nav-link:hover:not(.active) {
-            background: var(--bg-input);
-        }
-
-        .profile-trigger {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .avatar-small {
-            background: var(--primary);
-            color: var(--text-inverse);
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        /* ================= MAIN CONTENT ================= */
-        .main-content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .view {
-            display: none;
-            flex-direction: column;
-            gap: 20px;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .view.active {
-            display: flex;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        .view-header h2 {
-            font-size: 28px;
-            font-weight: 800;
-            margin-bottom: 5px;
-        }
-
-        .view-header p {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        /* Camera Container */
-        .camera-container {
-            position: relative;
-            width: 100%;
-            height: 70vh;
-            background: #000;
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-        }
-
-        .camera-container.small {
-            height: 300px;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: scaleX(-1);
-            pointer-events: none;
-        }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            z-index: 10;
-            transition: 0.3s;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        .camera-controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 5;
-        }
-
-        .btn-icon {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-icon:hover {
-            background: var(--primary);
-        }
-
-        .status-badge {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            backdrop-filter: blur(5px);
-            z-index: 5;
-        }
-
-        /* Database View */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-color);
-            transition: background-color 0.4s ease, border-color 0.4s ease;
-        }
-
-        .stat-card h3 {
-            font-size: 12px;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-            margin-bottom: 10px;
-        }
-
-        .stat-card p {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--text-primary);
-        }
-
-        /* Table Controls - Modern */
-        .table-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-            background: var(--bg-card);
-            padding: 15px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-color);
-            transition: background-color 0.4s ease, border-color 0.4s ease;
-        }
-
-        .table-controls input {
-            padding: 10px 14px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            outline: none;
-            font-size: 13px;
-            background: var(--bg-input);
-            color: var(--text-primary);
-            transition: 0.3s;
-        }
-
-        .table-controls input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
-        }
-
-        .table-controls input[type="text"] {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .table-controls input[type="date"] {
-            width: 140px;
-        }
-
-        .table-controls .date-arrow {
-            color: var(--text-secondary);
-            font-weight: bold;
-        }
-
-        .btn-export {
-            background: var(--primary);
-            color: var(--text-inverse);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
-            transition: 0.3s;
-            white-space: nowrap;
-        }
-
-        .btn-export:hover {
-            background: var(--primary-hover);
-        }
-
-        .btn-danger {
-            background: var(--bg-card);
-            color: var(--danger);
-            border: 1px solid var(--danger);
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
-            transition: 0.3s;
-            white-space: nowrap;
-        }
-
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        /* Table Grid */
-        .table-wrapper {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-            transition: background-color 0.4s ease;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        th {
-            text-align: left;
-            padding: 15px;
-            background: var(--bg-table-header);
-            color: var(--text-secondary);
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 11px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-
-        td:last-child {
-            border-right: none;
-        }
-
-        tr:hover {
-            background-color: var(--bg-input);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px !important;
-            color: var(--text-secondary);
-        }
-
-        .empty-state small {
-            display: block;
-            margin-top: 5px;
-            color: var(--text-secondary);
-            opacity: 0.7;
-        }
-
-        /* Formulir View */
-        .form-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-        }
-
-        .card {
-            background: var(--bg-card);
-            padding: 25px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-color);
-            transition: background-color 0.4s ease, border-color 0.4s ease;
-        }
-
-        .form-card h3,
-        .camera-card h3 {
-            margin-bottom: 20px;
-            font-size: 18px;
-            color: var(--text-primary);
-        }
-
-        .form-card .input-group {
-            margin-bottom: 15px;
-        }
-
-        .camera-card p {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-        }
-
-        .analysis-bar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 15px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .progress-bar {
-            flex: 1;
-            height: 8px;
-            background: var(--bg-input);
-            border-radius: 4px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-        }
-
-        .progress-fill {
-            height: 100%;
-            width: 0%;
-            background: var(--primary);
-            transition: width 0.3s ease;
-        }
-
-        .hint-text {
-            font-size: 12px;
-            color: var(--primary);
-            margin-top: 5px;
-            font-weight: 600;
-        }
-
-        .camera-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .btn-secondary {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            flex: 1;
-            transition: 0.3s;
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-input);
-        }
-
-        .btn-dark {
-            background: var(--text-primary);
-            color: var(--bg-card);
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            flex: 1;
-            transition: 0.3s;
-        }
-
-        .btn-dark:hover {
-            opacity: 0.9;
-        }
-
-        /* ================= MODAL PROFILE ================= */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-card {
-            background: var(--bg-card);
-            width: 100%;
-            max-width: 450px;
-            border-radius: var(--radius);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            animation: scaleUp 0.3s ease;
-            overflow: hidden;
-            transition: background-color 0.4s ease;
-        }
-
-        @keyframes scaleUp {
-            from {
-                transform: scale(0.95);
-                opacity: 0;
-            }
-
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            padding: 20px 25px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h4 {
-            font-size: 10px;
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .modal-header h2 {
-            font-size: 20px;
-            color: var(--text-primary);
-        }
-
-        .btn-close {
-            background: transparent;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .avatar-large {
-            width: 70px;
-            height: 70px;
-            background: var(--primary);
-            color: var(--text-inverse);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            font-weight: bold;
-            margin: 0 auto;
-        }
-
-        .btn-text {
-            background: transparent;
-            border: none;
-            color: var(--primary);
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: -10px;
-        }
-
-        .modal-footer {
-            padding: 20px 25px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-danger-outline {
-            background: transparent;
-            color: var(--danger);
-            border: 1px solid var(--danger);
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .btn-danger-outline:hover {
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        /* ================= TOAST ================= */
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--text-primary);
-            color: var(--bg-card);
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            z-index: 1000;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-            pointer-events: none;
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-
-        .toast.success {
-            background: var(--success);
-            color: white;
-        }
-
-        .toast.error {
-            background: var(--danger);
-            color: white;
-        }
-
-        /* ================= TEMA TOGGLE (DI PROFILE) ================= */
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 4px;
-            cursor: pointer;
-            width: 60px;
-            position: relative;
-            transition: 0.3s;
-        }
-
-        .theme-toggle .toggle-circle {
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            background: var(--primary);
-            border-radius: 50%;
-            transition: transform 0.3s ease;
-            left: 4px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        body[data-theme="dark"] .theme-toggle .toggle-circle {
-            transform: translateY(-50%) translateX(28px);
-        }
-
-        .theme-icon {
-            font-size: 14px;
-            z-index: 1;
-            width: 24px;
-            text-align: center;
-            transition: 0.3s;
-        }
-
-        .theme-icon.sun {
-            color: var(--text-secondary);
-        }
-
-        .theme-icon.moon {
-            color: var(--text-secondary);
-        }
-
-        body[data-theme="dark"] .theme-icon.sun {
-            color: var(--text-primary);
-        }
-
-        body[data-theme="light"] .theme-icon.moon {
-            color: var(--text-primary);
-        }
-
-        /* ================= RESPONSIVE ================= */
-        @media (max-width: 768px) {
-
-            .form-layout,
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .navbar {
-                flex-direction: column;
-                gap: 15px;
-                padding: 15px;
-            }
-
-            .nav-links {
-                width: 100%;
-                justify-content: space-between;
-                flex-wrap: wrap;
-            }
-
-            .nav-link {
-                flex: 1;
-                text-align: center;
-                font-size: 12px;
-                padding: 8px;
-            }
-
-            .auth-card {
-                padding: 25px;
-                margin: 15px;
-            }
-
-            .table-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .table-controls input[type="date"] {
-                width: 100%;
-            }
-        }
-    </style>
+    <script defer src="script.js"></script>
 </head>
 
 <body data-theme="light">
-    <!-- Background Grid Futuristik -->
-    <div class="bg-grid"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <!-- Container Utama -->
-    <div id="app">
+    <main id="auth-screen" class="auth-screen screen active">
+        <section class="auth-card">
+            <a class="brand" href="#" aria-label="Amanah.id">
+                <span class="brand-mark">A</span>
+                <span>Amanah<span class="brand-dot">.id</span></span>
+            </a>
+            <p class="muted" data-i18n="subtitle">Sistem Presensi Wajah</p>
 
-        <!-- ================= SCREEN 1: AUTH (LOGIN/DAFTAR) ================= -->
-        <div id="auth-screen" class="screen active">
-            <div class="auth-card">
-                <div class="logo-area">
-                    <div class="logo-shield"></div>
-                    <h1>Amanah ID</h1>
-                    <p class="subtitle" data-i18n="subtitle">Sistem Presensi Wajah</p>
-                </div>
-
-                <!-- Tab Login/Daftar -->
-                <div class="tab-switcher">
-                    <button class="tab-btn active" id="tab-login" data-i18n="login">Masuk</button>
-                    <button class="tab-btn" id="tab-register" data-i18n="register">Daftar</button>
-                </div>
-
-                <!-- Pemilih Bahasa Utama (Login/Register) -->
-                <div class="lang-switcher" id="lang-switcher-auth">
-                    <button class="lang-btn active" data-lang="id">Indonesia</button>
-                    <button class="lang-btn" data-lang="en">English</button>
-                    <button class="lang-btn" data-lang="ar">العربية</button>
-                </div>
-
-                <!-- Form Login -->
-                <form id="login-form" class="auth-form active">
-                    <div class="input-group">
-                        <label data-i18n="email">Email</label>
-                        <input type="email" placeholder="admin@amanahid.sch.id" value="admin@amanahid.sch.id" required>
-                    </div>
-                    <div class="input-group">
-                        <label data-i18n="password">Kata Sandi</label>
-                        <input type="password" placeholder="Masukkan kata sandi" value="AmanahDemo!2026#ID" required>
-                    </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="terms-login" checked>
-                        <label for="terms-login" data-i18n="terms_agree">Saya setuju dengan <a href="#">Syarat &
-                                Ketentuan</a></label>
-                    </div>
-                    <button type="submit" class="btn-primary" data-i18n="login_btn">Masuk</button>
-                    <div class="demo-info" data-i18n="demo_info">Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID</div>
-                </form>
-
-                <!-- Form Register -->
-                <form id="register-form" class="auth-form">
-                    <div class="input-group">
-                        <label data-i18n="full_name">Nama Lengkap</label>
-                        <input type="text" placeholder="Masukkan nama lengkap" required>
-                    </div>
-                    <div class="input-group">
-                        <label data-i18n="email">Email</label>
-                        <input type="email" placeholder="email@anda.com" required>
-                    </div>
-                    <div class="input-group">
-                        <label data-i18n="password">Kata Sandi</label>
-                        <input type="password" placeholder="Minimal 6 karakter" required>
-                    </div>
-                    <div class="input-group">
-                        <label data-i18n="confirm_password">Konfirmasi Sandi</label>
-                        <input type="password" placeholder="Ulangi kata sandi" required>
-                    </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="terms-reg" required>
-                        <label for="terms-reg" data-i18n="terms_agree_reg">Saya setuju dengan <a href="#">Syarat &
-                                Ketentuan</a></label>
-                    </div>
-                    <button type="submit" class="btn-primary" disabled id="btn-register-submit"
-                        data-i18n="register_btn">Daftar</button>
-                </form>
+            <div class="language-bar" aria-label="Language">
+                <button class="lang-btn active" data-lang="id">Indonesia</button>
+                <button class="lang-btn" data-lang="en">English</button>
+                <button class="lang-btn" data-lang="ar">العربية</button>
             </div>
-        </div>
 
-        <!-- ================= SCREEN 2: DASHBOARD ================= -->
-        <div id="dashboard-screen" class="screen">
-            <!-- Navbar -->
-            <nav class="navbar">
-                <div class="nav-brand">
-                    <div class="logo-shield-small"></div>
-                    <span>Amanah ID</span>
+            <div class="auth-tabs">
+                <button id="tab-login" class="auth-tab active" data-i18n="login">Masuk</button>
+                <button id="tab-register" class="auth-tab" data-i18n="register">Daftar</button>
+            </div>
+
+            <form id="login-form" class="auth-form active">
+                <label for="login-email" data-i18n="email">Email</label>
+                <input id="login-email" type="email" autocomplete="username" required
+                    data-i18n-placeholder="email_placeholder" placeholder="Masukkan email">
+                <label for="login-password" data-i18n="password">Kata sandi</label>
+                <input id="login-password" type="password" autocomplete="current-password" required
+                    data-i18n-placeholder="password_placeholder" placeholder="Masukkan kata sandi">
+                <button class="btn primary full" type="submit" data-i18n="login_btn">Masuk</button>
+                <p class="demo-info" data-i18n="demo_info">Demo admin tersedia.</p>
+            </form>
+
+            <form id="register-form" class="auth-form">
+                <label for="register-name" data-i18n="full_name">Nama lengkap</label>
+                <input id="register-name" type="text" required autocomplete="name"
+                    data-i18n-placeholder="name_placeholder" placeholder="Nama lengkap">
+                <label for="register-email" data-i18n="email">Email</label>
+                <input id="register-email" type="email" required autocomplete="email"
+                    data-i18n-placeholder="email_placeholder" placeholder="Email">
+                <label for="register-password" data-i18n="password">Kata sandi</label>
+                <input id="register-password" type="password" required minlength="8" autocomplete="new-password"
+                    data-i18n-placeholder="password_placeholder" placeholder="Kata sandi">
+                <label for="register-confirm" data-i18n="confirm_password">Konfirmasi kata sandi</label>
+                <input id="register-confirm" type="password" required minlength="8" autocomplete="new-password"
+                    data-i18n-placeholder="confirm_placeholder" placeholder="Ulangi kata sandi">
+                <label class="check-row">
+                    <input id="terms-reg" type="checkbox" required>
+                    <span data-i18n="terms">Saya menyetujui syarat dan ketentuan.</span>
+                </label>
+                <button id="btn-register-submit" class="btn primary full" type="submit" disabled
+                    data-i18n="register_btn">Daftar</button>
+                <p class="muted small" data-i18n="register_note">Registrasi demo hanya tersimpan selama halaman aktif.
+                </p>
+            </form>
+        </section>
+    </main>
+
+    <main id="dashboard-screen" class="dashboard screen">
+        <header class="topbar">
+            <a class="brand compact" href="#" aria-label="Amanah.id">
+                <span class="brand-mark">A</span>
+                <span>Amanah<span class="brand-dot">.id</span></span>
+            </a>
+            <div class="topbar-right">
+                <span id="header-user" class="muted">Admin</span>
+                <div class="language-bar compact-languages">
+                    <button class="lang-btn active" data-lang="id">ID</button>
+                    <button class="lang-btn" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="ar">ع</button>
                 </div>
-                <div class="nav-links">
-                    <button class="nav-link active" data-target="presensi" data-i18n="nav_presensi">Presensi</button>
-                    <button class="nav-link" data-target="database" data-i18n="nav_database">Database</button>
-                    <button class="nav-link" data-target="formulir" data-i18n="nav_formulir">Formulir</button>
-                    <button class="nav-link profile-trigger" data-target="profile">
-                        <span class="avatar-small">A</span> <span data-i18n="nav_profile">Profil</span>
-                    </button>
+                <button id="open-profile" class="avatar-button" aria-label="Profile">A</button>
+            </div>
+        </header>
+
+        <div class="app-layout">
+            <aside class="sidebar">
+                <p class="side-label" data-i18n="workspace">WORKSPACE</p>
+                <button class="nav-link active" data-target="presensi"><span class="nav-icon">01</span><span
+                        data-i18n="nav_presensi">Presensi</span></button>
+                <button class="nav-link" data-target="database"><span class="nav-icon">02</span><span
+                        data-i18n="nav_database">Database</span></button>
+                <button class="nav-link" data-target="formulir"><span class="nav-icon">03</span><span
+                        data-i18n="nav_formulir">Formulir siswa</span></button>
+                <div class="sidebar-bottom">
+                    <div class="system-status"><span class="status-dot"></span><span data-i18n="local_mode">Mode
+                            lokal</span></div>
+                    <p class="muted small" data-i18n="memory_note">Data hanya tersimpan selama sesi aktif.</p>
+                    <button class="nav-link" data-target="profile"><span class="nav-icon">04</span><span
+                            data-i18n="nav_profile">Profil & pengaturan</span></button>
                 </div>
-            </nav>
+            </aside>
 
-            <!-- Konten Utama -->
-            <main class="main-content">
+            <section class="main-content">
+                <section id="view-presensi" class="view active">
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow" data-i18n="attendance_label">ATTENDANCE MANAGEMENT</p>
+                            <h1 data-i18n="attendance_title">Presensi wajah</h1>
+                            <p class="muted" data-i18n="attendance_desc">Verifikasi identitas siswa menggunakan kamera.
+                            </p>
+                        </div>
+                        <span id="model-status" class="pill warning" data-i18n="model_waiting">Model AI belum
+                            siap</span>
+                    </div>
 
-                <!-- View: Presensi -->
-                <div id="view-presensi" class="view active">
-                    <div class="camera-container">
-                        <video id="video-presensi" autoplay muted playsinline></video>
-                        <canvas id="overlay-presensi"></canvas>
-                        <div id="loading-ai" class="loading-overlay">
-                            <div class="spinner"></div>
-                            <p data-i18n="loading_ai">Memuat Model AI...</p>
-                        </div>
-                        <div class="camera-controls">
-                            <button class="btn-icon" id="btn-capture-presensi" title="Ambil Gambar">📸</button>
-                            <button class="btn-icon" title="Fullscreen">⛶</button>
-                        </div>
-                        <div id="status-presensi" class="status-badge" data-i18n="detecting_face">Mendeteksi Wajah...
+                    <div class="attendance-grid">
+                        <article class="card camera-card">
+                            <div class="card-heading">
+                                <div>
+                                    <h2 data-i18n="live_camera">Kamera langsung</h2>
+                                    <p class="muted small" data-i18n="camera_hint">Posisikan wajah di tengah kamera.</p>
+                                </div>
+                                <span id="camera-status" class="pill neutral" data-i18n="camera_off">Kamera mati</span>
+                            </div>
+                            <div class="camera-frame">
+                                <video id="video-presensi" autoplay muted playsinline></video>
+                                <canvas id="overlay-presensi"></canvas>
+                                <div id="camera-placeholder" class="camera-placeholder">
+                                    <span class="camera-symbol">CAM</span>
+                                    <p data-i18n="camera_placeholder">Kamera belum diaktifkan</p>
+                                </div>
+                            </div>
+                            <div class="camera-actions">
+                                <button id="btn-start-attendance" class="btn primary" data-i18n="start_camera">Aktifkan
+                                    kamera</button>
+                                <button id="btn-stop-attendance" class="btn secondary" data-i18n="stop_camera">Matikan
+                                    kamera</button>
+                            </div>
+                            <div class="status-panel">
+                                <span class="status-dot"></span>
+                                <span id="status-presensi" data-i18n="waiting_face">Menunggu wajah...</span>
+                            </div>
+                            <p id="liveness-status" class="muted small" data-i18n="liveness_waiting">Liveness: menunggu
+                                gerakan wajah.</p>
+                            <div class="model-error hidden" id="model-error">
+                                <p data-i18n="model_error">Model AI gagal dimuat. Periksa koneksi internet.</p>
+                                <button id="btn-retry-model" class="btn secondary" data-i18n="retry">Coba lagi</button>
+                            </div>
+                        </article>
+
+                        <article class="card instruction-card">
+                            <p class="eyebrow" data-i18n="verification">VERIFICATION</p>
+                            <h2 data-i18n="how_to">Cara melakukan presensi</h2>
+                            <ol class="steps">
+                                <li data-i18n="step_one">Aktifkan kamera dan izinkan akses.</li>
+                                <li data-i18n="step_two">Hadapkan wajah ke kamera dengan pencahayaan cukup.</li>
+                                <li data-i18n="step_three">Gerakkan kepala sedikit agar sistem memeriksa liveness.</li>
+                                <li data-i18n="step_four">Wajah yang cocok akan dicatat sebagai hadir.</li>
+                            </ol>
+                            <div class="notice">
+                                <strong data-i18n="privacy_title">Privasi</strong>
+                                <p data-i18n="privacy_text">Descriptor wajah dan data presensi disimpan di memori
+                                    halaman ini, bukan dikirim ke server aplikasi.</p>
+                            </div>
+                            <div class="stat-mini">
+                                <span data-i18n="registered_students">Siswa terdaftar</span>
+                                <strong id="registered-count">0</strong>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section id="view-database" class="view">
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow" data-i18n="records_label">RECORDS & REPORTS</p>
+                            <h1 data-i18n="db_title">Database presensi</h1>
+                            <p class="muted" data-i18n="db_desc">Cari, filter, ekspor, dan kelola riwayat kehadiran.</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- View: Database -->
-                <div id="view-database" class="view">
-                    <div class="view-header">
-                        <h2 data-i18n="db_title">Database Presensi</h2>
-                        <p data-i18n="db_desc">Kelola riwayat presensi, filter tanggal, & ekspor laporan.</p>
-                    </div>
                     <div class="stats-grid">
-                        <div class="stat-card">
-                            <h3 data-i18n="total_students">Total Siswa</h3>
-                            <p>0</p>
+                        <article class="stat-card"><span data-i18n="total_students">Total siswa</span><strong
+                                id="stat-students">0</strong></article>
+                        <article class="stat-card"><span data-i18n="present_today">Hadir hari ini</span><strong
+                                id="stat-today">0</strong></article>
+                        <article class="stat-card"><span data-i18n="attendance_rate">Persentase kehadiran</span><strong
+                                id="stat-rate">0%</strong></article>
+                        <article class="stat-card"><span data-i18n="total_history">Total riwayat</span><strong
+                                id="stat-history">0</strong></article>
+                    </div>
+
+                    <article class="card database-card">
+                        <div class="filter-grid">
+                            <input id="db-search" type="search" data-i18n-placeholder="search_placeholder"
+                                placeholder="Cari nama, NISN, atau kelas">
+                            <label><span data-i18n="date_start">Tanggal mulai</span><input id="date-start"
+                                    type="date"></label>
+                            <label><span data-i18n="date_end">Tanggal selesai</span><input id="date-end"
+                                    type="date"></label>
+                            <button id="btn-export" class="btn primary" data-i18n="export">Ekspor CSV</button>
+                            <button id="btn-delete-all" class="btn danger" data-i18n="delete_all">Hapus semua</button>
                         </div>
-                        <div class="stat-card">
-                            <h3 data-i18n="present_today">Hadir Hari Ini</h3>
-                            <p>0</p>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="number">No.</th>
+                                        <th data-i18n="nisn">NISN</th>
+                                        <th data-i18n="name">Nama</th>
+                                        <th data-i18n="class">Kelas</th>
+                                        <th data-i18n="status">Status</th>
+                                        <th data-i18n="date">Tanggal</th>
+                                        <th data-i18n="time">Waktu</th>
+                                        <th data-i18n="method">Metode</th>
+                                        <th data-i18n="confidence">Keyakinan</th>
+                                        <th data-i18n="action">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="db-tbody"></tbody>
+                            </table>
                         </div>
-                        <div class="stat-card">
-                            <h3 data-i18n="percentage">Persentase</h3>
-                            <p>0%</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3 data-i18n="total_history">Total Riwayat</h3>
-                            <p>0</p>
+                        <p id="db-count" class="muted small">0 records</p>
+                    </article>
+                </section>
+
+                <section id="view-formulir" class="view">
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow" data-i18n="student_label">STUDENT MANAGEMENT</p>
+                            <h1 data-i18n="form_title">Formulir siswa</h1>
+                            <p class="muted" data-i18n="form_desc">Daftarkan identitas dan descriptor wajah siswa.</p>
                         </div>
                     </div>
 
-                    <!-- Table Controls -->
-                    <div class="table-controls">
-                        <input type="text" placeholder="Cari nama, NISN, atau kelas..."
-                            data-i18n-placeholder="search_placeholder">
-                        <input type="date" value="2026-09-21">
-                        <span class="date-arrow">→</span>
-                        <input type="date" value="2026-09-28">
-                        <button class="btn-export" data-i18n="export">Export</button>
-                        <button class="btn-danger" data-i18n="delete_all">Hapus Semua</button>
-                    </div>
+                    <div class="form-grid">
+                        <article class="card">
+                            <h2 data-i18n="student_identity">Identitas siswa</h2>
+                            <form id="student-form">
+                                <label for="input-nisn" data-i18n="nisn">NISN</label>
+                                <input id="input-nisn" inputmode="numeric" required maxlength="20"
+                                    data-i18n-placeholder="nisn_placeholder" placeholder="Masukkan NISN">
+                                <label for="input-nama" data-i18n="name">Nama</label>
+                                <input id="input-nama" required data-i18n-placeholder="student_name_placeholder"
+                                    placeholder="Nama siswa">
+                                <label for="input-kelas" data-i18n="class">Kelas</label>
+                                <input id="input-kelas" required data-i18n-placeholder="class_placeholder"
+                                    placeholder="Contoh: XI IPA 1">
+                                <label for="photo-upload" data-i18n="upload_photo">Unggah foto</label>
+                                <input id="photo-upload" type="file" accept="image/*">
+                                <p class="muted small" data-i18n="upload_hint">Foto harus memuat tepat satu wajah yang
+                                    terlihat jelas.</p>
+                                <button id="btn-save-siswa" class="btn primary full" type="submit"
+                                    data-i18n="save_student">Simpan data siswa</button>
+                            </form>
+                        </article>
 
-                    <!-- Table Grid -->
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th data-i18n="nisn">NISN</th>
-                                    <th data-i18n="name">NAMA</th>
-                                    <th data-i18n="class">KELAS</th>
-                                    <th data-i18n="status">STATUS</th>
-                                    <th data-i18n="date">TANGGAL</th>
-                                    <th data-i18n="time">WAKTU</th>
-                                    <th data-i18n="method">METODE</th>
-                                    <th data-i18n="confidence">CONFIDENCE</th>
-                                    <th data-i18n="action">AKSI</th>
-                                </tr>
-                            </thead>
-                            <tbody id="db-tbody">
-                                <tr>
-                                    <td colspan="10" class="empty-state" data-i18n="no_data">Belum ada data
-                                        presensi<br><small>Data akan muncul setelah siswa melakukan verifikasi
-                                            wajah.</small></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- View: Formulir -->
-                <div id="view-formulir" class="view">
-                    <div class="view-header">
-                        <h2 data-i18n="form_title">Formulir Siswa</h2>
-                        <p data-i18n="form_desc">Daftarkan identitas dan wajah siswa untuk presensi.</p>
-                    </div>
-                    <div class="form-layout">
-                        <div class="card form-card">
-                            <h3 data-i18n="student_identity">Identitas Siswa</h3>
-                            <div class="input-group"><label data-i18n="nisn">NISN</label><input type="text"
-                                    id="input-nisn" placeholder="Masukkan NISN"></div>
-                            <div class="input-group"><label data-i18n="full_name">Nama Lengkap</label><input type="text"
-                                    id="input-nama" placeholder="Masukkan nama lengkap"></div>
-                            <div class="input-group"><label data-i18n="class">Kelas</label><input type="text"
-                                    id="input-kelas" placeholder="Contoh: XI IPA 1"></div>
-                            <button class="btn-primary" id="btn-save-siswa" data-i18n="save_student">Simpan Data
-                                Siswa</button>
-                        </div>
-                        <div class="card camera-card">
-                            <h3 data-i18n="face_verification">Verifikasi Wajah</h3>
-                            <p data-i18n="face_verification_desc">Ambil wajah dari depan, kiri, kanan, atas, dan bawah
-                                agar presensi tetap akurat.</p>
-                            <div class="camera-container small">
+                        <article class="card">
+                            <h2 data-i18n="face_verification">Verifikasi wajah</h2>
+                            <p class="muted" data-i18n="form_camera_hint">Gunakan kamera atau unggah foto untuk
+                                mengambil descriptor wajah.</p>
+                            <div class="camera-frame form-camera-frame">
                                 <video id="video-formulir" autoplay muted playsinline></video>
                                 <canvas id="overlay-formulir"></canvas>
-                                <div id="loading-ai-form" class="loading-overlay">
-                                    <div class="spinner"></div>
-                                    <p data-i18n="loading_ai">Memuat Model AI...</p>
+                                <div id="form-camera-placeholder" class="camera-placeholder">
+                                    <span class="camera-symbol">CAM</span>
+                                    <p data-i18n="camera_placeholder">Kamera belum diaktifkan</p>
                                 </div>
                             </div>
-                            <div class="analysis-bar">
-                                <span data-i18n="ai_analysis">Analisis AI</span>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" id="ai-progress"></div>
-                                </div>
-                                <span id="ai-percent">0%</span>
-                            </div>
-                            <p class="hint-text" data-i18n="position_hint">Posisikan wajah dari depan</p>
                             <div class="camera-actions">
-                                <button class="btn-secondary" id="btn-upload" data-i18n="upload_photo">Upload
-                                    Foto</button>
-                                <button class="btn-dark" id="btn-camera" data-i18n="use_camera">Gunakan Kamera</button>
+                                <button id="btn-start-form-camera" class="btn primary" type="button"
+                                    data-i18n="use_camera">Gunakan kamera</button>
+                                <button id="btn-stop-form-camera" class="btn secondary" type="button"
+                                    data-i18n="stop_camera">Matikan kamera</button>
                             </div>
-                        </div>
+                            <div class="progress-label"><span data-i18n="ai_confidence">Keyakinan deteksi
+                                    AI</span><strong id="ai-percent">0%</strong></div>
+                            <div class="progress-track">
+                                <div id="ai-progress" class="progress-bar"></div>
+                            </div>
+                            <p id="form-face-status" class="muted small" data-i18n="waiting_face">Menunggu wajah...</p>
+                        </article>
                     </div>
-                </div>
-
-            </main>
+                </section>
+            </section>
         </div>
+    </main>
 
-        <!-- ================= MODAL: PROFILE ================= -->
-        <div id="profile-modal" class="modal-overlay">
-            <div class="modal-card">
-                <div class="modal-header">
-                    <div>
-                        <h4>Amanah ID</h4>
-                        <h2 data-i18n="profile_title">Profil</h2>
-                    </div>
-                    <button class="btn-close" id="close-profile">✕</button>
-                </div>
-                <div class="modal-body">
-                    <div class="avatar-large">A</div>
-                    <button class="btn-text" data-i18n="change_photo">Ganti foto</button>
-                    <div class="input-group"><label data-i18n="full_name">Nama Lengkap</label><input type="text"
-                            value="Admin" readonly></div>
-                    <div class="input-group"><label data-i18n="email">Email</label><input type="email"
-                            value="admin@amanahid.sch.id" readonly></div>
-                    <div class="input-group"><label data-i18n="password">Kata Sandi</label><input type="password"
-                            value="************" readonly></div>
-
-                    <!-- Pengaturan Bahasa & Tema -->
-                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                        <div style="flex: 1; min-width: 150px;">
-                            <label data-i18n="language"
-                                style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Bahasa</label>
-                            <div class="lang-switcher" id="lang-switcher-profile"
-                                style="margin:0; justify-content:flex-start;">
-                                <button class="lang-btn active" data-lang="id">ID</button>
-                                <button class="lang-btn" data-lang="en">EN</button>
-                                <button class="lang-btn" data-lang="ar">AR</button>
-                            </div>
-                        </div>
-                        <div style="flex: 1; min-width: 100px;">
-                            <label data-i18n="theme"
-                                style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">Tema</label>
-                            <div class="theme-toggle" id="theme-toggle">
-                                <span class="theme-icon sun">☀️</span>
-                                <span class="theme-icon moon">🌙</span>
-                                <div class="toggle-circle"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-primary" id="btn-save-profile" data-i18n="save_profile">Simpan Profil</button>
-                    <button class="btn-danger-outline" id="btn-logout" data-i18n="logout">Keluar</button>
-                </div>
+    <div id="profile-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+        <div class="modal-backdrop" data-close-profile></div>
+        <section class="modal-card">
+            <button id="close-profile" class="modal-close" aria-label="Close">×</button>
+            <div class="profile-avatar">A</div>
+            <h2 id="profile-title" data-i18n="profile_title">Profil & pengaturan</h2>
+            <p id="profile-email" class="muted">admin@amanahid.sch.id</p>
+            <label for="profile-name" data-i18n="full_name">Nama lengkap</label>
+            <input id="profile-name" type="text" value="Admin">
+            <label data-i18n="language">Bahasa</label>
+            <div class="language-bar modal-languages">
+                <button class="lang-btn active" data-lang="id">Indonesia</button>
+                <button class="lang-btn" data-lang="en">English</button>
+                <button class="lang-btn" data-lang="ar">العربية</button>
             </div>
-        </div>
-
+            <label for="theme-select" data-i18n="theme">Tema</label>
+            <select id="theme-select">
+                <option value="light" data-i18n="light">Terang</option>
+                <option value="dark" data-i18n="dark">Gelap</option>
+            </select>
+            <button id="btn-save-profile" class="btn primary full" data-i18n="save_profile">Simpan pengaturan</button>
+            <button id="btn-logout" class="btn secondary full" data-i18n="logout">Keluar</button>
+        </section>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast">Pesan Notifikasi</div>
-
-    <script>
-        /* ================= KONFIGURASI BAHASA (i18n) ================= */
-        const translations = {
-            id: {
-                subtitle: "Sistem Presensi Wajah",
-                login: "Masuk", register: "Daftar", email: "Email", password: "Kata Sandi",
-                confirm_password: "Konfirmasi Sandi", full_name: "Nama Lengkap",
-                terms_agree: "Saya setuju dengan <a href='#'>Syarat & Ketentuan</a>",
-                terms_agree_reg: "Saya setuju dengan <a href='#'>Syarat & Ketentuan</a>",
-                login_btn: "Masuk", register_btn: "Daftar",
-                demo_info: "Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID",
-                nav_presensi: "Presensi", nav_database: "Database", nav_formulir: "Formulir", nav_profile: "Profil",
-                loading_ai: "Memuat Model AI...", detecting_face: "Mendeteksi Wajah...",
-                db_title: "Database Presensi", db_desc: "Kelola riwayat presensi, filter tanggal, & ekspor laporan.",
-                total_students: "Total Siswa", present_today: "Hadir Hari Ini", percentage: "Persentase", total_history: "Total Riwayat",
-                search_placeholder: "Cari nama, NISN, atau kelas...", export: "Export", delete_all: "Hapus Semua",
-                nisn: "NISN", name: "NAMA", class: "KELAS", status: "STATUS", date: "TANGGAL", time: "WAKTU", method: "METODE", confidence: "CONFIDENCE", action: "AKSI",
-                no_data: "Belum ada data presensi<br><small>Data akan muncul setelah siswa melakukan verifikasi wajah.</small>",
-                form_title: "Formulir Siswa", form_desc: "Daftarkan identitas dan wajah siswa untuk presensi.",
-                student_identity: "Identitas Siswa", save_student: "Simpan Data Siswa",
-                face_verification: "Verifikasi Wajah", face_verification_desc: "Ambil wajah dari depan, kiri, kanan, atas, dan bawah agar presensi tetap akurat.",
-                ai_analysis: "Analisis AI", position_hint: "Posisikan wajah dari depan", upload_photo: "Upload Foto", use_camera: "Gunakan Kamera",
-                profile_title: "Profil", change_photo: "Ganti foto", language: "Bahasa", theme: "Tema", save_profile: "Simpan Profil", logout: "Keluar",
-                toast_login_success: "Login berhasil! Selamat datang.", toast_login_fail: "Email atau kata sandi salah!",
-                toast_register_success: "Pendaftaran berhasil! Silakan login.", toast_model_loaded: "Model AI berhasil dimuat!",
-                toast_model_fail: "Gagal memuat model AI. Periksa koneksi internet.", toast_camera_denied: "Akses kamera ditolak atau tidak tersedia.",
-                toast_student_saved: "Siswa {name} berhasil didaftarkan!", toast_face_not_detected: "Wajah tidak terdeteksi! Pastikan wajah terlihat jelas.",
-                toast_attendance_success: "Presensi {name} berhasil!", toast_profile_saved: "Profil berhasil disimpan!",
-                toast_logout: "Anda telah keluar.", toast_fill_all: "Harap isi semua data identitas siswa!",
-                toast_liveness_fail: "Tolong bergerak sedikit (kiri/kanan) agar sistem mengenali wajah asli Anda."
-            },
-            en: {
-                subtitle: "Facial Attendance System",
-                login: "Login", register: "Register", email: "Email", password: "Password",
-                confirm_password: "Confirm Password", full_name: "Full Name",
-                terms_agree: "I agree to the <a href='#'>Terms & Conditions</a>",
-                terms_agree_reg: "I agree to the <a href='#'>Terms & Conditions</a>",
-                login_btn: "Login", register_btn: "Register",
-                demo_info: "Demo: admin@amanahid.sch.id / AmanahDemo!2026#ID",
-                nav_presensi: "Attendance", nav_database: "Database", nav_formulir: "Form", nav_profile: "Profile",
-                loading_ai: "Loading AI Model...", detecting_face: "Detecting Face...",
-                db_title: "Attendance Database", db_desc: "Manage attendance history, filter dates, & export reports.",
-                total_students: "Total Students", present_today: "Present Today", percentage: "Percentage", total_history: "Total History",
-                search_placeholder: "Search name, NISN, or class...", export: "Export", delete_all: "Delete All",
-                nisn: "NISN", name: "NAME", class: "CLASS", status: "STATUS", date: "DATE", time: "TIME", method: "METHOD", confidence: "CONFIDENCE", action: "ACTION",
-                no_data: "No attendance data yet<br><small>Data will appear after students verify their face.</small>",
-                form_title: "Student Form", form_desc: "Register student identity and face for attendance.",
-                student_identity: "Student Identity", save_student: "Save Student Data",
-                face_verification: "Face Verification", face_verification_desc: "Capture face from front, left, right, top, and bottom for accurate attendance.",
-                ai_analysis: "AI Analysis", position_hint: "Position your face forward", upload_photo: "Upload Photo", use_camera: "Use Camera",
-                profile_title: "Profile", change_photo: "Change photo", language: "Language", theme: "Theme", save_profile: "Save Profile", logout: "Logout",
-                toast_login_success: "Login successful! Welcome.", toast_login_fail: "Wrong email or password!",
-                toast_register_success: "Registration successful! Please login.", toast_model_loaded: "AI Model loaded successfully!",
-                toast_model_fail: "Failed to load AI model. Check internet connection.", toast_camera_denied: "Camera access denied or unavailable.",
-                toast_student_saved: "Student {name} registered successfully!", toast_face_not_detected: "Face not detected! Make sure face is clearly visible.",
-                toast_attendance_success: "Attendance for {name} successful!", toast_profile_saved: "Profile saved successfully!",
-                toast_logout: "You have been logged out.", toast_fill_all: "Please fill in all student identity data!",
-                toast_liveness_fail: "Please move slightly (left/right) so the system recognizes your real face."
-            },
-            ar: {
-                subtitle: "نظام الحضور بالوجه",
-                login: "تسجيل الدخول", register: "تسجيل", email: "البريد الإلكتروني", password: "كلمة المرور",
-                confirm_password: "تأكيد كلمة المرور", full_name: "الاسم الكامل",
-                terms_agree: "أوافق على <a href='#'>الشروط والأحكام</a>",
-                terms_agree_reg: "أوافق على <a href='#'>الشروط والأحكام</a>",
-                login_btn: "دخول", register_btn: "تسجيل",
-                demo_info: "تجريبي: admin@amanahid.sch.id / AmanahDemo!2026#ID",
-                nav_presensi: "الحضور", nav_database: "قاعدة البيانات", nav_formulir: "النموذج", nav_profile: "الملف الشخصي",
-                loading_ai: "جارٍ تحميل نموذج الذكاء الاصطناعي...", detecting_face: "جارٍ اكتشاف الوجه...",
-                db_title: "قاعدة بيانات الحضور", db_desc: "إدارة سجل الحضور، تصفية التواريخ، وتصدير التقارير.",
-                total_students: "إجمالي الطلاب", present_today: "الحاضرون اليوم", percentage: "النسبة المئوية", total_history: "إجمالي السجل",
-                search_placeholder: "ابحث عن الاسم، NISN، أو الفصل...", export: "تصدير", delete_all: "حذف الكل",
-                nisn: "NISN", name: "الاسم", class: "الفصل", status: "الحالة", date: "التاريخ", time: "الوقت", method: "الطريقة", confidence: "الثقة", action: "الإجراء",
-                no_data: "لا توجد بيانات حضور بعد<br><small>ستظهر البيانات بعد التحقق من الوجه.</small>",
-                form_title: "نموذج الطالب", form_desc: "تسجيل هوية الطالب ووجهه للحضور.",
-                student_identity: "هوية الطالب", save_student: "حفظ بيانات الطالب",
-                face_verification: "التحقق من الوجه", face_verification_desc: "التقط الوجه من الأمام، اليسار، اليمين، الأعلى، والأسفل لضمان دقة الحضور.",
-                ai_analysis: "تحليل الذكاء الاصطناعي", position_hint: "ضع وجهك للأمام", upload_photo: "رفع صورة", use_camera: "استخدام الكاميرا",
-                profile_title: "الملف الشخصي", change_photo: "تغيير الصورة", language: "اللغة", theme: "المظهر", save_profile: "حفظ الملف", logout: "خروج",
-                toast_login_success: "تم تسجيل الدخول بنجاح! مرحباً.", toast_login_fail: "البريد الإلكتروني أو كلمة المرور خاطئة!",
-                toast_register_success: "تم التسجيل بنجاح! يرجى تسجيل الدخول.", toast_model_loaded: "تم تحميل نموذج الذكاء الاصطناعي بنجاح!",
-                toast_model_fail: "فشل تحميل نموذج الذكاء الاصطناعي. تحقق من الاتصال.", toast_camera_denied: "تم رفض الوصول إلى الكاميرا أو غير متاح.",
-                toast_student_saved: "تم تسجيل الطالب {name} بنجاح!", toast_face_not_detected: "لم يتم اكتشاف الوجه! تأكد من وضوح الوجه.",
-                toast_attendance_success: "تم تسجيل حضور {name} بنجاح!", toast_profile_saved: "تم حفظ الملف الشخصي بنجاح!",
-                toast_logout: "لقد تم تسجيل خروجك.", toast_fill_all: "يرجى ملء جميع بيانات هوية الطالب!",
-                toast_liveness_fail: "يرجى التحرك قليلاً (يسار/يمين) حتى يتعرف النظام على وجهك الحقيقي."
-            }
-        };
-
-        let currentLang = 'id';
-
-        /* ================= STATE & DOM ================= */
-        const state = {
-            currentUser: null,
-            registeredFaces: [],
-            isModelLoaded: false,
-            attendanceData: [],
-            stream: null,
-            detectionInterval: null,
-            livenessFrames: 0,
-            lastLandmarks: null,
-        };
-
-        const screens = {
-            auth: document.getElementById('auth-screen'),
-            dashboard: document.getElementById('dashboard-screen'),
-        };
-        const views = {
-            presensi: document.getElementById('view-presensi'),
-            database: document.getElementById('view-database'),
-            formulir: document.getElementById('view-formulir'),
-        };
-        const modalProfile = document.getElementById('profile-modal');
-        const toastEl = document.getElementById('toast');
-
-        /* ================= FUNGSI BAHASA (i18n) ================= */
-        function setLanguage(lang) {
-            currentLang = lang;
-            document.body.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
-
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (translations[lang] && translations[lang][key]) {
-                    el.innerHTML = translations[lang][key];
-                }
-            });
-
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                const key = el.getAttribute('data-i18n-placeholder');
-                if (translations[lang] && translations[lang][key]) {
-                    el.placeholder = translations[lang][key];
-                }
-            });
-
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.lang === lang);
-            });
-        }
-
-        document.querySelectorAll('.lang-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const lang = e.target.dataset.lang;
-                if (lang) setLanguage(lang);
-            });
-        });
-
-        /* ================= FUNGSI TEMA (DARK/LIGHT) ================= */
-        function setTheme(theme) {
-            document.body.setAttribute('data-theme', theme);
-            localStorage.setItem('amanah-theme', theme);
-
-            // Update ikon toggle
-            const sunIcon = document.querySelector('.theme-icon.sun');
-            const moonIcon = document.querySelector('.theme-icon.moon');
-            if (theme === 'dark') {
-                sunIcon.style.color = 'var(--text-secondary)';
-                moonIcon.style.color = 'var(--text-primary)';
-            } else {
-                sunIcon.style.color = 'var(--text-primary)';
-                moonIcon.style.color = 'var(--text-secondary)';
-            }
-        }
-
-        document.getElementById('theme-toggle').addEventListener('click', () => {
-            const currentTheme = document.body.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            setTheme(newTheme);
-        });
-
-        // Muat tema dari localStorage
-        const savedTheme = localStorage.getItem('amanah-theme') || 'light';
-        setTheme(savedTheme);
-
-        /* ================= TOAST ================= */
-        function showToast(messageKey, type = 'info', params = {}) {
-            let message = translations[currentLang][messageKey] || messageKey;
-            Object.keys(params).forEach(key => {
-                message = message.replace(`{${key}}`, params[key]);
-            });
-
-            toastEl.textContent = message;
-            toastEl.className = `toast show ${type}`;
-            setTimeout(() => { toastEl.classList.remove('show'); }, 3000);
-        }
-
-        /* ================= NAVIGASI & UI ================= */
-        document.getElementById('tab-login').addEventListener('click', () => {
-            document.getElementById('tab-login').classList.add('active');
-            document.getElementById('tab-register').classList.remove('active');
-            document.getElementById('login-form').classList.add('active');
-            document.getElementById('register-form').classList.remove('active');
-        });
-        document.getElementById('tab-register').addEventListener('click', () => {
-            document.getElementById('tab-register').classList.add('active');
-            document.getElementById('tab-login').classList.remove('active');
-            document.getElementById('register-form').classList.add('active');
-            document.getElementById('login-form').classList.remove('active');
-        });
-
-        const termsReg = document.getElementById('terms-reg');
-        const btnRegisterSubmit = document.getElementById('btn-register-submit');
-        termsReg.addEventListener('change', () => {
-            btnRegisterSubmit.disabled = !termsReg.checked;
-        });
-
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = e.target.querySelector('input[type="email"]').value;
-            const password = e.target.querySelector('input[type="password"]').value;
-
-            if (email === 'admin@amanahid.sch.id' && password === 'AmanahDemo!2026#ID') {
-                state.currentUser = { name: 'Admin', email: email };
-                showToast('toast_login_success', 'success');
-                screens.auth.classList.remove('active');
-                screens.dashboard.classList.add('active');
-                initDashboard();
-            } else {
-                showToast('toast_login_fail', 'error');
-            }
-        });
-
-        document.getElementById('register-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            showToast('toast_register_success', 'success');
-            document.getElementById('tab-login').click();
-        });
-
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const target = e.currentTarget.dataset.target;
-                if (target === 'profile') {
-                    modalProfile.classList.add('active');
-                    return;
-                }
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                Object.values(views).forEach(v => v.classList.remove('active'));
-                if (views[target]) {
-                    views[target].classList.add('active');
-                    if (target === 'presensi') startCamera('video-presensi', 'overlay-presensi');
-                    else if (target === 'formulir') startCamera('video-formulir', 'overlay-formulir');
-                    else stopCamera();
-                }
-            });
-        });
-
-        document.getElementById('close-profile').addEventListener('click', () => modalProfile.classList.remove('active'));
-        document.getElementById('btn-save-profile').addEventListener('click', () => {
-            showToast('toast_profile_saved', 'success');
-            modalProfile.classList.remove('active');
-        });
-        document.getElementById('btn-logout').addEventListener('click', () => {
-            modalProfile.classList.remove('active');
-            screens.dashboard.classList.remove('active');
-            screens.auth.classList.add('active');
-            state.currentUser = null;
-            stopCamera();
-            showToast('toast_logout', 'info');
-        });
-
-        /* ================= AI & FACE RECOGNITION ================= */
-        async function loadModels() {
-            try {
-                // Memuat model dengan cepat
-                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
-                await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
-                state.isModelLoaded = true;
-                document.getElementById('loading-ai').style.display = 'none';
-                document.getElementById('loading-ai-form').style.display = 'none';
-                showToast('toast_model_loaded', 'success');
-            } catch (error) {
-                console.error("Gagal memuat model AI:", error);
-                showToast('toast_model_fail', 'error');
-            }
-        }
-
-        async function startCamera(videoId, overlayId) {
-            stopCamera();
-            const video = document.getElementById(videoId);
-            const overlay = document.getElementById(overlayId);
-            try {
-                // Resolusi rendah untuk performa maksimal
-                state.stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
-                });
-                video.srcObject = state.stream;
-                video.onloadedmetadata = () => {
-                    video.play();
-                    startDetection(video, overlay);
-                };
-            } catch (err) {
-                showToast('toast_camera_denied', 'error');
-            }
-        }
-
-        function stopCamera() {
-            if (state.stream) {
-                state.stream.getTracks().forEach(track => track.stop());
-                state.stream = null;
-            }
-            if (state.detectionInterval) {
-                clearInterval(state.detectionInterval);
-                state.detectionInterval = null;
-            }
-            state.livenessFrames = 0;
-            state.lastLandmarks = null;
-        }
-
-        async function startDetection(video, canvas) {
-            if (!state.isModelLoaded) {
-                setTimeout(() => startDetection(video, canvas), 500);
-                return;
-            }
-            const displaySize = { width: video.videoWidth, height: video.videoHeight };
-            faceapi.matchDimensions(canvas, displaySize);
-
-            // Deteksi cepat: 250ms interval, inputSize 224
-            state.detectionInterval = setInterval(async () => {
-                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
-                    .withFaceLandmarks()
-                    .withFaceDescriptors();
-
-                const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-                faceapi.draw.drawDetections(canvas, resizedDetections);
-                faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-
-                // Update progress bar di Formulir
-                const aiProgress = document.getElementById('ai-progress');
-                const aiPercent = document.getElementById('ai-percent');
-                if (aiProgress && aiPercent) {
-                    if (detections.length > 0) {
-                        const confidence = Math.round(detections[0].detection.score * 100);
-                        aiProgress.style.width = `${confidence}%`;
-                        aiPercent.textContent = `${confidence}%`;
-                    } else {
-                        aiProgress.style.width = '0%';
-                        aiPercent.textContent = '0%';
-                    }
-                }
-
-                // ================= MATEMATIKA LIVENESS DETECTION =================
-                // Menghitung Euclidean Distance dari pergerakan landmark (mata & hidung)
-                if (detections.length > 0) {
-                    const landmarks = detections[0].landmarks;
-                    const leftEye = landmarks.getLeftEye();
-                    const rightEye = landmarks.getRightEye();
-                    const nose = landmarks.getNose();
-
-                    // Ambil titik tengah mata dan hidung
-                    const currentCenter = {
-                        x: (leftEye[0].x + rightEye[0].x + nose[0].x) / 3,
-                        y: (leftEye[0].y + rightEye[0].y + nose[0].y) / 3
-                    };
-
-                    if (state.lastLandmarks) {
-                        // Rumus Euclidean Distance: sqrt((x2-x1)^2 + (y2-y1)^2)
-                        const dx = currentCenter.x - state.lastLandmarks.x;
-                        const dy = currentCenter.y - state.lastLandmarks.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-
-                        // Jika pergerakan > 2.5 pixel (micro-movement), dianggap hidup
-                        if (distance > 2.5) {
-                            state.livenessFrames++;
-                        }
-                    }
-                    state.lastLandmarks = currentCenter;
-                }
-
-                // Logika Presensi
-                if (video.id === 'video-presensi' && detections.length > 0) {
-                    const statusBadge = document.getElementById('status-presensi');
-
-                    // Cek Liveness: Harus ada setidaknya 8 frame gerakan mikro
-                    if (state.livenessFrames < 8) {
-                        statusBadge.textContent = translations[currentLang].toast_liveness_fail;
-                        statusBadge.style.backgroundColor = 'rgba(245, 158, 11, 0.8)';
-                        return;
-                    }
-
-                    if (state.registeredFaces.length === 0) {
-                        statusBadge.textContent = "Belum ada data siswa terdaftar!";
-                        statusBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
-                    } else {
-                        // Threshold diperketat menjadi 0.45 (Anti-Kembar)
-                        const labeledDescriptors = state.registeredFaces.map(f =>
-                            new faceapi.LabeledFaceDescriptors(f.nisn, [new Float32Array(f.descriptor)])
-                        );
-                        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
-                        const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
-
-                        if (bestMatch.label !== 'unknown') {
-                            const student = state.registeredFaces.find(f => f.nisn === bestMatch.label);
-                            statusBadge.textContent = `Presensi: ${student.nama}`;
-                            statusBadge.style.backgroundColor = 'rgba(16, 185, 129, 0.8)';
-
-                            if (!state.attendanceData.find(a => a.nisn === student.nisn && a.timestamp > Date.now() - 5000)) {
-                                state.attendanceData.push({
-                                    nisn: student.nisn,
-                                    nama: student.nama,
-                                    kelas: student.kelas,
-                                    status: 'Hadir',
-                                    timestamp: Date.now(),
-                                    confidence: Math.round(bestMatch.distance * 100)
-                                });
-                                updateDatabaseTable();
-                                showToast('toast_attendance_success', 'success', { name: student.nama });
-                            }
-                        } else {
-                            statusBadge.textContent = 'Wajah tidak dikenali!';
-                            statusBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
-                        }
-                    }
-                }
-            }, 250); // Interval 250ms untuk kecepatan maksimal
-        }
-
-        document.getElementById('btn-save-siswa').addEventListener('click', async () => {
-            const nisn = document.getElementById('input-nisn').value;
-            const nama = document.getElementById('input-nama').value;
-            const kelas = document.getElementById('input-kelas').value;
-            const video = document.getElementById('video-formulir');
-
-            if (!nisn || !nama || !kelas) {
-                showToast('toast_fill_all', 'error');
-                return;
-            }
-            if (!state.isModelLoaded) {
-                showToast('toast_model_fail', 'error');
-                return;
-            }
-
-            const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
-                .withFaceLandmarks()
-                .withFaceDescriptor();
-
-            if (!detections) {
-                showToast('toast_face_not_detected', 'error');
-                return;
-            }
-
-            state.registeredFaces.push({
-                nisn: nisn,
-                nama: nama,
-                kelas: kelas,
-                descriptor: Array.from(detections.descriptor)
-            });
-
-            showToast('toast_student_saved', 'success', { name: nama });
-            document.getElementById('input-nisn').value = '';
-            document.getElementById('input-nama').value = '';
-            document.getElementById('input-kelas').value = '';
-            updateStats();
-        });
-
-        function updateStats() {
-            document.querySelector('.stat-card:nth-child(1) p').textContent = state.registeredFaces.length;
-            document.querySelector('.stat-card:nth-child(2) p').textContent = state.attendanceData.filter(a => a.status === 'Hadir').length;
-            const percentage = state.registeredFaces.length > 0 ? Math.round((state.attendanceData.length / state.registeredFaces.length) * 100) : 0;
-            document.querySelector('.stat-card:nth-child(3) p').textContent = `${percentage}%`;
-            document.querySelector('.stat-card:nth-child(4) p').textContent = state.attendanceData.length;
-        }
-
-        function updateDatabaseTable() {
-            const tbody = document.getElementById('db-tbody');
-            if (state.attendanceData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="empty-state">${translations[currentLang].no_data}</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = state.attendanceData.map((data, index) => `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${data.nisn}</td>
-                    <td>${data.nama}</td>
-                    <td>${data.kelas}</td>
-                    <td><span style="color: var(--success); font-weight: bold;">${data.status}</span></td>
-                    <td>${new Date(data.timestamp).toLocaleDateString(currentLang === 'id' ? 'id-ID' : currentLang === 'ar' ? 'ar-SA' : 'en-US')}</td>
-                    <td>${new Date(data.timestamp).toLocaleTimeString(currentLang === 'id' ? 'id-ID' : currentLang === 'ar' ? 'ar-SA' : 'en-US')}</td>
-                    <td>Face Recognition</td>
-                    <td>${data.confidence}%</td>
-                    <td><button class="btn-text" style="color: var(--danger);">Hapus</button></td>
-                </tr>
-            `).join('');
-            updateStats();
-        }
-
-        function initDashboard() {
-            loadModels();
-            document.querySelector('[data-target="presensi"]').click();
-        }
-
-        document.getElementById('btn-capture-presensi').addEventListener('click', () => {
-            if (state.livenessFrames >= 8) {
-                showToast('toast_attendance_success', 'info', { name: 'Siswa' });
-            } else {
-                showToast('toast_liveness_fail', 'error');
-            }
-        });
-
-        // Inisialisasi bahasa default
-        setLanguage('id');
-    </script>
+    <dialog id="confirm-dialog" class="confirm-dialog">
+        <form method="dialog">
+            <h2 data-i18n="confirm_delete_title">Hapus seluruh data?</h2>
+            <p data-i18n="confirm_delete_text">Semua siswa dan riwayat presensi akan dihapus dari memori sesi ini.</p>
+            <div class="dialog-actions">
+                <button class="btn secondary" value="cancel" data-i18n="cancel">Batal</button>
+                <button id="confirm-delete" class="btn danger" value="confirm" data-i18n="delete_all">Hapus
+                    semua</button>
+            </div>
+        </form>
+    </dialog>
 </body>
 
 </html>
