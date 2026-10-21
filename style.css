@@ -1948,11 +1948,11 @@ html[dir="rtl"] .modal-heading {
     box-shadow: var(--shadow);
 }
 
-.student-attendance-card > h2 {
+.student-attendance-card>h2 {
     margin-top: 8px;
 }
 
-.student-attendance-card > .muted {
+.student-attendance-card>.muted {
     max-width: 640px;
 }
 

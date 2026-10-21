@@ -541,9 +541,9 @@ function renderLocationBadge() {
                 accuracy: state.lastLocation.accuracy
             })
             : tr("outsideMessage", {
-            distance: state.lastLocation.distance,
-            radius: SCHOOL_LOCATION.radius
-        });
+                distance: state.lastLocation.distance,
+                radius: SCHOOL_LOCATION.radius
+            });
     setStatus(state.lastLocation.inside ? "inside" : "outside", badgeLabel, description);
 }
 
