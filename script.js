@@ -236,6 +236,7 @@ const state = {
     cloudLoadToken: 0,
     cloudDataPromise: Promise.resolve()
 };
+let authModalTrigger = null;
 
 // Three-language dictionary
 const T = {
@@ -347,6 +348,7 @@ function showView(target) {
 
 function showAuth() {
     stopAllCameras();
+    closeAuthModal();
     $("login-password").value = "";
     $("dashboard-guru").classList.add("hidden");
     $("dashboard-siswa").classList.add("hidden");
@@ -373,6 +375,7 @@ function handleHashRoute() {
 }
 
 function showApp(user) {
+    closeAuthModal();
     state.user = user;
     $("auth-screen").classList.add("hidden");
     const isStudent = user.role === "siswa";
@@ -1686,6 +1689,47 @@ function switchAuthTab(tab) {
     $("tab-register").setAttribute("aria-selected", String(!login));
     $("login-form").classList.toggle("hidden", !login);
     $("register-form").classList.toggle("hidden", login);
+    document.querySelectorAll("[data-auth-tab]").forEach(button => {
+        const selected = button.dataset.authTab === tab;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-selected", String(selected));
+    });
+    $("auth-modal-title").textContent = login
+        ? `${tr("login")} Amanah.id`
+        : `${tr("signup")} Amanah.id`;
+}
+
+function openAuthModal(tab) {
+    authModalTrigger = document.activeElement;
+    switchAuthTab(tab);
+    $("auth-modal").classList.remove("hidden");
+    document.body.classList.add("auth-modal-open");
+    requestAnimationFrame(() => {
+        $(tab === "login" ? "login-email" : "register-name").focus();
+    });
+}
+
+function closeAuthModal() {
+    const modal = $("auth-modal");
+    if (!modal || modal.classList.contains("hidden")) return;
+    modal.classList.add("hidden");
+    document.body.classList.remove("auth-modal-open");
+    if (authModalTrigger?.isConnected && !authModalTrigger.hidden) authModalTrigger.focus();
+    authModalTrigger = null;
+}
+
+function initSplashScreen() {
+    const splash = $("splash-screen");
+    if (!splash) return;
+    splash.classList.add("is-playing");
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    window.setTimeout(() => {
+        splash.classList.add("is-leaving");
+        window.setTimeout(() => {
+            splash.classList.add("hidden");
+            splash.setAttribute("aria-hidden", "true");
+        }, reducedMotion ? 120 : 500);
+    }, reducedMotion ? 350 : 2550);
 }
 
 function inferRoleFromEmail(email) {
@@ -1706,11 +1750,20 @@ function updateSignupRoleFields() {
 
 function setupEvents() {
     $("hero-cta").addEventListener("click", () => {
-        switchAuthTab("login");
-        $("login-email").focus();
+        openAuthModal("login");
     });
-    $("tab-login").addEventListener("click", () => switchAuthTab("login"));
-    $("tab-register").addEventListener("click", () => switchAuthTab("register"));
+    $("tab-login").addEventListener("click", () => openAuthModal("login"));
+    $("tab-register").addEventListener("click", () => openAuthModal("register"));
+    document.querySelectorAll("[data-auth-tab]").forEach(button => {
+        button.addEventListener("click", () => switchAuthTab(button.dataset.authTab));
+    });
+    $("close-auth-modal").addEventListener("click", closeAuthModal);
+    $("auth-modal").addEventListener("click", event => {
+        if (event.target === $("auth-modal")) closeAuthModal();
+    });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !$("auth-modal").classList.contains("hidden")) closeAuthModal();
+    });
     $("model-retry").addEventListener("click", () => location.reload());
 
     $("login-form").addEventListener("submit", async event => {
@@ -1768,6 +1821,7 @@ function setupEvents() {
         $("btn-register-submit").disabled = true;
         updateSignupRoleFields();
         switchAuthTab("login");
+        closeAuthModal();
         $("login-email").value = email;
         $("login-password").value = "";
         toast(role === "siswa" ? tr("studentUnlinked") : tr("signupSuccess"),
@@ -1954,6 +2008,7 @@ function setupEvents() {
 }
 
 function initialize() {
+    initSplashScreen();
     setTheme("light");
     setLanguage("id");
     showAuth();

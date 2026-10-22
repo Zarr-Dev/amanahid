@@ -16,11 +16,21 @@
 </head>
 
 <body>
+    <div id="splash-screen" class="splash-screen" aria-label="Amanah.id" aria-live="polite">
+        <div class="splash-lockup">
+            <span class="splash-mark" aria-hidden="true">✓</span>
+            <div class="splash-copy">
+                <strong>Amanah ID</strong>
+                <span>Presensi Digital Sekolah</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Single-page landing and auth; login resolves the account role automatically. -->
     <main id="auth-screen" class="auth-screen">
         <header class="auth-header">
             <a class="brand brand-auth" href="#" aria-label="Amanah.id">
-                <span class="brand-mark">A</span>
+                <span class="brand-mark" aria-hidden="true">✓</span>
                 <span>Amanah<span class="brand-dot">.id</span></span>
             </a>
         </header>
@@ -52,50 +62,6 @@
                     <button id="tab-register" class="auth-action auth-action-outline" type="button" role="tab"
                         aria-selected="false" aria-controls="register-form">Sign Up</button>
                 </div>
-
-                <section class="auth-form-card" aria-label="Form akun">
-                    <form id="login-form" class="form-stack">
-                        <label for="login-email" data-i18n="email">Email</label>
-                        <input id="login-email" type="email" autocomplete="username" placeholder="nama@sekolah.sch.id"
-                            required>
-                        <label for="login-password" data-i18n="password">Kata sandi</label>
-                        <input id="login-password" type="password" autocomplete="current-password"
-                            placeholder="••••••••" required>
-                        <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
-                    </form>
-
-                    <form id="register-form" class="form-stack hidden">
-                        <p class="signup-hint" data-i18n="signupRoleHint">
-                            Peran otomatis dari email: gunakan @siswa.id atau @guru.id.
-                        </p>
-                        <label for="register-name" data-i18n="fullName">Nama lengkap</label>
-                        <input id="register-name" type="text" autocomplete="name" required>
-                        <div id="register-nisn-field">
-                            <label for="register-nisn" data-i18n="nisn">NISN</label>
-                            <input id="register-nisn" inputmode="numeric" maxlength="20" autocomplete="off">
-                        </div>
-                        <label for="register-email" data-i18n="email">Email</label>
-                        <input id="register-email" type="email" autocomplete="email" required>
-                        <label for="register-password" data-i18n="password">Kata sandi</label>
-                        <input id="register-password" type="password" minlength="8" autocomplete="new-password"
-                            required>
-                        <label for="register-confirm" data-i18n="confirmPassword">Konfirmasi kata sandi</label>
-                        <input id="register-confirm" type="password" minlength="8" autocomplete="new-password" required>
-                        <label class="check-line">
-                            <input id="terms-reg" type="checkbox">
-                            <span data-i18n="terms">Saya menyetujui ketentuan penggunaan demo.</span>
-                        </label>
-                        <button id="btn-register-submit" class="button primary full" type="submit" disabled
-                            data-i18n="signup">Daftar</button>
-                    </form>
-
-                    <p class="demo-note"><span data-i18n="demoAccount">Demo</span>:
-                        <strong data-i18n="roleTeacher">Guru</strong> <code>admin@amanahid.sch.id</code> /
-                        <code>AmanahDemo!2026#ID</code>
-                        <br><strong data-i18n="roleStudent">Siswa</strong> <code>siswa@amanahid.sch.id</code> /
-                        <code>SiswaDemo!2026#ID</code>
-                    </p>
-                </section>
             </section>
 
             <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah.id">
@@ -168,6 +134,66 @@
         </footer>
         <button id="hero-cta" type="button" hidden>Login</button>
     </main>
+
+    <div id="auth-modal" class="modal-backdrop auth-modal-backdrop hidden" role="dialog" aria-modal="true"
+        aria-labelledby="auth-modal-title">
+        <section class="modal-card auth-modal-card">
+            <div class="auth-modal-heading">
+                <div>
+                    <span class="auth-modal-kicker">AMANAH.ID</span>
+                    <h2 id="auth-modal-title">Masuk ke Amanah.id</h2>
+                </div>
+                <button id="close-auth-modal" class="icon-button" type="button" aria-label="Tutup">×</button>
+            </div>
+
+            <div class="auth-modal-tabs" role="tablist" aria-label="Pilih Login atau Sign Up">
+                <button class="auth-modal-tab active" type="button" role="tab" data-auth-tab="login"
+                    aria-selected="true" aria-controls="login-form">Login</button>
+                <button class="auth-modal-tab" type="button" role="tab" data-auth-tab="register" aria-selected="false"
+                    aria-controls="register-form">Sign Up</button>
+            </div>
+
+            <form id="login-form" class="form-stack">
+                <label for="login-email" data-i18n="email">Email</label>
+                <input id="login-email" type="email" autocomplete="username" placeholder="nama@sekolah.sch.id" required>
+                <label for="login-password" data-i18n="password">Kata sandi</label>
+                <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••"
+                    required>
+                <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
+            </form>
+
+            <form id="register-form" class="form-stack hidden">
+                <p class="signup-hint" data-i18n="signupRoleHint">
+                    Peran otomatis dari email: gunakan @siswa.id atau @guru.id.
+                </p>
+                <label for="register-name" data-i18n="fullName">Nama lengkap</label>
+                <input id="register-name" type="text" autocomplete="name" required>
+                <div id="register-nisn-field">
+                    <label for="register-nisn" data-i18n="nisn">NISN</label>
+                    <input id="register-nisn" inputmode="numeric" maxlength="20" autocomplete="off">
+                </div>
+                <label for="register-email" data-i18n="email">Email</label>
+                <input id="register-email" type="email" autocomplete="email" required>
+                <label for="register-password" data-i18n="password">Kata sandi</label>
+                <input id="register-password" type="password" minlength="8" autocomplete="new-password" required>
+                <label for="register-confirm" data-i18n="confirmPassword">Konfirmasi kata sandi</label>
+                <input id="register-confirm" type="password" minlength="8" autocomplete="new-password" required>
+                <label class="check-line">
+                    <input id="terms-reg" type="checkbox">
+                    <span data-i18n="terms">Saya menyetujui ketentuan penggunaan demo.</span>
+                </label>
+                <button id="btn-register-submit" class="button primary full" type="submit" disabled
+                    data-i18n="signup">Daftar</button>
+            </form>
+
+            <p class="demo-note"><span data-i18n="demoAccount">Demo</span>:
+                <strong data-i18n="roleTeacher">Guru</strong> <code>admin@amanahid.sch.id</code> /
+                <code>AmanahDemo!2026#ID</code>
+                <br><strong data-i18n="roleStudent">Siswa</strong> <code>siswa@amanahid.sch.id</code> /
+                <code>SiswaDemo!2026#ID</code>
+            </p>
+        </section>
+    </div>
 
     <!-- Teacher dashboard -->
     <main id="dashboard-guru" class="app-shell hidden">
