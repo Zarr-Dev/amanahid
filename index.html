@@ -26,6 +26,15 @@
                 </a>
                 <h1 id="auth-hero-title" data-i18n="welcomeTitle">Presensi sekolah, lebih mudah.</h1>
                 <p class="muted" data-i18n="welcomeDesc">Amanah.id menggabungkan verifikasi wajah dan lokasi.</p>
+                <ul class="hero-features" aria-label="Fitur Amanah.id">
+                    <li><span aria-hidden="true">✓</span><span data-i18n="heroFeatureFaceGps">Wajah + GPS</span></li>
+                    <li><span aria-hidden="true">⌁</span><span data-i18n="heroFeatureNoHardware">Tanpa mesin
+                            tambahan</span></li>
+                    <li><span aria-hidden="true">⌖</span><span data-i18n="heroFeatureLocation">Lokasi
+                            terverifikasi</span></li>
+                </ul>
+                <button id="hero-cta" class="button primary hero-cta" type="button" data-i18n="heroCta">Masuk / Coba
+                    demo</button>
             </section>
 
             <div class="auth-tabs" role="tablist" aria-label="Akun">
@@ -324,7 +333,7 @@
                         <label for="input-parent-wa" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
                         <input id="input-parent-wa" type="tel" inputmode="tel" autocomplete="tel"
                             data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
-                            pattern="(?:08|628)[0-9]{8,13}" required>
+                            pattern="(?:08|628)[0-9]{8,13}">
                         <label data-i18n="faceSample">Sampel wajah</label>
                         <div class="form-camera-stage">
                             <video id="video-formulir" autoplay muted playsinline></video><canvas

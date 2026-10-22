@@ -311,6 +311,47 @@ label {
 
 .auth-hero .muted {
     margin-bottom: 0;
+    line-height: 1.65;
+}
+
+.hero-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 18px 0 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.hero-features li {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 10px;
+    border: 1px solid #e1ebff;
+    border-radius: 999px;
+    background: #f4f8ff;
+    color: #4d6185;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.hero-features li>span:first-child {
+    display: grid;
+    width: 18px;
+    height: 18px;
+    place-items: center;
+    border-radius: 50%;
+    background: #e1edff;
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.hero-cta {
+    width: 100%;
+    min-height: 46px;
+    border-radius: 12px;
 }
 
 .signup-hint {
@@ -353,6 +394,17 @@ label {
 .demo-note code {
     color: var(--muted);
     font-size: 10px;
+}
+
+body.theme-dark .hero-features li {
+    border-color: var(--border);
+    background: var(--surface-soft);
+    color: var(--muted);
+}
+
+body.theme-dark .hero-features li>span:first-child {
+    background: var(--blue-soft);
+    color: var(--blue);
 }
 
 .check-line {
@@ -1914,6 +1966,15 @@ html[dir="rtl"] .modal-heading {
 
     .auth-hero h1 {
         font-size: 25px;
+    }
+
+    .hero-features {
+        gap: 6px;
+    }
+
+    .hero-features li {
+        padding: 7px 8px;
+        font-size: 10px;
     }
 
     .auth-hero .brand-auth {

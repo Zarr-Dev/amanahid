@@ -96,7 +96,17 @@ const ROLE_T = {
 const EXTRA_T = {
     id: {
         welcomeTitle: "Presensi sekolah, lebih mudah.",
-        welcomeDesc: "Amanah.id menggabungkan verifikasi wajah dan lokasi.",
+        welcomeDesc: "Amanah.id mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
+        registeredStudentsHint: "Data wajah terdaftar di Supabase",
+        historyDesc: "Riwayat tersimpan di cloud dan dapat diakses lintas perangkat.",
+        privacyFirst: "Descriptor wajah, bukan foto",
+        privacyDesc: "Descriptor wajah 128 dimensi disimpan di Supabase melalui server. Foto asli tidak disimpan.",
+        heroFeatureFaceGps: "Wajah + GPS",
+        heroFeatureNoHardware: "Tanpa mesin tambahan",
+        heroFeatureLocation: "Lokasi terverifikasi",
+        heroCta: "Masuk / Coba demo",
+        studentCameraStop: "Matikan kamera",
+        studentCameraStarting: "Memeriksa lokasi dan menyalakan kamera...",
         signupRoleHint: "Peran otomatis dari email: gunakan @siswa.id atau @guru.id.",
         signupEmailRoleRequired: "Email signup harus memuat jenis akun pada domain, seperti @siswa.id atau @guru.id.",
         allowedRadius: "Radius diizinkan: {radius} m",
@@ -108,11 +118,26 @@ const EXTRA_T = {
         faceSampleLimit: "Maksimal 5 sampel wajah per siswa.",
         duplicateFaceSample: "Sampel terlalu mirip. Ubah sudut wajah atau unggah foto lain.",
         locationAccuracyBad: "Akurasi rendah",
-        fakeLocation: "Lokasi GPS menunjukkan anomali. Aktifkan lokasi perangkat yang sebenarnya lalu coba lagi."
+        fakeLocation: "Lokasi GPS menunjukkan anomali. Aktifkan lokasi perangkat yang sebenarnya lalu coba lagi.",
+        cloudLoadFailed: "Data cloud gagal dimuat. Periksa koneksi lalu coba lagi.",
+        cloudSaveFailed: "Data gagal disimpan ke cloud. Periksa koneksi lalu coba lagi.",
+        cloudDeleteFailed: "Data gagal dihapus dari cloud. Periksa koneksi lalu coba lagi.",
+        attendanceNetworkFailed: "Presensi tidak berhasil dikirim. Periksa koneksi lalu coba lagi.",
+        attendanceWhatsappFailed: "Presensi tercatat, tetapi notifikasi WhatsApp gagal dikirim."
     },
     en: {
         welcomeTitle: "School attendance, made simple.",
-        welcomeDesc: "Amanah.id combines face and location verification.",
+        welcomeDesc: "Amanah.id records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
+        registeredStudentsHint: "Face data stored in Supabase",
+        historyDesc: "Attendance history is stored in the cloud and available across devices.",
+        privacyFirst: "Face descriptors, not photos",
+        privacyDesc: "128-dimensional face descriptors are stored in Supabase through the server. Original photos are not stored.",
+        heroFeatureFaceGps: "Face + GPS",
+        heroFeatureNoHardware: "No extra hardware",
+        heroFeatureLocation: "Verified location",
+        heroCta: "Log in / Try demo",
+        studentCameraStop: "Turn camera off",
+        studentCameraStarting: "Checking location and starting camera...",
         signupRoleHint: "Your role is detected from email. Use @siswa.id or @guru.id.",
         signupEmailRoleRequired: "Signup email must identify the account role, such as @siswa.id or @guru.id.",
         allowedRadius: "Allowed radius: {radius} m",
@@ -124,11 +149,26 @@ const EXTRA_T = {
         faceSampleLimit: "A maximum of 5 face samples is allowed per student.",
         duplicateFaceSample: "This sample is too similar. Change the face angle or upload another photo.",
         locationAccuracyBad: "Low accuracy",
-        fakeLocation: "GPS location appears anomalous. Enable the device's actual location and try again."
+        fakeLocation: "GPS location appears anomalous. Enable the device's actual location and try again.",
+        cloudLoadFailed: "Cloud data could not be loaded. Check your connection and try again.",
+        cloudSaveFailed: "Data could not be saved to the cloud. Check your connection and try again.",
+        cloudDeleteFailed: "Cloud data could not be deleted. Check your connection and try again.",
+        attendanceNetworkFailed: "Attendance could not be submitted. Check your connection and try again.",
+        attendanceWhatsappFailed: "Attendance was recorded, but the WhatsApp notification failed."
     },
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
-        welcomeDesc: "تجمع أمانة.id بين التحقق من الوجه والموقع.",
+        welcomeDesc: "تسجل أمانة.id الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
+        registeredStudentsHint: "بيانات الوجه محفوظة في Supabase",
+        historyDesc: "يُحفظ سجل الحضور في السحابة ويمكن الوصول إليه من أجهزة متعددة.",
+        privacyFirst: "واصفات الوجه، وليس الصور",
+        privacyDesc: "تُحفظ واصفات الوجه ذات 128 بُعدًا في Supabase عبر الخادم. لا تُحفظ الصور الأصلية.",
+        heroFeatureFaceGps: "الوجه + GPS",
+        heroFeatureNoHardware: "دون أجهزة إضافية",
+        heroFeatureLocation: "موقع موثّق",
+        heroCta: "دخول / تجربة العرض",
+        studentCameraStop: "إيقاف الكاميرا",
+        studentCameraStarting: "جارٍ التحقق من الموقع وتشغيل الكاميرا...",
         signupRoleHint: "يُحدد الدور من البريد الإلكتروني. استخدم @siswa.id أو @guru.id.",
         signupEmailRoleRequired: "يجب أن يحدد بريد التسجيل الدور، مثل @siswa.id أو @guru.id.",
         allowedRadius: "النطاق المسموح: {radius} م",
@@ -140,7 +180,12 @@ const EXTRA_T = {
         faceSampleLimit: "الحد الأقصى 5 عينات وجه لكل طالب.",
         duplicateFaceSample: "العينة مشابهة جدًا. غيّر زاوية الوجه أو ارفع صورة أخرى.",
         locationAccuracyBad: "دقة منخفضة",
-        fakeLocation: "يبدو أن موقع GPS غير طبيعي. فعّل الموقع الحقيقي للجهاز ثم أعد المحاولة."
+        fakeLocation: "يبدو أن موقع GPS غير طبيعي. فعّل الموقع الحقيقي للجهاز ثم أعد المحاولة.",
+        cloudLoadFailed: "تعذر تحميل بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
+        cloudSaveFailed: "تعذر حفظ البيانات في السحابة. تحقق من الاتصال وحاول مرة أخرى.",
+        cloudDeleteFailed: "تعذر حذف بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
+        attendanceNetworkFailed: "تعذر إرسال الحضور. تحقق من الاتصال وحاول مرة أخرى.",
+        attendanceWhatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب."
     }
 };
 
@@ -163,10 +208,14 @@ const state = {
     attendance: [],
     modelReady: false,
     modelLoading: false,
+    modelLoadingPromise: null,
     attendanceStream: null,
+    attendanceStarting: false,
+    attendanceStartToken: 0,
     formStream: null,
     attendanceTimer: null,
     formTimer: null,
+    formStartToken: 0,
     attendanceBusy: false,
     formBusy: false,
     faceSamples: [],
@@ -183,7 +232,9 @@ const state = {
     lastNose: null,
     movementFrames: 0,
     attendanceRecorded: false,
-    attendanceMode: "guru"
+    attendanceMode: "guru",
+    cloudLoadToken: 0,
+    cloudDataPromise: Promise.resolve()
 };
 
 // Three-language dictionary
@@ -289,6 +340,7 @@ function showView(target) {
         renderDatabase();
         renderStudentList();
         updateStats();
+        state.cloudDataPromise = loadCloudData();
     }
     if (target === "view-s-history") renderStudentHistory();
 }
@@ -346,6 +398,7 @@ function showApp(user) {
         showView("view-presensi");
     }
     loadModels();
+    state.cloudDataPromise = loadCloudData(user);
 }
 
 function openProfile() {
@@ -386,6 +439,103 @@ function safeText(value) {
     return String(value ?? "").replace(/[&<>"']/g, c => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     })[c]);
+}
+
+async function cloudRequest(path, { method = "GET", body, role = state.user?.role, nisn = state.user?.nisn } = {}) {
+    const headers = {};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    if (role) headers["X-Role"] = role;
+    if (role === "siswa" && nisn) headers["X-NISN"] = nisn;
+
+    let response;
+    try {
+        response = await fetch(path, {
+            method,
+            headers,
+            ...(body === undefined ? {} : { body: JSON.stringify(body) })
+        });
+    } catch (cause) {
+        const error = new Error("Cloud request failed");
+        error.name = "CloudApiError";
+        throw error;
+    }
+    let result;
+    try {
+        result = await response.json();
+    } catch {
+        const error = new Error("Invalid server response");
+        error.name = "CloudApiError";
+        throw error;
+    }
+    if (!response.ok) {
+        const error = new Error(result.error || `Request failed (${response.status})`);
+        error.name = "CloudApiError";
+        error.status = response.status;
+        throw error;
+    }
+    return result;
+}
+
+function normalizeCloudStudent(student) {
+    const cached = state.students.find(item => item.nisn === student.nisn);
+    return {
+        id: student.id,
+        nisn: student.nisn,
+        name: student.name,
+        className: student.class_name,
+        parentWhatsApp: student.parent_whatsapp || "",
+        faceDescriptors: Array.isArray(student.face_descriptors)
+            ? student.face_descriptors
+            : cached?.faceDescriptors || [],
+        registeredDate: student.created_at
+            ? new Date(student.created_at).toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID")
+            : ""
+    };
+}
+
+async function loadCloudData(user = state.user) {
+    if (!user) return;
+    const token = ++state.cloudLoadToken;
+    try {
+        if (user.role === "guru") {
+            await cloudRequest("/api/teachers", {
+                method: "POST",
+                role: "guru",
+                body: { email: user.email, name: user.name }
+            });
+        }
+        const studentsRequest = user.role === "siswa"
+            ? cloudRequest(`/api/students?with_faces=1&nisn=${encodeURIComponent(user.nisn)}`, {
+                role: user.role,
+                nisn: user.nisn
+            }).then(result => ({ students: result.students, faceStudents: result.students }))
+            : Promise.all([
+                cloudRequest("/api/students", { role: user.role }),
+                cloudRequest("/api/students?with_faces=1", { role: user.role })
+            ]).then(([result, faces]) => ({ students: result.students, faceStudents: faces.students }));
+        const [studentData, attendanceResult] = await Promise.all([
+            studentsRequest,
+            cloudRequest("/api/attendance", { role: user.role, nisn: user.nisn })
+        ]);
+        if (token !== state.cloudLoadToken || state.user !== user) return;
+
+        const descriptorsByNisn = new Map(studentData.faceStudents.map(student =>
+            [student.nisn, student.face_descriptors]
+        ));
+        state.students = studentData.students.map(student => normalizeCloudStudent({
+            ...student,
+            face_descriptors: descriptorsByNisn.get(student.nisn)
+        }));
+        state.attendance = attendanceResult.attendance;
+        renderStudentList();
+        renderDatabase();
+        renderStudentHistory();
+        updateStudentProfile();
+        updateStats();
+    } catch (error) {
+        console.error("Cloud data load failed:", error);
+        if (token === state.cloudLoadToken && state.user === user) toast(tr("cloudLoadFailed"), "error");
+    }
 }
 
 // Teacher database and student-owned history
@@ -667,30 +817,36 @@ function displayModelError(error) {
     $("model-error").classList.remove("hidden");
 }
 
-async function loadModels() {
-    if (state.modelReady || state.modelLoading) return state.modelReady;
+function loadModels() {
+    if (state.modelReady) return Promise.resolve(true);
+    if (state.modelLoadingPromise) return state.modelLoadingPromise;
     state.modelLoading = true;
     $("model-status").className = "model-badge";
     $("model-status").textContent = tr("modelLoadingLong");
 
-    try {
-        if (!window.faceapi) throw new Error("face-api.js unavailable");
-        const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
-        await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(base),
-            faceapi.nets.faceLandmark68Net.loadFromUri(base),
-            faceapi.nets.faceRecognitionNet.loadFromUri(base)
-        ]);
-        state.modelReady = true;
-        $("model-status").className = "model-badge ready";
-        $("model-status").textContent = tr("modelReady");
-        $("model-error").classList.add("hidden");
-    } catch (error) {
-        displayModelError(error);
-    } finally {
-        state.modelLoading = false;
-    }
-    return state.modelReady;
+    state.modelLoadingPromise = (async () => {
+        try {
+            if (!window.faceapi) throw new Error("face-api.js unavailable");
+            const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(base),
+                faceapi.nets.faceLandmark68Net.loadFromUri(base),
+                faceapi.nets.faceRecognitionNet.loadFromUri(base)
+            ]);
+            state.modelReady = true;
+            $("model-status").className = "model-badge ready";
+            $("model-status").textContent = tr("modelReady");
+            $("model-error").classList.add("hidden");
+            return true;
+        } catch (error) {
+            displayModelError(error);
+            return false;
+        } finally {
+            state.modelLoading = false;
+            state.modelLoadingPromise = null;
+        }
+    })();
+    return state.modelLoadingPromise;
 }
 
 function updateCameraTexts() {
@@ -699,6 +855,9 @@ function updateCameraTexts() {
         $("switch-hint").textContent = tr("switchOffHint");
         $("status-presensi").textContent = tr("waitingFace");
     }
+    $("btn-student-attendance").textContent = state.attendanceStream
+        ? tr("studentCameraStop")
+        : state.attendanceStarting ? tr("studentCameraStarting") : tr("checkInNow");
     $("model-status").textContent = state.modelReady ? tr("modelReady") : state.modelLoading ? tr("modelLoadingLong") : tr("modelFailed");
 }
 
@@ -708,15 +867,15 @@ function setSwitch(on) {
 }
 
 function attendanceVideo() {
-    return $(state.user?.role === "siswa" ? "video-student-attendance" : "video-presensi");
+    return $(state.attendanceMode === "siswa" ? "video-student-attendance" : "video-presensi");
 }
 
 function attendanceCanvas() {
-    return $(state.user?.role === "siswa" ? "overlay-student-attendance" : "overlay-presensi");
+    return $(state.attendanceMode === "siswa" ? "overlay-student-attendance" : "overlay-presensi");
 }
 
 function attendancePlaceholder() {
-    return $(state.user?.role === "siswa" ? "student-camera-placeholder" : "camera-placeholder");
+    return $(state.attendanceMode === "siswa" ? "student-camera-placeholder" : "camera-placeholder");
 }
 
 function attendanceViewActive() {
@@ -725,24 +884,41 @@ function attendanceViewActive() {
 }
 
 function stopStream(stream) {
-    if (stream) stream.getTracks().forEach(track => track.stop());
+    if (!stream) return;
+    stream.getTracks().forEach(track => {
+        try {
+            track.stop();
+        } catch (error) {
+            console.error("Camera track stop failed:", error);
+        }
+    });
 }
 
 function stopAttendanceCamera() {
-    if (state.attendanceTimer) clearInterval(state.attendanceTimer);
+    state.attendanceStartToken++;
+    state.attendanceStarting = false;
+    if (state.attendanceTimer !== null) clearInterval(state.attendanceTimer);
     state.attendanceTimer = null;
-    stopStream(state.attendanceStream);
+    const stream = state.attendanceStream;
     state.attendanceStream = null;
+    stopStream(stream);
     const video = attendanceVideo();
     const canvas = attendanceCanvas();
-    if (video) video.srcObject = null;
-    if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    if (video) {
+        video.pause();
+        video.srcObject = null;
+    }
+    if (canvas) canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
     attendancePlaceholder()?.classList.remove("hidden");
     $("ai-progress").style.width = "0%";
     $("ai-percent").textContent = "0%";
     $("status-presensi").textContent = tr("waitingFace");
     $("camera-status").textContent = tr("cameraReady");
     $("liveness-status").textContent = tr("livenessWaiting");
+    $("student-attendance-status").textContent = tr("studentCheckinDesc");
+    $("btn-student-attendance").textContent = tr("checkInNow");
+    $("camera-placeholder").classList.remove("hidden");
+    $("student-camera-placeholder").classList.remove("hidden");
     state.attendanceBusy = false;
     state.attendanceRecorded = false;
     state.lastNose = null;
@@ -751,6 +927,7 @@ function stopAttendanceCamera() {
 }
 
 function stopFormCamera() {
+    state.formStartToken++;
     if (state.formTimer) clearInterval(state.formTimer);
     state.formTimer = null;
     stopStream(state.formStream);
@@ -780,8 +957,8 @@ async function getCameraStream() {
             }
         });
     } catch (error) {
-        if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") throw new Error("permission");
-        if (error.name === "NotFoundError" || error.name === "NotReadableError" || error.name === "AbortError") throw new Error("unavailable");
+        if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") throw new Error("permission");
+        if (error?.name === "NotFoundError" || error?.name === "NotReadableError" || error?.name === "AbortError") throw new Error("unavailable");
         throw new Error("failed");
     }
 }
@@ -794,75 +971,106 @@ function cameraErrorText(error) {
 }
 
 async function startAttendanceCamera() {
-    if (state.attendanceStream) return;
+    if (state.attendanceStream || state.attendanceStarting) return;
     if (!state.user) return;
     const requestUser = state.user;
     state.attendanceMode = requestUser.role;
-
-    if (state.user.role === "siswa" && !state.students.some(student =>
-        student.nisn === state.user.nisn && getStudentDescriptors(student).length
-    )) {
-        toast(tr("studentUnlinked"), "error");
-        return;
-    }
-
-    state.lastLocation = { checking: true };
-    renderLocationBadge();
-    const status = state.user.role === "siswa" ? $("student-attendance-status") : $("camera-status");
-    const hint = $("switch-hint");
-    if (status) status.textContent = tr("checkingBeforeCamera");
-    if (hint) hint.textContent = tr("checkingBeforeCamera");
-    if (state.user.role === "guru") setSwitch(false);
-
-    const result = await checkGeofence();
-    if (state.user !== requestUser || !attendanceViewActive() || document.hidden) return;
-
-    if (!result.inside || result.error) {
-        stopAttendanceCamera();
-        renderLocationBadge();
-        const message = result.error || tr("outsideMessage", {
-            distance: result.distance,
-            radius: SCHOOL_LOCATION.radius
-        });
-        if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
-        toast(message, "error");
-        return;
-    }
-
-    if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
-        stopAttendanceCamera();
-        const message = tr("accuracyWarning", { accuracy: result.accuracy });
-        if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
-        toast(message, "error");
-        return;
-    }
-
-    if (!state.modelReady && !(await loadModels())) {
-        if (state.user.role === "siswa") $("student-attendance-status").textContent = tr("modelFailed");
-        toast(tr("modelFailed"), "error");
-        stopAttendanceCamera();
-        return;
-    }
-    if (state.user !== requestUser || !attendanceViewActive() || document.hidden) return;
-
-    $("camera-status").textContent = tr("cameraStarting");
+    state.attendanceStarting = true;
+    const startToken = ++state.attendanceStartToken;
 
     try {
-        const stream = await getCameraStream();
+        await state.cloudDataPromise;
+        if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+            !attendanceViewActive() || document.hidden) return;
 
-        // Do not keep a stream alive if the user left the attendance view meanwhile.
-        if (!attendanceViewActive() || document.hidden) {
+        if (requestUser.role === "siswa" && !state.students.some(student =>
+            student.nisn === requestUser.nisn && getStudentDescriptors(student).length
+        )) {
+            toast(tr("studentUnlinked"), "error");
+            return;
+        }
+
+        state.lastLocation = { checking: true };
+        renderLocationBadge();
+        if (requestUser.role === "siswa") {
+            $("student-attendance-status").textContent = tr("checkingBeforeCamera");
+            $("btn-student-attendance").textContent = tr("studentCameraStarting");
+        } else {
+            $("camera-status").textContent = tr("checkingBeforeCamera");
+            $("switch-hint").textContent = tr("checkingBeforeCamera");
+            setSwitch(false);
+        }
+
+        const result = await checkGeofence();
+        if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+            !attendanceViewActive() || document.hidden) return;
+
+        if (!result.inside || result.error) {
+            const message = result.error || tr("outsideMessage", {
+                distance: result.distance,
+                radius: SCHOOL_LOCATION.radius
+            });
+            stopAttendanceCamera();
+            setAttendanceMessage(message);
+            toast(message, "error");
+            return;
+        }
+
+        if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
+            const message = tr("accuracyWarning", { accuracy: Math.round(result.accuracy) });
+            stopAttendanceCamera();
+            setAttendanceMessage(message);
+            toast(message, "error");
+            return;
+        }
+
+        if (!state.modelReady && !(await loadModels())) {
+            if (startToken === state.attendanceStartToken) {
+                stopAttendanceCamera();
+                setAttendanceMessage(tr("modelFailed"));
+                toast(tr("modelFailed"), "error");
+            }
+            return;
+        }
+        if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+            !attendanceViewActive() || document.hidden) return;
+
+        if (requestUser.role === "siswa") {
+            $("student-attendance-status").textContent = tr("cameraStarting");
+            $("btn-student-attendance").textContent = tr("studentCameraStarting");
+        } else {
+            $("camera-status").textContent = tr("cameraStarting");
+        }
+
+        const stream = await getCameraStream();
+        if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+            !attendanceViewActive() || document.hidden) {
             stopStream(stream);
             return;
         }
 
         state.attendanceStream = stream;
+        stream.getTracks().forEach(track => {
+            track.addEventListener("ended", () => {
+                if (state.attendanceStream === stream) {
+                    stopAttendanceCamera();
+                    toast(tr("cameraUnavailable"), "error");
+                }
+            }, { once: true });
+        });
         const video = attendanceVideo();
         video.srcObject = stream;
         await video.play();
+        if (startToken !== state.attendanceStartToken || state.attendanceStream !== stream ||
+            state.user !== requestUser || !attendanceViewActive() || document.hidden) {
+            stopStream(stream);
+            if (state.attendanceStream === stream) stopAttendanceCamera();
+            return;
+        }
         attendancePlaceholder().classList.add("hidden");
-        if (state.user.role === "siswa") {
+        if (requestUser.role === "siswa") {
             $("student-attendance-status").textContent = tr("livenessMove");
+            $("btn-student-attendance").textContent = tr("studentCameraStop");
         } else {
             $("camera-status").textContent = tr("attendanceReady");
             $("switch-hint").textContent = tr("attendanceReady");
@@ -876,11 +1084,34 @@ async function startAttendanceCamera() {
 
         state.attendanceTimer = setInterval(() => processAttendanceFrame(), 250);
     } catch (error) {
-        stopAttendanceCamera();
-        const message = cameraErrorText(error);
-        if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
-        toast(message, "error");
+        if (startToken === state.attendanceStartToken) {
+            stopAttendanceCamera();
+            const message = error.message === "ai" ? tr("modelFailed") : cameraErrorText(error);
+            setAttendanceMessage(message);
+            toast(message, "error");
+        }
+    } finally {
+        if (startToken === state.attendanceStartToken) state.attendanceStarting = false;
     }
+}
+
+function setAttendanceMessage(message) {
+    if (state.attendanceMode === "siswa") {
+        $("student-attendance-status").textContent = message;
+    } else {
+        $("camera-status").textContent = message;
+        $("liveness-status").textContent = message;
+        $("switch-hint").textContent = message;
+    }
+}
+
+function toggleAttendanceCamera() {
+    if (state.attendanceStream || state.attendanceStarting) {
+        stopAttendanceCamera();
+        toast(tr("cameraStopped"), "info");
+        return;
+    }
+    startAttendanceCamera();
 }
 
 function resizeOverlay(video, canvas) {
@@ -964,54 +1195,23 @@ function updateProgress(percent, label) {
     $("status-presensi").textContent = label;
 }
 
-// Parent WhatsApp notifications use the protected Vercel Function.
-async function notifyParent(student, date, time) {
-    if (!student.parentWhatsApp) {
-        toast(tr("studentMissingWa"), "error");
-        return;
-    }
-    const normalizedTarget = student.parentWhatsApp.replace(/\D/g, "")
-        .replace(/^08/, "628");
-    const message = tr("parentAttendanceMessage", {
-        name: student.name,
-        nisn: student.nisn,
-        date: formatDate(date),
-        time
-    });
-
-    try {
-        const response = await fetch("/api/send-wa", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target: normalizedTarget, message })
-        });
-        if (!response.ok) {
-            console.error("WhatsApp notification failed:", response.status);
-            toast(tr("whatsappFailed"), "error");
-            return;
-        }
-        toast(tr("whatsappSuccess"), "success");
-    } catch (error) {
-        console.error("WhatsApp notification request failed:", error);
-        toast(tr("whatsappFailed"), "error");
-    }
-}
-
 async function processAttendanceFrame() {
     if (!state.attendanceStream || state.attendanceBusy || state.attendanceRecorded) return;
-    state.attendanceBusy = true;
+    const requestStream = state.attendanceStream;
     const requestUser = state.user;
+    if (!requestUser) return;
+    state.attendanceBusy = true;
 
     try {
         const video = attendanceVideo();
         const detections = await detectFaces(video);
+        if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         drawDetections(video, attendanceCanvas(), detections);
 
         if (!detections.length) {
-            if (state.user.role === "siswa") $("student-attendance-status").textContent = tr("faceNotFound");
-            else {
+            setAttendanceMessage(tr("faceNotFound"));
+            if (requestUser.role === "guru") {
                 updateProgress(0, tr("faceNotFound"));
-                $("liveness-status").textContent = tr("faceNotFound");
             }
             state.lastNose = null;
             state.movementFrames = 0;
@@ -1019,29 +1219,35 @@ async function processAttendanceFrame() {
         }
 
         if (detections.length > 1) {
-            if (state.user.role === "siswa") $("student-attendance-status").textContent = tr("faceTooMany");
-            else {
+            setAttendanceMessage(tr("faceTooMany"));
+            state.lastNose = null;
+            state.movementFrames = 0;
+            if (requestUser.role === "guru") {
                 updateProgress(0, tr("faceTooMany"));
-                $("liveness-status").textContent = tr("faceTooMany");
             }
             return;
         }
 
         const detection = detections[0];
-        const nose = detection.landmarks.getNose()[3];
+        const nose = detection.landmarks.getNose()?.[3];
+        if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y)) {
+            state.lastNose = null;
+            state.movementFrames = 0;
+            setAttendanceMessage(tr("faceNotFound"));
+            return;
+        }
         if (state.lastNose) {
             const delta = Math.hypot(nose.x - state.lastNose.x, nose.y - state.lastNose.y);
             if (delta > 1.2) state.movementFrames++;
         }
         state.lastNose = { x: nose.x, y: nose.y };
 
-        if (state.user.role === "guru") {
+        if (requestUser.role === "guru") {
             updateProgress(Math.min(100, 30 + state.movementFrames * 12), tr("attendanceInProgress"));
         }
 
         if (state.movementFrames < 3) {
-            if (state.user.role === "siswa") $("student-attendance-status").textContent = tr("livenessMove");
-            else $("liveness-status").textContent = tr("livenessMove");
+            setAttendanceMessage(tr("livenessMove"));
             return;
         }
 
@@ -1073,18 +1279,18 @@ async function processAttendanceFrame() {
         if (!student) return;
 
         const location = await checkGeofence();
-        if (state.user !== requestUser || !state.attendanceStream || !attendanceViewActive()) return;
+        if (state.user !== requestUser || state.attendanceStream !== requestStream ||
+            !attendanceViewActive() || document.hidden) return;
         if (location.error || !location.inside || location.accuracy > MAX_GPS_ACCURACY_METERS) {
             const message = location.error || (location.accuracy > MAX_GPS_ACCURACY_METERS
                 ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
                 : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
-            if (requestUser.role === "siswa") $("student-attendance-status").textContent = message;
-            else {
-                $("liveness-status").textContent = message;
+            stopAttendanceCamera();
+            setAttendanceMessage(message);
+            if (requestUser.role === "guru") {
                 updateProgress(0, message);
             }
             toast(message, "error");
-            stopAttendanceCamera();
             return;
         }
 
@@ -1101,17 +1307,20 @@ async function processAttendanceFrame() {
             return;
         }
 
-        const attendanceTime = localTime();
-        state.attendance.push({
-            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-            nisn: student.nisn,
-            name: student.name,
-            className: student.className,
-            date: today,
-            time: attendanceTime,
-            confidence,
-            method: "face-gps"
+        const saved = await cloudRequest("/api/attendance", {
+            method: "POST",
+            role: requestUser.role,
+            nisn: requestUser.nisn,
+            body: {
+                nisn: student.nisn,
+                lat: location.lat,
+                lng: location.lng,
+                accuracy: location.accuracy,
+                confidence
+            }
         });
+        if (state.user !== requestUser || state.attendanceStream !== requestStream) return;
+        state.attendance = [saved.attendance, ...state.attendance.filter(item => item.id !== saved.attendance.id)];
 
         state.attendanceRecorded = true;
         const successMessage = requestUser.role === "siswa"
@@ -1130,45 +1339,79 @@ async function processAttendanceFrame() {
             stopAttendanceCamera();
             $("student-attendance-status").textContent = successMessage;
         }
-        await notifyParent(student, today, attendanceTime);
+        if (saved.whatsapp?.error) toast(tr("attendanceWhatsappFailed"), "error");
     } catch (error) {
-        displayModelError(error);
-        stopAttendanceCamera();
-        toast(tr("modelFailed"), "error");
+        if (state.attendanceStream === requestStream) {
+            stopAttendanceCamera();
+            if (error.status === 409) {
+                setAttendanceMessage(tr("alreadyPresent"));
+                toast(tr("alreadyPresent"), "info");
+            } else if (error.name === "CloudApiError") {
+                console.error("Attendance submission failed:", error);
+                setAttendanceMessage(tr("attendanceNetworkFailed"));
+                toast(tr("attendanceNetworkFailed"), "error");
+            } else {
+                displayModelError(error);
+                setAttendanceMessage(tr("modelFailed"));
+                toast(tr("modelFailed"), "error");
+            }
+        }
     } finally {
-        state.attendanceBusy = false;
+        if (state.attendanceStream === requestStream) state.attendanceBusy = false;
     }
 }
 
 async function startFormCamera() {
     if (state.formStream) return;
-    if (!state.modelReady && !(await loadModels())) {
-        toast(tr("modelFailed"), "error");
-        return;
-    }
+    const startToken = ++state.formStartToken;
     try {
+        if (!state.modelReady && !(await loadModels())) {
+            toast(tr("modelFailed"), "error");
+            return;
+        }
+        if (startToken !== state.formStartToken || !$("view-formulir").classList.contains("active") || document.hidden) return;
         const stream = await getCameraStream();
-        if (!$("view-formulir").classList.contains("active") || document.hidden) {
+        if (startToken !== state.formStartToken ||
+            !$("view-formulir").classList.contains("active") || document.hidden) {
             stopStream(stream);
             return;
         }
         state.formStream = stream;
+        stream.getTracks().forEach(track => {
+            track.addEventListener("ended", () => {
+                if (state.formStream === stream) {
+                    stopFormCamera();
+                    toast(tr("cameraUnavailable"), "error");
+                }
+            }, { once: true });
+        });
         $("video-formulir").srcObject = stream;
         await $("video-formulir").play();
+        if (startToken !== state.formStartToken || state.formStream !== stream ||
+            !$("view-formulir").classList.contains("active") || document.hidden) {
+            stopStream(stream);
+            if (state.formStream === stream) stopFormCamera();
+            return;
+        }
         $("form-camera-placeholder").classList.add("hidden");
         state.formTimer = setInterval(() => processFormFrame(), 350);
         toast(tr("cameraFormReady"), "success");
     } catch (error) {
-        toast(cameraErrorText(error), "error");
+        if (startToken === state.formStartToken) {
+            stopFormCamera();
+            toast(cameraErrorText(error), "error");
+        }
     }
 }
 
 async function processFormFrame() {
     if (!state.formStream || state.formBusy) return;
+    const requestStream = state.formStream;
     state.formBusy = true;
     try {
         const video = $("video-formulir");
         const detections = await detectFaces(video);
+        if (state.formStream !== requestStream) return;
         drawDetections(video, $("overlay-formulir"), detections);
         if (detections.length === 1) {
             state.faceCandidate = Array.from(detections[0].descriptor);
@@ -1231,7 +1474,7 @@ async function readUploadedFaces(files) {
 }
 
 // Teacher student registration and map
-function registerStudent(event) {
+async function registerStudent(event) {
     event.preventDefault();
     stopFormCamera();
     const nisn = $("input-nisn").value.trim();
@@ -1244,12 +1487,8 @@ function registerStudent(event) {
         toast(tr("invalidNisn"), "error");
         return;
     }
-    if (!/^(08|628)\d{8,13}$/.test(waDigits)) {
+    if (waDigits && !/^(08|628)\d{8,13}$/.test(waDigits)) {
         toast(tr("invalidWhatsApp"), "error");
-        return;
-    }
-    if (state.students.some(s => s.nisn === nisn)) {
-        toast(tr("studentExists"), "error");
         return;
     }
     if (!state.faceSamples.length) {
@@ -1257,12 +1496,28 @@ function registerStudent(event) {
         return;
     }
 
-    state.students.push({
-        nisn, name, className,
-        parentWhatsApp: waDigits.replace(/^08/, "628"),
-        faceDescriptors: state.faceSamples.map(sample => [...sample]),
-        registeredDate: new Date().toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID")
-    });
+    try {
+        const response = await cloudRequest("/api/students", {
+            method: "POST",
+            role: "guru",
+            body: {
+                nisn,
+                name,
+                class_name: className,
+                parent_whatsapp: waDigits ? waDigits.replace(/^08/, "628") : null,
+                face_descriptors: state.faceSamples.map(sample => [...sample])
+            }
+        });
+        state.students = [
+            normalizeCloudStudent(response.student),
+            ...state.students.filter(student => student.nisn !== nisn)
+        ];
+    } catch (error) {
+        console.error("Student registration failed:", error);
+        toast(error.status === 409 ? tr("studentExists") : tr("cloudSaveFailed"), "error");
+        return;
+    }
+
     state.accounts.filter(account => account.role === "siswa" && account.nisn === nisn)
         .forEach(account => { account.linked = true; });
 
@@ -1278,7 +1533,17 @@ function registerStudent(event) {
     toast(tr("studentSaved"), "success");
 }
 
-function removeStudent(nisn) {
+async function removeStudent(nisn) {
+    try {
+        await cloudRequest(`/api/students?nisn=${encodeURIComponent(nisn)}`, {
+            method: "DELETE",
+            role: "guru"
+        });
+    } catch (error) {
+        console.error("Student deletion failed:", error);
+        toast(tr("cloudDeleteFailed"), "error");
+        return;
+    }
     state.students = state.students.filter(s => s.nisn !== nisn);
     state.attendance = state.attendance.filter(a => a.nisn !== nisn);
     state.accounts.filter(account => account.role === "siswa" && account.nisn === nisn)
@@ -1440,11 +1705,15 @@ function updateSignupRoleFields() {
 }
 
 function setupEvents() {
+    $("hero-cta").addEventListener("click", () => {
+        switchAuthTab("login");
+        $("login-email").focus();
+    });
     $("tab-login").addEventListener("click", () => switchAuthTab("login"));
     $("tab-register").addEventListener("click", () => switchAuthTab("register"));
     $("model-retry").addEventListener("click", () => location.reload());
 
-    $("login-form").addEventListener("submit", event => {
+    $("login-form").addEventListener("submit", async event => {
         event.preventDefault();
         const email = $("login-email").value.trim().toLowerCase();
         const password = $("login-password").value;
@@ -1562,22 +1831,8 @@ function setupEvents() {
     });
     $("student-theme-select").addEventListener("change", () => setTheme($("student-theme-select").value));
     $("student-profile-language").addEventListener("change", () => setLanguage($("student-profile-language").value));
-    $("btn-student-attendance").addEventListener("click", async () => {
-        if (state.attendanceStream) {
-            stopAttendanceCamera();
-            return;
-        }
-        await startAttendanceCamera();
-    });
-
-    $("btn-attendance-switch").addEventListener("click", async () => {
-        if (state.attendanceStream) {
-            stopAttendanceCamera();
-            toast(tr("cameraStopped"), "info");
-        } else {
-            await startAttendanceCamera();
-        }
-    });
+    $("btn-student-attendance").addEventListener("click", toggleAttendanceCamera);
+    $("btn-attendance-switch").addEventListener("click", toggleAttendanceCamera);
 
     $("btn-fullscreen").addEventListener("click", async () => {
         const stage = $("camera-stage");
@@ -1622,9 +1877,19 @@ function setupEvents() {
     $("student-date-end").addEventListener("change", renderStudentHistory);
     $("btn-export").addEventListener("click", exportCsv);
 
-    $("db-tbody").addEventListener("click", event => {
+    $("db-tbody").addEventListener("click", async event => {
         const button = event.target.closest("[data-delete-attendance]");
         if (!button) return;
+        try {
+            await cloudRequest(`/api/attendance?id=${encodeURIComponent(button.dataset.deleteAttendance)}`, {
+                method: "DELETE",
+                role: "guru"
+            });
+        } catch (error) {
+            console.error("Attendance deletion failed:", error);
+            toast(tr("cloudDeleteFailed"), "error");
+            return;
+        }
         state.attendance = state.attendance.filter(a => a.id !== button.dataset.deleteAttendance);
         renderDatabase();
         updateStats();
@@ -1645,7 +1910,15 @@ function setupEvents() {
         $("confirm-dialog").classList.add("hidden");
     });
 
-    $("confirm-delete").addEventListener("click", () => {
+    $("confirm-delete").addEventListener("click", async () => {
+        try {
+            await cloudRequest("/api/students?all=1", { method: "DELETE", role: "guru" });
+        } catch (error) {
+            console.error("Bulk data deletion failed:", error);
+            toast(tr("cloudDeleteFailed"), "error");
+            $("confirm-dialog").classList.add("hidden");
+            return;
+        }
         state.attendance = [];
         state.students = [];
         state.accounts.filter(account => account.role === "siswa")
