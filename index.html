@@ -45,37 +45,39 @@
             </form>
 
             <form id="register-form" class="form-stack hidden">
-                <form id="register-form" class="form-stack hidden">
-                    <label for="register-name" data-i18n="fullName">Nama lengkap</label>
-                    <input id="register-name" type="text" autocomplete="name" required>
-                    <div id="register-nisn-field">
-                        <label for="register-nisn" data-i18n="nisn">NISN</label>
-                        <input id="register-nisn" inputmode="numeric" maxlength="20" autocomplete="off" required>
-                    </div>
-                    <label for="register-email" data-i18n="email">Email</label>
-                    <input id="register-email" type="email" autocomplete="email" required>
-                    <label for="register-password" data-i18n="password">Kata sandi</label>
-                    <input id="register-password" type="password" minlength="8" autocomplete="new-password" required>
-                    <label for="register-confirm" data-i18n="confirmPassword">Konfirmasi kata sandi</label>
-                    <input id="register-confirm" type="password" minlength="8" autocomplete="new-password" required>
-                    <label class="check-line">
-                        <input id="terms-reg" type="checkbox">
-                        <span data-i18n="terms">Saya menyetujui ketentuan penggunaan demo.</span>
-                    </label>
-                    <button id="btn-register-submit" class="button primary full" type="submit" disabled
-                        data-i18n="signup">Daftar</button>
-                </form>
-                <p class="demo-note"><span data-i18n="demoAccount">Demo</span>:
-                    <strong data-i18n="roleTeacher">Guru</strong> <code>admin@amanahid.sch.id</code> /
-                    <code>AmanahDemo!2026#ID</code>
-                    <br><strong data-i18n="roleStudent">Siswa</strong> <code>siswa@amanahid.sch.id</code> /
-                    <code>SiswaDemo!2026#ID</code>
+                <p class="signup-hint" data-i18n="signupRoleHint">
+                    Peran otomatis dari email: gunakan @siswa.id atau @guru.id.
                 </p>
-                <div class="language-row">
-                    <button class="lang-btn active" type="button" data-lang="id">ID</button>
-                    <button class="lang-btn" type="button" data-lang="en">EN</button>
-                    <button class="lang-btn" type="button" data-lang="ar">العربية</button>
+                <label for="register-name" data-i18n="fullName">Nama lengkap</label>
+                <input id="register-name" type="text" autocomplete="name" required>
+                <div id="register-nisn-field">
+                    <label for="register-nisn" data-i18n="nisn">NISN</label>
+                    <input id="register-nisn" inputmode="numeric" maxlength="20" autocomplete="off">
                 </div>
+                <label for="register-email" data-i18n="email">Email</label>
+                <input id="register-email" type="email" autocomplete="email" required>
+                <label for="register-password" data-i18n="password">Kata sandi</label>
+                <input id="register-password" type="password" minlength="8" autocomplete="new-password" required>
+                <label for="register-confirm" data-i18n="confirmPassword">Konfirmasi kata sandi</label>
+                <input id="register-confirm" type="password" minlength="8" autocomplete="new-password" required>
+                <label class="check-line">
+                    <input id="terms-reg" type="checkbox">
+                    <span data-i18n="terms">Saya menyetujui ketentuan penggunaan demo.</span>
+                </label>
+                <button id="btn-register-submit" class="button primary full" type="submit" disabled
+                    data-i18n="signup">Daftar</button>
+            </form>
+            <p class="demo-note"><span data-i18n="demoAccount">Demo</span>:
+                <strong data-i18n="roleTeacher">Guru</strong> <code>admin@amanahid.sch.id</code> /
+                <code>AmanahDemo!2026#ID</code>
+                <br><strong data-i18n="roleStudent">Siswa</strong> <code>siswa@amanahid.sch.id</code> /
+                <code>SiswaDemo!2026#ID</code>
+            </p>
+            <div class="language-row">
+                <button class="lang-btn active" type="button" data-lang="id">ID</button>
+                <button class="lang-btn" type="button" data-lang="en">EN</button>
+                <button class="lang-btn" type="button" data-lang="ar">العربية</button>
+            </div>
         </section>
     </main>
 

@@ -240,14 +240,32 @@ label {
 
 /* Login and signup layout */
 .auth-screen {
+    position: relative;
+    isolation: isolate;
     min-height: 100vh;
     display: grid;
     place-items: center;
     padding: 24px 16px;
     background: var(--bg);
+    overflow: hidden;
+}
+
+.auth-screen::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(76, 121, 196, .055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(76, 121, 196, .055) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, #000 0%, transparent 78%);
 }
 
 .auth-card {
+    position: relative;
+    z-index: 1;
     width: min(100%, 440px);
     padding: clamp(22px, 5vw, 36px);
     border: 1px solid var(--border);
@@ -293,6 +311,13 @@ label {
 
 .auth-hero .muted {
     margin-bottom: 0;
+}
+
+.signup-hint {
+    margin: 0 0 4px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
 }
 
 .auth-tabs {
@@ -1880,10 +1905,15 @@ html[dir="rtl"] .modal-heading {
     .auth-screen {
         min-height: 100svh;
         padding: 14px;
+        place-items: start center;
     }
 
     .auth-card {
         padding: 22px 18px;
+    }
+
+    .auth-hero h1 {
+        font-size: 25px;
     }
 
     .auth-hero .brand-auth {

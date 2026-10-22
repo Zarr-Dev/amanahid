@@ -97,7 +97,8 @@ const EXTRA_T = {
     id: {
         welcomeTitle: "Presensi sekolah, lebih mudah.",
         welcomeDesc: "Amanah.id menggabungkan verifikasi wajah dan lokasi.",
-        signupStudentHint: "Pendaftaran mandiri untuk siswa. Akun guru diberikan sekolah.",
+        signupRoleHint: "Peran otomatis dari email: gunakan @siswa.id atau @guru.id.",
+        signupEmailRoleRequired: "Email signup harus memuat jenis akun pada domain, seperti @siswa.id atau @guru.id.",
         allowedRadius: "Radius diizinkan: {radius} m",
         mapSchoolPopup: "Al Fityan School · Radius {radius} m",
         checkLocation: "Periksa lokasi",
@@ -112,7 +113,8 @@ const EXTRA_T = {
     en: {
         welcomeTitle: "School attendance, made simple.",
         welcomeDesc: "Amanah.id combines face and location verification.",
-        signupStudentHint: "Self-registration is for students. Teacher accounts are issued by the school.",
+        signupRoleHint: "Your role is detected from email. Use @siswa.id or @guru.id.",
+        signupEmailRoleRequired: "Signup email must identify the account role, such as @siswa.id or @guru.id.",
         allowedRadius: "Allowed radius: {radius} m",
         mapSchoolPopup: "Al Fityan School · {radius} m radius",
         checkLocation: "Check location",
@@ -127,7 +129,8 @@ const EXTRA_T = {
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
         welcomeDesc: "تجمع أمانة.id بين التحقق من الوجه والموقع.",
-        signupStudentHint: "التسجيل الذاتي للطلاب. تمنح المدرسة حسابات المعلمين.",
+        signupRoleHint: "يُحدد الدور من البريد الإلكتروني. استخدم @siswa.id أو @guru.id.",
+        signupEmailRoleRequired: "يجب أن يحدد بريد التسجيل الدور، مثل @siswa.id أو @guru.id.",
         allowedRadius: "النطاق المسموح: {radius} م",
         mapSchoolPopup: "مدرسة الفتيان · نطاق {radius} م",
         checkLocation: "تحقق من الموقع",
@@ -1420,6 +1423,22 @@ function switchAuthTab(tab) {
     $("register-form").classList.toggle("hidden", login);
 }
 
+function inferRoleFromEmail(email) {
+    const [localPart = "", domain = ""] = email.trim().toLowerCase().split("@");
+    const tokens = `${localPart}.${domain}`.split(/[.+_-]/);
+    const hasStudent = tokens.includes("siswa") || tokens.includes("student");
+    const hasTeacher = tokens.includes("guru") || tokens.includes("teacher");
+    if (hasStudent === hasTeacher) return null;
+    return hasStudent ? "siswa" : "guru";
+}
+
+function updateSignupRoleFields() {
+    const role = inferRoleFromEmail($("register-email").value);
+    const isStudent = role === "siswa";
+    $("register-nisn-field").classList.toggle("hidden", role === "guru");
+    $("register-nisn").required = isStudent;
+}
+
 function setupEvents() {
     $("tab-login").addEventListener("click", () => switchAuthTab("login"));
     $("tab-register").addEventListener("click", () => switchAuthTab("register"));
@@ -1434,14 +1453,16 @@ function setupEvents() {
             toast(tr("loginFailed"), "error");
             return;
         }
+        const role = inferRoleFromEmail(email) || account.role;
         showApp({
-            name: account.name, email: account.email, role: account.role, nisn: account.nisn || ""
+            name: account.name, email: account.email, role, nisn: account.nisn || ""
         });
     });
 
     $("terms-reg").addEventListener("change", () => {
         $("btn-register-submit").disabled = !$("terms-reg").checked;
     });
+    $("register-email").addEventListener("input", updateSignupRoleFields);
 
     $("register-form").addEventListener("submit", event => {
         event.preventDefault();
@@ -1454,12 +1475,17 @@ function setupEvents() {
         const password = $("register-password").value;
         const confirm = $("register-confirm").value;
         const nisn = $("register-nisn").value.trim();
+        const role = inferRoleFromEmail(email);
 
         if (password !== confirm) {
             toast(tr("passwordMismatch"), "error");
             return;
         }
-        if (!nisn) {
+        if (!role) {
+            toast(tr("signupEmailRoleRequired"), "error");
+            return;
+        }
+        if (role === "siswa" && !nisn) {
             toast(tr("studentNeedsNisn"), "error");
             return;
         }
@@ -1468,13 +1494,15 @@ function setupEvents() {
             return;
         }
 
-        state.accounts.push({ name, email, password, role: "siswa", nisn });
+        state.accounts.push({ name, email, password, role, ...(role === "siswa" ? { nisn } : {}) });
         $("register-form").reset();
         $("btn-register-submit").disabled = true;
+        updateSignupRoleFields();
         switchAuthTab("login");
         $("login-email").value = email;
         $("login-password").value = "";
-        toast(tr("studentUnlinked"), "info");
+        toast(role === "siswa" ? tr("studentUnlinked") : tr("signupSuccess"),
+            role === "siswa" ? "info" : "success");
     });
 
     document.querySelectorAll(".lang-btn").forEach(btn => {
