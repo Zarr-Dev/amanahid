@@ -31,9 +31,17 @@ create table if not exists public.attendance (
     time time not null,
     confidence numeric,
     method text not null default 'face-gps',
+    idempotency_key uuid,
     created_at timestamptz not null default now(),
     constraint attendance_student_date_unique unique (student_id, date)
 );
+
+-- Keep request retries idempotent across serverless instances and restarts.
+alter table public.attendance
+    add column if not exists idempotency_key uuid;
+create unique index if not exists idx_attendance_idempotency_key
+    on public.attendance (idempotency_key)
+    where idempotency_key is not null;
 
 -- Speed up date-based attendance filtering.
 create index if not exists idx_attendance_date on public.attendance (date);

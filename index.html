@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f5f8ff">
     <title>Amanah.id | Presensi Digital</title>
+    <link rel="icon" type="image/png" href="assets/amanah-favicon.png">
+    <link rel="apple-touch-icon" href="assets/amanah-favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -235,7 +237,9 @@
                 <button id="open-profile" class="profile-shortcut" type="button">
                     <span id="header-avatar" class="avatar">A</span>
                     <span class="profile-short-text"><strong id="header-user">Admin</strong><small
-                            data-i18n="viewProfile">Lihat profil</small></span>
+                            data-i18n="viewProfile">Lihat profil</small><small id="network-status-teacher"
+                            class="network-status hidden" data-i18n="networkReconnecting" aria-live="polite">
+                            Menghubungkan ulang...</small></span>
                     <span class="more-dots">···</span>
                 </button>
             </div>
@@ -527,7 +531,9 @@
                 <button id="student-open-profile" class="profile-shortcut" type="button">
                     <span id="student-header-avatar" class="avatar">S</span>
                     <span class="profile-short-text"><strong id="student-header-user">Siswa</strong>
-                        <small data-i18n="viewProfile">Lihat profil</small></span><span class="more-dots">···</span>
+                        <small data-i18n="viewProfile">Lihat profil</small><small id="network-status-student"
+                            class="network-status hidden" data-i18n="networkReconnecting" aria-live="polite">
+                            Menghubungkan ulang...</small></span><span class="more-dots">···</span>
                 </button>
             </div>
         </aside>

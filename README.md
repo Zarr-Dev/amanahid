@@ -19,7 +19,9 @@ The Vercel API uses these environment variables:
 Run `supabase-schema.sql` in the Supabase SQL editor before deploying so that
 the `school_settings` row and deny-all RLS policy are created. The frontend
 loads the location from `/api/settings`; attendance submissions are checked
-against that same database location.
+against that same database location. The schema also adds a unique attendance
+idempotency key; re-run it on existing projects before deploying the updated
+attendance API.
 
 Student face descriptors are not exposed through the student list API. After
 liveness succeeds, `/api/face-match` compares the student's live descriptor

@@ -2,6 +2,7 @@ import {
     getRequestRole,
     isAllowedOrigin,
     jsonError,
+    jsonSupabaseError,
     supabaseRequest,
     verifyTeacherSession
 } from "../lib/supabase.js";
@@ -37,7 +38,21 @@ export default async function handler(req, res) {
             return res.status(200).json(settings);
         } catch (error) {
             console.error("School settings query failed:", error);
-            return jsonError(res, 500, "Unable to load school location settings");
+            return jsonSupabaseError(res, error, "Unable to load school location settings");
+        }
+    }
+
+    if (req.method === "HEAD") {
+        if (!getRequestRole(req)) return jsonError(res, 403, "A valid user role is required");
+        try {
+            const rows = await supabaseRequest(
+                `school_settings?select=id&id=eq.${SCHOOL_SETTINGS_ID}&limit=1`
+            );
+            if (!rows.length) return jsonError(res, 503, "School location settings are not configured");
+            return res.status(200).end();
+        } catch (error) {
+            console.error("School settings heartbeat failed:", error);
+            return jsonSupabaseError(res, error, "Unable to reach school location settings");
         }
     }
 
@@ -74,10 +89,10 @@ export default async function handler(req, res) {
             });
         } catch (error) {
             console.error("School settings update failed:", error);
-            return jsonError(res, 500, "Unable to save school location settings");
+            return jsonSupabaseError(res, error, "Unable to save school location settings");
         }
     }
 
-    res.setHeader("Allow", "GET, PUT");
+    res.setHeader("Allow", "GET, HEAD, PUT");
     return jsonError(res, 405, "Method not allowed");
 }

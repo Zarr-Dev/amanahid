@@ -1,4 +1,4 @@
-import { isAllowedOrigin, jsonError, supabaseRequest, verifyTeacherSession } from "../lib/supabase.js";
+import { isAllowedOrigin, jsonError, jsonSupabaseError, supabaseRequest, verifyTeacherSession } from "../lib/supabase.js";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -29,6 +29,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ teacher: rows[0] });
     } catch (error) {
         console.error("Teacher upsert failed:", error);
-        return jsonError(res, 500, "Unable to save teacher data");
+        return jsonSupabaseError(res, error, "Unable to save teacher data");
     }
 }

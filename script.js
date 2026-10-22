@@ -123,6 +123,9 @@ const EXTRA_T = {
         cloudSaveFailed: "Data gagal disimpan ke cloud. Periksa koneksi lalu coba lagi.",
         cloudDeleteFailed: "Data gagal dihapus dari cloud. Periksa koneksi lalu coba lagi.",
         attendanceNetworkFailed: "Presensi tidak berhasil dikirim. Periksa koneksi lalu coba lagi.",
+        rateLimitWait: "Terlalu banyak percobaan, harap tunggu 1 menit.",
+        serverBusyReconnect: "Server sedang sibuk, mencoba menghubungkan ulang...",
+        networkReconnecting: "Menghubungkan ulang...",
         attendanceWhatsappFailed: "Presensi tercatat, tetapi notifikasi WhatsApp gagal dikirim."
     },
     en: {
@@ -154,6 +157,9 @@ const EXTRA_T = {
         cloudSaveFailed: "Data could not be saved to the cloud. Check your connection and try again.",
         cloudDeleteFailed: "Cloud data could not be deleted. Check your connection and try again.",
         attendanceNetworkFailed: "Attendance could not be submitted. Check your connection and try again.",
+        rateLimitWait: "Too many attempts. Please wait 1 minute.",
+        serverBusyReconnect: "The server is busy. Reconnecting...",
+        networkReconnecting: "Reconnecting...",
         attendanceWhatsappFailed: "Attendance was recorded, but the WhatsApp notification failed."
     },
     ar: {
@@ -185,6 +191,9 @@ const EXTRA_T = {
         cloudSaveFailed: "تعذر حفظ البيانات في السحابة. تحقق من الاتصال وحاول مرة أخرى.",
         cloudDeleteFailed: "تعذر حذف بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
         attendanceNetworkFailed: "تعذر إرسال الحضور. تحقق من الاتصال وحاول مرة أخرى.",
+        rateLimitWait: "محاولات كثيرة جدًا. يرجى الانتظار دقيقة واحدة.",
+        serverBusyReconnect: "الخادم مشغول. جارٍ إعادة الاتصال...",
+        networkReconnecting: "جارٍ إعادة الاتصال...",
         attendanceWhatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب."
     }
 };
@@ -233,6 +242,9 @@ const state = {
     movementFrames: 0,
     attendanceRecorded: false,
     lastFaceMatchAt: 0,
+    attendanceIdempotencyKey: null,
+    networkHeartbeatTimer: null,
+    networkHeartbeatBusy: false,
     cloudLoadToken: 0,
     cloudDataPromise: Promise.resolve(),
     schoolSettingsLoaded: false,
@@ -520,6 +532,7 @@ function showView(target) {
 
 function showAuth() {
     stopAllCameras();
+    stopNetworkHeartbeat();
     cancelSchoolLocationEdit();
     state.schoolSettingsLoaded = false;
     state.cloudLoadToken++;
@@ -561,6 +574,7 @@ async function showApp(user) {
     $("btn-attendance-switch").disabled = true;
     $("btn-student-attendance").disabled = true;
     $("auth-screen").classList.add("hidden");
+    startNetworkHeartbeat();
     const isStudent = user.role === "siswa";
     $("dashboard-guru").classList.toggle("hidden", isStudent);
     $("dashboard-siswa").classList.toggle("hidden", !isStudent);
@@ -634,44 +648,128 @@ function safeText(value) {
 }
 
 async function cloudRequest(path, {
-    method = "GET", body, role = state.user?.role, nisn = state.user?.nisn, timeoutMs = 15_000
+    method = "GET", body, role = state.user?.role, nisn = state.user?.nisn,
+    timeoutMs = 15_000, idempotencyKey
 } = {}) {
     const headers = {};
     if (body !== undefined) headers["Content-Type"] = "application/json";
     if (role) headers["X-Role"] = role;
     if (role === "siswa" && nisn) headers["X-NISN"] = nisn;
     if (role === "guru" && state.user?.email) headers["X-User-Email"] = state.user.email;
+    if (idempotencyKey) headers["X-Idempotency-Key"] = idempotencyKey;
 
-    let response;
-    let result;
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    const maxAttempts = 3;
+    let lastError;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(path, {
+                method,
+                headers,
+                signal: controller.signal,
+                ...(body === undefined ? {} : { body: JSON.stringify(body) })
+            });
+            const responseText = response.status === 204 || method === "HEAD"
+                ? ""
+                : await response.text();
+
+            if (!response.ok) {
+                let payload;
+                try {
+                    payload = responseText ? JSON.parse(responseText) : null;
+                } catch {
+                    payload = null;
+                }
+                const error = new Error(payload?.error || `Request failed (${response.status})`);
+                error.name = "CloudApiError";
+                error.status = response.status;
+                throw error;
+            }
+
+            if (!responseText) return {};
+            try {
+                return JSON.parse(responseText);
+            } catch (cause) {
+                const error = new Error("Invalid server response");
+                error.name = "CloudApiError";
+                error.cause = cause;
+                throw error;
+            }
+        } catch (cause) {
+            if (cause?.name === "CloudApiError") {
+                lastError = cause;
+            } else {
+                lastError = new Error(cause?.name === "AbortError"
+                    ? "Cloud request timed out"
+                    : "Cloud request failed");
+                lastError.name = "CloudApiError";
+                lastError.status = cause?.name === "AbortError" ? 504 : undefined;
+                lastError.cause = cause;
+            }
+            const retryable = cause?.name !== "CloudApiError" ||
+                cause.status === 429 || cause.status >= 500;
+            if (!retryable || attempt === maxAttempts - 1) throw lastError;
+        } finally {
+            window.clearTimeout(timeoutId);
+        }
+
+        // The zero-based attempt doubles the base delay on each retry, then adds 0-500 ms of jitter.
+        const delay = Math.min(5000, 1000 * (2 ** attempt)) + (Math.random() * 500);
+        await new Promise(resolve => window.setTimeout(resolve, delay));
+    }
+    throw lastError;
+}
+
+function createIdempotencyKey() {
+    if (typeof window.crypto?.randomUUID === "function") return window.crypto.randomUUID();
+    const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+async function checkNetworkHeartbeat() {
+    const requestUser = state.user;
+    if (!requestUser || state.networkHeartbeatBusy) return;
+    state.networkHeartbeatBusy = true;
     try {
-        response = await fetch(path, {
-            method,
-            headers,
-            signal: controller.signal,
-            ...(body === undefined ? {} : { body: JSON.stringify(body) })
-        });
-        result = await response.json();
-    } catch (cause) {
-        const message = cause?.name === "AbortError"
-            ? "Cloud request timed out"
-            : cause instanceof SyntaxError ? "Invalid server response" : "Cloud request failed";
-        const error = new Error(message);
-        error.name = "CloudApiError";
-        error.cause = cause;
-        throw error;
+        await cloudRequest("/api/settings", { method: "HEAD", timeoutMs: 5_000 });
+        if (state.user !== requestUser) return;
+        $("network-status-teacher").classList.add("hidden");
+        $("network-status-student").classList.add("hidden");
+    } catch (error) {
+        if (state.user !== requestUser) return;
+        console.warn("Network heartbeat failed; will retry on the next interval:", error);
+        const badge = requestUser.role === "siswa"
+            ? $("network-status-student")
+            : $("network-status-teacher");
+        badge.classList.remove("hidden");
     } finally {
-        window.clearTimeout(timeoutId);
+        if (state.user === requestUser) state.networkHeartbeatBusy = false;
     }
-    if (!response.ok) {
-        const error = new Error(result.error || `Request failed (${response.status})`);
-        error.name = "CloudApiError";
-        error.status = response.status;
-        throw error;
+}
+
+function startNetworkHeartbeat() {
+    if (state.networkHeartbeatTimer !== null) {
+        window.clearInterval(state.networkHeartbeatTimer);
     }
-    return result;
+    state.networkHeartbeatBusy = false;
+    void checkNetworkHeartbeat();
+    state.networkHeartbeatTimer = window.setInterval(() => {
+        if (state.user) void checkNetworkHeartbeat();
+    }, 30_000);
+}
+
+function stopNetworkHeartbeat() {
+    if (state.networkHeartbeatTimer !== null) {
+        window.clearInterval(state.networkHeartbeatTimer);
+    }
+    state.networkHeartbeatTimer = null;
+    state.networkHeartbeatBusy = false;
+    $("network-status-teacher").classList.add("hidden");
+    $("network-status-student").classList.add("hidden");
 }
 
 async function loadSchoolSettings({ preserveOnError = false } = {}) {
@@ -1171,6 +1269,7 @@ function stopAttendanceCamera() {
     state.lastNose = null;
     state.movementFrames = 0;
     state.lastFaceMatchAt = 0;
+    state.attendanceIdempotencyKey = null;
     setSwitch(false);
 }
 
@@ -1346,6 +1445,7 @@ async function startAttendanceCamera() {
         state.attendanceRecorded = false;
         state.lastNose = null;
         state.movementFrames = 0;
+        state.attendanceIdempotencyKey = createIdempotencyKey();
 
         scheduleAttendanceFrame(stream, startToken);
     } catch (error) {
@@ -1461,7 +1561,8 @@ function updateProgress(percent, label) {
 }
 
 async function processAttendanceFrame() {
-    if (!state.attendanceStream || state.attendanceBusy || state.attendanceRecorded) return;
+    if (state.attendanceBusy) return;
+    if (!state.attendanceStream || state.attendanceRecorded) return;
     const requestStream = state.attendanceStream;
     const requestUser = state.user;
     if (!requestUser) return;
@@ -1478,6 +1579,9 @@ async function processAttendanceFrame() {
             setAttendanceMessage(tr("faceNotRegistered"));
             return;
         }
+        await new Promise(resolve => window.requestAnimationFrame(resolve));
+        if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
+        if (video.readyState < 2) return;
         const detections = await detectFaces(video);
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         drawDetections(video, attendanceCanvas(), detections);
@@ -1528,7 +1632,7 @@ async function processAttendanceFrame() {
         let student;
         let confidence;
         if (requestUser.role === "siswa") {
-            if (Date.now() - state.lastFaceMatchAt < 1000) return;
+            if (Date.now() - state.lastFaceMatchAt < 2500) return;
             state.lastFaceMatchAt = Date.now();
             const result = await cloudRequest("/api/face-match", {
                 method: "POST",
@@ -1603,7 +1707,8 @@ async function processAttendanceFrame() {
                 lng: location.lng,
                 accuracy: location.accuracy,
                 confidence
-            }
+            },
+            idempotencyKey: state.attendanceIdempotencyKey
         });
         if (state.user !== requestUser || state.attendanceStream !== requestStream) return;
         state.attendance = [saved.attendance, ...state.attendance.filter(item => item.id !== saved.attendance.id)];
@@ -1634,8 +1739,13 @@ async function processAttendanceFrame() {
                 toast(tr("alreadyPresent"), "info");
             } else if (error.name === "CloudApiError") {
                 console.error("Attendance submission failed:", error);
-                setAttendanceMessage(tr("attendanceNetworkFailed"));
-                toast(tr("attendanceNetworkFailed"), "error");
+                const message = error.status === 429
+                    ? tr("rateLimitWait")
+                    : error.status === 503 || error.status === 504
+                        ? tr("serverBusyReconnect")
+                        : tr("attendanceNetworkFailed");
+                setAttendanceMessage(message);
+                toast(message, "error");
             } else {
                 displayModelError(error);
                 setAttendanceMessage(tr("modelFailed"));
@@ -1643,8 +1753,8 @@ async function processAttendanceFrame() {
             }
         }
     } finally {
+        state.attendanceBusy = false;
         if (state.attendanceStream === requestStream) {
-            state.attendanceBusy = false;
             if (!state.attendanceRecorded) scheduleAttendanceFrame(requestStream, state.attendanceStartToken);
         }
     }

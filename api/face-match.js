@@ -2,6 +2,7 @@ import {
     getRequestRole,
     isAllowedOrigin,
     jsonError,
+    jsonSupabaseError,
     supabaseRequest
 } from "../lib/supabase.js";
 
@@ -49,6 +50,6 @@ export default async function handler(req, res) {
         });
     } catch (error) {
         console.error("Student face match failed:", error);
-        return jsonError(res, 500, "Unable to verify student face");
+        return jsonSupabaseError(res, error, "Unable to verify student face");
     }
 }

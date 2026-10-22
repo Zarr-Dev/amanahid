@@ -1284,6 +1284,29 @@ body.theme-dark .auth-footer .lang-btn.active {
     font-size: 10px;
 }
 
+.profile-short-text .network-status {
+    color: #b45309;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.profile-short-text .network-status::before {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-inline-end: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    content: "";
+    animation: network-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes network-pulse {
+    50% {
+        opacity: .35;
+    }
+}
+
 .more-dots {
     color: var(--muted);
     font-size: 20px;

@@ -26,6 +26,7 @@ export default async function handler(req, res) {
         if (error.message === "FONNTE_TOKEN is not configured") {
             return jsonError(res, 500, "WhatsApp service is not configured");
         }
+        if (error.status === 504) return jsonError(res, 504, "WhatsApp provider timed out");
         return jsonError(res, 502, "WhatsApp provider is unavailable");
     }
 }

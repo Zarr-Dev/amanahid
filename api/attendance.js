@@ -3,6 +3,7 @@ import {
     isAllowedOrigin,
     jakartaDateTime,
     jsonError,
+    jsonSupabaseError,
     rateLimit,
     supabaseRequest,
     verifyTeacherSession
@@ -10,6 +11,7 @@ import {
 import { sendWhatsApp } from "../lib/whatsapp.js";
 
 const MAX_ACCURACY = 35;
+const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function distanceMeters(lat1, lng1, lat2, lng2) {
     const radians = value => value * Math.PI / 180;
@@ -58,15 +60,12 @@ export default async function handler(req, res) {
             return res.status(200).json({ attendance: rows.map(normalizeAttendance) });
         } catch (error) {
             console.error("Attendance query failed:", error);
-            return jsonError(res, 500, "Unable to load attendance");
+            return jsonSupabaseError(res, error, "Unable to load attendance");
         }
     }
 
     if (req.method === "POST") {
         if (!role) return jsonError(res, 403, "A valid user role is required");
-        if (!rateLimit(req, "attendance:POST", 5, 60_000)) {
-            return jsonError(res, 429, "Too many attendance attempts. Try again in a minute.");
-        }
         const { nisn, lat, lng, accuracy, confidence } = req.body || {};
         if (typeof nisn !== "string" || !/^\d{8,20}$/.test(nisn)) {
             return jsonError(res, 400, "Invalid NISN");
@@ -78,8 +77,28 @@ export default async function handler(req, res) {
         if (role === "siswa" && req.headers["x-nisn"] !== nisn) {
             return jsonError(res, 403, "Students can only record their own attendance");
         }
+        const idempotencyKey = req.headers["x-idempotency-key"];
+        if (typeof idempotencyKey !== "string" || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
+            return jsonError(res, 400, "A valid X-Idempotency-Key UUID is required");
+        }
 
         try {
+            const repeated = await supabaseRequest(
+                `attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name)&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`
+            );
+            if (repeated.length) {
+                if (repeated[0].students?.nisn !== nisn) {
+                    return jsonError(res, 409, "Idempotency key has already been used");
+                }
+                return res.status(200).json({
+                    attendance: normalizeAttendance(repeated[0]),
+                    whatsapp: { sent: false, skipped: true }
+                });
+            }
+            if (!rateLimit(req, "attendance:POST", 5, 60_000)) {
+                return jsonError(res, 429, "Too many attendance attempts. Try again in a minute.");
+            }
+
             const settings = await supabaseRequest(
                 "school_settings?select=lat,lng,radius&id=eq.00000000-0000-0000-0000-000000000001&limit=1"
             );
@@ -109,9 +128,17 @@ export default async function handler(req, res) {
             const { date, time } = jakartaDateTime();
 
             const existing = await supabaseRequest(
-                `attendance?select=id&student_id=eq.${encodeURIComponent(student.id)}&date=eq.${date}&limit=1`
+                `attendance?select=id,student_id,date,time,confidence,method,created_at,idempotency_key,students!inner(nisn,name,class_name)&student_id=eq.${encodeURIComponent(student.id)}&date=eq.${date}&limit=1`
             );
-            if (existing.length) return jsonError(res, 409, "Attendance has already been recorded today");
+            if (existing.length) {
+                if (existing[0].idempotency_key === idempotencyKey) {
+                    return res.status(200).json({
+                        attendance: normalizeAttendance(existing[0]),
+                        whatsapp: { sent: false, skipped: true }
+                    });
+                }
+                return jsonError(res, 409, "Attendance has already been recorded today");
+            }
 
             const inserted = await supabaseRequest(
                 "attendance?select=id,student_id,date,time,confidence,method,created_at",
@@ -123,10 +150,11 @@ export default async function handler(req, res) {
                         date,
                         time,
                         confidence,
-                        method: "face-gps"
+                        method: "face-gps",
+                        idempotency_key: idempotencyKey
                     })
                 }
-            );
+                );
 
             let whatsapp = { sent: false, skipped: !student.parent_whatsapp };
             if (student.parent_whatsapp) {
@@ -146,9 +174,25 @@ export default async function handler(req, res) {
                 whatsapp
             });
         } catch (error) {
-            if (error.code === "23505") return jsonError(res, 409, "Attendance has already been recorded today");
+            if (error.code === "23505") {
+                try {
+                    const repeated = await supabaseRequest(
+                        `attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name)&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`
+                    );
+                    if (repeated.length && repeated[0].students?.nisn === nisn) {
+                        return res.status(200).json({
+                            attendance: normalizeAttendance(repeated[0]),
+                            whatsapp: { sent: false, skipped: true }
+                        });
+                    }
+                } catch (lookupError) {
+                    console.error("Attendance idempotency lookup failed:", lookupError);
+                    return jsonSupabaseError(res, lookupError, "Unable to confirm attendance status");
+                }
+                return jsonError(res, 409, "Attendance has already been recorded today");
+            }
             console.error("Attendance insert failed:", error);
-            return jsonError(res, 500, "Unable to record attendance");
+            return jsonSupabaseError(res, error, "Unable to record attendance");
         }
     }
 
@@ -166,7 +210,7 @@ export default async function handler(req, res) {
             return res.status(200).json({ ok: true });
         } catch (error) {
             console.error("Attendance delete failed:", error);
-            return jsonError(res, 500, "Unable to delete attendance");
+            return jsonSupabaseError(res, error, "Unable to delete attendance");
         }
     }
 

@@ -2,6 +2,7 @@ import {
     getRequestRole,
     isAllowedOrigin,
     jsonError,
+    jsonSupabaseError,
     rateLimit,
     supabaseRequest,
     verifyTeacherSession
@@ -43,7 +44,7 @@ export default async function handler(req, res) {
             return res.status(200).json({ students });
         } catch (error) {
             console.error("Student query failed:", error);
-            return jsonError(res, 500, "Unable to load students");
+            return jsonSupabaseError(res, error, "Unable to load students");
         }
     }
 
@@ -89,7 +90,7 @@ export default async function handler(req, res) {
         } catch (error) {
             if (error.code === "23505") return jsonError(res, 409, "A student with this NISN already exists");
             console.error("Student insert failed:", error);
-            return jsonError(res, 500, "Unable to save student");
+            return jsonSupabaseError(res, error, "Unable to save student");
         }
     }
 
@@ -104,7 +105,7 @@ export default async function handler(req, res) {
             return res.status(200).json({ ok: true });
         } catch (error) {
             console.error("Student delete failed:", error);
-            return jsonError(res, 500, "Unable to delete student");
+            return jsonSupabaseError(res, error, "Unable to delete student");
         }
     }
 
