@@ -5,9 +5,10 @@
 const SCHOOL_LOCATION = {
     lat: -6.253590517740096,
     lng: 106.60299502682263,
-    radius: 50,
+    radius: 35,
     name: "Al Fityan School"
 };
+const MAX_GPS_ACCURACY_METERS = 35;
 const FACE_MATCH_THRESHOLD = 0.45;
 const MAX_FACE_SAMPLES = 5;
 
@@ -94,8 +95,13 @@ const ROLE_T = {
 
 const EXTRA_T = {
     id: {
-        welcomeTitle: "Amanah.id",
-        welcomeDesc: "Presensi sekolah dengan verifikasi wajah dan lokasi.",
+        welcomeTitle: "Presensi sekolah, lebih mudah.",
+        welcomeDesc: "Amanah.id menggabungkan verifikasi wajah dan lokasi.",
+        signupStudentHint: "Pendaftaran mandiri untuk siswa. Akun guru diberikan sekolah.",
+        allowedRadius: "Radius diizinkan: {radius} m",
+        mapSchoolPopup: "Al Fityan School · Radius {radius} m",
+        checkLocation: "Periksa lokasi",
+        refreshLocation: "Perbarui lokasi",
         captureSample: "Simpan sampel kamera",
         faceSamplesCount: "{count} sampel wajah",
         faceSampleLimit: "Maksimal 5 sampel wajah per siswa.",
@@ -104,8 +110,13 @@ const EXTRA_T = {
         fakeLocation: "Lokasi GPS menunjukkan anomali. Aktifkan lokasi perangkat yang sebenarnya lalu coba lagi."
     },
     en: {
-        welcomeTitle: "Amanah.id",
-        welcomeDesc: "School attendance with face and location verification.",
+        welcomeTitle: "School attendance, made simple.",
+        welcomeDesc: "Amanah.id combines face and location verification.",
+        signupStudentHint: "Self-registration is for students. Teacher accounts are issued by the school.",
+        allowedRadius: "Allowed radius: {radius} m",
+        mapSchoolPopup: "Al Fityan School · {radius} m radius",
+        checkLocation: "Check location",
+        refreshLocation: "Refresh location",
         captureSample: "Save camera sample",
         faceSamplesCount: "{count} face samples",
         faceSampleLimit: "A maximum of 5 face samples is allowed per student.",
@@ -114,8 +125,13 @@ const EXTRA_T = {
         fakeLocation: "GPS location appears anomalous. Enable the device's actual location and try again."
     },
     ar: {
-        welcomeTitle: "أمانة.id",
-        welcomeDesc: "حضور مدرسي مع التحقق من الوجه والموقع.",
+        welcomeTitle: "حضور مدرسي أكثر سهولة.",
+        welcomeDesc: "تجمع أمانة.id بين التحقق من الوجه والموقع.",
+        signupStudentHint: "التسجيل الذاتي للطلاب. تمنح المدرسة حسابات المعلمين.",
+        allowedRadius: "النطاق المسموح: {radius} م",
+        mapSchoolPopup: "مدرسة الفتيان · نطاق {radius} م",
+        checkLocation: "تحقق من الموقع",
+        refreshLocation: "تحديث الموقع",
         captureSample: "حفظ عينة الكاميرا",
         faceSamplesCount: "{count} عينات وجه",
         faceSampleLimit: "الحد الأقصى 5 عينات وجه لكل طالب.",
@@ -154,6 +170,7 @@ const state = {
     faceCandidate: null,
     lastLocation: null,
     lastGpsFix: null,
+    locationCheckBusy: false,
     map: null,
     schoolMarker: null,
     userMarker: null,
@@ -163,8 +180,7 @@ const state = {
     lastNose: null,
     movementFrames: 0,
     attendanceRecorded: false,
-    attendanceMode: "guru",
-    selectedRoles: { login: "guru", register: "siswa" }
+    attendanceMode: "guru"
 };
 
 // Three-language dictionary
@@ -209,7 +225,11 @@ function setLanguage(lang) {
     document.querySelectorAll("[data-i18n]").forEach(el => {
         const key = el.dataset.i18n;
         const text = EXTRA_T[lang]?.[key] ?? T[lang][key];
-        if (text !== undefined) el.textContent = text;
+        if (text !== undefined) {
+            el.textContent = key === "allowedRadius"
+                ? tr(key, { radius: SCHOOL_LOCATION.radius })
+                : text;
+        }
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
         const key = el.dataset.i18nPlaceholder;
@@ -486,15 +506,6 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
     return 2 * earthRadius * Math.atan2(Math.sqrt(clamped), Math.sqrt(1 - clamped));
 }
 
-function geolocationErrorMessage(error) {
-    if (!navigator.geolocation) return tr("gpsUnsupported");
-    if (!error) return tr("gpsFailed");
-    if (error.code === 1) return tr("gpsDenied");
-    if (error.code === 2) return tr("gpsUnavailable");
-    if (error.code === 3) return tr("gpsTimeout");
-    return tr("gpsFailed");
-}
-
 function geolocationErrorKey(error) {
     if (!navigator.geolocation) return "gpsUnsupported";
     if (error?.code === 1) return "gpsDenied";
@@ -505,70 +516,97 @@ function geolocationErrorKey(error) {
 
 async function checkGeofence() {
     if (!("geolocation" in navigator)) {
-        const error = tr("gpsUnsupported");
-        state.lastLocation = { error, errorKey: "gpsUnsupported", checkedAt: Date.now() };
-        renderLocationBadge();
-        updateMapText();
-        return { inside: false, distance: NaN, accuracy: NaN, error };
+        return setLocationError("gpsUnsupported");
     }
 
     return new Promise(resolve => {
-        navigator.geolocation.getCurrentPosition(position => {
-            const { latitude, longitude, accuracy } = position.coords;
-            const distanceExact = calculateDistance(
-                latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
-            );
-            const timestamp = Number.isFinite(position.timestamp) ? position.timestamp : Date.now();
-            const previousFix = state.lastGpsFix;
-            const elapsedSeconds = previousFix ? (timestamp - previousFix.timestamp) / 1000 : 0;
-            const estimatedSpeed = previousFix && elapsedSeconds > 0
-                ? calculateDistance(previousFix.lat, previousFix.lng, latitude, longitude) / elapsedSeconds
-                : 0;
-            const reportedSpeed = Number.isFinite(position.coords.speed) ? position.coords.speed : 0;
-            const fakeLocation = accuracy <= 0 || !Number.isFinite(accuracy) ||
-                !Number.isFinite(distanceExact) || reportedSpeed > 55 ||
-                (elapsedSeconds >= 1 && elapsedSeconds <= 600 && estimatedSpeed > 55);
-            state.lastGpsFix = { lat: latitude, lng: longitude, timestamp };
-            if (fakeLocation) {
-                const error = tr("fakeLocation");
-                state.lastLocation = { error, errorKey: "fakeLocation", fakeLocation: true, checkedAt: Date.now() };
+        let settled = false;
+        const timeoutId = setTimeout(() => {
+            finishWithError("gpsTimeout");
+        }, 12000);
+        const finish = result => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeoutId);
+            resolve(result);
+        };
+        const finishWithError = errorKey => {
+            const result = setLocationError(errorKey);
+            finish(result);
+        };
+        const onSuccess = position => {
+            if (settled) return;
+            try {
+                const { latitude, longitude, accuracy } = position.coords;
+                const distanceExact = calculateDistance(
+                    latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
+                );
+                const timestamp = Number.isFinite(position.timestamp) ? position.timestamp : Date.now();
+                const previousFix = state.lastGpsFix;
+                const elapsedSeconds = previousFix ? (timestamp - previousFix.timestamp) / 1000 : 0;
+                const estimatedSpeed = previousFix && elapsedSeconds > 0
+                    ? calculateDistance(previousFix.lat, previousFix.lng, latitude, longitude) / elapsedSeconds
+                    : 0;
+                const reportedSpeed = Number.isFinite(position.coords.speed) ? position.coords.speed : 0;
+                const fakeLocation = accuracy <= 0 || !Number.isFinite(accuracy) ||
+                    !Number.isFinite(distanceExact) || reportedSpeed > 55 ||
+                    (elapsedSeconds >= 1 && elapsedSeconds <= 600 && estimatedSpeed > 55);
+                state.lastGpsFix = { lat: latitude, lng: longitude, timestamp };
+                if (fakeLocation) {
+                    const error = tr("fakeLocation");
+                    state.lastLocation = { error, errorKey: "fakeLocation", fakeLocation: true, checkedAt: Date.now() };
+                    renderLocationBadge();
+                    updateMapText();
+                    finish({ inside: false, distance: NaN, accuracy, error, fakeLocation: true });
+                    return;
+                }
+                const roundedDistance = Math.round(distanceExact);
+                const roundedAccuracy = Math.round(accuracy);
+                const inside = distanceExact <= SCHOOL_LOCATION.radius;
+
+                state.lastLocation = {
+                    lat: latitude, lng: longitude, accuracy,
+                    distance: roundedDistance, inside, checkedAt: Date.now()
+                };
+
                 renderLocationBadge();
+                updateMapUserMarker();
+
                 updateMapText();
-                resolve({ inside: false, distance: NaN, accuracy, error, fakeLocation: true });
-                return;
+                finish({
+                    inside,
+                    distance: roundedDistance,
+                    accuracy,
+                    error: null,
+                    fakeLocation: false
+                });
+            } catch (error) {
+                console.error("GPS location processing error:", error);
+                finishWithError("gpsFailed");
             }
-            const roundedDistance = Math.round(distanceExact);
-            const roundedAccuracy = Math.round(accuracy);
-            const inside = distanceExact <= SCHOOL_LOCATION.radius;
-
-            state.lastLocation = {
-                lat: latitude, lng: longitude, accuracy,
-                distance: roundedDistance, inside, checkedAt: Date.now()
-            };
-
-            renderLocationBadge();
-            updateMapUserMarker();
-
-            resolve({
-                inside,
-                distance: roundedDistance,
-                accuracy,
-                error: null,
-                fakeLocation: false
+        };
+        try {
+            navigator.geolocation.getCurrentPosition(onSuccess, error => {
+                if (settled) return;
+                finishWithError(geolocationErrorKey(error));
+            }, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
             });
-        }, error => {
-            const message = geolocationErrorMessage(error);
-            const errorKey = geolocationErrorKey(error);
-            state.lastLocation = { error: message, errorKey, checkedAt: Date.now() };
-            renderLocationBadge();
-            updateMapText();
-            resolve({ inside: false, distance: NaN, accuracy: NaN, error: message });
-        }, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        });
+        } catch (error) {
+            console.error("GPS request failed:", error);
+            finishWithError("gpsFailed");
+        }
     });
+}
+
+function setLocationError(errorKey) {
+    const error = tr(errorKey);
+    state.lastLocation = { error, errorKey, checkedAt: Date.now() };
+    renderLocationBadge();
+    updateMapText();
+    return { inside: false, distance: NaN, accuracy: NaN, error };
 }
 
 function renderLocationBadge() {
@@ -598,11 +636,11 @@ function renderLocationBadge() {
         return;
     }
 
-    const accuracyAccepted = state.lastLocation.accuracy <= 35;
+    const accuracyAccepted = state.lastLocation.accuracy <= MAX_GPS_ACCURACY_METERS;
     const badgeLabel = !accuracyAccepted
         ? `${tr("locationAccuracyBad")} · ±${Math.round(state.lastLocation.accuracy)} m`
         : `${tr(state.lastLocation.inside ? "locationInside" : "locationOutside")} · ${state.lastLocation.distance} m`;
-    const description = state.lastLocation.accuracy > 35
+    const description = state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
         ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
         : state.lastLocation.inside
             ? tr("insideMessage", {
@@ -788,7 +826,7 @@ async function startAttendanceCamera() {
         return;
     }
 
-    if (result.accuracy > 35) {
+    if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
         stopAttendanceCamera();
         const message = tr("accuracyWarning", { accuracy: result.accuracy });
         if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
@@ -1033,8 +1071,8 @@ async function processAttendanceFrame() {
 
         const location = await checkGeofence();
         if (state.user !== requestUser || !state.attendanceStream || !attendanceViewActive()) return;
-        if (location.error || !location.inside || location.accuracy > 35) {
-            const message = location.error || (location.accuracy > 35
+        if (location.error || !location.inside || location.accuracy > MAX_GPS_ACCURACY_METERS) {
+            const message = location.error || (location.accuracy > MAX_GPS_ACCURACY_METERS
                 ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
                 : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
             if (requestUser.role === "siswa") $("student-attendance-status").textContent = message;
@@ -1285,9 +1323,12 @@ function openMap() {
             fillOpacity: .18
         }).addTo(state.map);
 
-        state.schoolMarker.bindPopup(tr("mapSchoolPopup"));
     }
 
+    state.schoolMarker.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
+    state.schoolMarker.bindPopup(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
+    state.schoolCircle.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
+    state.schoolCircle.setRadius(SCHOOL_LOCATION.radius);
     setTimeout(() => state.map?.invalidateSize(), 100);
     updateMapUserMarker();
 }
@@ -1317,7 +1358,7 @@ function updateMapUserMarker() {
 function updateMapText() {
     $("map-subtitle").textContent = tr("mapDesc");
     $("map-location-detail").textContent = state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking
-        ? state.lastLocation.accuracy > 35
+        ? state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
             ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
             : tr(state.lastLocation.inside ? "insideMessage" : "outsideMessage", {
                 distance: state.lastLocation.distance,
@@ -1327,7 +1368,9 @@ function updateMapText() {
         : state.lastLocation?.errorKey ? tr(state.lastLocation.errorKey)
             : state.lastLocation?.error || tr("locationMapReady");
 
-    if (state.schoolMarker) state.schoolMarker.setPopupContent(tr("mapSchoolPopup"));
+    if (state.schoolMarker) {
+        state.schoolMarker.setPopupContent(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
+    }
     if (state.userMarker && state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking) {
         state.userMarker.setPopupContent(
             `${tr("mapUserPopup")}<br>${tr("mapDistance", { distance: state.lastLocation.distance })}<br>${tr("mapAccuracy", { accuracy: Math.round(state.lastLocation.accuracy) })}`
@@ -1336,21 +1379,34 @@ function updateMapText() {
 }
 
 async function refreshMapLocation() {
+    if (state.locationCheckBusy) return;
+    state.locationCheckBusy = true;
+    $("btn-check-map-location").disabled = true;
+    $("btn-refresh-map-location").disabled = true;
     state.lastLocation = { checking: true };
     renderLocationBadge();
     updateMapText();
 
-    const result = await checkGeofence();
-    if (result.error) {
-        toast(result.error, "error");
-    } else if (result.accuracy > 35) {
-        toast(tr("accuracyWarning", { accuracy: Math.round(result.accuracy) }), "error");
-    } else {
-        toast(result.inside
-            ? tr("insideMessage", { distance: result.distance, accuracy: result.accuracy })
-            : tr("outsideMessage", { distance: result.distance, radius: SCHOOL_LOCATION.radius }), result.inside ? "success" : "error");
+    try {
+        const result = await checkGeofence();
+        if (result.error) {
+            toast(result.error, "error");
+        } else if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
+            toast(tr("accuracyWarning", { accuracy: Math.round(result.accuracy) }), "error");
+        } else {
+            toast(result.inside
+                ? tr("insideMessage", { distance: result.distance, accuracy: Math.round(result.accuracy) })
+                : tr("outsideMessage", { distance: result.distance, radius: SCHOOL_LOCATION.radius }), result.inside ? "success" : "error");
+        }
+    } catch (error) {
+        console.error("Map location refresh failed:", error);
+        toast(tr("gpsFailed"), "error");
+    } finally {
+        state.locationCheckBusy = false;
+        $("btn-check-map-location").disabled = false;
+        $("btn-refresh-map-location").disabled = false;
+        updateMapText();
     }
-    updateMapText();
 }
 
 // Event listener setup
@@ -1364,30 +1420,10 @@ function switchAuthTab(tab) {
     $("register-form").classList.toggle("hidden", login);
 }
 
-function selectAuthRole(formName, role) {
-    state.selectedRoles[formName] = role;
-    const inputId = formName === "login" ? "login-role" : "register-role";
-    $(inputId).value = role;
-    document.querySelectorAll(`[data-role-form="${formName}"]`).forEach(button => {
-        button.classList.toggle("active", button.dataset.roleChoice === role);
-        button.setAttribute("aria-pressed", String(button.dataset.roleChoice === role));
-    });
-    if (formName === "register") {
-        const studentRole = role === "siswa";
-        $("register-nisn-field").classList.toggle("hidden", !studentRole);
-        $("register-nisn").required = studentRole;
-    }
-}
-
 function setupEvents() {
     $("tab-login").addEventListener("click", () => switchAuthTab("login"));
     $("tab-register").addEventListener("click", () => switchAuthTab("register"));
     $("model-retry").addEventListener("click", () => location.reload());
-    document.querySelectorAll("[data-role-choice]").forEach(button => {
-        button.addEventListener("click", () => selectAuthRole(button.dataset.roleForm, button.dataset.roleChoice));
-    });
-    selectAuthRole("login", "guru");
-    selectAuthRole("register", "siswa");
 
     $("login-form").addEventListener("submit", event => {
         event.preventDefault();
@@ -1396,11 +1432,6 @@ function setupEvents() {
         const account = state.accounts.find(a => a.email === email && a.password === password);
         if (!account) {
             toast(tr("loginFailed"), "error");
-            return;
-        }
-        const selectedRole = $("login-role").value;
-        if (account.role !== selectedRole) {
-            toast(tr(selectedRole === "guru" ? "roleTeacherMismatch" : "roleStudentMismatch"), "error");
             return;
         }
         showApp({
@@ -1422,14 +1453,13 @@ function setupEvents() {
         const email = $("register-email").value.trim().toLowerCase();
         const password = $("register-password").value;
         const confirm = $("register-confirm").value;
-        const role = $("register-role").value;
         const nisn = $("register-nisn").value.trim();
 
         if (password !== confirm) {
             toast(tr("passwordMismatch"), "error");
             return;
         }
-        if (role === "siswa" && !nisn) {
+        if (!nisn) {
             toast(tr("studentNeedsNisn"), "error");
             return;
         }
@@ -1438,14 +1468,13 @@ function setupEvents() {
             return;
         }
 
-        state.accounts.push({ name, email, password, role, ...(role === "siswa" ? { nisn } : {}) });
+        state.accounts.push({ name, email, password, role: "siswa", nisn });
         $("register-form").reset();
         $("btn-register-submit").disabled = true;
-        selectAuthRole("register", "siswa");
         switchAuthTab("login");
         $("login-email").value = email;
-        selectAuthRole("login", role);
-        toast(role === "siswa" ? tr("studentUnlinked") : tr("signupSuccess"), role === "siswa" ? "info" : "success");
+        $("login-password").value = "";
+        toast(tr("studentUnlinked"), "info");
     });
 
     document.querySelectorAll(".lang-btn").forEach(btn => {
@@ -1612,6 +1641,7 @@ function setupEvents() {
     $("map-modal").addEventListener("click", event => {
         if (event.target === $("map-modal")) $("map-modal").classList.add("hidden");
     });
+    $("btn-check-map-location").addEventListener("click", refreshMapLocation);
     $("btn-refresh-map-location").addEventListener("click", refreshMapLocation);
 
     document.addEventListener("visibilitychange", () => {
