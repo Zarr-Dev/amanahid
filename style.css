@@ -118,17 +118,25 @@ p {
     font-size: 23px;
     text-decoration: none;
     letter-spacing: -.5px;
+    transition: transform .2s ease;
+}
+
+.brand:hover {
+    transform: translateY(-1px);
 }
 
 .brand-mark {
-    width: 35px;
-    height: 35px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    background: linear-gradient(140deg, #6ea4ff, #3978f6);
-    color: #fff;
-    box-shadow: 0 6px 16px #3978f638;
+    display: block;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    object-fit: contain;
+}
+
+.brand-auth .brand-mark {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
 }
 
 .brand-dot {
@@ -262,7 +270,7 @@ label {
 .splash-lockup {
     display: flex;
     align-items: center;
-    gap: 13px;
+    gap: 16px;
     transform-origin: center center;
     animation: splash-land 2.55s cubic-bezier(.2, .78, .2, 1) both paused;
 }
@@ -272,18 +280,12 @@ label {
 }
 
 .splash-mark {
-    display: grid;
-    width: 48px;
-    height: 48px;
-    flex: 0 0 48px;
-    place-items: center;
-    border-radius: 15px;
-    background: linear-gradient(145deg, #6ea4ff, var(--blue));
-    box-shadow: 0 10px 30px rgba(57, 120, 246, .28);
-    color: #fff;
-    font-family: "Inter", sans-serif;
-    font-size: 28px;
-    font-weight: 800;
+    display: block;
+    width: 64px;
+    height: 64px;
+    flex: 0 0 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 13px rgba(57, 120, 246, .2));
     opacity: 0;
     transform: scale(.72);
 }
@@ -301,7 +303,7 @@ label {
 .splash-copy strong {
     color: #1b2740;
     font-family: "Fredoka", sans-serif;
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 600;
     letter-spacing: -.45px;
     line-height: 1.1;
@@ -364,7 +366,7 @@ label {
     }
 
     100% {
-        transform: translate3d(0, calc(-50vh + var(--splash-target-y)), 0) scale(.78);
+        transform: translate3d(0, calc(-50vh + var(--splash-target-y)), 0) scale(.84);
     }
 }
 
@@ -640,14 +642,11 @@ label {
 }
 
 .mockup-brand-mark {
-    display: grid;
+    display: block;
     width: 25px;
     height: 25px;
-    place-items: center;
-    border-radius: 8px;
-    background: linear-gradient(145deg, #78a9ff, var(--blue));
-    color: white;
-    font-size: 14px;
+    flex: 0 0 25px;
+    object-fit: contain;
 }
 
 .mockup-window-dots {
@@ -848,15 +847,23 @@ label {
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-width: 205px;
-    padding: 12px 14px;
+    gap: 12px;
+    min-width: 224px;
+    padding: 14px 16px;
     border: 1px solid rgba(255, 255, 255, .88);
     border-radius: 15px;
     background: rgba(255, 255, 255, .83);
     box-shadow: 0 18px 42px rgba(33, 67, 125, .18);
     backdrop-filter: blur(16px);
     animation: auth-float 5.5s ease-in-out infinite;
+    transition: box-shadow .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.floating-card:hover {
+    border-color: rgba(115, 159, 238, .55);
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 22px 48px rgba(33, 67, 125, .23);
+    animation-play-state: paused;
 }
 
 .floating-card>span:nth-child(2) {
@@ -868,24 +875,24 @@ label {
 .floating-card strong {
     color: #293954;
     font-family: "Inter", sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 750;
 }
 
 .floating-card small {
     color: #8490a5;
-    font-size: 9px;
+    font-size: 10px;
 }
 
 .floating-icon,
 .floating-check {
     display: grid;
-    width: 31px;
-    height: 31px;
-    flex: 0 0 31px;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
     place-items: center;
     border-radius: 10px;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 800;
 }
 
@@ -915,13 +922,13 @@ label {
 
 .floating-face {
     top: 88px;
-    left: -25px;
+    left: -12px;
     animation-delay: -.8s;
 }
 
 .floating-location {
     top: 250px;
-    right: -31px;
+    right: -12px;
     animation-delay: -2.3s;
 }
 
@@ -2558,11 +2565,11 @@ html[dir="rtl"] .modal-heading {
     }
 
     .floating-face {
-        left: -12px;
+        left: 0;
     }
 
     .floating-location {
-        right: -13px;
+        right: 0;
     }
 
     .app-shell {
@@ -2588,7 +2595,21 @@ html[dir="rtl"] .modal-heading {
 
 @media (max-width: 820px) {
     .splash-screen {
-        --splash-target-y: 36px;
+        --splash-target-y: 34px;
+    }
+
+    .splash-lockup {
+        gap: 13px;
+    }
+
+    .splash-mark {
+        width: 58px;
+        height: 58px;
+        flex-basis: 58px;
+    }
+
+    .splash-copy strong {
+        font-size: 27px;
     }
 
     .auth-screen {
@@ -2622,7 +2643,7 @@ html[dir="rtl"] .modal-heading {
 
     .auth-visual {
         width: min(100%, 570px);
-        min-height: 495px;
+        min-height: 520px;
         margin: 0 auto;
     }
 
@@ -2833,6 +2854,34 @@ html[dir="rtl"] .modal-heading {
         font-size: 21px;
     }
 
+    .brand-auth .brand-mark {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+
+    .splash-screen {
+        --splash-target-y: 28px;
+    }
+
+    .splash-lockup {
+        gap: 10px;
+    }
+
+    .splash-mark {
+        width: 50px;
+        height: 50px;
+        flex-basis: 50px;
+    }
+
+    .splash-copy strong {
+        font-size: 24px;
+    }
+
+    .splash-copy span {
+        font-size: 10px;
+    }
+
     .auth-copy h1 {
         font-size: clamp(36px, 10vw, 44px);
         letter-spacing: -1px;
@@ -2858,7 +2907,7 @@ html[dir="rtl"] .modal-heading {
     }
 
     .auth-visual {
-        min-height: 410px;
+        min-height: 430px;
     }
 
     .dashboard-mockup {
@@ -2873,9 +2922,10 @@ html[dir="rtl"] .modal-heading {
     }
 
     .floating-card {
-        min-width: 174px;
-        gap: 7px;
-        padding: 9px 10px;
+        min-width: 0;
+        width: min(72%, 208px);
+        gap: 8px;
+        padding: 10px 11px;
     }
 
     .floating-face {
@@ -2891,11 +2941,25 @@ html[dir="rtl"] .modal-heading {
     }
 
     .floating-card strong {
-        font-size: 9px;
+        font-size: 10px;
     }
 
     .floating-card small {
-        font-size: 8px;
+        font-size: 9px;
+    }
+
+    .floating-icon {
+        width: 32px;
+        height: 32px;
+        flex-basis: 32px;
+        font-size: 16px;
+    }
+
+    .floating-check {
+        width: 18px;
+        height: 18px;
+        flex-basis: 18px;
+        font-size: 10px;
     }
 
     .auth-footer {
