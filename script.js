@@ -8,6 +8,8 @@ const SCHOOL_LOCATION = {
     radius: 50,
     name: "Al Fityan School"
 };
+const FACE_MATCH_THRESHOLD = 0.45;
+const MAX_FACE_SAMPLES = 5;
 
 const ROLE_T = {
     id: {
@@ -90,6 +92,39 @@ const ROLE_T = {
     }
 };
 
+const EXTRA_T = {
+    id: {
+        welcomeTitle: "Amanah.id",
+        welcomeDesc: "Presensi sekolah dengan verifikasi wajah dan lokasi.",
+        captureSample: "Simpan sampel kamera",
+        faceSamplesCount: "{count} sampel wajah",
+        faceSampleLimit: "Maksimal 5 sampel wajah per siswa.",
+        duplicateFaceSample: "Sampel terlalu mirip. Ubah sudut wajah atau unggah foto lain.",
+        locationAccuracyBad: "Akurasi rendah",
+        fakeLocation: "Lokasi GPS menunjukkan anomali. Aktifkan lokasi perangkat yang sebenarnya lalu coba lagi."
+    },
+    en: {
+        welcomeTitle: "Amanah.id",
+        welcomeDesc: "School attendance with face and location verification.",
+        captureSample: "Save camera sample",
+        faceSamplesCount: "{count} face samples",
+        faceSampleLimit: "A maximum of 5 face samples is allowed per student.",
+        duplicateFaceSample: "This sample is too similar. Change the face angle or upload another photo.",
+        locationAccuracyBad: "Low accuracy",
+        fakeLocation: "GPS location appears anomalous. Enable the device's actual location and try again."
+    },
+    ar: {
+        welcomeTitle: "أمانة.id",
+        welcomeDesc: "حضور مدرسي مع التحقق من الوجه والموقع.",
+        captureSample: "حفظ عينة الكاميرا",
+        faceSamplesCount: "{count} عينات وجه",
+        faceSampleLimit: "الحد الأقصى 5 عينات وجه لكل طالب.",
+        duplicateFaceSample: "العينة مشابهة جدًا. غيّر زاوية الوجه أو ارفع صورة أخرى.",
+        locationAccuracyBad: "دقة منخفضة",
+        fakeLocation: "يبدو أن موقع GPS غير طبيعي. فعّل الموقع الحقيقي للجهاز ثم أعد المحاولة."
+    }
+};
+
 const $ = id => document.getElementById(id);
 const state = {
     lang: "id",
@@ -115,9 +150,10 @@ const state = {
     formTimer: null,
     attendanceBusy: false,
     formBusy: false,
-    faceSample: null,
-    faceSampleImage: null,
+    faceSamples: [],
+    faceCandidate: null,
     lastLocation: null,
+    lastGpsFix: null,
     map: null,
     schoolMarker: null,
     userMarker: null,
@@ -148,7 +184,8 @@ Object.keys(ROLE_T).forEach(lang => Object.assign(T[lang], ROLE_T[lang]));
 
 // Text, theme, and basic UI helpers
 function tr(key, vars = {}) {
-    let text = T[state.lang]?.[key] ?? T.id[key] ?? key;
+    let text = EXTRA_T[state.lang]?.[key] ?? T[state.lang]?.[key] ??
+        EXTRA_T.id[key] ?? T.id[key] ?? key;
     for (const [name, value] of Object.entries(vars)) {
         text = text.replaceAll(`{${name}}`, String(value));
     }
@@ -171,15 +208,18 @@ function setLanguage(lang) {
 
     document.querySelectorAll("[data-i18n]").forEach(el => {
         const key = el.dataset.i18n;
-        if (T[lang][key] !== undefined) el.textContent = T[lang][key];
+        const text = EXTRA_T[lang]?.[key] ?? T[lang][key];
+        if (text !== undefined) el.textContent = text;
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
         const key = el.dataset.i18nPlaceholder;
-        if (T[lang][key] !== undefined) el.placeholder = T[lang][key];
+        const text = EXTRA_T[lang]?.[key] ?? T[lang][key];
+        if (text !== undefined) el.placeholder = text;
     });
     document.querySelectorAll("[data-i18n-title]").forEach(el => {
         const key = el.dataset.i18nTitle;
-        if (T[lang][key] !== undefined) el.title = T[lang][key];
+        const text = EXTRA_T[lang]?.[key] ?? T[lang][key];
+        if (text !== undefined) el.title = text;
     });
     document.querySelectorAll(".lang-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.lang === lang);
@@ -232,6 +272,7 @@ function showView(target) {
 
 function showAuth() {
     stopAllCameras();
+    $("login-password").value = "";
     $("dashboard-guru").classList.add("hidden");
     $("dashboard-siswa").classList.add("hidden");
     $("auth-screen").classList.remove("hidden");
@@ -429,6 +470,11 @@ function exportCsv() {
 
 // GPS geofencing
 function calculateDistance(lat1, lng1, lat2, lng2) {
+    if (![lat1, lng1, lat2, lng2].every(Number.isFinite) ||
+        Math.abs(lat1) > 90 || Math.abs(lat2) > 90 ||
+        Math.abs(lng1) > 180 || Math.abs(lng2) > 180) {
+        return NaN;
+    }
     const earthRadius = 6371000;
     const toRad = degrees => degrees * Math.PI / 180;
     const dLat = toRad(lat2 - lat1);
@@ -472,12 +518,31 @@ async function checkGeofence() {
             const distanceExact = calculateDistance(
                 latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
             );
+            const timestamp = Number.isFinite(position.timestamp) ? position.timestamp : Date.now();
+            const previousFix = state.lastGpsFix;
+            const elapsedSeconds = previousFix ? (timestamp - previousFix.timestamp) / 1000 : 0;
+            const estimatedSpeed = previousFix && elapsedSeconds > 0
+                ? calculateDistance(previousFix.lat, previousFix.lng, latitude, longitude) / elapsedSeconds
+                : 0;
+            const reportedSpeed = Number.isFinite(position.coords.speed) ? position.coords.speed : 0;
+            const fakeLocation = accuracy <= 0 || !Number.isFinite(accuracy) ||
+                !Number.isFinite(distanceExact) || reportedSpeed > 55 ||
+                (elapsedSeconds >= 1 && elapsedSeconds <= 600 && estimatedSpeed > 55);
+            state.lastGpsFix = { lat: latitude, lng: longitude, timestamp };
+            if (fakeLocation) {
+                const error = tr("fakeLocation");
+                state.lastLocation = { error, errorKey: "fakeLocation", fakeLocation: true, checkedAt: Date.now() };
+                renderLocationBadge();
+                updateMapText();
+                resolve({ inside: false, distance: NaN, accuracy, error, fakeLocation: true });
+                return;
+            }
             const roundedDistance = Math.round(distanceExact);
             const roundedAccuracy = Math.round(accuracy);
             const inside = distanceExact <= SCHOOL_LOCATION.radius;
 
             state.lastLocation = {
-                lat: latitude, lng: longitude, accuracy: roundedAccuracy,
+                lat: latitude, lng: longitude, accuracy,
                 distance: roundedDistance, inside, checkedAt: Date.now()
             };
 
@@ -487,8 +552,9 @@ async function checkGeofence() {
             resolve({
                 inside,
                 distance: roundedDistance,
-                accuracy: roundedAccuracy,
-                error: null
+                accuracy,
+                error: null,
+                fakeLocation: false
             });
         }, error => {
             const message = geolocationErrorMessage(error);
@@ -532,19 +598,22 @@ function renderLocationBadge() {
         return;
     }
 
-    const badgeLabel = `${tr(state.lastLocation.inside ? "locationInside" : "locationOutside")} · ${state.lastLocation.distance} m`;
+    const accuracyAccepted = state.lastLocation.accuracy <= 35;
+    const badgeLabel = !accuracyAccepted
+        ? `${tr("locationAccuracyBad")} · ±${Math.round(state.lastLocation.accuracy)} m`
+        : `${tr(state.lastLocation.inside ? "locationInside" : "locationOutside")} · ${state.lastLocation.distance} m`;
     const description = state.lastLocation.accuracy > 35
-        ? tr("accuracyWarning", { accuracy: state.lastLocation.accuracy })
+        ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
         : state.lastLocation.inside
             ? tr("insideMessage", {
                 distance: state.lastLocation.distance,
-                accuracy: state.lastLocation.accuracy
+                accuracy: Math.round(state.lastLocation.accuracy)
             })
             : tr("outsideMessage", {
                 distance: state.lastLocation.distance,
                 radius: SCHOOL_LOCATION.radius
             });
-    setStatus(state.lastLocation.inside ? "inside" : "outside", badgeLabel, description);
+    setStatus(state.lastLocation.inside && accuracyAccepted ? "inside" : "outside", badgeLabel, description);
 }
 
 // Camera lifecycle and face recognition
@@ -690,7 +759,7 @@ async function startAttendanceCamera() {
     state.attendanceMode = requestUser.role;
 
     if (state.user.role === "siswa" && !state.students.some(student =>
-        student.nisn === state.user.nisn && student.descriptor?.length
+        student.nisn === state.user.nisn && getStudentDescriptors(student).length
     )) {
         toast(tr("studentUnlinked"), "error");
         return;
@@ -795,8 +864,56 @@ function drawDetections(video, canvas, detections) {
 
 async function detectFaces(video) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
     return faceapi.detectAllFaces(video, options).withFaceLandmarks().withFaceDescriptors();
+}
+
+function getStudentDescriptors(student) {
+    const samples = Array.isArray(student.faceDescriptors)
+        ? student.faceDescriptors
+        : student.descriptor?.length ? [student.descriptor] : [];
+    return samples.filter(sample => Array.isArray(sample) && sample.length === 128 &&
+        sample.every(Number.isFinite)).map(sample => new Float32Array(sample));
+}
+
+function createFaceMatcher(students) {
+    const labeledDescriptors = students.map(student => {
+        const descriptors = getStudentDescriptors(student);
+        return descriptors.length
+            ? new faceapi.LabeledFaceDescriptors(student.nisn, descriptors)
+            : null;
+    }).filter(Boolean);
+    return labeledDescriptors.length
+        ? new faceapi.FaceMatcher(labeledDescriptors, FACE_MATCH_THRESHOLD)
+        : null;
+}
+
+function updateFaceSampleCount() {
+    $("face-sample-count").textContent = tr("faceSamplesCount", { count: state.faceSamples.length });
+    $("btn-capture-face").disabled = !state.faceCandidate || state.faceSamples.length >= MAX_FACE_SAMPLES;
+}
+
+function saveFaceSample(descriptor) {
+    const values = Array.from(descriptor || []);
+    if (values.length !== 128 || !values.every(Number.isFinite)) {
+        toast(tr("faceUploadError"), "error");
+        return false;
+    }
+    if (state.faceSamples.length >= MAX_FACE_SAMPLES) {
+        toast(tr("faceSampleLimit"), "info");
+        return false;
+    }
+    const descriptorVector = new Float32Array(values);
+    if (state.faceSamples.some(sample =>
+        faceapi.euclideanDistance(descriptorVector, new Float32Array(sample)) < 0.05
+    )) {
+        toast(tr("duplicateFaceSample"), "info");
+        return false;
+    }
+    state.faceSamples.push(values);
+    updateFaceSampleCount();
+    $("form-face-status").textContent = tr("faceSampleReady");
+    return true;
 }
 
 function updateProgress(percent, label) {
@@ -842,6 +959,7 @@ async function notifyParent(student, date, time) {
 async function processAttendanceFrame() {
     if (!state.attendanceStream || state.attendanceBusy || state.attendanceRecorded) return;
     state.attendanceBusy = true;
+    const requestUser = state.user;
 
     try {
         const video = attendanceVideo();
@@ -886,48 +1004,54 @@ async function processAttendanceFrame() {
             return;
         }
 
-        let student;
-        let confidence;
-        if (state.user.role === "siswa") {
-            student = state.students.find(item => item.nisn === state.user.nisn);
-            if (!student?.descriptor?.length) {
-                $("student-attendance-status").textContent = tr("studentUnlinked");
-                return;
+        const candidates = requestUser.role === "siswa"
+            ? state.students.filter(item => item.nisn === requestUser.nisn)
+            : state.students;
+        const matcher = createFaceMatcher(candidates);
+        if (!matcher) {
+            const message = requestUser.role === "siswa" ? tr("studentUnlinked") : tr("faceNotRegistered");
+            if (requestUser.role === "siswa") $("student-attendance-status").textContent = message;
+            else {
+                $("liveness-status").textContent = message;
+                updateProgress(0, message);
             }
-            const distance = faceapi.euclideanDistance(
-                detection.descriptor, new Float32Array(student.descriptor)
-            );
-            if (distance > 0.45) {
-                $("student-attendance-status").textContent = tr("faceNoMatch");
-                return;
-            }
-            confidence = Math.max(0, Math.min(1, 1 - distance));
-        } else {
-            if (!state.students.length) {
-                $("liveness-status").textContent = tr("faceNotRegistered");
-                updateProgress(0, tr("faceNotRegistered"));
-                return;
-            }
-            const labeled = state.students.map(item => new faceapi.LabeledFaceDescriptors(
-                item.nisn, [new Float32Array(item.descriptor)]
-            ));
-            const matcher = new faceapi.FaceMatcher(labeled, 0.45);
-            const best = matcher.findBestMatch(detection.descriptor);
-            if (best.label === "unknown") {
-                $("liveness-status").textContent = tr("faceNoMatch");
-                updateProgress(0, tr("faceNoMatch"));
-                return;
-            }
-            student = state.students.find(item => item.nisn === best.label);
-            confidence = Math.max(0, Math.min(1, 1 - best.distance));
+            return;
         }
+        const best = matcher.findBestMatch(detection.descriptor);
+        if (best.label === "unknown") {
+            const message = tr("faceNoMatch");
+            if (requestUser.role === "siswa") $("student-attendance-status").textContent = message;
+            else {
+                $("liveness-status").textContent = message;
+                updateProgress(0, message);
+            }
+            return;
+        }
+        const student = candidates.find(item => item.nisn === best.label);
+        const confidence = Math.max(0, Math.min(1, 1 - best.distance));
         if (!student) return;
+
+        const location = await checkGeofence();
+        if (state.user !== requestUser || !state.attendanceStream || !attendanceViewActive()) return;
+        if (location.error || !location.inside || location.accuracy > 35) {
+            const message = location.error || (location.accuracy > 35
+                ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
+                : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
+            if (requestUser.role === "siswa") $("student-attendance-status").textContent = message;
+            else {
+                $("liveness-status").textContent = message;
+                updateProgress(0, message);
+            }
+            toast(message, "error");
+            stopAttendanceCamera();
+            return;
+        }
 
         const today = localDateKey();
         if (state.attendance.some(a => a.nisn === student.nisn && a.date === today)) {
             state.attendanceRecorded = true;
-            const message = state.user.role === "siswa" ? tr("studentAlreadyPresent") : tr("alreadyPresent");
-            if (state.user.role === "siswa") $("student-attendance-status").textContent = message;
+            const message = requestUser.role === "siswa" ? tr("studentAlreadyPresent") : tr("alreadyPresent");
+            if (requestUser.role === "siswa") $("student-attendance-status").textContent = message;
             else {
                 updateProgress(100, message);
                 $("liveness-status").textContent = message;
@@ -949,10 +1073,10 @@ async function processAttendanceFrame() {
         });
 
         state.attendanceRecorded = true;
-        const successMessage = state.user.role === "siswa"
+        const successMessage = requestUser.role === "siswa"
             ? tr("studentAttendanceSuccess")
             : tr("attendanceSuccess", { name: student.name });
-        if (state.user.role === "siswa") $("student-attendance-status").textContent = successMessage;
+        if (requestUser.role === "siswa") $("student-attendance-status").textContent = successMessage;
         else {
             updateProgress(100, successMessage);
             $("liveness-status").textContent = tr("locationVerified");
@@ -961,7 +1085,7 @@ async function processAttendanceFrame() {
         renderStudentHistory();
         updateStats();
         toast(successMessage, "success");
-        if (state.user.role === "siswa") {
+        if (requestUser.role === "siswa") {
             stopAttendanceCamera();
             $("student-attendance-status").textContent = successMessage;
         }
@@ -1006,13 +1130,16 @@ async function processFormFrame() {
         const detections = await detectFaces(video);
         drawDetections(video, $("overlay-formulir"), detections);
         if (detections.length === 1) {
-            state.faceSample = Array.from(detections[0].descriptor);
-            $("form-face-status").textContent = tr("faceSampleCapture");
+            state.faceCandidate = Array.from(detections[0].descriptor);
+            $("form-face-status").textContent = tr("faceDetected");
         } else if (detections.length > 1) {
+            state.faceCandidate = null;
             $("form-face-status").textContent = tr("faceTooMany");
         } else {
+            state.faceCandidate = null;
             $("form-face-status").textContent = tr("faceNotFound");
         }
+        updateFaceSampleCount();
     } catch (error) {
         displayModelError(error);
         stopFormCamera();
@@ -1036,22 +1163,29 @@ async function readUploadedFace(file) {
     try {
         const image = await faceapi.bufferToImage(file);
         const detections = await faceapi.detectAllFaces(
-            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
         ).withFaceLandmarks().withFaceDescriptors();
 
         if (detections.length !== 1) {
-            state.faceSample = null;
             $("form-face-status").textContent = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
             toast(detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound"), "error");
             return;
         }
 
-        state.faceSample = Array.from(detections[0].descriptor);
-        $("form-face-status").textContent = tr("faceSampleReady");
-        toast(tr("faceSampleReady"), "success");
+        if (saveFaceSample(detections[0].descriptor)) toast(tr("faceSampleReady"), "success");
     } catch (error) {
         console.error("Image processing error:", error);
         toast(tr("faceUploadError"), "error");
+    }
+}
+
+async function readUploadedFaces(files) {
+    for (const file of files) {
+        if (state.faceSamples.length >= MAX_FACE_SAMPLES) {
+            toast(tr("faceSampleLimit"), "info");
+            break;
+        }
+        await readUploadedFace(file);
     }
 }
 
@@ -1077,7 +1211,7 @@ function registerStudent(event) {
         toast(tr("studentExists"), "error");
         return;
     }
-    if (!state.faceSample || state.faceSample.length === 0) {
+    if (!state.faceSamples.length) {
         toast(tr("needFace"), "error");
         return;
     }
@@ -1085,15 +1219,17 @@ function registerStudent(event) {
     state.students.push({
         nisn, name, className,
         parentWhatsApp: waDigits.replace(/^08/, "628"),
-        descriptor: [...state.faceSample],
+        faceDescriptors: state.faceSamples.map(sample => [...sample]),
         registeredDate: new Date().toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID")
     });
     state.accounts.filter(account => account.role === "siswa" && account.nisn === nisn)
         .forEach(account => { account.linked = true; });
 
-    state.faceSample = null;
+    state.faceSamples = [];
+    state.faceCandidate = null;
     $("student-form").reset();
     $("form-face-status").textContent = tr("noFaceSample");
+    updateFaceSampleCount();
     renderStudentList();
     renderDatabase();
     updateStudentProfile();
@@ -1174,25 +1310,27 @@ function updateMapUserMarker() {
     }
 
     state.userMarker.bindPopup(
-        `${tr("mapUserPopup")}<br>${tr("mapDistance", { distance: state.lastLocation.distance })}<br>${tr("mapAccuracy", { accuracy: state.lastLocation.accuracy })}`
+        `${tr("mapUserPopup")}<br>${tr("mapDistance", { distance: state.lastLocation.distance })}<br>${tr("mapAccuracy", { accuracy: Math.round(state.lastLocation.accuracy) })}`
     );
 }
 
 function updateMapText() {
     $("map-subtitle").textContent = tr("mapDesc");
     $("map-location-detail").textContent = state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking
-        ? tr(state.lastLocation.inside ? "insideMessage" : "outsideMessage", {
-            distance: state.lastLocation.distance,
-            accuracy: state.lastLocation.accuracy,
-            radius: SCHOOL_LOCATION.radius
-        })
+        ? state.lastLocation.accuracy > 35
+            ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
+            : tr(state.lastLocation.inside ? "insideMessage" : "outsideMessage", {
+                distance: state.lastLocation.distance,
+                accuracy: Math.round(state.lastLocation.accuracy),
+                radius: SCHOOL_LOCATION.radius
+            })
         : state.lastLocation?.errorKey ? tr(state.lastLocation.errorKey)
             : state.lastLocation?.error || tr("locationMapReady");
 
     if (state.schoolMarker) state.schoolMarker.setPopupContent(tr("mapSchoolPopup"));
     if (state.userMarker && state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking) {
         state.userMarker.setPopupContent(
-            `${tr("mapUserPopup")}<br>${tr("mapDistance", { distance: state.lastLocation.distance })}<br>${tr("mapAccuracy", { accuracy: state.lastLocation.accuracy })}`
+            `${tr("mapUserPopup")}<br>${tr("mapDistance", { distance: state.lastLocation.distance })}<br>${tr("mapAccuracy", { accuracy: Math.round(state.lastLocation.accuracy) })}`
         );
     }
 }
@@ -1205,6 +1343,8 @@ async function refreshMapLocation() {
     const result = await checkGeofence();
     if (result.error) {
         toast(result.error, "error");
+    } else if (result.accuracy > 35) {
+        toast(tr("accuracyWarning", { accuracy: Math.round(result.accuracy) }), "error");
     } else {
         toast(result.inside
             ? tr("insideMessage", { distance: result.distance, accuracy: result.accuracy })
@@ -1218,6 +1358,8 @@ function switchAuthTab(tab) {
     const login = tab === "login";
     $("tab-login").classList.toggle("active", login);
     $("tab-register").classList.toggle("active", !login);
+    $("tab-login").setAttribute("aria-selected", String(login));
+    $("tab-register").setAttribute("aria-selected", String(!login));
     $("login-form").classList.toggle("hidden", !login);
     $("register-form").classList.toggle("hidden", login);
 }
@@ -1238,12 +1380,6 @@ function selectAuthRole(formName, role) {
 }
 
 function setupEvents() {
-    document.addEventListener("click", event => {
-        const button = event.target instanceof Element ? event.target.closest("button") : null;
-        if (!button || button.id === "btn-attendance-switch" || button.id === "btn-student-attendance") return;
-        if (state.attendanceStream || state.formStream) stopAllCameras();
-    }, true);
-
     $("tab-login").addEventListener("click", () => switchAuthTab("login"));
     $("tab-register").addEventListener("click", () => switchAuthTab("register"));
     $("model-retry").addEventListener("click", () => location.reload());
@@ -1407,8 +1543,13 @@ function setupEvents() {
         toast(tr("cameraFormOff"), "info");
     });
 
+    $("btn-capture-face").addEventListener("click", () => {
+        if (state.faceCandidate && saveFaceSample(state.faceCandidate)) {
+            toast(tr("faceSampleReady"), "success");
+        }
+    });
     $("photo-upload").addEventListener("change", event => {
-        readUploadedFace(event.target.files?.[0]);
+        readUploadedFaces(Array.from(event.target.files || []));
         event.target.value = "";
     });
 
@@ -1452,7 +1593,9 @@ function setupEvents() {
         state.students = [];
         state.accounts.filter(account => account.role === "siswa")
             .forEach(account => { account.linked = false; });
-        state.faceSample = null;
+        state.faceSamples = [];
+        state.faceCandidate = null;
+        updateFaceSampleCount();
         $("confirm-dialog").classList.add("hidden");
         renderDatabase();
         renderStudentList();
@@ -1489,6 +1632,7 @@ function initialize() {
     renderStudentHistory();
     updateStats();
     setSwitch(false);
+    updateFaceSampleCount();
     $("model-status").textContent = tr("modelLoading");
 }
 

@@ -95,16 +95,6 @@ p {
     display: none !important;
 }
 
-.background-grid {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image: linear-gradient(rgba(76, 121, 196, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(76, 121, 196, .045) 1px, transparent 1px);
-    background-size: 28px 28px;
-    mask-image: linear-gradient(to bottom, black, transparent 95%);
-}
-
 .muted {
     color: var(--muted);
 }
@@ -253,68 +243,73 @@ label {
     min-height: 100vh;
     display: grid;
     place-items: center;
-    padding: 30px 16px;
+    padding: 24px 16px;
+    background: var(--bg);
 }
 
 .auth-card {
-    width: min(100%, 430px);
-    padding: clamp(24px, 5vw, 42px);
+    width: min(100%, 410px);
+    padding: clamp(24px, 5vw, 36px);
     border: 1px solid var(--border);
-    border-radius: 26px;
-    background: var(--surface);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(18px);
+    border-radius: 18px;
+    background: var(--surface-solid);
+    box-shadow: 0 12px 40px rgba(43, 76, 133, .07);
 }
 
 .brand-auth {
-    margin-bottom: 27px;
+    margin-bottom: 24px;
 }
 
-.auth-card .eyebrow {
-    margin-bottom: 10px;
+.auth-card h1 {
+    margin-bottom: 8px;
+    font-size: 30px;
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+}
+
+.auth-card .brand {
+    font-family: "Inter", sans-serif;
+    font-size: 20px;
 }
 
 .auth-card .muted {
-    margin-bottom: 22px;
+    margin-bottom: 20px;
+    font-size: 13px;
 }
 
 .auth-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    padding: 4px;
-    background: var(--surface-soft);
-    border-radius: 12px;
-    margin-bottom: 22px;
+    gap: 10px;
+    margin-bottom: 18px;
 }
 
 .auth-tab {
-    border: 0;
-    border-radius: 9px;
-    padding: 11px;
+    min-height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
     color: var(--muted);
-    background: transparent;
+    background: var(--surface-solid);
     font-weight: 750;
 }
 
 .auth-tab.active {
-    background: var(--surface-solid);
-    color: var(--blue);
-    box-shadow: 0 2px 8px #1b27400c;
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
 }
 
 .demo-note {
-    margin: 5px 0 0;
-    padding: 12px;
-    border-radius: 11px;
-    background: var(--surface-soft);
+    margin: 16px 0 0;
     color: var(--muted);
-    font-size: 11px;
-    line-height: 1.9;
+    font-size: 10px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
 }
 
 .demo-note code {
-    color: var(--text);
-    font-size: 11px;
+    color: var(--muted);
+    font-size: 10px;
 }
 
 .check-line {
@@ -342,7 +337,7 @@ label {
 }
 
 .auth-card>.language-row {
-    margin-top: 22px;
+    margin-top: 14px;
     justify-content: center;
 }
 
@@ -1634,10 +1629,6 @@ body.theme-dark .demo-note {
     background: var(--surface-soft);
 }
 
-body.theme-dark .background-grid {
-    opacity: .4;
-}
-
 /* Arabic RTL support */
 html[dir="rtl"] body {
     font-family: "Inter", sans-serif;
@@ -1939,11 +1930,11 @@ html[dir="rtl"] .modal-heading {
 }
 
 .student-attendance-card {
-    max-width: 820px;
+    max-width: 620px;
     margin: 0 auto;
     padding: clamp(18px, 4vw, 36px);
     border: 1px solid var(--border);
-    border-radius: 22px;
+    border-radius: 18px;
     background: var(--surface);
     box-shadow: var(--shadow);
 }
@@ -1953,7 +1944,7 @@ html[dir="rtl"] .modal-heading {
 }
 
 .student-attendance-card>.muted {
-    max-width: 640px;
+    max-width: 460px;
 }
 
 .student-camera-stage {
@@ -1962,9 +1953,13 @@ html[dir="rtl"] .modal-heading {
 
 .student-checkin-button {
     width: 100%;
-    min-height: 56px;
+    min-height: 62px;
     margin-top: 16px;
-    font-size: 15px;
+    font-size: 16px;
+}
+
+.face-sample-count {
+    margin: -10px 0 0;
 }
 
 .student-profile-panel {

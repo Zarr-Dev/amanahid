@@ -16,8 +16,6 @@
 </head>
 
 <body>
-    <div class="background-grid"></div>
-
     <!-- Single-page auth screen; role routing uses the URL hash. -->
     <main id="auth-screen" class="auth-screen">
         <section class="auth-card">
@@ -25,13 +23,14 @@
                 <span class="brand-mark">A</span>
                 <span>Amanah<span class="brand-dot">.id</span></span>
             </a>
-            <p class="eyebrow" data-i18n="authEyebrow">PRESENSI DIGITAL SEKOLAH</p>
-            <h1 data-i18n="welcomeTitle">Presensi yang lebih aman.</h1>
-            <p class="muted" data-i18n="welcomeDesc">Masuk untuk mengelola presensi dan data siswa.</p>
+            <h1 data-i18n="welcomeTitle">Amanah.id</h1>
+            <p class="muted" data-i18n="welcomeDesc">Presensi sekolah dengan verifikasi wajah dan lokasi.</p>
 
-            <div class="auth-tabs">
-                <button id="tab-login" class="auth-tab active" type="button" data-i18n="login">Masuk</button>
-                <button id="tab-register" class="auth-tab" type="button" data-i18n="signup">Daftar</button>
+            <div class="auth-tabs" role="tablist" aria-label="Akun">
+                <button id="tab-login" class="auth-tab active" type="button" role="tab" aria-selected="true"
+                    aria-controls="login-form" data-i18n="login">Masuk</button>
+                <button id="tab-register" class="auth-tab" type="button" role="tab" aria-selected="false"
+                    aria-controls="register-form" data-i18n="signup">Daftar</button>
             </div>
 
             <form id="login-form" class="form-stack">
@@ -48,12 +47,6 @@
                 <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••"
                     required>
                 <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
-                <p class="demo-note"><span data-i18n="demoAccount">Akun demo</span><br>
-                    <strong data-i18n="roleTeacher">Guru</strong>: <code>admin@amanahid.sch.id</code> /
-                    <code>AmanahDemo!2026#ID</code><br>
-                    <strong data-i18n="roleStudent">Siswa</strong>: <code>siswa@amanahid.sch.id</code> /
-                    <code>SiswaDemo!2026#ID</code>
-                </p>
             </form>
 
             <form id="register-form" class="form-stack hidden">
@@ -83,6 +76,12 @@
                 <button id="btn-register-submit" class="button primary full" type="submit" disabled
                     data-i18n="signup">Daftar</button>
             </form>
+            <p class="demo-note"><span data-i18n="demoAccount">Demo</span>:
+                <strong data-i18n="roleTeacher">Guru</strong> <code>admin@amanahid.sch.id</code> /
+                <code>AmanahDemo!2026#ID</code>
+                <br><strong data-i18n="roleStudent">Siswa</strong> <code>siswa@amanahid.sch.id</code> /
+                <code>SiswaDemo!2026#ID</code>
+            </p>
             <div class="language-row">
                 <button class="lang-btn active" type="button" data-lang="id">ID</button>
                 <button class="lang-btn" type="button" data-lang="en">EN</button>
@@ -348,11 +347,15 @@
                         <div class="form-camera-actions"><button id="btn-start-form-camera" class="button secondary"
                                 type="button" data-i18n="openCamera">Buka kamera</button><button
                                 id="btn-stop-form-camera" class="button subtle" type="button"
-                                data-i18n="closeCamera">Tutup kamera</button></div>
+                                data-i18n="closeCamera">Tutup kamera</button><button id="btn-capture-face"
+                                class="button subtle" type="button" disabled data-i18n="captureSample">Simpan sampel
+                                kamera</button></div>
                         <label for="photo-upload" data-i18n="uploadPhoto">Unggah foto wajah</label><input
-                            id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp">
+                            id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp" multiple>
                         <p id="form-face-status" class="helper-text" data-i18n="noFaceSample">Belum ada sampel wajah.
                         </p>
+                        <p id="face-sample-count" class="helper-text face-sample-count" aria-live="polite"
+                            data-i18n="faceSamplesCount">0 sampel wajah</p>
                         <button class="button primary full" type="submit" data-i18n="saveStudent">Simpan siswa</button>
                     </form>
                     <aside class="form-aside">
