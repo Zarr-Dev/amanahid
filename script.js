@@ -290,7 +290,7 @@ const LANDING_T = {
     },
     en: {
         brandName: "Amanah.id", splashSubtitle: "Digital School Attendance",
-        heroTitleFirst: "The Modern Way to Track Attendance,", heroTitleSecond: "No Proxy Check-ins.",
+        heroTitleFirst: "Modern School Attendance,", heroTitleSecond: "No Proxy Check-ins.",
         heroDescription: "Track student attendance in real time with face and GPS verification. No fingerprint machines or hardware costs.",
         heroBenefitsLabel: "Amanah.id features", heroBenefitAccuracy: "High-accuracy face recognition",
         heroBenefitGps: "Prevents GPS spoofing and proxy check-ins",
@@ -321,7 +321,7 @@ const LANDING_T = {
     },
     ar: {
         brandName: "أمانة.id", splashSubtitle: "الحضور المدرسي الرقمي",
-        heroTitleFirst: "الحضور المدرسي بالطريقة الحديثة،", heroTitleSecond: "لا تسجيل بالنيابة.",
+        heroTitleFirst: "الحضور المدرسي الحديث،", heroTitleSecond: "لا تسجيل بالنيابة.",
         heroDescription: "تابع حضور الطلاب لحظيًا باستخدام التحقق من الوجه وموقع GPS، دون أجهزة بصمة أو تكاليف معدات.",
         heroBenefitsLabel: "ميزات أمانة.id", heroBenefitAccuracy: "دقة عالية في التحقق من الوجه",
         heroBenefitGps: "منع تزوير GPS وتسجيل الحضور بالنيابة",
@@ -415,6 +415,71 @@ function setLanguage(lang) {
     updateStudentProfile();
     if (state.map) updateMapText();
     updateSchoolLocationEditor();
+    fitHeroTitle();
+}
+
+function fitHeroTitle() {
+    const title = $("auth-hero-title");
+    if (!title) return;
+
+    title.style.removeProperty("--hero-fit-size");
+    const baseSize = Number.parseFloat(getComputedStyle(title).fontSize);
+    const availableWidth = title.clientWidth;
+    if (!baseSize || !availableWidth) return;
+
+    const style = getComputedStyle(title);
+    const lineWidths = [...title.querySelectorAll("[data-i18n^='heroTitle']")].map(line => {
+        const measure = document.createElement("span");
+        measure.textContent = line.textContent.trim();
+        Object.assign(measure.style, {
+            position: "fixed",
+            left: "-10000px",
+            top: "0",
+            width: "max-content",
+            whiteSpace: "nowrap",
+            visibility: "hidden",
+            fontFamily: style.fontFamily,
+            fontSize: `${baseSize}px`,
+            fontWeight: style.fontWeight,
+            letterSpacing: style.letterSpacing,
+            direction: document.documentElement.dir
+        });
+        document.body.append(measure);
+        const width = measure.getBoundingClientRect().width;
+        measure.remove();
+        return width;
+    });
+    const widestLine = Math.max(0, ...lineWidths);
+    const fitSize = widestLine > availableWidth
+        ? baseSize * ((availableWidth - 2) / widestLine)
+        : baseSize;
+    title.style.setProperty("--hero-fit-size", `${Math.max(12, fitSize)}px`);
+}
+
+function setMapStatus(key = "") {
+    const status = $("map-status");
+    if (!status) return;
+    if (!key) {
+        status.textContent = "";
+        delete status.dataset.i18n;
+        status.classList.add("hidden");
+        return;
+    }
+    status.dataset.i18n = key;
+    status.textContent = tr(key);
+    status.classList.remove("hidden");
+}
+
+function observeHeroTitleSize() {
+    const copy = document.querySelector(".auth-copy");
+    if (!copy) return;
+    if ("ResizeObserver" in window) {
+        const observer = new ResizeObserver(() => fitHeroTitle());
+        observer.observe(copy);
+    } else {
+        window.addEventListener("resize", fitHeroTitle);
+    }
+    document.fonts?.ready.then(() => fitHeroTitle());
 }
 
 function setTheme(theme) {
@@ -609,9 +674,10 @@ async function cloudRequest(path, {
     return result;
 }
 
-async function loadSchoolSettings() {
+async function loadSchoolSettings({ preserveOnError = false } = {}) {
     const requestUser = state.user;
-    state.schoolSettingsLoaded = false;
+    const previousSettingsLoaded = state.schoolSettingsLoaded;
+    if (!preserveOnError) state.schoolSettingsLoaded = false;
     try {
         const settings = await cloudRequest("/api/settings");
         if (state.user !== requestUser) return false;
@@ -631,12 +697,15 @@ async function loadSchoolSettings() {
             state.schoolCircle.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
             state.schoolCircle.setRadius(SCHOOL_LOCATION.radius);
         }
-        if (state.map) updateMapText();
+        if (state.map) {
+            state.map.setView([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng], state.map.getZoom());
+            updateMapText();
+        }
         updateSchoolLocationEditor();
         return true;
     } catch (error) {
         console.error("School location settings failed to load:", error);
-        state.schoolSettingsLoaded = false;
+        state.schoolSettingsLoaded = preserveOnError && previousSettingsLoaded;
         return false;
     }
 }
@@ -1788,66 +1857,81 @@ async function removeStudent(nisn) {
     toast(tr("studentDeleted"), "success");
 }
 
-async function openMap() {
-    if (!(await loadSchoolSettings())) {
-        toast(tr("schoolSettingsFailed"), "error");
-        return;
-    }
+function openMap() {
     stopAllCameras();
     $("map-modal").classList.remove("hidden");
+    setMapStatus();
     $("school-location-editor").classList.toggle("hidden", state.user?.role !== "guru");
     updateMapText();
 
     if (!window.L) {
+        setMapStatus("mapFailed");
         toast(tr("mapFailed"), "error");
         return;
     }
 
-    if (!state.map) {
-        state.map = L.map("school-map", { zoomControl: true }).setView(
-            [SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng], 18
-        );
+    try {
+        if (!state.map) {
+            state.map = L.map("school-map", { zoomControl: true }).setView(
+                [SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng], 18
+            );
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(state.map);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(state.map);
 
-        state.schoolMarker = L.marker([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng], {
-            icon: L.divIcon({
-                className: "",
-                html: '<div class="school-marker"></div>',
-                iconSize: [18, 18],
-                iconAnchor: [9, 9]
-            })
-        }).addTo(state.map);
+            state.schoolMarker = L.marker([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng], {
+                icon: L.divIcon({
+                    className: "",
+                    html: '<div class="school-marker"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9]
+                })
+            }).addTo(state.map);
 
-        state.schoolCircle = L.circle([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng], {
-            radius: SCHOOL_LOCATION.radius,
-            color: "#3978f6",
-            weight: 2,
-            fillColor: "#3978f6",
-            fillOpacity: .18
-        }).addTo(state.map);
+            state.schoolCircle = L.circle([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng], {
+                radius: SCHOOL_LOCATION.radius,
+                color: "#3978f6",
+                weight: 2,
+                fillColor: "#3978f6",
+                fillOpacity: .18
+            }).addTo(state.map);
 
-        state.map.on("click", event => {
-            if (!state.mapEditMode || state.user?.role !== "guru") return;
-            state.mapDraftLocation = {
-                ...state.mapDraftLocation,
-                lat: event.latlng.lat,
-                lng: event.latlng.lng
-            };
-            updateSchoolLocationEditor();
-        });
+            state.map.on("click", event => {
+                if (!state.mapEditMode || state.user?.role !== "guru") return;
+                state.mapDraftLocation = {
+                    ...state.mapDraftLocation,
+                    lat: event.latlng.lat,
+                    lng: event.latlng.lng
+                };
+                updateSchoolLocationEditor();
+            });
+        }
+
+        state.schoolMarker.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
+        state.schoolMarker.bindPopup(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
+        state.schoolCircle.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
+        state.schoolCircle.setRadius(SCHOOL_LOCATION.radius);
+        state.map.setView([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng], state.map.getZoom());
+        window.setTimeout(() => state.map?.invalidateSize(), 100);
+        updateMapUserMarker();
+        updateSchoolLocationEditor();
+    } catch (error) {
+        console.error("School map failed to initialize:", error);
+        setMapStatus("mapFailed");
+        toast(tr("mapFailed"), "error");
+        return;
     }
 
-    state.schoolMarker.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
-    state.schoolMarker.bindPopup(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
-    state.schoolCircle.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
-    state.schoolCircle.setRadius(SCHOOL_LOCATION.radius);
-    window.setTimeout(() => state.map?.invalidateSize(), 100);
-    updateMapUserMarker();
-    updateSchoolLocationEditor();
+    if (!state.schoolSettingsLoaded) {
+        void loadSchoolSettings({ preserveOnError: true }).then(loaded => {
+            if (!loaded && !$("map-modal").classList.contains("hidden")) {
+                setMapStatus("schoolSettingsFailed");
+                toast(tr("schoolSettingsFailed"), "error");
+            }
+        });
+    }
 }
 
 function updateSchoolLocationEditor() {
@@ -2357,6 +2441,7 @@ function initialize() {
     initSplashScreen();
     setTheme("light");
     setLanguage("id");
+    observeHeroTitleSize();
     showAuth();
     setupEvents();
     renderDatabase();
