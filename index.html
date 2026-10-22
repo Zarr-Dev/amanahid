@@ -16,78 +16,157 @@
 </head>
 
 <body>
-    <!-- Single-page auth screen; login resolves the account role automatically. -->
+    <!-- Single-page landing and auth; login resolves the account role automatically. -->
     <main id="auth-screen" class="auth-screen">
-        <section class="auth-card">
-            <section class="auth-hero" aria-labelledby="auth-hero-title">
-                <a class="brand brand-auth" href="#" aria-label="Amanah.id">
-                    <span class="brand-mark">A</span>
-                    <span>Amanah<span class="brand-dot">.id</span></span>
-                </a>
-                <h1 id="auth-hero-title" data-i18n="welcomeTitle">Presensi sekolah, lebih mudah.</h1>
-                <p class="muted" data-i18n="welcomeDesc">Amanah.id menggabungkan verifikasi wajah dan lokasi.</p>
-                <ul class="hero-features" aria-label="Fitur Amanah.id">
-                    <li><span aria-hidden="true">✓</span><span data-i18n="heroFeatureFaceGps">Wajah + GPS</span></li>
-                    <li><span aria-hidden="true">⌁</span><span data-i18n="heroFeatureNoHardware">Tanpa mesin
-                            tambahan</span></li>
-                    <li><span aria-hidden="true">⌖</span><span data-i18n="heroFeatureLocation">Lokasi
-                            terverifikasi</span></li>
+        <header class="auth-header">
+            <a class="brand brand-auth" href="#" aria-label="Amanah.id">
+                <span class="brand-mark">A</span>
+                <span>Amanah<span class="brand-dot">.id</span></span>
+            </a>
+        </header>
+
+        <div class="auth-layout">
+            <section class="auth-copy" aria-labelledby="auth-hero-title">
+                <p class="auth-eyebrow" data-i18n="authEyebrow">PRESENSI DIGITAL SEKOLAH</p>
+                <h1 id="auth-hero-title">Presensi Sekolah Masa Kini,<br><span>Anti Titip Absen.</span></h1>
+                <p class="auth-description">
+                    Pantau kehadiran siswa secara real-time dengan verifikasi wajah (Face Recognition) dan lokasi (GPS
+                    Geofencing). Tanpa mesin fingerprint, tanpa biaya hardware.
+                </p>
+
+                <ul class="auth-benefits" aria-label="Fitur Amanah.id">
+                    <li><span class="benefit-check" aria-hidden="true">✓</span>Akurasi wajah tingkat tinggi (ArcFace)
+                    </li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span>Mencegah fake GPS &amp; absen titip</li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span>Cukup gunakan HP siswa masing-masing</li>
                 </ul>
-                <button id="hero-cta" class="button primary hero-cta" type="button" data-i18n="heroCta">Masuk / Coba
-                    demo</button>
+
+                <details class="about-amanah">
+                    <summary>Tentang Amanah ID</summary>
+                    <p>Amanah.id membantu sekolah mencatat kehadiran siswa dengan verifikasi wajah dan lokasi.</p>
+                </details>
+
+                <div class="auth-actions" role="tablist" aria-label="Pilih akses">
+                    <button id="tab-login" class="auth-action auth-action-primary active" type="button" role="tab"
+                        aria-selected="true" aria-controls="login-form">Login</button>
+                    <button id="tab-register" class="auth-action auth-action-outline" type="button" role="tab"
+                        aria-selected="false" aria-controls="register-form">Sign Up</button>
+                </div>
+
+                <section class="auth-form-card" aria-label="Form akun">
+                    <form id="login-form" class="form-stack">
+                        <label for="login-email" data-i18n="email">Email</label>
+                        <input id="login-email" type="email" autocomplete="username" placeholder="nama@sekolah.sch.id"
+                            required>
+                        <label for="login-password" data-i18n="password">Kata sandi</label>
+                        <input id="login-password" type="password" autocomplete="current-password"
+                            placeholder="••••••••" required>
+                        <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
+                    </form>
+
+                    <form id="register-form" class="form-stack hidden">
+                        <p class="signup-hint" data-i18n="signupRoleHint">
+                            Peran otomatis dari email: gunakan @siswa.id atau @guru.id.
+                        </p>
+                        <label for="register-name" data-i18n="fullName">Nama lengkap</label>
+                        <input id="register-name" type="text" autocomplete="name" required>
+                        <div id="register-nisn-field">
+                            <label for="register-nisn" data-i18n="nisn">NISN</label>
+                            <input id="register-nisn" inputmode="numeric" maxlength="20" autocomplete="off">
+                        </div>
+                        <label for="register-email" data-i18n="email">Email</label>
+                        <input id="register-email" type="email" autocomplete="email" required>
+                        <label for="register-password" data-i18n="password">Kata sandi</label>
+                        <input id="register-password" type="password" minlength="8" autocomplete="new-password"
+                            required>
+                        <label for="register-confirm" data-i18n="confirmPassword">Konfirmasi kata sandi</label>
+                        <input id="register-confirm" type="password" minlength="8" autocomplete="new-password" required>
+                        <label class="check-line">
+                            <input id="terms-reg" type="checkbox">
+                            <span data-i18n="terms">Saya menyetujui ketentuan penggunaan demo.</span>
+                        </label>
+                        <button id="btn-register-submit" class="button primary full" type="submit" disabled
+                            data-i18n="signup">Daftar</button>
+                    </form>
+
+                    <p class="demo-note"><span data-i18n="demoAccount">Demo</span>:
+                        <strong data-i18n="roleTeacher">Guru</strong> <code>admin@amanahid.sch.id</code> /
+                        <code>AmanahDemo!2026#ID</code>
+                        <br><strong data-i18n="roleStudent">Siswa</strong> <code>siswa@amanahid.sch.id</code> /
+                        <code>SiswaDemo!2026#ID</code>
+                    </p>
+                </section>
             </section>
 
-            <div class="auth-tabs" role="tablist" aria-label="Akun">
-                <button id="tab-login" class="auth-tab active" type="button" role="tab" aria-selected="true"
-                    aria-controls="login-form" data-i18n="login">Masuk</button>
-                <button id="tab-register" class="auth-tab" type="button" role="tab" aria-selected="false"
-                    aria-controls="register-form" data-i18n="signup">Daftar</button>
-            </div>
-
-            <form id="login-form" class="form-stack">
-                <label for="login-email" data-i18n="email">Email</label>
-                <input id="login-email" type="email" autocomplete="username" placeholder="nama@sekolah.sch.id" required>
-                <label for="login-password" data-i18n="password">Kata sandi</label>
-                <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••"
-                    required>
-                <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
-            </form>
-
-            <form id="register-form" class="form-stack hidden">
-                <p class="signup-hint" data-i18n="signupRoleHint">
-                    Peran otomatis dari email: gunakan @siswa.id atau @guru.id.
-                </p>
-                <label for="register-name" data-i18n="fullName">Nama lengkap</label>
-                <input id="register-name" type="text" autocomplete="name" required>
-                <div id="register-nisn-field">
-                    <label for="register-nisn" data-i18n="nisn">NISN</label>
-                    <input id="register-nisn" inputmode="numeric" maxlength="20" autocomplete="off">
+            <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah.id">
+                <div class="visual-glow"></div>
+                <div class="dashboard-mockup">
+                    <div class="mockup-topbar">
+                        <div class="mockup-brand"><span class="mockup-brand-mark">A</span>Amanah.id</div>
+                        <div class="mockup-window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+                    </div>
+                    <div class="mockup-content">
+                        <div class="mockup-greeting">
+                            <span>Dashboard Presensi</span>
+                            <strong>Selamat pagi 👋</strong>
+                        </div>
+                        <div class="mockup-attendance-card">
+                            <div class="mockup-attendance-icon" aria-hidden="true">✓</div>
+                            <div><small>STATUS KEHADIRAN</small><strong>Hadir hari ini</strong></div>
+                            <span class="mockup-live-dot"></span>
+                        </div>
+                        <div class="mockup-metrics">
+                            <div><span>Total siswa</span><strong>284</strong><small>Terdaftar</small></div>
+                            <div><span>Sudah hadir</span><strong>261</strong><small class="metric-positive">+92%</small>
+                            </div>
+                        </div>
+                        <div class="mockup-list-heading"><strong>Presensi terbaru</strong><span>Lihat semua</span></div>
+                        <div class="mockup-student-row">
+                            <span class="mockup-avatar">NA</span>
+                            <span><strong>Nadia Azzahra</strong><small>XI IPA 2 · 07:12</small></span>
+                            <b>Hadir</b>
+                        </div>
+                        <div class="mockup-student-row">
+                            <span class="mockup-avatar avatar-lilac">RF</span>
+                            <span><strong>Rafi Firmansyah</strong><small>XI IPA 1 · 07:14</small></span>
+                            <b>Hadir</b>
+                        </div>
+                        <div class="mockup-chart" aria-hidden="true">
+                            <span style="--bar: 42%"></span><span style="--bar: 63%"></span>
+                            <span style="--bar: 51%"></span><span style="--bar: 78%"></span>
+                            <span style="--bar: 58%"></span><span style="--bar: 92%"></span>
+                            <span style="--bar: 72%"></span><span style="--bar: 100%"></span>
+                        </div>
+                    </div>
                 </div>
-                <label for="register-email" data-i18n="email">Email</label>
-                <input id="register-email" type="email" autocomplete="email" required>
-                <label for="register-password" data-i18n="password">Kata sandi</label>
-                <input id="register-password" type="password" minlength="8" autocomplete="new-password" required>
-                <label for="register-confirm" data-i18n="confirmPassword">Konfirmasi kata sandi</label>
-                <input id="register-confirm" type="password" minlength="8" autocomplete="new-password" required>
-                <label class="check-line">
-                    <input id="terms-reg" type="checkbox">
-                    <span data-i18n="terms">Saya menyetujui ketentuan penggunaan demo.</span>
-                </label>
-                <button id="btn-register-submit" class="button primary full" type="submit" disabled
-                    data-i18n="signup">Daftar</button>
-            </form>
-            <p class="demo-note"><span data-i18n="demoAccount">Demo</span>:
-                <strong data-i18n="roleTeacher">Guru</strong> <code>admin@amanahid.sch.id</code> /
-                <code>AmanahDemo!2026#ID</code>
-                <br><strong data-i18n="roleStudent">Siswa</strong> <code>siswa@amanahid.sch.id</code> /
-                <code>SiswaDemo!2026#ID</code>
-            </p>
+
+                <div class="floating-card floating-face">
+                    <span class="floating-icon face-icon" aria-hidden="true">◎</span>
+                    <span><strong>Wajah Cocok</strong><small>99.8% terverifikasi</small></span>
+                    <span class="floating-check" aria-hidden="true">✓</span>
+                </div>
+                <div class="floating-card floating-location">
+                    <span class="floating-icon location-icon" aria-hidden="true">⌖</span>
+                    <span><strong>Lokasi Valid</strong><small>15 m dari sekolah</small></span>
+                </div>
+                <div class="floating-card floating-success">
+                    <span class="floating-icon success-icon" aria-hidden="true">✓</span>
+                    <span><strong>Presensi berhasil</strong><small>Tercatat otomatis</small></span>
+                </div>
+                <div class="floating-orb orb-one" aria-hidden="true"></div>
+                <div class="floating-orb orb-two" aria-hidden="true"></div>
+            </section>
+        </div>
+
+        <footer class="auth-footer">
+            <span>© 2026 Amanah.id · Presensi digital sekolah</span>
             <div class="language-row">
                 <button class="lang-btn active" type="button" data-lang="id">ID</button>
                 <button class="lang-btn" type="button" data-lang="en">EN</button>
                 <button class="lang-btn" type="button" data-lang="ar">العربية</button>
             </div>
-        </section>
+        </footer>
+        <button id="hero-cta" type="button" hidden>Login</button>
     </main>
 
     <!-- Teacher dashboard -->
