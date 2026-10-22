@@ -1,14 +1,14 @@
 import {
     getRequestRole,
-    hasRole,
     isAllowedOrigin,
     jakartaDateTime,
     jsonError,
-    supabaseRequest
+    rateLimit,
+    supabaseRequest,
+    verifyTeacherSession
 } from "../lib/supabase.js";
 import { sendWhatsApp } from "../lib/whatsapp.js";
 
-const SCHOOL = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 35 };
 const MAX_ACCURACY = 35;
 
 function distanceMeters(lat1, lng1, lat2, lng2) {
@@ -64,26 +64,43 @@ export default async function handler(req, res) {
 
     if (req.method === "POST") {
         if (!role) return jsonError(res, 403, "A valid user role is required");
+        if (!rateLimit(req, "attendance:POST", 5, 60_000)) {
+            return jsonError(res, 429, "Too many attendance attempts. Try again in a minute.");
+        }
         const { nisn, lat, lng, accuracy, confidence } = req.body || {};
         if (typeof nisn !== "string" || !/^\d{8,20}$/.test(nisn)) {
             return jsonError(res, 400, "Invalid NISN");
         }
         if (![lat, lng, accuracy, confidence].every(value => typeof value === "number" && Number.isFinite(value)) ||
-            Math.abs(lat) > 90 || Math.abs(lng) > 180 || accuracy <= 0 || confidence < 0 || confidence > 1) {
+            Math.abs(lat) > 90 || Math.abs(lng) > 180 || accuracy <= 0 || confidence < 0.3 || confidence > 1) {
             return jsonError(res, 400, "Invalid location or confidence values");
-        }
-        const distance = distanceMeters(SCHOOL.lat, SCHOOL.lng, lat, lng);
-        if (accuracy > MAX_ACCURACY) {
-            return jsonError(res, 400, `GPS accuracy must be ${MAX_ACCURACY} meters or better`);
-        }
-        if (distance > SCHOOL.radius) {
-            return jsonError(res, 403, `Attendance is outside the ${SCHOOL.radius}-meter school geofence`);
         }
         if (role === "siswa" && req.headers["x-nisn"] !== nisn) {
             return jsonError(res, 403, "Students can only record their own attendance");
         }
 
         try {
+            const settings = await supabaseRequest(
+                "school_settings?select=lat,lng,radius&id=eq.00000000-0000-0000-0000-000000000001&limit=1"
+            );
+            if (!settings.length) return jsonError(res, 503, "School location settings are not configured");
+            const school = {
+                lat: Number(settings[0].lat),
+                lng: Number(settings[0].lng),
+                radius: Number(settings[0].radius)
+            };
+            if (![school.lat, school.lng, school.radius].every(Number.isFinite)) {
+                console.error("School location settings contain invalid values");
+                return jsonError(res, 503, "School location settings are invalid");
+            }
+            const distance = distanceMeters(school.lat, school.lng, lat, lng);
+            if (accuracy > MAX_ACCURACY) {
+                return jsonError(res, 400, `GPS accuracy must be ${MAX_ACCURACY} meters or better`);
+            }
+            if (distance > school.radius) {
+                return jsonError(res, 403, `Attendance is outside the ${school.radius}-meter school geofence`);
+            }
+
             const students = await supabaseRequest(
                 `students?select=id,nisn,name,class_name,parent_whatsapp&nisn=eq.${encodeURIComponent(nisn)}&limit=1`
             );
@@ -136,7 +153,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-        if (!hasRole(req, "guru")) return jsonError(res, 403, "Teacher role is required");
+        if (!verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
         const id = req.query?.id;
         const deleteAll = req.query?.all === "1";
         if (!deleteAll && (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id))) {

@@ -16,12 +16,12 @@
 </head>
 
 <body>
-    <div id="splash-screen" class="splash-screen" aria-label="Amanah.id" aria-live="polite">
+    <div id="splash-screen" class="splash-screen" aria-label="Amanah.id" data-i18n-aria="brandName" aria-live="polite">
         <div class="splash-lockup">
             <img class="splash-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
             <div class="splash-copy">
                 <strong>Amanah ID</strong>
-                <span>Presensi Digital Sekolah</span>
+                <span data-i18n="splashSubtitle">Presensi Digital Sekolah</span>
             </div>
         </div>
     </div>
@@ -29,7 +29,7 @@
     <!-- Single-page landing and auth; login resolves the account role automatically. -->
     <main id="auth-screen" class="auth-screen">
         <header class="auth-header">
-            <a class="brand brand-auth" href="#" aria-label="Amanah.id">
+            <a class="brand brand-auth" href="#" aria-label="Amanah.id" data-i18n-aria="brandName">
                 <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
                 <span>Amanah<span class="brand-dot">.id</span></span>
             </a>
@@ -38,33 +38,39 @@
         <div class="auth-layout">
             <section class="auth-copy" aria-labelledby="auth-hero-title">
                 <p class="auth-eyebrow" data-i18n="authEyebrow">PRESENSI DIGITAL SEKOLAH</p>
-                <h1 id="auth-hero-title">Presensi Sekolah Masa Kini,<br><span>Anti Titip Absen.</span></h1>
-                <p class="auth-description">
+                <h1 id="auth-hero-title"><span class="hero-title-first" data-i18n="heroTitleFirst">Presensi Sekolah Masa
+                        Kini,</span><br><span data-i18n="heroTitleSecond">Anti Titip Absen.</span></h1>
+                <p class="auth-description" data-i18n="heroDescription">
                     Pantau kehadiran siswa secara real-time dengan verifikasi wajah (Face Recognition) dan lokasi (GPS
                     Geofencing). Tanpa mesin fingerprint, tanpa biaya hardware.
                 </p>
 
-                <ul class="auth-benefits" aria-label="Fitur Amanah.id">
-                    <li><span class="benefit-check" aria-hidden="true">✓</span>Akurasi wajah tingkat tinggi (ArcFace)
+                <ul class="auth-benefits" aria-label="Fitur Amanah.id" data-i18n-aria="heroBenefitsLabel">
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span
+                            data-i18n="heroBenefitAccuracy">Akurasi wajah tingkat tinggi (ArcFace)</span>
                     </li>
-                    <li><span class="benefit-check" aria-hidden="true">✓</span>Mencegah fake GPS &amp; absen titip</li>
-                    <li><span class="benefit-check" aria-hidden="true">✓</span>Cukup gunakan HP siswa masing-masing</li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitGps">Mencegah
+                            fake GPS &amp; absen titip</span></li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitPhone">Cukup
+                            gunakan HP siswa masing-masing</span></li>
                 </ul>
 
                 <details class="about-amanah">
-                    <summary>Tentang Amanah ID</summary>
-                    <p>Amanah.id membantu sekolah mencatat kehadiran siswa dengan verifikasi wajah dan lokasi.</p>
+                    <summary data-i18n="aboutTitle">Tentang Amanah ID</summary>
+                    <p data-i18n="aboutDescription">Amanah.id membantu sekolah mencatat kehadiran siswa dengan
+                        verifikasi wajah dan lokasi.</p>
                 </details>
 
-                <div class="auth-actions" role="tablist" aria-label="Pilih akses">
+                <div class="auth-actions" role="tablist" aria-label="Pilih akses" data-i18n-aria="chooseAccess">
                     <button id="tab-login" class="auth-action auth-action-primary active" type="button" role="tab"
-                        aria-selected="true" aria-controls="login-form">Login</button>
+                        aria-selected="true" aria-controls="login-form" data-i18n="login">Login</button>
                     <button id="tab-register" class="auth-action auth-action-outline" type="button" role="tab"
-                        aria-selected="false" aria-controls="register-form">Sign Up</button>
+                        aria-selected="false" aria-controls="register-form" data-i18n="signup">Sign Up</button>
                 </div>
             </section>
 
-            <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah.id">
+            <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah.id"
+                data-i18n-aria="heroDashboardLabel">
                 <div class="visual-glow"></div>
                 <div class="dashboard-mockup">
                     <div class="mockup-topbar">
@@ -74,29 +80,33 @@
                     </div>
                     <div class="mockup-content">
                         <div class="mockup-greeting">
-                            <span>Dashboard Presensi</span>
-                            <strong>Selamat pagi 👋</strong>
+                            <span data-i18n="mockDashboard">Dashboard Presensi</span>
+                            <strong data-i18n="mockGreeting">Selamat pagi 👋</strong>
                         </div>
                         <div class="mockup-attendance-card">
                             <div class="mockup-attendance-icon" aria-hidden="true">✓</div>
-                            <div><small>STATUS KEHADIRAN</small><strong>Hadir hari ini</strong></div>
+                            <div><small data-i18n="mockAttendanceLabel">STATUS KEHADIRAN</small><strong
+                                    data-i18n="mockPresentToday">Hadir hari ini</strong></div>
                             <span class="mockup-live-dot"></span>
                         </div>
                         <div class="mockup-metrics">
-                            <div><span>Total siswa</span><strong>284</strong><small>Terdaftar</small></div>
-                            <div><span>Sudah hadir</span><strong>261</strong><small class="metric-positive">+92%</small>
+                            <div><span data-i18n="mockTotalStudents">Total siswa</span><strong>284</strong><small
+                                    data-i18n="mockRegistered">Terdaftar</small></div>
+                            <div><span data-i18n="mockCheckedIn">Sudah hadir</span><strong>261</strong><small
+                                    class="metric-positive">+92%</small>
                             </div>
                         </div>
-                        <div class="mockup-list-heading"><strong>Presensi terbaru</strong><span>Lihat semua</span></div>
+                        <div class="mockup-list-heading"><strong data-i18n="mockLatestAttendance">Presensi
+                                terbaru</strong><span data-i18n="mockViewAll">Lihat semua</span></div>
                         <div class="mockup-student-row">
                             <span class="mockup-avatar">NA</span>
                             <span><strong>Nadia Azzahra</strong><small>XI IPA 2 · 07:12</small></span>
-                            <b>Hadir</b>
+                            <b data-i18n="attendance">Hadir</b>
                         </div>
                         <div class="mockup-student-row">
                             <span class="mockup-avatar avatar-lilac">RF</span>
                             <span><strong>Rafi Firmansyah</strong><small>XI IPA 1 · 07:14</small></span>
-                            <b>Hadir</b>
+                            <b data-i18n="attendance">Hadir</b>
                         </div>
                         <div class="mockup-chart" aria-hidden="true">
                             <span style="--bar: 42%"></span><span style="--bar: 63%"></span>
@@ -109,16 +119,19 @@
 
                 <div class="floating-card floating-face">
                     <span class="floating-icon face-icon" aria-hidden="true">◎</span>
-                    <span><strong>Wajah Cocok</strong><small>99.8% terverifikasi</small></span>
+                    <span><strong data-i18n="heroFaceMatch">Wajah Cocok</strong><small
+                            data-i18n="heroFaceVerified">99.8% terverifikasi</small></span>
                     <span class="floating-check" aria-hidden="true">✓</span>
                 </div>
                 <div class="floating-card floating-location">
                     <span class="floating-icon location-icon" aria-hidden="true">⌖</span>
-                    <span><strong>Lokasi Valid</strong><small>15 m dari sekolah</small></span>
+                    <span><strong data-i18n="heroLocationValid">Lokasi Valid</strong><small
+                            data-i18n="heroSchoolDistance">15 m dari sekolah</small></span>
                 </div>
                 <div class="floating-card floating-success">
                     <span class="floating-icon success-icon" aria-hidden="true">✓</span>
-                    <span><strong>Presensi berhasil</strong><small>Tercatat otomatis</small></span>
+                    <span><strong data-i18n="heroAttendanceSuccess">Presensi berhasil</strong><small
+                            data-i18n="heroRecordedAutomatically">Tercatat otomatis</small></span>
                 </div>
                 <div class="floating-orb orb-one" aria-hidden="true"></div>
                 <div class="floating-orb orb-two" aria-hidden="true"></div>
@@ -126,14 +139,13 @@
         </div>
 
         <footer class="auth-footer">
-            <span>© 2026 Amanah.id · Presensi digital sekolah</span>
+            <span data-i18n="heroFooter">© 2026 Amanah.id · Presensi digital sekolah</span>
             <div class="language-row">
                 <button class="lang-btn active" type="button" data-lang="id">ID</button>
                 <button class="lang-btn" type="button" data-lang="en">EN</button>
                 <button class="lang-btn" type="button" data-lang="ar">العربية</button>
             </div>
         </footer>
-        <button id="hero-cta" type="button" hidden>Login</button>
     </main>
 
     <div id="auth-modal" class="modal-backdrop auth-modal-backdrop hidden" role="dialog" aria-modal="true"
@@ -144,22 +156,25 @@
                     <span class="auth-modal-kicker">AMANAH.ID</span>
                     <h2 id="auth-modal-title">Masuk ke Amanah.id</h2>
                 </div>
-                <button id="close-auth-modal" class="icon-button" type="button" aria-label="Tutup">×</button>
+                <button id="close-auth-modal" class="icon-button" type="button" aria-label="Tutup"
+                    data-i18n-aria="close">×</button>
             </div>
 
-            <div class="auth-modal-tabs" role="tablist" aria-label="Pilih Login atau Sign Up">
+            <div class="auth-modal-tabs" role="tablist" aria-label="Pilih Login atau Sign Up"
+                data-i18n-aria="chooseAuthTab">
                 <button class="auth-modal-tab active" type="button" role="tab" data-auth-tab="login"
-                    aria-selected="true" aria-controls="login-form">Login</button>
+                    aria-selected="true" aria-controls="login-form" data-i18n="login">Login</button>
                 <button class="auth-modal-tab" type="button" role="tab" data-auth-tab="register" aria-selected="false"
-                    aria-controls="register-form">Sign Up</button>
+                    aria-controls="register-form" data-i18n="signup">Sign Up</button>
             </div>
 
             <form id="login-form" class="form-stack">
                 <label for="login-email" data-i18n="email">Email</label>
-                <input id="login-email" type="email" autocomplete="username" placeholder="nama@sekolah.sch.id" required>
+                <input id="login-email" type="email" autocomplete="username" data-i18n-placeholder="emailPlaceholder"
+                    placeholder="nama@sekolah.sch.id" required>
                 <label for="login-password" data-i18n="password">Kata sandi</label>
-                <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••"
-                    required>
+                <input id="login-password" type="password" autocomplete="current-password"
+                    data-i18n-placeholder="passwordPlaceholder" placeholder="••••••••" required>
                 <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
             </form>
 
@@ -204,7 +219,7 @@
                 <span>Amanah<span class="brand-dot">.id</span></span>
             </a>
             <p class="sidebar-caption" data-i18n="workspace">WORKSPACE</p>
-            <nav class="main-nav" aria-label="Main navigation">
+            <nav class="main-nav" aria-label="Main navigation" data-i18n-aria="mainNavigation">
                 <button class="nav-link active" type="button" data-target="view-presensi"><span
                         class="nav-symbol">◉</span><span data-i18n="dashboard">Dashboard</span></button>
                 <button class="nav-link" type="button" data-target="view-database"><span
@@ -238,7 +253,8 @@
                         <button class="lang-btn" type="button" data-lang="en">EN</button>
                         <button class="lang-btn" type="button" data-lang="ar">ع</button>
                     </div>
-                    <button id="top-profile" class="icon-button" type="button" aria-label="Profile">☰</button>
+                    <button id="top-profile" class="icon-button" type="button" aria-label="Profile"
+                        data-i18n-aria="myProfile">☰</button>
                 </div>
             </header>
 
@@ -276,7 +292,8 @@
                         <div class="stage-bottom">
                             <span id="camera-status" data-i18n="cameraReady">Kamera siap</span>
                             <button id="btn-fullscreen" class="fullscreen-button" type="button"
-                                data-i18n-title="fullscreen" title="Layar penuh" aria-label="Fullscreen">⛶</button>
+                                data-i18n-title="fullscreen" title="Layar penuh" aria-label="Fullscreen"
+                                data-i18n-aria="fullscreen">⛶</button>
                         </div>
                     </div>
 
@@ -304,7 +321,8 @@
                                 diaktifkan.</small>
                         </div>
                         <button id="btn-attendance-switch" class="camera-switch" type="button" role="switch"
-                            aria-checked="false" aria-label="Toggle attendance camera">
+                            aria-checked="false" aria-label="Toggle attendance camera"
+                            data-i18n-aria="toggleAttendanceCamera" disabled>
                             <span class="switch-knob"></span><span class="switch-text" data-i18n="off">MATI</span>
                         </button>
                     </div>
@@ -431,11 +449,12 @@
                             </div>
                         </div>
                         <label for="input-nisn" data-i18n="nisn">NISN</label><input id="input-nisn" inputmode="numeric"
-                            required maxlength="20" placeholder="Contoh: 0091234567">
+                            required minlength="8" maxlength="20" pattern="[0-9]{8,20}"
+                            data-i18n-placeholder="nisnExample" placeholder="Contoh: 0091234567">
                         <label for="input-nama" data-i18n="fullName">Nama lengkap</label><input id="input-nama" required
-                            maxlength="100">
+                            maxlength="120">
                         <label for="input-kelas" data-i18n="class">Kelas</label><input id="input-kelas" required
-                            maxlength="40" placeholder="Contoh: XI IPA 1">
+                            maxlength="40" data-i18n-placeholder="classExample" placeholder="Contoh: XI IPA 1">
                         <label for="input-parent-wa" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
                         <input id="input-parent-wa" type="tel" inputmode="tel" autocomplete="tel"
                             data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
@@ -489,7 +508,7 @@
                         class="brand-dot">.id</span></span>
             </a>
             <p class="sidebar-caption" data-i18n="studentWorkspace">MENU SISWA</p>
-            <nav class="main-nav" aria-label="Student navigation">
+            <nav class="main-nav" aria-label="Student navigation" data-i18n-aria="studentNavigation">
                 <button class="nav-link active" type="button" data-target="view-s-presensi">
                     <span class="nav-symbol">◉</span><span data-i18n="studentAttendance">Presensi Saya</span>
                 </button>
@@ -525,7 +544,8 @@
                         <button class="lang-btn" type="button" data-lang="ar">ع</button>
                     </div>
                     <button id="student-top-profile" class="icon-button" type="button" data-i18n-title="myProfile"
-                        title="Profil" aria-label="Profile">☰</button>
+                        title="Profil" aria-label="Profile" data-i18n-title="myProfile"
+                        data-i18n-aria="myProfile">☰</button>
                 </div>
             </header>
             <section id="view-s-presensi" class="view active">
@@ -557,7 +577,7 @@
                     <p id="student-attendance-status" class="camera-footnote" data-i18n="studentCheckinDesc">Pastikan
                         Anda berada di area sekolah.</p>
                     <button id="btn-student-attendance" class="button primary student-checkin-button" type="button"
-                        data-i18n="checkInNow">Absen Sekarang</button>
+                        data-i18n="checkInNow" disabled>Absen Sekarang</button>
                 </div>
             </section>
             <section id="view-s-history" class="view hidden">
@@ -633,7 +653,8 @@
             <div class="modal-heading">
                 <div><span class="section-kicker" data-i18n="accountSettings">PENGATURAN AKUN</span>
                     <h2 id="profile-modal-title" data-i18n="myProfile">Profil saya</h2>
-                </div><button id="close-profile" class="icon-button" type="button" aria-label="Close">×</button>
+                </div><button id="close-profile" class="icon-button" type="button" aria-label="Close"
+                    data-i18n-aria="close">×</button>
             </div>
             <div class="profile-identity"><span id="profile-modal-avatar" class="avatar large">A</span>
                 <div><strong id="profile-name">Admin</strong><small id="profile-email">admin@amanahid.sch.id</small>
@@ -662,15 +683,32 @@
                 <div><span class="section-kicker" data-i18n="locationSecurity">KEAMANAN LOKASI</span>
                     <h2 id="map-title" data-i18n="schoolMap">Peta area sekolah</h2>
                     <p id="map-subtitle" class="muted" data-i18n="mapDesc">Titik sekolah dan posisi perangkat Anda.</p>
-                </div><button id="close-map" class="icon-button" type="button" aria-label="Close">×</button>
+                </div><button id="close-map" class="icon-button" type="button" aria-label="Close"
+                    data-i18n-aria="close">×</button>
             </div>
-            <div id="school-map" aria-label="Interactive school map"></div>
+            <div id="school-map" aria-label="Interactive school map" data-i18n-aria="interactiveSchoolMap"></div>
             <div class="map-legend"><span><i class="legend-school"></i><span data-i18n="schoolPoint">Titik
                         sekolah</span></span><span><i class="legend-user"></i><span data-i18n="yourLocation">Lokasi
                         Anda</span></span><span><i class="legend-radius"></i><span id="allowed-radius"
                         data-i18n="allowedRadius">Radius diizinkan: 35 m</span></span></div>
             <p id="map-location-detail" class="helper-text" data-i18n="mapLocationPending">Periksa lokasi untuk
                 menampilkan posisi perangkat.</p>
+            <div id="school-location-editor" class="school-location-editor hidden">
+                <button id="btn-edit-school-location" class="button secondary" type="button"
+                    data-i18n="setSchoolLocation">Atur titik sekolah</button>
+                <div id="school-radius-control" class="school-radius-control hidden">
+                    <label for="school-radius-slider" data-i18n="schoolRadius">Radius sekolah: 35 m</label>
+                    <input id="school-radius-slider" type="range" min="10" max="500" step="5" value="35">
+                    <p id="school-location-edit-status" class="helper-text" aria-live="polite"
+                        data-i18n="locationEditHint">Pilih titik sekolah pada peta, lalu atur radius.</p>
+                    <div class="map-location-actions">
+                        <button id="btn-save-school-location" class="button primary" type="button"
+                            data-i18n="saveLocation">Simpan lokasi</button>
+                        <button id="btn-cancel-school-location" class="button subtle" type="button"
+                            data-i18n="cancel">Batal</button>
+                    </div>
+                </div>
+            </div>
             <div class="map-location-actions">
                 <button id="btn-check-map-location" class="button primary" type="button"
                     data-i18n="checkLocation">Periksa lokasi</button>

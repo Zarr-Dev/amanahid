@@ -38,6 +38,21 @@ create table if not exists public.attendance (
 -- Speed up date-based attendance filtering.
 create index if not exists idx_attendance_date on public.attendance (date);
 
+-- Store the single school geofence used by both the browser and attendance API.
+create table if not exists public.school_settings (
+    id uuid primary key default '00000000-0000-0000-0000-000000000001'::uuid
+        check (id = '00000000-0000-0000-0000-000000000001'::uuid),
+    lat numeric not null check (lat between -90 and 90),
+    lng numeric not null check (lng between -180 and 180),
+    radius numeric not null default 35 check (radius between 10 and 500),
+    updated_by text not null default 'system',
+    updated_at timestamptz not null default now()
+);
+
+insert into public.school_settings (id, lat, lng, radius)
+values ('00000000-0000-0000-0000-000000000001'::uuid, -6.253590517740096, 106.60299502682263, 35)
+on conflict (id) do nothing;
+
 -- Deny every direct browser role; only the server-side secret key may access rows.
 alter table public.students enable row level security;
 drop policy if exists "deny all direct access" on public.students;
@@ -52,4 +67,9 @@ create policy "deny all direct access" on public.teachers
 alter table public.attendance enable row level security;
 drop policy if exists "deny all direct access" on public.attendance;
 create policy "deny all direct access" on public.attendance
+    for all using (false) with check (false);
+
+alter table public.school_settings enable row level security;
+drop policy if exists "deny all direct access" on public.school_settings;
+create policy "deny all direct access" on public.school_settings
     for all using (false) with check (false);

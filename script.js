@@ -2,7 +2,7 @@
 "use strict";
 
 // School configuration and in-memory state
-const SCHOOL_LOCATION = {
+let SCHOOL_LOCATION = {
     lat: -6.253590517740096,
     lng: 106.60299502682263,
     radius: 35,
@@ -209,6 +209,7 @@ const state = {
     modelReady: false,
     modelLoading: false,
     modelLoadingPromise: null,
+    faceDetectorOptions: null,
     attendanceStream: null,
     attendanceStarting: false,
     attendanceStartToken: 0,
@@ -228,13 +229,16 @@ const state = {
     userMarker: null,
     schoolCircle: null,
     toastTimer: null,
-    pendingDelete: null,
     lastNose: null,
     movementFrames: 0,
     attendanceRecorded: false,
-    attendanceMode: "guru",
+    lastFaceMatchAt: 0,
     cloudLoadToken: 0,
-    cloudDataPromise: Promise.resolve()
+    cloudDataPromise: Promise.resolve(),
+    schoolSettingsLoaded: false,
+    mapEditMode: false,
+    mapDraftLocation: null,
+    splashTimers: []
 };
 let authModalTrigger = null;
 
@@ -252,6 +256,102 @@ const T = {
 };
 
 Object.keys(ROLE_T).forEach(lang => Object.assign(T[lang], ROLE_T[lang]));
+
+const LANDING_T = {
+    id: {
+        brandName: "Amanah.id", splashSubtitle: "Presensi Digital Sekolah",
+        heroTitleFirst: "Presensi Sekolah Masa Kini,", heroTitleSecond: "Anti Titip Absen.",
+        heroDescription: "Pantau kehadiran siswa secara real-time dengan verifikasi wajah dan lokasi GPS. Tanpa mesin fingerprint atau biaya perangkat keras.",
+        heroBenefitsLabel: "Fitur Amanah.id", heroBenefitAccuracy: "Akurasi wajah tingkat tinggi",
+        heroBenefitGps: "Mencegah GPS palsu dan titip absen", heroBenefitPhone: "Cukup gunakan ponsel siswa",
+        aboutTitle: "Tentang Amanah.id",
+        aboutDescription: "Amanah.id membantu sekolah mencatat kehadiran dengan verifikasi wajah dan lokasi.",
+        chooseAccess: "Pilih akses", heroDashboardLabel: "Contoh dashboard presensi Amanah.id",
+        mockDashboard: "Dashboard Presensi", mockGreeting: "Selamat pagi 👋",
+        mockAttendanceLabel: "STATUS KEHADIRAN", mockPresentToday: "Hadir hari ini",
+        mockTotalStudents: "Total siswa", mockRegistered: "Terdaftar", mockCheckedIn: "Sudah hadir",
+        mockLatestAttendance: "Presensi terbaru", mockViewAll: "Lihat semua",
+        heroFaceMatch: "Wajah cocok", heroFaceVerified: "99.8% terverifikasi",
+        heroLocationValid: "Lokasi valid", heroSchoolDistance: "15 m dari sekolah",
+        heroAttendanceSuccess: "Presensi berhasil", heroRecordedAutomatically: "Tercatat otomatis",
+        heroFooter: "© 2026 Amanah.id · Presensi digital sekolah",
+        emailPlaceholder: "nama@sekolah.sch.id", passwordPlaceholder: "Masukkan kata sandi",
+        nisnExample: "Contoh: 0091234567", classExample: "Contoh: XI IPA 1",
+        chooseAuthTab: "Pilih masuk atau daftar", close: "Tutup",
+        setSchoolLocation: "Atur titik sekolah", cancelLocationEdit: "Batal mengatur lokasi",
+        schoolRadius: "Radius sekolah: {radius} m", saveLocation: "Simpan lokasi",
+        locationEditHint: "Pilih titik sekolah pada peta, lalu atur radius.",
+        locationSaved: "Lokasi sekolah berhasil disimpan.",
+        locationSaveFailed: "Lokasi sekolah gagal disimpan. Periksa koneksi lalu coba lagi.",
+        schoolSettingsFailed: "Pengaturan lokasi gagal dimuat. Presensi dinonaktifkan.",
+        locationSaving: "Menyimpan lokasi...", interactiveSchoolMap: "Peta sekolah interaktif",
+        mainNavigation: "Navigasi utama", studentNavigation: "Navigasi siswa",
+        profile: "Profil", toggleAttendanceCamera: "Aktifkan atau matikan kamera presensi"
+    },
+    en: {
+        brandName: "Amanah.id", splashSubtitle: "Digital School Attendance",
+        heroTitleFirst: "The Modern Way to Track Attendance,", heroTitleSecond: "No Proxy Check-ins.",
+        heroDescription: "Track student attendance in real time with face and GPS verification. No fingerprint machines or hardware costs.",
+        heroBenefitsLabel: "Amanah.id features", heroBenefitAccuracy: "High-accuracy face recognition",
+        heroBenefitGps: "Prevents GPS spoofing and proxy check-ins",
+        heroBenefitPhone: "Students only need their phones",
+        aboutTitle: "About Amanah.id",
+        aboutDescription: "Amanah.id helps schools record attendance with face and location verification.",
+        chooseAccess: "Choose access", heroDashboardLabel: "Amanah.id attendance dashboard preview",
+        mockDashboard: "Attendance dashboard", mockGreeting: "Good morning 👋",
+        mockAttendanceLabel: "ATTENDANCE STATUS", mockPresentToday: "Present today",
+        mockTotalStudents: "Total students", mockRegistered: "Registered", mockCheckedIn: "Checked in",
+        mockLatestAttendance: "Recent attendance", mockViewAll: "View all",
+        heroFaceMatch: "Face matched", heroFaceVerified: "99.8% verified",
+        heroLocationValid: "Location verified", heroSchoolDistance: "15 m from school",
+        heroAttendanceSuccess: "Attendance recorded", heroRecordedAutomatically: "Saved automatically",
+        heroFooter: "© 2026 Amanah.id · Digital school attendance",
+        emailPlaceholder: "name@school.edu", passwordPlaceholder: "Enter your password",
+        nisnExample: "Example: 0091234567", classExample: "Example: Grade 11 Science 1",
+        chooseAuthTab: "Choose login or sign up", close: "Close",
+        setSchoolLocation: "Set school location", cancelLocationEdit: "Cancel location editing",
+        schoolRadius: "School radius: {radius} m", saveLocation: "Save location",
+        locationEditHint: "Choose the school point on the map, then set the radius.",
+        locationSaved: "School location saved.",
+        locationSaveFailed: "Could not save the school location. Check your connection and try again.",
+        schoolSettingsFailed: "Could not load location settings. Attendance is disabled.",
+        locationSaving: "Saving location...", interactiveSchoolMap: "Interactive school map",
+        mainNavigation: "Main navigation", studentNavigation: "Student navigation",
+        profile: "Profile", toggleAttendanceCamera: "Toggle attendance camera"
+    },
+    ar: {
+        brandName: "أمانة.id", splashSubtitle: "الحضور المدرسي الرقمي",
+        heroTitleFirst: "الحضور المدرسي بالطريقة الحديثة،", heroTitleSecond: "لا تسجيل بالنيابة.",
+        heroDescription: "تابع حضور الطلاب لحظيًا باستخدام التحقق من الوجه وموقع GPS، دون أجهزة بصمة أو تكاليف معدات.",
+        heroBenefitsLabel: "ميزات أمانة.id", heroBenefitAccuracy: "دقة عالية في التحقق من الوجه",
+        heroBenefitGps: "منع تزوير GPS وتسجيل الحضور بالنيابة",
+        heroBenefitPhone: "يكفي استخدام هاتف الطالب",
+        aboutTitle: "عن أمانة.id",
+        aboutDescription: "تساعد أمانة.id المدارس على تسجيل الحضور بالتحقق من الوجه والموقع.",
+        chooseAccess: "اختر طريقة الدخول", heroDashboardLabel: "معاينة لوحة الحضور في أمانة.id",
+        mockDashboard: "لوحة الحضور", mockGreeting: "صباح الخير 👋",
+        mockAttendanceLabel: "حالة الحضور", mockPresentToday: "حاضر اليوم",
+        mockTotalStudents: "إجمالي الطلاب", mockRegistered: "مسجل", mockCheckedIn: "سجلوا الحضور",
+        mockLatestAttendance: "أحدث سجلات الحضور", mockViewAll: "عرض الكل",
+        heroFaceMatch: "تم تطابق الوجه", heroFaceVerified: "تم التحقق بنسبة 99.8%",
+        heroLocationValid: "الموقع موثّق", heroSchoolDistance: "على بُعد 15 م من المدرسة",
+        heroAttendanceSuccess: "تم تسجيل الحضور", heroRecordedAutomatically: "تم الحفظ تلقائيًا",
+        heroFooter: "© 2026 أمانة.id · الحضور المدرسي الرقمي",
+        emailPlaceholder: "name@school.edu", passwordPlaceholder: "أدخل كلمة المرور",
+        nisnExample: "مثال: 0091234567", classExample: "مثال: الصف 11 علوم 1",
+        chooseAuthTab: "اختر تسجيل الدخول أو إنشاء حساب", close: "إغلاق",
+        setSchoolLocation: "تعيين موقع المدرسة", cancelLocationEdit: "إلغاء تعديل الموقع",
+        schoolRadius: "نطاق المدرسة: {radius} م", saveLocation: "حفظ الموقع",
+        locationEditHint: "اختر نقطة المدرسة على الخريطة ثم حدد النطاق.",
+        locationSaved: "تم حفظ موقع المدرسة.",
+        locationSaveFailed: "تعذر حفظ موقع المدرسة. تحقق من الاتصال وحاول مجددًا.",
+        schoolSettingsFailed: "تعذر تحميل إعدادات الموقع. تم تعطيل الحضور.",
+        locationSaving: "جارٍ حفظ الموقع...", interactiveSchoolMap: "خريطة المدرسة التفاعلية",
+        mainNavigation: "التنقل الرئيسي", studentNavigation: "تنقل الطالب",
+        profile: "الملف الشخصي", toggleAttendanceCamera: "تشغيل كاميرا الحضور أو إيقافها"
+    }
+};
+Object.keys(LANDING_T).forEach(lang => Object.assign(T[lang], LANDING_T[lang]));
 
 // Text, theme, and basic UI helpers
 function tr(key, vars = {}) {
@@ -281,7 +381,7 @@ function setLanguage(lang) {
         const key = el.dataset.i18n;
         const text = EXTRA_T[lang]?.[key] ?? T[lang][key];
         if (text !== undefined) {
-            el.textContent = key === "allowedRadius"
+            el.textContent = ["allowedRadius", "schoolRadius"].includes(key)
                 ? tr(key, { radius: SCHOOL_LOCATION.radius })
                 : text;
         }
@@ -296,10 +396,16 @@ function setLanguage(lang) {
         const text = EXTRA_T[lang]?.[key] ?? T[lang][key];
         if (text !== undefined) el.title = text;
     });
+    document.querySelectorAll("[data-i18n-aria]").forEach(el => {
+        const text = tr(el.dataset.i18nAria);
+        if (text) el.setAttribute("aria-label", text);
+    });
+    document.title = `${tr("brandName")} | ${tr("welcomeTitle")}`;
     document.querySelectorAll(".lang-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.lang === lang);
     });
     $("profile-language").value = lang;
+    $("student-profile-language").value = lang;
     renderLocationBadge();
     renderDatabase();
     renderStudentList();
@@ -308,6 +414,7 @@ function setLanguage(lang) {
     renderStudentHistory();
     updateStudentProfile();
     if (state.map) updateMapText();
+    updateSchoolLocationEditor();
 }
 
 function setTheme(theme) {
@@ -348,6 +455,11 @@ function showView(target) {
 
 function showAuth() {
     stopAllCameras();
+    cancelSchoolLocationEdit();
+    state.schoolSettingsLoaded = false;
+    state.cloudLoadToken++;
+    $("btn-attendance-switch").disabled = true;
+    $("btn-student-attendance").disabled = true;
     closeAuthModal();
     $("login-password").value = "";
     $("dashboard-guru").classList.add("hidden");
@@ -369,14 +481,20 @@ function handleHashRoute() {
     }
     const expected = state.user.role === "siswa" ? "#siswa" : "#guru";
     if (location.hash !== expected) {
-        state.user = null;
         showAuth();
+        state.user = null;
+        state.cloudLoadToken++;
     }
 }
 
-function showApp(user) {
+async function showApp(user) {
     closeAuthModal();
+    stopAllCameras();
     state.user = user;
+    state.cloudLoadToken++;
+    state.schoolSettingsLoaded = false;
+    $("btn-attendance-switch").disabled = true;
+    $("btn-student-attendance").disabled = true;
     $("auth-screen").classList.add("hidden");
     const isStudent = user.role === "siswa";
     $("dashboard-guru").classList.toggle("hidden", isStudent);
@@ -400,6 +518,12 @@ function showApp(user) {
         location.hash = "guru";
         showView("view-presensi");
     }
+    const settingsLoaded = await loadSchoolSettings();
+    if (state.user !== user) return;
+    state.schoolSettingsLoaded = settingsLoaded;
+    $("btn-attendance-switch").disabled = !settingsLoaded;
+    $("btn-student-attendance").disabled = !settingsLoaded;
+    if (!settingsLoaded) toast(tr("schoolSettingsFailed"), "error");
     loadModels();
     state.cloudDataPromise = loadCloudData(user);
 }
@@ -444,31 +568,37 @@ function safeText(value) {
     })[c]);
 }
 
-async function cloudRequest(path, { method = "GET", body, role = state.user?.role, nisn = state.user?.nisn } = {}) {
+async function cloudRequest(path, {
+    method = "GET", body, role = state.user?.role, nisn = state.user?.nisn, timeoutMs = 15_000
+} = {}) {
     const headers = {};
     if (body !== undefined) headers["Content-Type"] = "application/json";
     if (role) headers["X-Role"] = role;
     if (role === "siswa" && nisn) headers["X-NISN"] = nisn;
+    if (role === "guru" && state.user?.email) headers["X-User-Email"] = state.user.email;
 
     let response;
+    let result;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
         response = await fetch(path, {
             method,
             headers,
+            signal: controller.signal,
             ...(body === undefined ? {} : { body: JSON.stringify(body) })
         });
-    } catch (cause) {
-        const error = new Error("Cloud request failed");
-        error.name = "CloudApiError";
-        throw error;
-    }
-    let result;
-    try {
         result = await response.json();
-    } catch {
-        const error = new Error("Invalid server response");
+    } catch (cause) {
+        const message = cause?.name === "AbortError"
+            ? "Cloud request timed out"
+            : cause instanceof SyntaxError ? "Invalid server response" : "Cloud request failed";
+        const error = new Error(message);
         error.name = "CloudApiError";
+        error.cause = cause;
         throw error;
+    } finally {
+        window.clearTimeout(timeoutId);
     }
     if (!response.ok) {
         const error = new Error(result.error || `Request failed (${response.status})`);
@@ -477,6 +607,38 @@ async function cloudRequest(path, { method = "GET", body, role = state.user?.rol
         throw error;
     }
     return result;
+}
+
+async function loadSchoolSettings() {
+    const requestUser = state.user;
+    state.schoolSettingsLoaded = false;
+    try {
+        const settings = await cloudRequest("/api/settings");
+        if (state.user !== requestUser) return false;
+        if (![settings.lat, settings.lng, settings.radius].every(value =>
+            typeof value === "number" && Number.isFinite(value)
+        ) || settings.lat < -90 || settings.lat > 90 || settings.lng < -180 ||
+            settings.lng > 180 || settings.radius < 10 || settings.radius > 500) {
+            throw new Error("Invalid school location settings");
+        }
+        SCHOOL_LOCATION = { ...SCHOOL_LOCATION, ...settings };
+        state.schoolSettingsLoaded = true;
+        $("btn-attendance-switch").disabled = false;
+        $("btn-student-attendance").disabled = false;
+        if (state.schoolMarker && state.schoolCircle) {
+            state.schoolMarker.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
+            state.schoolMarker.setPopupContent(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
+            state.schoolCircle.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
+            state.schoolCircle.setRadius(SCHOOL_LOCATION.radius);
+        }
+        if (state.map) updateMapText();
+        updateSchoolLocationEditor();
+        return true;
+    } catch (error) {
+        console.error("School location settings failed to load:", error);
+        state.schoolSettingsLoaded = false;
+        return false;
+    }
 }
 
 function normalizeCloudStudent(student) {
@@ -506,12 +668,13 @@ async function loadCloudData(user = state.user) {
                 role: "guru",
                 body: { email: user.email, name: user.name }
             });
+            if (token !== state.cloudLoadToken || state.user !== user) return;
         }
         const studentsRequest = user.role === "siswa"
-            ? cloudRequest(`/api/students?with_faces=1&nisn=${encodeURIComponent(user.nisn)}`, {
+            ? cloudRequest(`/api/students?nisn=${encodeURIComponent(user.nisn)}`, {
                 role: user.role,
                 nisn: user.nisn
-            }).then(result => ({ students: result.students, faceStudents: result.students }))
+            }).then(result => ({ students: result.students, faceStudents: [] }))
             : Promise.all([
                 cloudRequest("/api/students", { role: user.role }),
                 cloudRequest("/api/students?with_faces=1", { role: user.role })
@@ -846,7 +1009,6 @@ function loadModels() {
             return false;
         } finally {
             state.modelLoading = false;
-            state.modelLoadingPromise = null;
         }
     })();
     return state.modelLoadingPromise;
@@ -865,20 +1027,23 @@ function updateCameraTexts() {
 }
 
 function setSwitch(on) {
-    $("btn-attendance-switch").setAttribute("aria-checked", String(on));
-    $("btn-attendance-switch").querySelector(".switch-text").textContent = tr(on ? "on" : "off");
+    const button = $("btn-attendance-switch");
+    if (!button) return;
+    button.setAttribute("aria-checked", String(on));
+    const label = button.querySelector(".switch-text");
+    if (label) label.textContent = tr(on ? "on" : "off");
 }
 
 function attendanceVideo() {
-    return $(state.attendanceMode === "siswa" ? "video-student-attendance" : "video-presensi");
+    return $(state.user?.role === "siswa" ? "video-student-attendance" : "video-presensi");
 }
 
 function attendanceCanvas() {
-    return $(state.attendanceMode === "siswa" ? "overlay-student-attendance" : "overlay-presensi");
+    return $(state.user?.role === "siswa" ? "overlay-student-attendance" : "overlay-presensi");
 }
 
 function attendancePlaceholder() {
-    return $(state.attendanceMode === "siswa" ? "student-camera-placeholder" : "camera-placeholder");
+    return $(state.user?.role === "siswa" ? "student-camera-placeholder" : "camera-placeholder");
 }
 
 function attendanceViewActive() {
@@ -900,32 +1065,43 @@ function stopStream(stream) {
 function stopAttendanceCamera() {
     state.attendanceStartToken++;
     state.attendanceStarting = false;
-    if (state.attendanceTimer !== null) clearInterval(state.attendanceTimer);
+    if (state.attendanceTimer !== null) window.clearTimeout(state.attendanceTimer);
     state.attendanceTimer = null;
     const stream = state.attendanceStream;
     state.attendanceStream = null;
-    stopStream(stream);
-    const video = attendanceVideo();
-    const canvas = attendanceCanvas();
-    if (video) {
+    const stoppedStreams = new Set();
+    if (stream) {
+        stopStream(stream);
+        stoppedStreams.add(stream);
+    }
+    for (const id of ["video-presensi", "video-student-attendance"]) {
+        const video = $(id);
+        if (!video) continue;
+        if (video.srcObject && !stoppedStreams.has(video.srcObject)) {
+            stopStream(video.srcObject);
+            stoppedStreams.add(video.srcObject);
+        }
         video.pause();
         video.srcObject = null;
     }
-    if (canvas) canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
-    attendancePlaceholder()?.classList.remove("hidden");
-    $("ai-progress").style.width = "0%";
-    $("ai-percent").textContent = "0%";
-    $("status-presensi").textContent = tr("waitingFace");
-    $("camera-status").textContent = tr("cameraReady");
-    $("liveness-status").textContent = tr("livenessWaiting");
-    $("student-attendance-status").textContent = tr("studentCheckinDesc");
-    $("btn-student-attendance").textContent = tr("checkInNow");
-    $("camera-placeholder").classList.remove("hidden");
-    $("student-camera-placeholder").classList.remove("hidden");
+    for (const id of ["overlay-presensi", "overlay-student-attendance"]) {
+        const canvas = $(id);
+        canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    if ($("ai-progress")) $("ai-progress").style.width = "0%";
+    if ($("ai-percent")) $("ai-percent").textContent = "0%";
+    if ($("status-presensi")) $("status-presensi").textContent = tr("waitingFace");
+    if ($("camera-status")) $("camera-status").textContent = tr("cameraReady");
+    if ($("liveness-status")) $("liveness-status").textContent = tr("livenessWaiting");
+    if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("studentCheckinDesc");
+    if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("checkInNow");
+    $("camera-placeholder")?.classList.remove("hidden");
+    $("student-camera-placeholder")?.classList.remove("hidden");
     state.attendanceBusy = false;
     state.attendanceRecorded = false;
     state.lastNose = null;
     state.movementFrames = 0;
+    state.lastFaceMatchAt = 0;
     setSwitch(false);
 }
 
@@ -933,11 +1109,18 @@ function stopFormCamera() {
     state.formStartToken++;
     if (state.formTimer) clearInterval(state.formTimer);
     state.formTimer = null;
-    stopStream(state.formStream);
+    const stream = state.formStream;
     state.formStream = null;
-    $("video-formulir").srcObject = null;
-    $("overlay-formulir").getContext("2d").clearRect(0, 0, $("overlay-formulir").width, $("overlay-formulir").height);
-    $("form-camera-placeholder").classList.remove("hidden");
+    const video = $("video-formulir");
+    const canvas = $("overlay-formulir");
+    if (stream) stopStream(stream);
+    if (video) {
+        if (video.srcObject && video.srcObject !== stream) stopStream(video.srcObject);
+        video.pause();
+        video.srcObject = null;
+    }
+    canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+    $("form-camera-placeholder")?.classList.remove("hidden");
 }
 
 function stopAllCameras() {
@@ -976,19 +1159,29 @@ function cameraErrorText(error) {
 async function startAttendanceCamera() {
     if (state.attendanceStream || state.attendanceStarting) return;
     if (!state.user) return;
+    if (!state.schoolSettingsLoaded) {
+        toast(tr("schoolSettingsFailed"), "error");
+        return;
+    }
     const requestUser = state.user;
-    state.attendanceMode = requestUser.role;
     state.attendanceStarting = true;
     const startToken = ++state.attendanceStartToken;
 
     try {
+        const settingsLoaded = await loadSchoolSettings();
+        if (startToken !== state.attendanceStartToken || state.user !== requestUser) return;
+        if (!settingsLoaded) {
+            $("btn-attendance-switch").disabled = true;
+            $("btn-student-attendance").disabled = true;
+            toast(tr("schoolSettingsFailed"), "error");
+            return;
+        }
+        if (!attendanceViewActive() || document.hidden) return;
         await state.cloudDataPromise;
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
             !attendanceViewActive() || document.hidden) return;
 
-        if (requestUser.role === "siswa" && !state.students.some(student =>
-            student.nisn === requestUser.nisn && getStudentDescriptors(student).length
-        )) {
+        if (requestUser.role === "siswa" && !state.students.some(student => student.nisn === requestUser.nisn)) {
             toast(tr("studentUnlinked"), "error");
             return;
         }
@@ -1085,7 +1278,7 @@ async function startAttendanceCamera() {
         state.lastNose = null;
         state.movementFrames = 0;
 
-        state.attendanceTimer = setInterval(() => processAttendanceFrame(), 250);
+        scheduleAttendanceFrame(stream, startToken);
     } catch (error) {
         if (startToken === state.attendanceStartToken) {
             stopAttendanceCamera();
@@ -1099,7 +1292,7 @@ async function startAttendanceCamera() {
 }
 
 function setAttendanceMessage(message) {
-    if (state.attendanceMode === "siswa") {
+    if (state.user?.role === "siswa") {
         $("student-attendance-status").textContent = message;
     } else {
         $("camera-status").textContent = message;
@@ -1139,8 +1332,8 @@ function drawDetections(video, canvas, detections) {
 
 async function detectFaces(video) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
-    return faceapi.detectAllFaces(video, options).withFaceLandmarks().withFaceDescriptors();
+    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+    return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks().withFaceDescriptors();
 }
 
 function getStudentDescriptors(student) {
@@ -1207,6 +1400,15 @@ async function processAttendanceFrame() {
 
     try {
         const video = attendanceVideo();
+        if (!video || video.readyState < 2) return;
+        const candidates = requestUser.role === "siswa"
+            ? state.students.filter(item => item.nisn === requestUser.nisn)
+            : state.students;
+        if (requestUser.role === "guru" &&
+            !candidates.some(student => getStudentDescriptors(student).length)) {
+            setAttendanceMessage(tr("faceNotRegistered"));
+            return;
+        }
         const detections = await detectFaces(video);
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         drawDetections(video, attendanceCanvas(), detections);
@@ -1254,31 +1456,43 @@ async function processAttendanceFrame() {
             return;
         }
 
-        const candidates = requestUser.role === "siswa"
-            ? state.students.filter(item => item.nisn === requestUser.nisn)
-            : state.students;
-        const matcher = createFaceMatcher(candidates);
-        if (!matcher) {
-            const message = requestUser.role === "siswa" ? tr("studentUnlinked") : tr("faceNotRegistered");
-            if (requestUser.role === "siswa") $("student-attendance-status").textContent = message;
-            else {
-                $("liveness-status").textContent = message;
-                updateProgress(0, message);
+        let student;
+        let confidence;
+        if (requestUser.role === "siswa") {
+            if (Date.now() - state.lastFaceMatchAt < 1000) return;
+            state.lastFaceMatchAt = Date.now();
+            const result = await cloudRequest("/api/face-match", {
+                method: "POST",
+                role: "siswa",
+                nisn: requestUser.nisn,
+                body: { nisn: requestUser.nisn, descriptor: Array.from(detection.descriptor) }
+            });
+            if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
+            if (!result.registered) {
+                setAttendanceMessage(tr("studentUnlinked"));
+                return;
             }
-            return;
-        }
-        const best = matcher.findBestMatch(detection.descriptor);
-        if (best.label === "unknown") {
-            const message = tr("faceNoMatch");
-            if (requestUser.role === "siswa") $("student-attendance-status").textContent = message;
-            else {
-                $("liveness-status").textContent = message;
-                updateProgress(0, message);
+            if (!result.match) {
+                setAttendanceMessage(tr("faceNoMatch"));
+                return;
             }
-            return;
+            student = candidates.find(item => item.nisn === requestUser.nisn);
+            confidence = result.confidence;
+        } else {
+            const matcher = createFaceMatcher(candidates);
+            if (!matcher) {
+                setAttendanceMessage(tr("faceNotRegistered"));
+                return;
+            }
+            const best = matcher.findBestMatch(detection.descriptor);
+            if (best.label === "unknown") {
+                setAttendanceMessage(tr("faceNoMatch"));
+                updateProgress(0, tr("faceNoMatch"));
+                return;
+            }
+            student = candidates.find(item => item.nisn === best.label);
+            confidence = Math.max(0, Math.min(1, 1 - best.distance));
         }
-        const student = candidates.find(item => item.nisn === best.label);
-        const confidence = Math.max(0, Math.min(1, 1 - best.distance));
         if (!student) return;
 
         const location = await checkGeofence();
@@ -1360,8 +1574,22 @@ async function processAttendanceFrame() {
             }
         }
     } finally {
-        if (state.attendanceStream === requestStream) state.attendanceBusy = false;
+        if (state.attendanceStream === requestStream) {
+            state.attendanceBusy = false;
+            if (!state.attendanceRecorded) scheduleAttendanceFrame(requestStream, state.attendanceStartToken);
+        }
     }
+}
+
+function scheduleAttendanceFrame(stream, startToken, delay = 250) {
+    if (state.attendanceStream !== stream || state.attendanceRecorded ||
+        startToken !== state.attendanceStartToken) return;
+    const video = attendanceVideo();
+    const nextDelay = video?.readyState < 2 ? 100 : delay;
+    state.attendanceTimer = window.setTimeout(() => {
+        state.attendanceTimer = null;
+        void processAttendanceFrame();
+    }, nextDelay);
 }
 
 async function startFormCamera() {
@@ -1484,13 +1712,16 @@ async function registerStudent(event) {
     const name = $("input-nama").value.trim();
     const className = $("input-kelas").value.trim();
     const parentWhatsApp = $("input-parent-wa").value.trim();
-    const waDigits = parentWhatsApp.replace(/\D/g, "");
 
     if (!nisn || !name || !className) {
         toast(tr("invalidNisn"), "error");
         return;
     }
-    if (waDigits && !/^(08|628)\d{8,13}$/.test(waDigits)) {
+    if (!/^\d{8,20}$/.test(nisn) || name.length > 120 || /[\u0000-\u001F\u007F]/.test(name)) {
+        toast(tr("invalidNisn"), "error");
+        return;
+    }
+    if (parentWhatsApp && !/^(08|628)\d{8,13}$/.test(parentWhatsApp)) {
         toast(tr("invalidWhatsApp"), "error");
         return;
     }
@@ -1507,7 +1738,7 @@ async function registerStudent(event) {
                 nisn,
                 name,
                 class_name: className,
-                parent_whatsapp: waDigits ? waDigits.replace(/^08/, "628") : null,
+                parent_whatsapp: parentWhatsApp ? parentWhatsApp.replace(/^08/, "628") : null,
                 face_descriptors: state.faceSamples.map(sample => [...sample])
             }
         });
@@ -1557,9 +1788,14 @@ async function removeStudent(nisn) {
     toast(tr("studentDeleted"), "success");
 }
 
-function openMap() {
+async function openMap() {
+    if (!(await loadSchoolSettings())) {
+        toast(tr("schoolSettingsFailed"), "error");
+        return;
+    }
     stopAllCameras();
     $("map-modal").classList.remove("hidden");
+    $("school-location-editor").classList.toggle("hidden", state.user?.role !== "guru");
     updateMapText();
 
     if (!window.L) {
@@ -1594,14 +1830,92 @@ function openMap() {
             fillOpacity: .18
         }).addTo(state.map);
 
+        state.map.on("click", event => {
+            if (!state.mapEditMode || state.user?.role !== "guru") return;
+            state.mapDraftLocation = {
+                ...state.mapDraftLocation,
+                lat: event.latlng.lat,
+                lng: event.latlng.lng
+            };
+            updateSchoolLocationEditor();
+        });
     }
 
     state.schoolMarker.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
     state.schoolMarker.bindPopup(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
     state.schoolCircle.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
     state.schoolCircle.setRadius(SCHOOL_LOCATION.radius);
-    setTimeout(() => state.map?.invalidateSize(), 100);
+    window.setTimeout(() => state.map?.invalidateSize(), 100);
     updateMapUserMarker();
+    updateSchoolLocationEditor();
+}
+
+function updateSchoolLocationEditor() {
+    const editButton = $("btn-edit-school-location");
+    const radiusInput = $("school-radius-slider");
+    if (!editButton || !radiusInput) return;
+    editButton.dataset.i18n = state.mapEditMode ? "cancelLocationEdit" : "setSchoolLocation";
+    editButton.textContent = tr(editButton.dataset.i18n);
+    $("school-radius-control").classList.toggle("hidden", !state.mapEditMode);
+    if (!state.mapEditMode) return;
+
+    const draft = state.mapDraftLocation || SCHOOL_LOCATION;
+    radiusInput.value = String(draft.radius);
+    document.querySelector('label[for="school-radius-slider"]').textContent =
+        tr("schoolRadius", { radius: draft.radius });
+    if (state.schoolMarker && state.schoolCircle) {
+        state.schoolMarker.setLatLng([draft.lat, draft.lng]);
+        state.schoolCircle.setLatLng([draft.lat, draft.lng]);
+        state.schoolCircle.setRadius(draft.radius);
+    }
+    $("allowed-radius").textContent = tr("allowedRadius", { radius: draft.radius });
+    $("school-location-edit-status").textContent = tr("locationEditHint");
+    if (state.map) state.map.getContainer().style.cursor = "crosshair";
+}
+
+function cancelSchoolLocationEdit() {
+    state.mapEditMode = false;
+    state.mapDraftLocation = null;
+    if (state.map) state.map.getContainer().style.cursor = "";
+    if (state.schoolMarker && state.schoolCircle) {
+        state.schoolMarker.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
+        state.schoolCircle.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
+        state.schoolCircle.setRadius(SCHOOL_LOCATION.radius);
+    }
+    $("allowed-radius").textContent = tr("allowedRadius", { radius: SCHOOL_LOCATION.radius });
+    updateMapText();
+    updateSchoolLocationEditor();
+}
+
+async function saveSchoolLocation() {
+    if (!state.mapDraftLocation || state.user?.role !== "guru") return;
+    const button = $("btn-save-school-location");
+    button.disabled = true;
+    $("school-location-edit-status").textContent = tr("locationSaving");
+    try {
+        const saved = await cloudRequest("/api/settings", {
+            method: "PUT",
+            role: "guru",
+            body: {
+                lat: state.mapDraftLocation.lat,
+                lng: state.mapDraftLocation.lng,
+                radius: state.mapDraftLocation.radius
+            }
+        });
+        SCHOOL_LOCATION = { ...SCHOOL_LOCATION, ...saved };
+        state.schoolSettingsLoaded = true;
+        cancelSchoolLocationEdit();
+        $("allowed-radius").textContent = tr("allowedRadius", { radius: SCHOOL_LOCATION.radius });
+        updateMapText();
+        renderLocationBadge();
+        toast(tr("locationSaved"), "success");
+    } catch (error) {
+        console.error("School location save failed:", error);
+        $("school-location-edit-status").textContent = tr("locationSaveFailed");
+        toast(tr("locationSaveFailed"), "error");
+    } finally {
+        button.disabled = false;
+    }
 }
 
 function updateMapUserMarker() {
@@ -1642,6 +1956,7 @@ function updateMapText() {
     if (state.schoolMarker) {
         state.schoolMarker.setPopupContent(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
     }
+    $("allowed-radius").textContent = tr("allowedRadius", { radius: SCHOOL_LOCATION.radius });
     if (state.userMarker && state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking) {
         state.userMarker.setPopupContent(
             `${tr("mapUserPopup")}<br>${tr("mapDistance", { distance: state.lastLocation.distance })}<br>${tr("mapAccuracy", { accuracy: Math.round(state.lastLocation.accuracy) })}`
@@ -1720,16 +2035,25 @@ function closeAuthModal() {
 
 function initSplashScreen() {
     const splash = $("splash-screen");
-    if (!splash) return;
+    if (!splash || splash.classList.contains("hidden")) return;
     splash.classList.add("is-playing");
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    window.setTimeout(() => {
+    const leaveTimer = window.setTimeout(() => {
+        if (splash.classList.contains("hidden")) return;
         splash.classList.add("is-leaving");
-        window.setTimeout(() => {
+        const hideTimer = window.setTimeout(() => {
+            if (splash.classList.contains("hidden")) return;
             splash.classList.add("hidden");
             splash.setAttribute("aria-hidden", "true");
         }, reducedMotion ? 120 : 500);
+        state.splashTimers.push(hideTimer);
     }, reducedMotion ? 350 : 2550);
+    state.splashTimers.push(leaveTimer);
+}
+
+function clearSplashTimers() {
+    state.splashTimers.forEach(timer => window.clearTimeout(timer));
+    state.splashTimers = [];
 }
 
 function inferRoleFromEmail(email) {
@@ -1749,9 +2073,6 @@ function updateSignupRoleFields() {
 }
 
 function setupEvents() {
-    $("hero-cta").addEventListener("click", () => {
-        openAuthModal("login");
-    });
     $("tab-login").addEventListener("click", () => openAuthModal("login"));
     $("tab-register").addEventListener("click", () => openAuthModal("register"));
     document.querySelectorAll("[data-auth-tab]").forEach(button => {
@@ -1992,12 +2313,37 @@ function setupEvents() {
     });
 
     $("btn-map").addEventListener("click", openMap);
-    $("close-map").addEventListener("click", () => $("map-modal").classList.add("hidden"));
+    $("close-map").addEventListener("click", () => {
+        cancelSchoolLocationEdit();
+        $("map-modal").classList.add("hidden");
+    });
     $("map-modal").addEventListener("click", event => {
-        if (event.target === $("map-modal")) $("map-modal").classList.add("hidden");
+        if (event.target === $("map-modal")) {
+            cancelSchoolLocationEdit();
+            $("map-modal").classList.add("hidden");
+        }
     });
     $("btn-check-map-location").addEventListener("click", refreshMapLocation);
     $("btn-refresh-map-location").addEventListener("click", refreshMapLocation);
+    $("btn-edit-school-location").addEventListener("click", () => {
+        if (state.user?.role !== "guru") return;
+        if (state.mapEditMode) {
+            cancelSchoolLocationEdit();
+            return;
+        }
+        state.mapEditMode = true;
+        state.mapDraftLocation = { ...SCHOOL_LOCATION };
+        updateSchoolLocationEditor();
+    });
+    $("school-radius-slider").addEventListener("input", event => {
+        if (!state.mapEditMode || !state.mapDraftLocation) return;
+        state.mapDraftLocation.radius = Number(event.target.value);
+        updateSchoolLocationEditor();
+    });
+    $("btn-cancel-school-location").addEventListener("click", cancelSchoolLocationEdit);
+    $("btn-save-school-location").addEventListener("click", saveSchoolLocation);
+    window.addEventListener("pagehide", clearSplashTimers, { once: true });
+    window.addEventListener("beforeunload", clearSplashTimers, { once: true });
 
     document.addEventListener("visibilitychange", () => {
         if (document.hidden) stopAllCameras();

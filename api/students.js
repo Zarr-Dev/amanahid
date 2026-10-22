@@ -1,9 +1,10 @@
 import {
     getRequestRole,
-    hasRole,
     isAllowedOrigin,
     jsonError,
-    supabaseRequest
+    rateLimit,
+    supabaseRequest,
+    verifyTeacherSession
 } from "../lib/supabase.js";
 
 const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at";
@@ -32,7 +33,7 @@ export default async function handler(req, res) {
         if (role === "siswa" && (!parseNisn(nisn) || req.headers["x-nisn"] !== nisn)) {
             return jsonError(res, 403, "Students can only access their own record");
         }
-        if (withFaces && role !== "guru" && req.headers["x-nisn"] !== nisn) {
+        if (withFaces && role !== "guru") {
             return jsonError(res, 403, "Face descriptors are not available for this request");
         }
         try {
@@ -47,7 +48,10 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-        if (!hasRole(req, "guru")) return jsonError(res, 403, "Teacher role is required");
+        if (!verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        if (!rateLimit(req, "students:POST", 10, 60_000)) {
+            return jsonError(res, 429, "Too many student registrations. Try again in a minute.");
+        }
         const { nisn, name, class_name, parent_whatsapp, face_descriptors } = req.body || {};
         if (!parseNisn(nisn)) return jsonError(res, 400, "NISN must contain 8 to 20 digits");
         if (typeof name !== "string" || !name.trim() || name.trim().length > 120 ||
@@ -90,7 +94,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-        if (!hasRole(req, "guru")) return jsonError(res, 403, "Teacher role is required");
+        if (!verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
         const nisn = req.query?.nisn;
         const deleteAll = req.query?.all === "1";
         if (!deleteAll && !parseNisn(nisn)) return jsonError(res, 400, "A valid NISN is required");

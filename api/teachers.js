@@ -1,4 +1,4 @@
-import { hasRole, isAllowedOrigin, jsonError, supabaseRequest } from "../lib/supabase.js";
+import { isAllowedOrigin, jsonError, supabaseRequest, verifyTeacherSession } from "../lib/supabase.js";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -6,7 +6,7 @@ export default async function handler(req, res) {
         return jsonError(res, 405, "Method not allowed");
     }
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
-    if (!hasRole(req, "guru")) return jsonError(res, 403, "Teacher role is required");
+    if (!verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
 
     const { email, name } = req.body || {};
     if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
