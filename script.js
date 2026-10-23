@@ -247,6 +247,8 @@ const state = {
     splashTimers: []
 };
 let authModalTrigger = null;
+let heroTitleMeasure = null;
+let heroTitleFrame = 0;
 
 // Three-language dictionary
 const T = {
@@ -425,41 +427,56 @@ function setLanguage(lang) {
 }
 
 function fitHeroTitle() {
-    const title = $("auth-hero-title");
-    if (!title) return;
+    if (heroTitleFrame) return;
+    heroTitleFrame = window.requestAnimationFrame(() => {
+        heroTitleFrame = 0;
+        fitHeroTitleNow();
+    });
+}
 
-    title.style.removeProperty("--hero-fit-size");
-    const baseSize = Number.parseFloat(getComputedStyle(title).fontSize);
+function fitHeroTitleNow() {
+    const title = $("auth-hero-title");
+    if (!title || !title.getClientRects().length) return;
     const availableWidth = title.clientWidth;
-    if (!baseSize || !availableWidth) return;
+    if (!availableWidth) return;
 
     const style = getComputedStyle(title);
-    const lineWidths = [...title.querySelectorAll("[data-i18n^='heroTitle']")].map(line => {
-        const measure = document.createElement("span");
-        measure.textContent = line.textContent.trim();
-        Object.assign(measure.style, {
+    if (!heroTitleMeasure) {
+        heroTitleMeasure = document.createElement("span");
+        Object.assign(heroTitleMeasure.style, {
             position: "fixed",
             left: "-10000px",
             top: "0",
             width: "max-content",
             whiteSpace: "nowrap",
             visibility: "hidden",
-            fontFamily: style.fontFamily,
-            fontSize: `${baseSize}px`,
-            fontWeight: style.fontWeight,
-            letterSpacing: style.letterSpacing,
-            direction: document.documentElement.dir
+            pointerEvents: "none"
         });
-        document.body.append(measure);
-        const width = measure.getBoundingClientRect().width;
-        measure.remove();
-        return width;
+        document.body.append(heroTitleMeasure);
+    }
+    Object.assign(heroTitleMeasure.style, {
+        fontFamily: style.fontFamily,
+        fontSize: style.getPropertyValue("--hero-base-size").trim() || style.fontSize,
+        fontWeight: style.fontWeight,
+        letterSpacing: style.letterSpacing,
+        direction: style.direction
+    });
+    const lines = [...title.querySelectorAll("[data-i18n^='heroTitle']")];
+    if (!lines.length) return;
+    const lineWidths = lines.map(line => {
+        heroTitleMeasure.textContent = line.textContent.trim();
+        return heroTitleMeasure.getBoundingClientRect().width;
     });
     const widestLine = Math.max(0, ...lineWidths);
+    const baseSize = Number.parseFloat(getComputedStyle(heroTitleMeasure).fontSize);
+    if (!baseSize || !widestLine) return;
     const fitSize = widestLine > availableWidth
         ? baseSize * ((availableWidth - 2) / widestLine)
         : baseSize;
-    title.style.setProperty("--hero-fit-size", `${Math.max(12, fitSize)}px`);
+    const nextSize = `${Math.round(Math.max(12, fitSize) * 100) / 100}px`;
+    if (title.style.getPropertyValue("--hero-fit-size") !== nextSize) {
+        title.style.setProperty("--hero-fit-size", nextSize);
+    }
 }
 
 function setMapStatus(key = "") {
@@ -485,13 +502,17 @@ function observeHeroTitleSize() {
     } else {
         window.addEventListener("resize", fitHeroTitle);
     }
-    document.fonts?.ready.then(() => fitHeroTitle());
+    if (document.fonts?.ready) {
+        document.fonts.ready.then(() => fitHeroTitle()).catch(error => {
+            console.warn("Hero title font readiness check failed:", error);
+        });
+    }
 }
 
 function setTheme(theme) {
     state.theme = theme === "dark" ? "dark" : "light";
     document.body.classList.toggle("theme-dark", state.theme === "dark");
-    $("theme-select").value = state.theme;
+    if ($("theme-select")) $("theme-select").value = state.theme;
     if ($("student-theme-select")) $("student-theme-select").value = state.theme;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = state.theme === "dark" ? "#111827" : "#f5f8ff";
@@ -532,21 +553,34 @@ function showAuth({ clearSession = true } = {}) {
         sessionStorage.removeItem("amanahid.adminToken");
     }
     state.user = null;
+    state.students = [];
+    state.attendance = [];
+    state.faceSamples = [];
+    state.faceCandidate = null;
+    state.faceCandidateQuality = null;
+    state.lastLocation = null;
+    state.lastGpsFix = null;
+    state.locationCheckBusy = false;
+    state.cloudDataPromise = Promise.resolve();
     cancelSchoolLocationEdit();
     state.schoolSettingsLoaded = false;
     state.cloudLoadToken++;
-    $("btn-attendance-switch").disabled = true;
-    $("btn-student-attendance").disabled = true;
+    if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
+    if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
     closeAuthModal();
     $("admin-login-modal")?.classList.add("hidden");
-    $("login-password").value = "";
-    $("dashboard-guru").classList.add("hidden");
-    $("dashboard-siswa").classList.add("hidden");
+    if ($("admin-login-form")) $("admin-login-form").reset();
+    if ($("login-password")) $("login-password").value = "";
+    $("dashboard-guru")?.classList.add("hidden");
+    $("dashboard-siswa")?.classList.add("hidden");
     $("dashboard-admin")?.classList.add("hidden");
-    $("auth-screen").classList.remove("hidden");
+    $("auth-screen")?.classList.remove("hidden");
     $("network-banner")?.classList.add("hidden");
-    $("profile-modal").classList.add("hidden");
-    $("map-modal").classList.add("hidden");
+    $("profile-modal")?.classList.add("hidden");
+    $("map-modal")?.classList.add("hidden");
+    document.body.classList.remove("auth-modal-open");
+    renderLocationBadge();
+    updateFaceSampleCount();
     if (location.hash) history.replaceState(null, "", `${location.pathname}${location.search}`);
 }
 
@@ -581,48 +615,50 @@ async function showApp(user) {
     }
     state.cloudLoadToken++;
     state.schoolSettingsLoaded = false;
-    $("btn-attendance-switch").disabled = true;
-    $("btn-student-attendance").disabled = true;
-    $("auth-screen").classList.add("hidden");
+    if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
+    if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
+    $("auth-screen")?.classList.add("hidden");
     startNetworkHeartbeat();
     $("dashboard-admin")?.classList.toggle("hidden", user.role !== "admin");
     const isStudent = user.role === "siswa";
-    $("dashboard-guru").classList.toggle("hidden", user.role !== "guru");
-    $("dashboard-siswa").classList.toggle("hidden", !isStudent);
+    $("dashboard-guru")?.classList.toggle("hidden", user.role !== "guru");
+    $("dashboard-siswa")?.classList.toggle("hidden", !isStudent);
     const initial = user.name.trim().charAt(0).toUpperCase() || (isStudent ? "S" : "A");
     if (user.role === "admin") {
-        $("admin-header-user").textContent = user.name;
-        $("admin-header-avatar").textContent = initial;
+        if ($("admin-header-user")) $("admin-header-user").textContent = user.name;
+        if ($("admin-header-avatar")) $("admin-header-avatar").textContent = initial;
         location.hash = "admin";
         showAdminView("admin-view-dashboard");
         await loadAdminDashboard();
         return;
     } else if (isStudent) {
-        $("student-header-user").textContent = user.name;
-        $("student-header-avatar").textContent = initial;
-        $("student-profile-name").textContent = user.name;
-        $("student-profile-email").textContent = user.email;
-        $("student-profile-avatar").textContent = initial;
+        if ($("student-header-user")) $("student-header-user").textContent = user.name;
+        if ($("student-header-avatar")) $("student-header-avatar").textContent = initial;
+        if ($("student-profile-name")) $("student-profile-name").textContent = user.name;
+        if ($("student-profile-email")) $("student-profile-email").textContent = user.email;
+        if ($("student-profile-avatar")) $("student-profile-avatar").textContent = initial;
         updateStudentProfile();
         location.hash = "siswa";
         showView("view-s-presensi");
     } else {
-        $("header-user").textContent = user.name;
-        $("header-avatar").textContent = initial;
-        $("profile-name").textContent = user.name;
-        $("profile-email").textContent = user.email;
-        $("profile-modal-avatar").textContent = initial;
+        if ($("header-user")) $("header-user").textContent = user.name;
+        if ($("header-avatar")) $("header-avatar").textContent = initial;
+        if ($("profile-name")) $("profile-name").textContent = user.name;
+        if ($("profile-email")) $("profile-email").textContent = user.email;
+        if ($("profile-modal-avatar")) $("profile-modal-avatar").textContent = initial;
         location.hash = "guru";
         showView("view-presensi");
     }
+    const cloudDataPromise = loadCloudData(user);
+    state.cloudDataPromise = cloudDataPromise;
     const settingsLoaded = await loadSchoolSettings();
-    if (state.user !== user) return;
+    await cloudDataPromise;
+    if (state.user !== user || state.cloudDataPromise !== cloudDataPromise) return;
     state.schoolSettingsLoaded = settingsLoaded;
-    $("btn-attendance-switch").disabled = !settingsLoaded;
-    $("btn-student-attendance").disabled = !settingsLoaded;
+    if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = !settingsLoaded;
+    if ($("btn-student-attendance")) $("btn-student-attendance").disabled = !settingsLoaded;
     if (!settingsLoaded) toast(tr("schoolSettingsFailed"), "error");
     loadModels();
-    state.cloudDataPromise = loadCloudData(user);
 }
 
 function restoreSession() {
@@ -635,7 +671,9 @@ function restoreSession() {
         const encoded = token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
         const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
         const claims = JSON.parse(new TextDecoder().decode(bytes));
-        const expectedRole = key === "amanahid.adminToken" ? "admin" : ["guru", "siswa"].includes(claims.role);
+        const expectedRole = key === "amanahid.adminToken"
+            ? claims.role === "admin"
+            : ["guru", "siswa"].includes(claims.role);
         if (!expectedRole || !claims.email || !Number.isFinite(claims.exp) || claims.exp <= Date.now()) {
             throw new Error("Stored session is invalid or expired");
         }
@@ -814,11 +852,13 @@ async function cloudRequest(path, {
                     error.gpsAccuracy = payload;
                     message = "Akurasi GPS terlalu rendah.";
                 } else if (response.status === 401) {
-                    message = "Sesi habis, silakan login ulang";
                     if (state.user) {
+                        message = "Sesi habis, silakan login ulang";
                         showAuth();
                         state.user = null;
                         toast("Sesi habis, silakan login ulang", "info");
+                    } else if (path === "/api/auth/login") {
+                        message = tr("loginFailed");
                     }
                 } else if (response.status === 403) {
                     message = "Akses ditolak. Periksa APP_ORIGIN di Vercel atau hubungi Admin.";
@@ -894,8 +934,8 @@ async function checkNetworkHeartbeat() {
         if (state.user !== requestUser) return;
         state.networkHeartbeatFailures = 0;
         $("network-banner")?.classList.add("hidden");
-        $("network-status-teacher").classList.add("hidden");
-        $("network-status-student").classList.add("hidden");
+        $("network-status-teacher")?.classList.add("hidden");
+        $("network-status-student")?.classList.add("hidden");
     } catch (error) {
         if (state.user !== requestUser) return;
         state.networkHeartbeatFailures++;
@@ -903,7 +943,7 @@ async function checkNetworkHeartbeat() {
         const badge = requestUser.role === "siswa"
             ? $("network-status-student")
             : $("network-status-teacher");
-        badge.classList.remove("hidden");
+        badge?.classList.remove("hidden");
         if (state.networkHeartbeatFailures >= 3) {
             $("network-banner")?.classList.remove("hidden");
         }
@@ -931,8 +971,8 @@ function stopNetworkHeartbeat() {
     }
     state.networkHeartbeatTimer = null;
     state.networkHeartbeatBusy = false;
-    $("network-status-teacher").classList.add("hidden");
-    $("network-status-student").classList.add("hidden");
+    $("network-status-teacher")?.classList.add("hidden");
+    $("network-status-student")?.classList.add("hidden");
 }
 
 async function loadSchoolSettings({ preserveOnError = false } = {}) {
@@ -950,8 +990,6 @@ async function loadSchoolSettings({ preserveOnError = false } = {}) {
         }
         SCHOOL_LOCATION = { ...SCHOOL_LOCATION, ...settings };
         state.schoolSettingsLoaded = true;
-        $("btn-attendance-switch").disabled = false;
-        $("btn-student-attendance").disabled = false;
         if (state.schoolMarker && state.schoolCircle) {
             state.schoolMarker.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
             state.schoolMarker.setPopupContent(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
@@ -1156,7 +1194,7 @@ function geolocationErrorKey(error) {
 }
 
 async function checkGeofence() {
-    if (!("geolocation" in navigator)) {
+    if (!navigator.geolocation?.getCurrentPosition) {
         return setLocationError("gpsUnsupported");
     }
 
@@ -1299,18 +1337,22 @@ function renderLocationBadge() {
 function displayModelError(error) {
     console.error("AI model error:", error);
     state.modelReady = false;
-    $("model-status").className = "model-badge error";
-    $("model-status").textContent = tr("modelFailed");
-    $("model-error-text").textContent = tr("modelFailed");
-    $("model-error").classList.remove("hidden");
+    if ($("model-status")) {
+        $("model-status").className = "model-badge error";
+        $("model-status").textContent = tr("modelFailed");
+    }
+    if ($("model-error-text")) $("model-error-text").textContent = tr("modelFailed");
+    $("model-error")?.classList.remove("hidden");
 }
 
 function loadModels() {
     if (state.modelReady) return Promise.resolve(true);
     if (state.modelLoadingPromise) return state.modelLoadingPromise;
     state.modelLoading = true;
-    $("model-status").className = "model-badge";
-    $("model-status").textContent = tr("modelLoadingLong");
+    if ($("model-status")) {
+        $("model-status").className = "model-badge";
+        $("model-status").textContent = tr("modelLoadingLong");
+    }
 
     state.modelLoadingPromise = (async () => {
         try {
@@ -1322,9 +1364,11 @@ function loadModels() {
                 faceapi.nets.faceRecognitionNet.loadFromUri(base)
             ]);
             state.modelReady = true;
-            $("model-status").className = "model-badge ready";
-            $("model-status").textContent = tr("modelReady");
-            $("model-error").classList.add("hidden");
+            if ($("model-status")) {
+                $("model-status").className = "model-badge ready";
+                $("model-status").textContent = tr("modelReady");
+            }
+            $("model-error")?.classList.add("hidden");
             return true;
         } catch (error) {
             displayModelError(error);
@@ -1338,14 +1382,19 @@ function loadModels() {
 
 function updateCameraTexts() {
     if (!state.attendanceStream) {
-        $("camera-status").textContent = tr("cameraReady");
-        $("switch-hint").textContent = tr("switchOffHint");
-        $("status-presensi").textContent = tr("waitingFace");
+        if ($("camera-status")) $("camera-status").textContent = tr("cameraReady");
+        if ($("switch-hint")) $("switch-hint").textContent = tr("switchOffHint");
+        if ($("status-presensi")) $("status-presensi").textContent = tr("waitingFace");
     }
-    $("btn-student-attendance").textContent = state.attendanceStream
+    const studentButton = $("btn-student-attendance");
+    if (studentButton) studentButton.textContent = state.attendanceStream
         ? tr("studentCameraStop")
         : state.attendanceStarting ? tr("studentCameraStarting") : tr("checkInNow");
-    $("model-status").textContent = state.modelReady ? tr("modelReady") : state.modelLoading ? tr("modelLoadingLong") : tr("modelFailed");
+    if ($("model-status")) {
+        $("model-status").textContent = state.modelReady
+            ? tr("modelReady")
+            : state.modelLoading ? tr("modelLoadingLong") : tr("modelFailed");
+    }
 }
 
 function setSwitch(on) {
@@ -1370,7 +1419,8 @@ function attendancePlaceholder() {
 
 function attendanceViewActive() {
     const viewId = state.user?.role === "siswa" ? "view-s-presensi" : "view-presensi";
-    return !$(viewId).classList.contains("hidden") && $(viewId).classList.contains("active");
+    const view = $(viewId);
+    return Boolean(view && !view.classList.contains("hidden") && view.classList.contains("active"));
 }
 
 function stopStream(stream) {
@@ -1489,21 +1539,24 @@ async function startAttendanceCamera() {
         return;
     }
     const requestUser = state.user;
+    const cloudDataPromise = state.cloudDataPromise;
     state.attendanceStarting = true;
     const startToken = ++state.attendanceStartToken;
 
     try {
         const settingsLoaded = await loadSchoolSettings();
-        if (startToken !== state.attendanceStartToken || state.user !== requestUser) return;
+        if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+            state.cloudDataPromise !== cloudDataPromise) return;
         if (!settingsLoaded) {
-            $("btn-attendance-switch").disabled = true;
-            $("btn-student-attendance").disabled = true;
+            if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
+            if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
             toast(tr("schoolSettingsFailed"), "error");
             return;
         }
         if (!attendanceViewActive() || document.hidden) return;
-        await state.cloudDataPromise;
+        await cloudDataPromise;
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+            state.cloudDataPromise !== cloudDataPromise ||
             !attendanceViewActive() || document.hidden) return;
 
         if (requestUser.role === "siswa" && !state.students.some(student => student.nisn === requestUser.nisn)) {
@@ -1514,11 +1567,11 @@ async function startAttendanceCamera() {
         state.lastLocation = { checking: true };
         renderLocationBadge();
         if (requestUser.role === "siswa") {
-            $("student-attendance-status").textContent = tr("checkingBeforeCamera");
-            $("btn-student-attendance").textContent = tr("studentCameraStarting");
+            if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("checkingBeforeCamera");
+            if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStarting");
         } else {
-            $("camera-status").textContent = tr("checkingBeforeCamera");
-            $("switch-hint").textContent = tr("checkingBeforeCamera");
+            if ($("camera-status")) $("camera-status").textContent = tr("checkingBeforeCamera");
+            if ($("switch-hint")) $("switch-hint").textContent = tr("checkingBeforeCamera");
             setSwitch(false);
         }
 
@@ -1557,10 +1610,10 @@ async function startAttendanceCamera() {
             !attendanceViewActive() || document.hidden) return;
 
         if (requestUser.role === "siswa") {
-            $("student-attendance-status").textContent = tr("cameraStarting");
-            $("btn-student-attendance").textContent = tr("studentCameraStarting");
+            if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("cameraStarting");
+            if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStarting");
         } else {
-            $("camera-status").textContent = tr("cameraStarting");
+            if ($("camera-status")) $("camera-status").textContent = tr("cameraStarting");
         }
 
         const stream = await getCameraStream();
@@ -1580,6 +1633,10 @@ async function startAttendanceCamera() {
             }, { once: true });
         });
         const video = attendanceVideo();
+        if (!video) {
+            stopStream(stream);
+            throw new Error("unavailable");
+        }
         video.srcObject = stream;
         await video.play();
         if (startToken !== state.attendanceStartToken || state.attendanceStream !== stream ||
@@ -1588,15 +1645,15 @@ async function startAttendanceCamera() {
             if (state.attendanceStream === stream) stopAttendanceCamera();
             return;
         }
-        attendancePlaceholder().classList.add("hidden");
+        attendancePlaceholder()?.classList.add("hidden");
         if (requestUser.role === "siswa") {
-            $("student-attendance-status").textContent = tr("livenessMove");
-            $("btn-student-attendance").textContent = tr("studentCameraStop");
+            if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("livenessMove");
+            if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStop");
         } else {
-            $("camera-status").textContent = tr("attendanceReady");
-            $("switch-hint").textContent = tr("attendanceReady");
-            $("status-presensi").textContent = tr("attendanceWaiting");
-            $("liveness-status").textContent = tr("livenessMove");
+            if ($("camera-status")) $("camera-status").textContent = tr("attendanceReady");
+            if ($("switch-hint")) $("switch-hint").textContent = tr("attendanceReady");
+            if ($("status-presensi")) $("status-presensi").textContent = tr("attendanceWaiting");
+            if ($("liveness-status")) $("liveness-status").textContent = tr("livenessMove");
             setSwitch(true);
         }
         state.attendanceRecorded = false;
@@ -1619,11 +1676,11 @@ async function startAttendanceCamera() {
 
 function setAttendanceMessage(message) {
     if (state.user?.role === "siswa") {
-        $("student-attendance-status").textContent = message;
+        if ($("student-attendance-status")) $("student-attendance-status").textContent = message;
     } else {
-        $("camera-status").textContent = message;
-        $("liveness-status").textContent = message;
-        $("switch-hint").textContent = message;
+        if ($("camera-status")) $("camera-status").textContent = message;
+        if ($("liveness-status")) $("liveness-status").textContent = message;
+        if ($("switch-hint")) $("switch-hint").textContent = message;
     }
 }
 
@@ -1683,8 +1740,12 @@ function createFaceMatcher(students) {
 }
 
 function updateFaceSampleCount() {
-    $("face-sample-count").textContent = tr("faceSamplesCount", { count: state.faceSamples.length });
-    $("btn-capture-face").disabled = !state.faceCandidate || state.faceSamples.length >= MAX_FACE_SAMPLES;
+    if ($("face-sample-count")) {
+        $("face-sample-count").textContent = tr("faceSamplesCount", { count: state.faceSamples.length });
+    }
+    if ($("btn-capture-face")) {
+        $("btn-capture-face").disabled = !state.faceCandidate || state.faceSamples.length >= MAX_FACE_SAMPLES;
+    }
     const progress = $("face-sample-progress-bar");
     if (progress) {
         progress.style.width = `${state.faceSamples.length / MAX_FACE_SAMPLES * 100}%`;
@@ -2286,7 +2347,9 @@ function cancelSchoolLocationEdit() {
         state.schoolCircle.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
         state.schoolCircle.setRadius(SCHOOL_LOCATION.radius);
     }
-    $("allowed-radius").textContent = tr("allowedRadius", { radius: SCHOOL_LOCATION.radius });
+    if ($("allowed-radius")) {
+        $("allowed-radius").textContent = tr("allowedRadius", { radius: SCHOOL_LOCATION.radius });
+    }
     updateMapText();
     updateSchoolLocationEditor();
 }
@@ -2345,8 +2408,9 @@ function updateMapUserMarker() {
 }
 
 function updateMapText() {
-    $("map-subtitle").textContent = tr("mapDesc");
-    $("map-location-detail").textContent = state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking
+    if ($("map-subtitle")) $("map-subtitle").textContent = tr("mapDesc");
+    const locationDetail = $("map-location-detail");
+    if (locationDetail) locationDetail.textContent = state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking
         ? state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
             ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
             : tr(state.lastLocation.inside ? "insideMessage" : "outsideMessage", {
@@ -2360,7 +2424,9 @@ function updateMapText() {
     if (state.schoolMarker) {
         state.schoolMarker.setPopupContent(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
     }
-    $("allowed-radius").textContent = tr("allowedRadius", { radius: SCHOOL_LOCATION.radius });
+    if ($("allowed-radius")) {
+        $("allowed-radius").textContent = tr("allowedRadius", { radius: SCHOOL_LOCATION.radius });
+    }
     if (state.userMarker && state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking) {
         state.userMarker.setPopupContent(
             `${tr("mapUserPopup")}<br>${tr("mapDistance", { distance: state.lastLocation.distance })}<br>${tr("mapAccuracy", { accuracy: Math.round(state.lastLocation.accuracy) })}`
@@ -2430,8 +2496,7 @@ function openAuthModal(tab, trigger = document.activeElement) {
 
 function closeAuthModal() {
     const modal = $("auth-modal");
-    if (!modal || modal.classList.contains("hidden")) return;
-    modal.classList.add("hidden");
+    modal?.classList.add("hidden");
     document.body.classList.remove("auth-modal-open");
     if (authModalTrigger?.isConnected && !authModalTrigger.hidden) authModalTrigger.focus();
     authModalTrigger = null;
@@ -2443,45 +2508,100 @@ function returnToUserLogin() {
     openAuthModal("login", $("tab-login"));
 }
 
+function cssTimeInMs(value) {
+    const time = Number.parseFloat(value);
+    if (!Number.isFinite(time)) return 0;
+    return value.trim().endsWith("ms") ? time : time * 1000;
+}
+
 function initSplashScreen() {
     const splash = $("splash-screen");
     if (!splash || splash.classList.contains("hidden")) return;
+    clearSplashTimers();
     const mark = splash.querySelector(".splash-mark");
+    const lockup = splash.querySelector(".splash-lockup");
     const headerMark = document.querySelector(".brand-auth .brand-mark");
-    if (mark && headerMark) {
-        const targetRect = headerMark.getBoundingClientRect();
-        splash.style.setProperty(
-            "--splash-target-x",
-            `${targetRect.left + targetRect.width / 2 - window.innerWidth / 2}px`
-        );
-        splash.style.setProperty(
-            "--splash-target-y",
-            `${targetRect.top + targetRect.height / 2 - window.innerHeight / 2}px`
-        );
-        splash.style.setProperty("--splash-target-scale", String(targetRect.width / mark.offsetWidth));
-    }
-    splash.classList.add("is-playing");
-    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (!reducedMotion && mark) {
-        mark.playbackRate = 1.55;
-        mark.play().catch(error => {
-            if (error.name !== "AbortError") {
-                console.warn("The animated logo could not play; showing its static poster instead:", error);
+    const fontReady = document.fonts?.ready || Promise.resolve();
+    let fontTimeout;
+    const fontsReady = new Promise(resolve => {
+        fontTimeout = window.setTimeout(resolve, 1200);
+        Promise.resolve(fontReady).then(resolve, resolve);
+    }).finally(() => window.clearTimeout(fontTimeout));
+    const safetyTimer = window.setTimeout(() => {
+        clearSplashTimers();
+        mark?.pause();
+        splash.classList.add("is-leaving", "hidden");
+        splash.setAttribute("aria-hidden", "true");
+    }, 6000);
+    state.splashTimers.push(safetyTimer);
+
+    void fontsReady.then(() => new Promise(resolve => {
+        window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+    })).then(() => {
+        if (!splash.isConnected || splash.classList.contains("hidden")) return;
+        splash.classList.add("is-playing");
+
+        if (mark && headerMark && lockup) {
+            const targetRect = headerMark.getBoundingClientRect();
+            const markRect = mark.getBoundingClientRect();
+            if (targetRect.width > 0 && targetRect.height > 0 && markRect.width > 0 && markRect.height > 0) {
+                splash.style.setProperty(
+                    "--splash-target-x",
+                    `${targetRect.left + targetRect.width / 2 - window.innerWidth / 2}px`
+                );
+                splash.style.setProperty(
+                    "--splash-target-y",
+                    `${targetRect.top + targetRect.height / 2 - window.innerHeight / 2}px`
+                );
+                splash.style.setProperty("--splash-target-scale", String(targetRect.width / markRect.width));
             }
-        });
-    }
-    const leaveTimer = window.setTimeout(() => {
-        if (splash.classList.contains("hidden")) return;
-        splash.classList.add("is-leaving");
-        const hideTimer = window.setTimeout(() => {
-            if (splash.classList.contains("hidden")) return;
-            mark?.pause();
-            splash.classList.add("hidden");
-            splash.setAttribute("aria-hidden", "true");
-        }, reducedMotion ? 120 : 350);
-        state.splashTimers.push(hideTimer);
-    }, reducedMotion ? 350 : 3500);
-    state.splashTimers.push(leaveTimer);
+        }
+
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+        const poster = mark?.getAttribute("poster") || "assets/amanah-favicon.png";
+        if (mark) {
+            mark.addEventListener("error", () => {
+                mark.pause();
+                mark.poster = poster;
+                console.warn("Splash animation video failed; using its static poster.");
+            }, { once: true });
+        }
+        if (!reducedMotion && mark?.play) {
+            mark.playbackRate = 1.55;
+            mark.play().catch(error => {
+                mark.pause();
+                mark.poster = poster;
+                if (error?.name !== "AbortError") {
+                    console.warn("The animated logo could not play; showing its static poster instead:", error);
+                }
+            });
+        }
+
+        const motionElements = [lockup, mark].filter(Boolean);
+        const animationMs = reducedMotion ? 1 : Math.max(0, ...motionElements.map(element => {
+            const style = getComputedStyle(element);
+            return cssTimeInMs(style.animationDuration) + cssTimeInMs(style.animationDelay);
+        }));
+        const splashTransitionMs = cssTimeInMs(getComputedStyle(splash).transitionDuration);
+        const leaveTimer = window.setTimeout(() => {
+            if (!splash.isConnected || splash.classList.contains("hidden")) return;
+            splash.classList.add("is-leaving");
+            const hideTimer = window.setTimeout(() => {
+                if (!splash.isConnected || splash.classList.contains("hidden")) return;
+                mark?.pause();
+                splash.classList.add("hidden");
+                splash.setAttribute("aria-hidden", "true");
+                clearSplashTimers();
+            }, splashTransitionMs + 50);
+            state.splashTimers.push(hideTimer);
+        }, animationMs + 50);
+        state.splashTimers.push(leaveTimer);
+    }).catch(error => {
+        console.error("Splash screen could not be initialized; hiding it safely:", error);
+        clearSplashTimers();
+        splash.classList.add("is-leaving", "hidden");
+        splash.setAttribute("aria-hidden", "true");
+    });
 }
 
 function clearSplashTimers() {
@@ -2884,7 +3004,14 @@ function setupEvents() {
     });
     $("btn-cancel-school-location").addEventListener("click", cancelSchoolLocationEdit);
     $("btn-save-school-location").addEventListener("click", saveSchoolLocation);
-    window.addEventListener("pagehide", clearSplashTimers, { once: true });
+    window.addEventListener("pagehide", () => {
+        clearSplashTimers();
+        const splash = $("splash-screen");
+        if (splash) {
+            splash.classList.add("hidden");
+            splash.setAttribute("aria-hidden", "true");
+        }
+    }, { once: true });
     window.addEventListener("beforeunload", clearSplashTimers, { once: true });
 
     document.addEventListener("visibilitychange", () => {
