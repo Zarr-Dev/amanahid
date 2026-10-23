@@ -13,6 +13,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -26,6 +27,9 @@
                 <span data-i18n="splashSubtitle">Presensi Digital Sekolah</span>
             </div>
         </div>
+    </div>
+    <div id="network-banner" class="network-banner hidden" role="status" aria-live="polite">
+        Koneksi terputus. Coba muat ulang.
     </div>
 
     <!-- Single-page landing and auth; login resolves the account role automatically. -->
@@ -69,6 +73,9 @@
                     <button id="tab-register" class="auth-action auth-action-outline" type="button" role="tab"
                         aria-selected="false" aria-controls="register-form" data-i18n="signup">Sign Up</button>
                 </div>
+                <button id="admin-login-open" class="button subtle" type="button">
+                    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Login Admin
+                </button>
             </section>
 
             <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah.id"
@@ -120,13 +127,15 @@
                 </div>
 
                 <div class="floating-card floating-face">
-                    <span class="floating-icon face-icon" aria-hidden="true">◎</span>
+                    <span class="floating-icon face-icon" aria-hidden="true"><i
+                            class="fa-solid fa-face-smile"></i></span>
                     <span><strong data-i18n="heroFaceMatch">Wajah Cocok</strong><small
                             data-i18n="heroFaceVerified">99.8% terverifikasi</small></span>
                     <span class="floating-check" aria-hidden="true">✓</span>
                 </div>
                 <div class="floating-card floating-location">
-                    <span class="floating-icon location-icon" aria-hidden="true">⌖</span>
+                    <span class="floating-icon location-icon" aria-hidden="true"><i
+                            class="fa-solid fa-location-dot"></i></span>
                     <span><strong data-i18n="heroLocationValid">Lokasi Valid</strong><small
                             data-i18n="heroSchoolDistance">15 m dari sekolah</small></span>
                 </div>
@@ -204,12 +213,28 @@
                     data-i18n="signup">Daftar</button>
             </form>
 
-            <p class="demo-note"><span data-i18n="demoAccount">Demo</span>:
-                <strong data-i18n="roleTeacher">Guru</strong> <code>admin@amanahid.sch.id</code> /
-                <code>AmanahDemo!2026#ID</code>
-                <br><strong data-i18n="roleStudent">Siswa</strong> <code>siswa@amanahid.sch.id</code> /
-                <code>SiswaDemo!2026#ID</code>
-            </p>
+            <p class="demo-note">Akun guru dibuat Admin. Akun siswa dibuat oleh guru saat pendaftaran.</p>
+        </section>
+    </div>
+
+    <div id="admin-login-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+        aria-labelledby="admin-login-title">
+        <section class="modal-card auth-modal-card">
+            <div class="auth-modal-heading">
+                <div><span class="auth-modal-kicker">AMANAH.ID</span>
+                    <h2 id="admin-login-title">Login Admin</h2>
+                </div>
+                <button id="admin-login-close" class="icon-button" type="button" aria-label="Tutup">×</button>
+            </div>
+            <form id="admin-login-form" class="form-stack">
+                <label for="admin-login-email">Email</label>
+                <input id="admin-login-email" type="email" autocomplete="username" required>
+                <label for="admin-login-password">Kata sandi</label>
+                <input id="admin-login-password" type="password" autocomplete="current-password" required>
+                <label for="admin-captcha">Captcha: 3 + 5 = ?</label>
+                <input id="admin-captcha" inputmode="numeric" pattern="[0-9]+" required>
+                <button class="button primary full" type="submit">Masuk sebagai Admin</button>
+            </form>
         </section>
     </div>
 
@@ -222,12 +247,15 @@
             </a>
             <p class="sidebar-caption" data-i18n="workspace">WORKSPACE</p>
             <nav class="main-nav" aria-label="Main navigation" data-i18n-aria="mainNavigation">
-                <button class="nav-link active" type="button" data-target="view-presensi"><span
-                        class="nav-symbol">◉</span><span data-i18n="dashboard">Dashboard</span></button>
-                <button class="nav-link" type="button" data-target="view-database"><span
-                        class="nav-symbol">▤</span><span data-i18n="database">Database</span></button>
-                <button class="nav-link" type="button" data-target="view-formulir"><span
-                        class="nav-symbol">＋</span><span data-i18n="formulir">Formulir</span></button>
+                <button class="nav-link active" type="button" data-target="view-presensi"><span class="nav-symbol"><i
+                            class="fa-solid fa-gauge" aria-hidden="true"></i></span><span
+                        data-i18n="dashboard">Dashboard</span></button>
+                <button class="nav-link" type="button" data-target="view-database"><span class="nav-symbol"><i
+                            class="fa-solid fa-database" aria-hidden="true"></i></span><span
+                        data-i18n="database">Database</span></button>
+                <button class="nav-link" type="button" data-target="view-formulir"><span class="nav-symbol"><i
+                            class="fa-solid fa-user-plus" aria-hidden="true"></i></span><span
+                        data-i18n="formulir">Formulir</span></button>
             </nav>
             <div class="sidebar-bottom">
                 <div class="school-mini"><span class="school-dot"></span>
@@ -240,7 +268,7 @@
                             data-i18n="viewProfile">Lihat profil</small><small id="network-status-teacher"
                             class="network-status hidden" data-i18n="networkReconnecting" aria-live="polite">
                             Menghubungkan ulang...</small></span>
-                    <span class="more-dots">···</span>
+                    <span class="more-dots"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></span>
                 </button>
             </div>
         </aside>
@@ -270,8 +298,9 @@
                         <p class="muted" data-i18n="cameraDesc">Periksa lokasi sekolah, lalu verifikasi wajah untuk
                             mencatat kehadiran.</p>
                     </div>
-                    <button id="btn-map" class="button subtle map-button" type="button"><span
-                            class="map-glyph">⌖</span><span data-i18n="viewMap">Lihat peta</span></button>
+                    <button id="btn-map" class="button subtle map-button" type="button"><span class="map-glyph"><i
+                                class="fa-solid fa-map-location-dot" aria-hidden="true"></i></span><span
+                            data-i18n="viewMap">Lihat peta</span></button>
                 </div>
 
                 <div class="camera-card">
@@ -303,7 +332,8 @@
 
                     <div class="location-strip">
                         <div class="location-info">
-                            <span class="location-icon">⌖</span>
+                            <span class="location-icon"><i class="fa-solid fa-location-dot"
+                                    aria-hidden="true"></i></span>
                             <div><strong data-i18n="locationVerification">Verifikasi lokasi</strong><small
                                     id="location-detail" data-i18n="locationNotChecked">Lokasi belum diperiksa</small>
                             </div>
@@ -397,8 +427,8 @@
                             <tbody id="db-tbody"></tbody>
                         </table>
                     </div>
-                    <div id="db-empty" class="empty-state"><span class="empty-icon">▤</span><strong
-                            data-i18n="noRecords">Belum ada catatan</strong>
+                    <div id="db-empty" class="empty-state"><span class="empty-icon"><i class="fa-solid fa-database"
+                                aria-hidden="true"></i></span><strong data-i18n="noRecords">Belum ada catatan</strong>
                         <p data-i18n="noRecordsDesc">Riwayat presensi akan muncul di sini setelah verifikasi berhasil.
                         </p>
                     </div>
@@ -463,6 +493,11 @@
                         <input id="input-parent-wa" type="tel" inputmode="tel" autocomplete="tel"
                             data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
                             pattern="(?:08|628)[0-9]{8,13}">
+                        <label for="input-student-email">Email akun siswa</label>
+                        <input id="input-student-email" type="email" autocomplete="email" required maxlength="254">
+                        <label for="input-student-password">Kata sandi awal siswa</label>
+                        <input id="input-student-password" type="password" autocomplete="new-password" required
+                            minlength="8" maxlength="128">
                         <label data-i18n="faceSample">Sampel wajah</label>
                         <div class="form-camera-stage">
                             <video id="video-formulir" autoplay muted playsinline></video><canvas
@@ -485,6 +520,9 @@
                         </p>
                         <p id="face-sample-count" class="helper-text face-sample-count" aria-live="polite"
                             data-i18n="faceSamplesCount">0 sampel wajah</p>
+                        <div class="face-sample-progress" aria-label="Progress sampel wajah">
+                            <div id="face-sample-progress-bar" class="face-sample-progress-bar"></div>
+                        </div>
                         <button class="button primary full" type="submit" data-i18n="saveStudent">Simpan siswa</button>
                     </form>
                     <aside class="form-aside">
@@ -514,13 +552,16 @@
             <p class="sidebar-caption" data-i18n="studentWorkspace">MENU SISWA</p>
             <nav class="main-nav" aria-label="Student navigation" data-i18n-aria="studentNavigation">
                 <button class="nav-link active" type="button" data-target="view-s-presensi">
-                    <span class="nav-symbol">◉</span><span data-i18n="studentAttendance">Presensi Saya</span>
+                    <span class="nav-symbol"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i></span><span
+                        data-i18n="studentAttendance">Presensi Saya</span>
                 </button>
                 <button class="nav-link" type="button" data-target="view-s-history">
-                    <span class="nav-symbol">▤</span><span data-i18n="studentHistory">Riwayat Saya</span>
+                    <span class="nav-symbol"><i class="fa-solid fa-clock-rotate-left"
+                            aria-hidden="true"></i></span><span data-i18n="studentHistory">Riwayat Saya</span>
                 </button>
                 <button class="nav-link" type="button" data-target="view-s-profile">
-                    <span class="nav-symbol">○</span><span data-i18n="myProfile">Profil</span>
+                    <span class="nav-symbol"><i class="fa-solid fa-user" aria-hidden="true"></i></span><span
+                        data-i18n="myProfile">Profil</span>
                 </button>
             </nav>
             <div class="sidebar-bottom">
@@ -533,7 +574,8 @@
                     <span class="profile-short-text"><strong id="student-header-user">Siswa</strong>
                         <small data-i18n="viewProfile">Lihat profil</small><small id="network-status-student"
                             class="network-status hidden" data-i18n="networkReconnecting" aria-live="polite">
-                            Menghubungkan ulang...</small></span><span class="more-dots">···</span>
+                            Menghubungkan ulang...</small></span><span class="more-dots"><i class="fa-solid fa-ellipsis"
+                            aria-hidden="true"></i></span>
                 </button>
             </div>
         </aside>
@@ -561,7 +603,8 @@
                     <p class="muted" data-i18n="studentCheckinDesc">Pastikan Anda berada di area sekolah. Lokasi akan
                         diperiksa sebelum kamera dinyalakan.</p>
                     <div class="location-strip">
-                        <div class="location-info"><span class="location-icon">⌖</span>
+                        <div class="location-info"><span class="location-icon"><i class="fa-solid fa-location-dot"
+                                    aria-hidden="true"></i></span>
                             <div><strong data-i18n="locationVerification">Verifikasi lokasi</strong>
                                 <small id="student-location-detail" data-i18n="locationNotChecked">Lokasi belum
                                     diperiksa</small>
@@ -649,6 +692,179 @@
                     <button id="btn-student-logout" class="button danger-outline full" type="button"
                         data-i18n="logout">Keluar</button>
                 </div>
+            </section>
+        </section>
+    </main>
+
+    <main id="dashboard-admin" class="app-shell hidden">
+        <aside class="sidebar">
+            <a class="brand" href="#admin"><img class="brand-mark" src="assets/amanah-logo.png" alt=""
+                    aria-hidden="true"><span>Amanah<span class="brand-dot">.id</span></span></a>
+            <p class="sidebar-caption">ADMINISTRATOR</p>
+            <nav class="main-nav" aria-label="Admin navigation">
+                <button class="nav-link active" type="button" data-admin-target="admin-view-dashboard"><span
+                        class="nav-symbol"><i class="fa-solid fa-gauge" aria-hidden="true"></i></span>Dashboard</button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-users"><span class="nav-symbol"><i
+                            class="fa-solid fa-users" aria-hidden="true"></i></span>Users</button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-settings"><span
+                        class="nav-symbol"><i class="fa-solid fa-gear" aria-hidden="true"></i></span>School
+                    Settings</button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-audit"><span class="nav-symbol"><i
+                            class="fa-solid fa-clipboard-list" aria-hidden="true"></i></span>Audit Log</button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-health"><span class="nav-symbol"><i
+                            class="fa-solid fa-heart-pulse" aria-hidden="true"></i></span>System Health</button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-profile"><span
+                        class="nav-symbol"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></span>Profile
+                    Admin</button>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="profile-shortcut">
+                    <span id="admin-header-avatar" class="avatar">A</span>
+                    <span class="profile-short-text"><strong id="admin-header-user">Admin</strong></span>
+                </div>
+                <button id="admin-logout" class="button danger-outline full" type="button">Logout Admin</button>
+            </div>
+        </aside>
+        <section class="main-area">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">AMANAH.ID</p>
+                    <h1>Dashboard Admin</h1>
+                </div>
+            </header>
+            <section id="admin-view-dashboard" class="admin-view view active">
+                <div class="page-intro">
+                    <div><span class="section-kicker">OVERVIEW</span>
+                        <h2>Ringkasan sekolah</h2>
+                    </div>
+                </div>
+                <div class="admin-stat-grid">
+                    <div class="panel"><span>Total siswa</span><strong id="admin-total-students">—</strong></div>
+                    <div class="panel"><span>Total guru</span><strong id="admin-total-teachers">—</strong></div>
+                    <div class="panel"><span>Presensi hari ini</span><strong id="admin-attendance-today">—</strong>
+                    </div>
+                    <div class="panel"><span>Presensi 7 hari</span><strong id="admin-attendance-week">—</strong></div>
+                    <div class="panel"><span>User aktif 7 hari</span><strong id="admin-active-week">—</strong></div>
+                </div>
+            </section>
+            <section id="admin-view-users" class="admin-view view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">ACCESS CONTROL</span>
+                        <h2>Users</h2>
+                    </div>
+                </div>
+                <form id="admin-user-form" class="panel form-stack">
+                    <h3>Tambah akun</h3>
+                    <label for="admin-user-role">Role</label>
+                    <select id="admin-user-role">
+                        <option value="guru">Guru</option>
+                        <option value="siswa">Siswa</option>
+                    </select>
+                    <label for="admin-user-name">Nama</label><input id="admin-user-name" required maxlength="120">
+                    <label for="admin-user-email">Email</label><input id="admin-user-email" type="email" required
+                        maxlength="254">
+                    <label for="admin-user-password">Kata sandi awal (min. 8 karakter)</label>
+                    <input id="admin-user-password" type="password" required minlength="8" maxlength="128">
+                    <div id="admin-student-fields" class="hidden">
+                        <label for="admin-user-nisn">NISN</label><input id="admin-user-nisn" inputmode="numeric"
+                            minlength="8" maxlength="20">
+                        <label for="admin-user-class">Kelas</label><input id="admin-user-class" maxlength="40">
+                    </div>
+                    <button class="button primary" type="submit">Tambah user</button>
+                </form>
+                <div class="panel table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-tbody"></tbody>
+                    </table>
+                    <p id="admin-users-empty" class="empty-state hidden">Belum ada user.</p>
+                </div>
+            </section>
+            <section id="admin-view-settings" class="admin-view view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">CONFIGURATION</span>
+                        <h2>School Settings</h2>
+                    </div>
+                </div>
+                <form id="admin-settings-form" class="panel form-stack">
+                    <label for="admin-setting-lat">Latitude</label><input id="admin-setting-lat" type="number"
+                        step="any" required>
+                    <label for="admin-setting-lng">Longitude</label><input id="admin-setting-lng" type="number"
+                        step="any" required>
+                    <label for="admin-setting-radius">Radius (meter)</label><input id="admin-setting-radius"
+                        type="number" min="10" max="500" required>
+                    <label for="admin-setting-timezone">Timezone</label><input id="admin-setting-timezone" required
+                        maxlength="64">
+                    <label for="admin-setting-entry-time">Jam masuk</label><input id="admin-setting-entry-time"
+                        type="time" required>
+                    <label for="admin-setting-tolerance">Toleransi keterlambatan (menit)</label><input
+                        id="admin-setting-tolerance" type="number" min="0" max="180" required>
+                    <button class="button primary" type="submit">Simpan settings</button>
+                </form>
+            </section>
+            <section id="admin-view-audit" class="admin-view view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">ACTIVITY</span>
+                        <h2>Audit Log</h2>
+                    </div>
+                </div>
+                <div class="panel form-stack">
+                    <label for="admin-audit-actor">Aktor</label><input id="admin-audit-actor" maxlength="254">
+                    <label for="admin-audit-action">Aksi</label><input id="admin-audit-action" maxlength="100">
+                    <label for="admin-audit-from">Dari tanggal</label><input id="admin-audit-from" type="date">
+                    <label for="admin-audit-to">Sampai tanggal</label><input id="admin-audit-to" type="date">
+                    <button id="admin-audit-filter" class="button secondary" type="button">Filter</button>
+                </div>
+                <div class="panel table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Aktor</th>
+                                <th>Role</th>
+                                <th>Aksi</th>
+                                <th>Tabel</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-audit-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="admin-view-health" class="admin-view view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">MONITORING</span>
+                        <h2>System Health</h2>
+                    </div>
+                </div>
+                <div class="panel">
+                    <p>Supabase: <strong id="health-supabase">—</strong></p>
+                    <p>Vercel API: <strong id="health-vercel">—</strong></p>
+                    <p>Fonnte: <strong id="health-fonnte">—</strong></p>
+                    <button class="button secondary" type="button" id="admin-health-refresh">Perbarui status</button>
+                </div>
+            </section>
+            <section id="admin-view-profile" class="admin-view view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">ACCOUNT SECURITY</span>
+                        <h2>Profile Admin</h2>
+                    </div>
+                </div>
+                <form id="admin-profile-form" class="panel form-stack">
+                    <label for="admin-current-password">Kata sandi saat ini</label><input id="admin-current-password"
+                        type="password" required>
+                    <label for="admin-new-password">Kata sandi baru (12+ karakter, huruf besar/kecil, angka,
+                        simbol)</label>
+                    <input id="admin-new-password" type="password" minlength="12" required>
+                    <button class="button primary" type="submit">Ubah kata sandi</button>
+                </form>
             </section>
         </section>
     </main>

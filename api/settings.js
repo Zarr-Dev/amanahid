@@ -1,11 +1,14 @@
 import {
     getRequestRole,
+    getSession,
     isAllowedOrigin,
     jsonError,
     jsonSupabaseError,
     supabaseRequest,
     verifyTeacherSession
 } from "../lib/supabase.js";
+import { writeAuditLog } from "../lib/audit.js";
+import { validateSchema } from "../lib/validate.js";
 
 const SCHOOL_SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -20,8 +23,8 @@ export default async function handler(req, res) {
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
 
     if (req.method === "GET") {
-        if (!getRequestRole(req)) return jsonError(res, 403, "A valid user role is required");
         try {
+            if (!await getRequestRole(req)) return jsonError(res, 403, "A valid user role is required");
             const rows = await supabaseRequest(
                 `school_settings?select=lat,lng,radius&id=eq.${SCHOOL_SETTINGS_ID}&limit=1`
             );
@@ -43,8 +46,8 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "HEAD") {
-        if (!getRequestRole(req)) return jsonError(res, 403, "A valid user role is required");
         try {
+            if (!await getRequestRole(req)) return jsonError(res, 403, "A valid user role is required");
             const rows = await supabaseRequest(
                 `school_settings?select=id&id=eq.${SCHOOL_SETTINGS_ID}&limit=1`
             );
@@ -57,12 +60,24 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "PUT") {
-        if (!verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
-        const { lat, lng, radius } = req.body || {};
+        try {
+            if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        } catch (error) {
+            console.error("School settings authorization failed:", error);
+            return jsonSupabaseError(res, error, "Unable to validate teacher session");
+        }
+        const body = req.body || {};
+        const validation = validateSchema({
+            lat: { type: "number", required: true, min: -90, max: 90 },
+            lng: { type: "number", required: true, min: -180, max: 180 },
+            radius: { type: "number", required: true, min: 10, max: 500 }
+        }, body);
+        if (!validation.valid) return jsonError(res, 400, validation.error);
+        const { lat, lng, radius } = body;
         if (!isValidSettings({ lat, lng, radius })) {
             return jsonError(res, 400, "Latitude, longitude, or radius is outside the allowed range");
         }
-        const updatedBy = req.headers["x-user-email"];
+        const updatedBy = getSession(req)?.email;
         try {
             const rows = await supabaseRequest(
                 `school_settings?id=eq.${SCHOOL_SETTINGS_ID}&select=lat,lng,radius`,
@@ -82,6 +97,11 @@ export default async function handler(req, res) {
                 }
             );
             if (!rows.length) return jsonError(res, 503, "School location settings are not configured");
+            await writeAuditLog(
+                getSession(req),
+                "settings.update", "school_settings", SCHOOL_SETTINGS_ID,
+                { lat, lng, radius }
+            );
             return res.status(200).json({
                 lat: Number(rows[0].lat),
                 lng: Number(rows[0].lng),

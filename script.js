@@ -203,16 +203,6 @@ const state = {
     lang: "id",
     theme: "light",
     user: null,
-    accounts: [
-        {
-            name: "Admin Amanah", email: "admin@amanahid.sch.id",
-            password: "AmanahDemo!2026#ID", role: "guru"
-        },
-        {
-            name: "Siswa Demo", email: "siswa@amanahid.sch.id",
-            password: "SiswaDemo!2026#ID", role: "siswa", nisn: "0091234567"
-        }
-    ],
     students: [],
     attendance: [],
     modelReady: false,
@@ -230,6 +220,9 @@ const state = {
     formBusy: false,
     faceSamples: [],
     faceCandidate: null,
+    faceCandidateQuality: null,
+    formStableFrames: 0,
+    lastFormNose: null,
     lastLocation: null,
     lastGpsFix: null,
     locationCheckBusy: false,
@@ -245,6 +238,7 @@ const state = {
     attendanceIdempotencyKey: null,
     networkHeartbeatTimer: null,
     networkHeartbeatBusy: false,
+    networkHeartbeatFailures: 0,
     cloudLoadToken: 0,
     cloudDataPromise: Promise.resolve(),
     schoolSettingsLoaded: false,
@@ -530,19 +524,27 @@ function showView(target) {
     if (target === "view-s-history") renderStudentHistory();
 }
 
-function showAuth() {
+function showAuth({ clearSession = true } = {}) {
     stopAllCameras();
     stopNetworkHeartbeat();
+    if (clearSession) {
+        sessionStorage.removeItem("amanahid.sessionToken");
+        sessionStorage.removeItem("amanahid.adminToken");
+    }
+    state.user = null;
     cancelSchoolLocationEdit();
     state.schoolSettingsLoaded = false;
     state.cloudLoadToken++;
     $("btn-attendance-switch").disabled = true;
     $("btn-student-attendance").disabled = true;
     closeAuthModal();
+    $("admin-login-modal")?.classList.add("hidden");
     $("login-password").value = "";
     $("dashboard-guru").classList.add("hidden");
     $("dashboard-siswa").classList.add("hidden");
+    $("dashboard-admin")?.classList.add("hidden");
     $("auth-screen").classList.remove("hidden");
+    $("network-banner")?.classList.add("hidden");
     $("profile-modal").classList.add("hidden");
     $("map-modal").classList.add("hidden");
     if (location.hash) history.replaceState(null, "", `${location.pathname}${location.search}`);
@@ -557,7 +559,8 @@ function handleHashRoute() {
         history.replaceState(null, "", `${location.pathname}${location.search}`);
         return;
     }
-    const expected = state.user.role === "siswa" ? "#siswa" : "#guru";
+    const expected = state.user.role === "admin" ? "#admin" :
+        state.user.role === "siswa" ? "#siswa" : "#guru";
     if (location.hash !== expected) {
         showAuth();
         state.user = null;
@@ -569,17 +572,32 @@ async function showApp(user) {
     closeAuthModal();
     stopAllCameras();
     state.user = user;
+    if (user.role === "admin") {
+        sessionStorage.setItem("amanahid.adminToken", user.token);
+        sessionStorage.removeItem("amanahid.sessionToken");
+    } else {
+        sessionStorage.setItem("amanahid.sessionToken", user.token);
+        sessionStorage.removeItem("amanahid.adminToken");
+    }
     state.cloudLoadToken++;
     state.schoolSettingsLoaded = false;
     $("btn-attendance-switch").disabled = true;
     $("btn-student-attendance").disabled = true;
     $("auth-screen").classList.add("hidden");
     startNetworkHeartbeat();
+    $("dashboard-admin")?.classList.toggle("hidden", user.role !== "admin");
     const isStudent = user.role === "siswa";
-    $("dashboard-guru").classList.toggle("hidden", isStudent);
+    $("dashboard-guru").classList.toggle("hidden", user.role !== "guru");
     $("dashboard-siswa").classList.toggle("hidden", !isStudent);
     const initial = user.name.trim().charAt(0).toUpperCase() || (isStudent ? "S" : "A");
-    if (isStudent) {
+    if (user.role === "admin") {
+        $("admin-header-user").textContent = user.name;
+        $("admin-header-avatar").textContent = initial;
+        location.hash = "admin";
+        showAdminView("admin-view-dashboard");
+        await loadAdminDashboard();
+        return;
+    } else if (isStudent) {
         $("student-header-user").textContent = user.name;
         $("student-header-avatar").textContent = initial;
         $("student-profile-name").textContent = user.name;
@@ -605,6 +623,108 @@ async function showApp(user) {
     if (!settingsLoaded) toast(tr("schoolSettingsFailed"), "error");
     loadModels();
     state.cloudDataPromise = loadCloudData(user);
+}
+
+function restoreSession() {
+    const key = sessionStorage.getItem("amanahid.adminToken")
+        ? "amanahid.adminToken"
+        : "amanahid.sessionToken";
+    const token = sessionStorage.getItem(key);
+    if (!token) return;
+    try {
+        const encoded = token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+        const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+        const claims = JSON.parse(new TextDecoder().decode(bytes));
+        const expectedRole = key === "amanahid.adminToken" ? "admin" : ["guru", "siswa"].includes(claims.role);
+        if (!expectedRole || !claims.email || !Number.isFinite(claims.exp) || claims.exp <= Date.now()) {
+            throw new Error("Stored session is invalid or expired");
+        }
+        void showApp({ ...claims, token });
+    } catch (error) {
+        console.warn("Stored session could not be restored:", error);
+        sessionStorage.removeItem("amanahid.sessionToken");
+        sessionStorage.removeItem("amanahid.adminToken");
+    }
+}
+
+function showAdminView(viewId) {
+    document.querySelectorAll("#dashboard-admin .admin-view").forEach(view => {
+        view.classList.toggle("hidden", view.id !== viewId);
+        view.classList.toggle("active", view.id === viewId);
+    });
+    document.querySelectorAll("#dashboard-admin .nav-link").forEach(button => {
+        button.classList.toggle("active", button.dataset.adminTarget === viewId);
+    });
+    if (viewId === "admin-view-users") void loadAdminUsers();
+    if (viewId === "admin-view-settings") void loadAdminSettings();
+    if (viewId === "admin-view-audit") void loadAdminAudit();
+}
+
+async function loadAdminDashboard() {
+    try {
+        const stats = await cloudRequest("/api/admin/dashboard-stats");
+        $("admin-total-students").textContent = stats.total_students;
+        $("admin-total-teachers").textContent = stats.total_teachers;
+        $("admin-attendance-today").textContent = stats.attendance_today;
+        $("admin-attendance-week").textContent = stats.attendance_week;
+        $("admin-active-week").textContent = stats.active_users_week;
+        $("health-supabase").textContent = stats.health.supabase;
+        $("health-vercel").textContent = stats.health.vercel;
+        $("health-fonnte").textContent = stats.health.fonnte;
+    } catch (error) {
+        console.error("Admin dashboard could not load:", error);
+        toast(error.message, "error");
+    }
+}
+
+async function loadAdminUsers() {
+    try {
+        const { users } = await cloudRequest("/api/admin/users");
+        $("admin-users-tbody").innerHTML = users.map(user => `<tr>
+            <td>${safeText(user.name)}</td><td>${safeText(user.email || "")}</td>
+            <td>${safeText(user.role)}</td><td>${safeText(user.is_active ? "Aktif" : "Nonaktif")}</td>
+            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id)}" data-table="${safeText(user.table)}">Ubah</button>
+            <button class="button subtle" type="button" data-admin-disable="${safeText(user.id)}" data-table="${safeText(user.table)}" ${user.is_active ? "" : "disabled"}>Nonaktifkan</button></td>
+        </tr>`).join("");
+        $("admin-users-empty").classList.toggle("hidden", users.length > 0);
+    } catch (error) {
+        console.error("Admin users could not load:", error);
+        toast(error.message, "error");
+    }
+}
+
+async function loadAdminSettings() {
+    try {
+        const settings = await cloudRequest("/api/admin/settings");
+        $("admin-setting-lat").value = settings.lat;
+        $("admin-setting-lng").value = settings.lng;
+        $("admin-setting-radius").value = settings.radius;
+        $("admin-setting-timezone").value = settings.timezone;
+        $("admin-setting-entry-time").value = settings.entry_time;
+        $("admin-setting-tolerance").value = settings.late_tolerance_min;
+    } catch (error) {
+        console.error("Admin settings could not load:", error);
+        toast(error.message, "error");
+    }
+}
+
+async function loadAdminAudit() {
+    try {
+        const filters = new URLSearchParams();
+        if ($("admin-audit-actor").value) filters.set("actor", $("admin-audit-actor").value);
+        if ($("admin-audit-action").value) filters.set("action", $("admin-audit-action").value);
+        if ($("admin-audit-from").value) filters.set("from", $("admin-audit-from").value);
+        if ($("admin-audit-to").value) filters.set("to", $("admin-audit-to").value);
+        const { entries } = await cloudRequest(`/api/admin/audit?${filters.toString()}`);
+        $("admin-audit-tbody").innerHTML = entries.map(entry => `<tr>
+            <td>${safeText(new Date(entry.created_at).toLocaleString())}</td>
+            <td>${safeText(entry.actor_email)}</td><td>${safeText(entry.actor_role)}</td>
+            <td>${safeText(entry.action)}</td><td>${safeText(entry.target_table || "")}</td>
+        </tr>`).join("");
+    } catch (error) {
+        console.error("Admin audit log could not load:", error);
+        toast(error.message, "error");
+    }
 }
 
 function openProfile() {
@@ -653,14 +773,18 @@ async function cloudRequest(path, {
 } = {}) {
     const headers = {};
     if (body !== undefined) headers["Content-Type"] = "application/json";
-    if (role) headers["X-Role"] = role;
-    if (role === "siswa" && nisn) headers["X-NISN"] = nisn;
-    if (role === "guru" && state.user?.email) headers["X-User-Email"] = state.user.email;
+    if (role === "admin" || path.startsWith("/api/admin/")) {
+        const token = sessionStorage.getItem("amanahid.adminToken");
+        if (token && !path.endsWith("/login")) headers["X-Admin-Token"] = token;
+    } else {
+        const token = sessionStorage.getItem("amanahid.sessionToken");
+        if (token) headers["X-Session-Token"] = token;
+    }
     if (idempotencyKey) headers["X-Idempotency-Key"] = idempotencyKey;
 
-    const maxAttempts = 3;
     let lastError;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let attempt = 0;
+    while (true) {
         const controller = new AbortController();
         const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
         try {
@@ -681,9 +805,36 @@ async function cloudRequest(path, {
                 } catch {
                     payload = null;
                 }
-                const error = new Error(payload?.error || `Request failed (${response.status})`);
+                let message = payload?.error || `Request failed (${response.status})`;
+                const error = new Error(message);
                 error.name = "CloudApiError";
                 error.status = response.status;
+                if (response.status === 400 && /gps/i.test(String(payload?.error || ""))) {
+                    error.type = "gps_accuracy";
+                    error.gpsAccuracy = payload;
+                    message = "Akurasi GPS terlalu rendah.";
+                } else if (response.status === 401) {
+                    message = "Sesi habis, silakan login ulang";
+                    if (state.user) {
+                        showAuth();
+                        state.user = null;
+                        toast("Sesi habis, silakan login ulang", "info");
+                    }
+                } else if (response.status === 403) {
+                    message = "Akses ditolak. Periksa APP_ORIGIN di Vercel atau hubungi Admin.";
+                } else if (response.status === 404) {
+                    message = "Data tidak ditemukan.";
+                } else if (response.status === 409) {
+                    message = "Sudah ada data serupa hari ini.";
+                } else if (response.status === 429) {
+                    const retryAfter = Number(response.headers.get("Retry-After"));
+                    error.retryAfter = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 60;
+                    message = `Tunggu ${error.retryAfter} detik.`;
+                } else if ([500, 502, 503, 504].includes(response.status)) {
+                    message = "Server sibuk, mencoba menghubungkan ulang...";
+                }
+                error.message = message;
+                error.retryAfter = error.retryAfter || response.headers.get("Retry-After");
                 throw error;
             }
 
@@ -700,25 +851,29 @@ async function cloudRequest(path, {
             if (cause?.name === "CloudApiError") {
                 lastError = cause;
             } else {
-                lastError = new Error(cause?.name === "AbortError"
-                    ? "Cloud request timed out"
-                    : "Cloud request failed");
+                lastError = new Error("Periksa koneksi internet Anda.");
                 lastError.name = "CloudApiError";
-                lastError.status = cause?.name === "AbortError" ? 504 : undefined;
+                lastError.status = undefined;
+                lastError.type = "network";
                 lastError.cause = cause;
             }
-            const retryable = cause?.name !== "CloudApiError" ||
-                cause.status === 429 || cause.status >= 500;
-            if (!retryable || attempt === maxAttempts - 1) throw lastError;
+            const isServerError = [500, 502, 503, 504].includes(lastError.status);
+            const retryLimit = isServerError ? 3 : lastError.type === "network" ? 2 : 0;
+            if (attempt >= retryLimit) throw lastError;
+            if (isServerError) lastError.message = "Server sibuk, mencoba menghubungkan ulang...";
         } finally {
             window.clearTimeout(timeoutId);
         }
 
-        // The zero-based attempt doubles the base delay on each retry, then adds 0-500 ms of jitter.
-        const delay = Math.min(5000, 1000 * (2 ** attempt)) + (Math.random() * 500);
+        const delay = Math.min(5000, 1000 * (2 ** attempt)) + Math.random() * 500;
+        attempt++;
         await new Promise(resolve => window.setTimeout(resolve, delay));
     }
-    throw lastError;
+}
+
+async function passwordDigest(password) {
+    const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
+    return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
 }
 
 function createIdempotencyKey() {
@@ -737,15 +892,21 @@ async function checkNetworkHeartbeat() {
     try {
         await cloudRequest("/api/settings", { method: "HEAD", timeoutMs: 5_000 });
         if (state.user !== requestUser) return;
+        state.networkHeartbeatFailures = 0;
+        $("network-banner")?.classList.add("hidden");
         $("network-status-teacher").classList.add("hidden");
         $("network-status-student").classList.add("hidden");
     } catch (error) {
         if (state.user !== requestUser) return;
+        state.networkHeartbeatFailures++;
         console.warn("Network heartbeat failed; will retry on the next interval:", error);
         const badge = requestUser.role === "siswa"
             ? $("network-status-student")
             : $("network-status-teacher");
         badge.classList.remove("hidden");
+        if (state.networkHeartbeatFailures >= 3) {
+            $("network-banner")?.classList.remove("hidden");
+        }
     } finally {
         if (state.user === requestUser) state.networkHeartbeatBusy = false;
     }
@@ -756,6 +917,8 @@ function startNetworkHeartbeat() {
         window.clearInterval(state.networkHeartbeatTimer);
     }
     state.networkHeartbeatBusy = false;
+    state.networkHeartbeatFailures = 0;
+    $("network-banner")?.classList.add("hidden");
     void checkNetworkHeartbeat();
     state.networkHeartbeatTimer = window.setInterval(() => {
         if (state.user) void checkNetworkHeartbeat();
@@ -829,14 +992,6 @@ async function loadCloudData(user = state.user) {
     if (!user) return;
     const token = ++state.cloudLoadToken;
     try {
-        if (user.role === "guru") {
-            await cloudRequest("/api/teachers", {
-                method: "POST",
-                role: "guru",
-                body: { email: user.email, name: user.name }
-            });
-            if (token !== state.cloudLoadToken || state.user !== user) return;
-        }
         const studentsRequest = user.role === "siswa"
             ? cloudRequest(`/api/students?nisn=${encodeURIComponent(user.nisn)}`, {
                 role: user.role,
@@ -1277,6 +1432,8 @@ function stopFormCamera() {
     state.formStartToken++;
     if (state.formTimer) clearInterval(state.formTimer);
     state.formTimer = null;
+    state.formStableFrames = 0;
+    state.lastFormNose = null;
     const stream = state.formStream;
     state.formStream = null;
     const video = $("video-formulir");
@@ -1528,12 +1685,22 @@ function createFaceMatcher(students) {
 function updateFaceSampleCount() {
     $("face-sample-count").textContent = tr("faceSamplesCount", { count: state.faceSamples.length });
     $("btn-capture-face").disabled = !state.faceCandidate || state.faceSamples.length >= MAX_FACE_SAMPLES;
+    const progress = $("face-sample-progress-bar");
+    if (progress) {
+        progress.style.width = `${state.faceSamples.length / MAX_FACE_SAMPLES * 100}%`;
+        progress.dataset.count = state.faceSamples.length;
+    }
 }
 
-function saveFaceSample(descriptor) {
+function saveFaceSample(descriptor, quality = state.faceCandidateQuality) {
     const values = Array.from(descriptor || []);
     if (values.length !== 128 || !values.every(Number.isFinite)) {
         toast(tr("faceUploadError"), "error");
+        return false;
+    }
+    if (typeof quality !== "number" || quality < 0.7) {
+        $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
+        toast("Wajah kurang jelas, mendekatlah ke kamera.", "error");
         return false;
     }
     if (state.faceSamples.length >= MAX_FACE_SAMPLES) {
@@ -1544,10 +1711,13 @@ function saveFaceSample(descriptor) {
     if (state.faceSamples.some(sample =>
         faceapi.euclideanDistance(descriptorVector, new Float32Array(sample)) < 0.05
     )) {
-        toast(tr("duplicateFaceSample"), "info");
+        $("form-face-status").textContent = "Ubah sudut wajah.";
+        toast("Ubah sudut wajah.", "info");
         return false;
     }
     state.faceSamples.push(values);
+    state.faceCandidate = null;
+    state.faceCandidateQuality = null;
     updateFaceSampleCount();
     $("form-face-status").textContent = tr("faceSampleReady");
     return true;
@@ -1735,15 +1905,15 @@ async function processAttendanceFrame() {
         if (state.attendanceStream === requestStream) {
             stopAttendanceCamera();
             if (error.status === 409) {
-                setAttendanceMessage(tr("alreadyPresent"));
-                toast(tr("alreadyPresent"), "info");
+                setAttendanceMessage(error.message);
+                toast(error.message, "info");
             } else if (error.name === "CloudApiError") {
                 console.error("Attendance submission failed:", error);
-                const message = error.status === 429
-                    ? tr("rateLimitWait")
-                    : error.status === 503 || error.status === 504
-                        ? tr("serverBusyReconnect")
-                        : tr("attendanceNetworkFailed");
+                const message = error.type === "gps_accuracy"
+                    ? tr("accuracyWarning", {
+                        accuracy: Math.ceil(error.gpsAccuracy?.actual || MAX_GPS_ACCURACY_METERS + 1)
+                    })
+                    : error.message;
                 setAttendanceMessage(message);
                 toast(message, "error");
             } else {
@@ -1824,13 +1994,44 @@ async function processFormFrame() {
         if (state.formStream !== requestStream) return;
         drawDetections(video, $("overlay-formulir"), detections);
         if (detections.length === 1) {
-            state.faceCandidate = Array.from(detections[0].descriptor);
+            const detection = detections[0];
+            const nose = detection.landmarks.getNose()?.[3];
+            const quality = detection.score * (
+                1 - Math.min(1, Math.abs(detection.box.width - 160) / 160)
+            );
+            state.faceCandidate = Array.from(detection.descriptor);
+            state.faceCandidateQuality = quality;
             $("form-face-status").textContent = tr("faceDetected");
+            if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
+                quality < 0.7 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
+                state.formStableFrames = 0;
+                state.lastFormNose = null;
+                if (quality < 0.7) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
+            } else {
+                if (state.lastFormNose) {
+                    const delta = Math.hypot(nose.x - state.lastFormNose.x, nose.y - state.lastFormNose.y);
+                    state.formStableFrames = delta < 0.5 ? state.formStableFrames + 1 : 0;
+                }
+                state.lastFormNose = { x: nose.x, y: nose.y };
+                if (state.formStableFrames >= 3) {
+                    if (saveFaceSample(detection.descriptor, quality)) {
+                        toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
+                    }
+                    state.formStableFrames = 0;
+                    state.lastFormNose = null;
+                }
+            }
         } else if (detections.length > 1) {
             state.faceCandidate = null;
+            state.faceCandidateQuality = null;
+            state.formStableFrames = 0;
+            state.lastFormNose = null;
             $("form-face-status").textContent = tr("faceTooMany");
         } else {
             state.faceCandidate = null;
+            state.faceCandidateQuality = null;
+            state.formStableFrames = 0;
+            state.lastFormNose = null;
             $("form-face-status").textContent = tr("faceNotFound");
         }
         updateFaceSampleCount();
@@ -1866,7 +2067,13 @@ async function readUploadedFace(file) {
             return;
         }
 
-        if (saveFaceSample(detections[0].descriptor)) toast(tr("faceSampleReady"), "success");
+        const detection = detections[0];
+        const quality = detection.score * (
+            1 - Math.min(1, Math.abs(detection.box.width - 160) / 160)
+        );
+        if (saveFaceSample(detection.descriptor, quality)) {
+            toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
+        }
     } catch (error) {
         console.error("Image processing error:", error);
         toast(tr("faceUploadError"), "error");
@@ -1891,12 +2098,15 @@ async function registerStudent(event) {
     const name = $("input-nama").value.trim();
     const className = $("input-kelas").value.trim();
     const parentWhatsApp = $("input-parent-wa").value.trim();
+    const email = $("input-student-email").value.trim().toLowerCase();
+    const password = $("input-student-password").value;
 
     if (!nisn || !name || !className) {
         toast(tr("invalidNisn"), "error");
         return;
     }
-    if (!/^\d{8,20}$/.test(nisn) || name.length > 120 || /[\u0000-\u001F\u007F]/.test(name)) {
+    if (!/^\d{8,20}$/.test(nisn) || name.length > 120 || /[\u0000-\u001F\u007F]/.test(name) ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || password.length > 128) {
         toast(tr("invalidNisn"), "error");
         return;
     }
@@ -1917,7 +2127,9 @@ async function registerStudent(event) {
                 nisn,
                 name,
                 class_name: className,
-                parent_whatsapp: parentWhatsApp ? parentWhatsApp.replace(/^08/, "628") : null,
+                parent_whatsapp: parentWhatsApp ? parentWhatsApp.replace(/^08/, "628") : undefined,
+                email,
+                password,
                 face_descriptors: state.faceSamples.map(sample => [...sample])
             }
         });
@@ -1927,15 +2139,15 @@ async function registerStudent(event) {
         ];
     } catch (error) {
         console.error("Student registration failed:", error);
-        toast(error.status === 409 ? tr("studentExists") : tr("cloudSaveFailed"), "error");
+        toast(error.message || tr("cloudSaveFailed"), "error");
         return;
     }
 
-    state.accounts.filter(account => account.role === "siswa" && account.nisn === nisn)
-        .forEach(account => { account.linked = true; });
-
     state.faceSamples = [];
     state.faceCandidate = null;
+    state.faceCandidateQuality = null;
+    state.formStableFrames = 0;
+    state.lastFormNose = null;
     $("student-form").reset();
     $("form-face-status").textContent = tr("noFaceSample");
     updateFaceSampleCount();
@@ -1954,13 +2166,11 @@ async function removeStudent(nisn) {
         });
     } catch (error) {
         console.error("Student deletion failed:", error);
-        toast(tr("cloudDeleteFailed"), "error");
+        toast(error.message || tr("cloudDeleteFailed"), "error");
         return;
     }
     state.students = state.students.filter(s => s.nisn !== nisn);
     state.attendance = state.attendance.filter(a => a.nisn !== nisn);
-    state.accounts.filter(account => account.role === "siswa" && account.nisn === nisn)
-        .forEach(account => { account.linked = false; });
     renderStudentList();
     renderDatabase();
     updateStats();
@@ -2278,22 +2488,56 @@ function setupEvents() {
     });
     document.addEventListener("keydown", event => {
         if (event.key === "Escape" && !$("auth-modal").classList.contains("hidden")) closeAuthModal();
+        if (event.key === "Escape") $("admin-login-modal")?.classList.add("hidden");
     });
     $("model-retry").addEventListener("click", () => location.reload());
+    $("admin-login-open").addEventListener("click", () => {
+        $("admin-login-modal").classList.remove("hidden");
+        $("admin-login-email").focus();
+    });
+    $("admin-login-close").addEventListener("click", () => $("admin-login-modal").classList.add("hidden"));
+    $("admin-login-modal").addEventListener("click", event => {
+        if (event.target === $("admin-login-modal")) $("admin-login-modal").classList.add("hidden");
+    });
 
     $("login-form").addEventListener("submit", async event => {
         event.preventDefault();
         const email = $("login-email").value.trim().toLowerCase();
         const password = $("login-password").value;
-        const account = state.accounts.find(a => a.email === email && a.password === password);
-        if (!account) {
-            toast(tr("loginFailed"), "error");
+        try {
+            const result = await cloudRequest("/api/auth/login", {
+                method: "POST",
+                body: { email, password: await passwordDigest(password) }
+            });
+            await showApp({ ...result.user, token: result.token });
+        } catch (error) {
+            console.error("Login failed:", error);
+            toast(error.message || tr("loginFailed"), "error");
+        }
+    });
+
+    $("admin-login-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        if ($("admin-captcha").value.trim() !== "8") {
+            toast("Captcha salah.", "error");
             return;
         }
-        const role = inferRoleFromEmail(email) || account.role;
-        showApp({
-            name: account.name, email: account.email, role, nisn: account.nisn || ""
-        });
+        try {
+            const result = await cloudRequest("/api/admin/login", {
+                method: "POST",
+                body: {
+                    email: $("admin-login-email").value.trim().toLowerCase(),
+                    password: await passwordDigest($("admin-login-password").value),
+                    captcha: $("admin-captcha").value.trim()
+                }
+            });
+            $("admin-login-modal").classList.add("hidden");
+            $("admin-login-form").reset();
+            await showApp({ ...result.user, token: result.token });
+        } catch (error) {
+            console.error("Admin login failed:", error);
+            toast(error.message, "error");
+        }
     });
 
     $("terms-reg").addEventListener("change", () => {
@@ -2303,52 +2547,119 @@ function setupEvents() {
 
     $("register-form").addEventListener("submit", event => {
         event.preventDefault();
-        if (!$("terms-reg").checked) {
-            toast(tr("termsRequired"), "error");
-            return;
-        }
-        const name = $("register-name").value.trim();
-        const email = $("register-email").value.trim().toLowerCase();
-        const password = $("register-password").value;
-        const confirm = $("register-confirm").value;
-        const nisn = $("register-nisn").value.trim();
-        const role = inferRoleFromEmail(email);
-
-        if (password !== confirm) {
-            toast(tr("passwordMismatch"), "error");
-            return;
-        }
-        if (!role) {
-            toast(tr("signupEmailRoleRequired"), "error");
-            return;
-        }
-        if (role === "siswa" && !nisn) {
-            toast(tr("studentNeedsNisn"), "error");
-            return;
-        }
-        if (state.accounts.some(a => a.email === email)) {
-            toast(tr("emailExists"), "error");
-            return;
-        }
-
-        state.accounts.push({ name, email, password, role, ...(role === "siswa" ? { nisn } : {}) });
-        $("register-form").reset();
-        $("btn-register-submit").disabled = true;
-        updateSignupRoleFields();
-        switchAuthTab("login");
-        closeAuthModal();
-        $("login-email").value = email;
-        $("login-password").value = "";
-        toast(role === "siswa" ? tr("studentUnlinked") : tr("signupSuccess"),
-            role === "siswa" ? "info" : "success");
+        toast("Akun dibuat oleh sekolah. Hubungi guru untuk akun siswa atau Admin untuk akun guru.", "info");
     });
 
     document.querySelectorAll(".lang-btn").forEach(btn => {
         btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
     });
 
-    document.querySelectorAll(".nav-link").forEach(btn => {
+    document.querySelectorAll("#dashboard-guru .nav-link[data-target], #dashboard-siswa .nav-link[data-target]").forEach(btn => {
         btn.addEventListener("click", () => showView(btn.dataset.target));
+    });
+    document.querySelectorAll("#dashboard-admin .nav-link[data-admin-target]").forEach(btn => {
+        btn.addEventListener("click", () => showAdminView(btn.dataset.adminTarget));
+    });
+    $("admin-user-role").addEventListener("change", () => {
+        $("admin-student-fields").classList.toggle("hidden", $("admin-user-role").value !== "siswa");
+    });
+    $("admin-user-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const role = $("admin-user-role").value;
+        const body = {
+            role,
+            email: $("admin-user-email").value.trim().toLowerCase(),
+            name: $("admin-user-name").value.trim(),
+            password: $("admin-user-password").value
+        };
+        if (role === "siswa") {
+            body.nisn = $("admin-user-nisn").value.trim();
+            body.class_name = $("admin-user-class").value.trim();
+        }
+        try {
+            await cloudRequest("/api/admin/users", { method: "POST", body });
+            $("admin-user-form").reset();
+            $("admin-student-fields").classList.remove("hidden");
+            await loadAdminUsers();
+            await loadAdminDashboard();
+            toast("Akun berhasil dibuat.", "success");
+        } catch (error) {
+            console.error("Admin user creation failed:", error);
+            toast(error.message, "error");
+        }
+    });
+    $("admin-users-tbody").addEventListener("click", async event => {
+        const button = event.target.closest("[data-admin-edit], [data-admin-disable]");
+        if (!button) return;
+        const id = button.dataset.adminEdit || button.dataset.adminDisable;
+        const table = button.dataset.table;
+        if (button.hasAttribute("data-admin-disable")) {
+            if (!window.confirm("Nonaktifkan akun ini?")) return;
+            try {
+                await cloudRequest("/api/admin/users", { method: "DELETE", body: { id, table } });
+            } catch (error) {
+                toast(error.message, "error");
+                return;
+            }
+        } else {
+            const email = window.prompt("Email baru (kosongkan jika tidak berubah):");
+            const name = window.prompt("Nama baru (kosongkan jika tidak berubah):");
+            const password = window.prompt("Kata sandi baru (kosongkan jika tidak berubah):");
+            const body = { id, table };
+            if (email) body.email = email.trim();
+            if (name) body.name = name.trim();
+            if (password) body.password = password;
+            if (!body.email && !body.name && !body.password) return;
+            try {
+                await cloudRequest("/api/admin/users", { method: "PUT", body });
+            } catch (error) {
+                toast(error.message, "error");
+                return;
+            }
+        }
+        await loadAdminUsers();
+        await loadAdminDashboard();
+    });
+    $("admin-settings-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const body = {
+            lat: Number($("admin-setting-lat").value),
+            lng: Number($("admin-setting-lng").value),
+            radius: Number($("admin-setting-radius").value),
+            timezone: $("admin-setting-timezone").value.trim(),
+            entry_time: $("admin-setting-entry-time").value,
+            late_tolerance_min: Number($("admin-setting-tolerance").value)
+        };
+        try {
+            await cloudRequest("/api/admin/settings", { method: "PUT", body });
+            toast("Pengaturan sekolah berhasil disimpan.", "success");
+        } catch (error) {
+            toast(error.message, "error");
+        }
+    });
+    $("admin-audit-filter").addEventListener("click", () => void loadAdminAudit());
+    $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
+    $("admin-profile-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const password = $("admin-new-password").value;
+        if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) ||
+            !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+            toast("Kata sandi harus 12+ karakter dan berisi huruf besar/kecil, angka, serta simbol.", "error");
+            return;
+        }
+        try {
+            await cloudRequest("/api/admin/profile", {
+                method: "PUT",
+                body: {
+                    current_password: await passwordDigest($("admin-current-password").value),
+                    password
+                }
+            });
+            $("admin-profile-form").reset();
+            toast("Kata sandi Admin berhasil diubah.", "success");
+        } catch (error) {
+            toast(error.message, "error");
+        }
     });
 
     $("brand-home").addEventListener("click", event => {
@@ -2393,6 +2704,10 @@ function setupEvents() {
     $("student-open-profile").addEventListener("click", openProfile);
     $("student-top-profile").addEventListener("click", openProfile);
     $("btn-student-logout").addEventListener("click", logoutStudent);
+    $("admin-logout").addEventListener("click", () => {
+        showAuth();
+        toast(tr("loggedOut"), "info");
+    });
     $("btn-student-save-profile").addEventListener("click", () => {
         setTheme($("student-theme-select").value);
         setLanguage($("student-profile-language").value);
@@ -2456,7 +2771,7 @@ function setupEvents() {
             });
         } catch (error) {
             console.error("Attendance deletion failed:", error);
-            toast(tr("cloudDeleteFailed"), "error");
+            toast(error.message || tr("cloudDeleteFailed"), "error");
             return;
         }
         state.attendance = state.attendance.filter(a => a.id !== button.dataset.deleteAttendance);
@@ -2484,14 +2799,12 @@ function setupEvents() {
             await cloudRequest("/api/students?all=1", { method: "DELETE", role: "guru" });
         } catch (error) {
             console.error("Bulk data deletion failed:", error);
-            toast(tr("cloudDeleteFailed"), "error");
+            toast(error.message || tr("cloudDeleteFailed"), "error");
             $("confirm-dialog").classList.add("hidden");
             return;
         }
         state.attendance = [];
         state.students = [];
-        state.accounts.filter(account => account.role === "siswa")
-            .forEach(account => { account.linked = false; });
         state.faceSamples = [];
         state.faceCandidate = null;
         updateFaceSampleCount();
@@ -2552,7 +2865,7 @@ function initialize() {
     setTheme("light");
     setLanguage("id");
     observeHeroTitleSize();
-    showAuth();
+    showAuth({ clearSession: false });
     setupEvents();
     renderDatabase();
     renderStudentList();
@@ -2561,6 +2874,7 @@ function initialize() {
     setSwitch(false);
     updateFaceSampleCount();
     $("model-status").textContent = tr("modelLoading");
+    restoreSession();
 }
 
 initialize();

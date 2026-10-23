@@ -4,9 +4,13 @@ import {
     jsonError,
     jsonSupabaseError,
     rateLimit,
+    getSession,
     supabaseRequest,
     verifyTeacherSession
 } from "../lib/supabase.js";
+import { hashPassword, validatePassword } from "../lib/admin-auth.js";
+import { writeAuditLog } from "../lib/audit.js";
+import { validateSchema } from "../lib/validate.js";
 
 const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at";
 const STUDENT_COLUMNS_WITH_FACES = `${STUDENT_COLUMNS},face_descriptors`;
@@ -27,20 +31,28 @@ export default async function handler(req, res) {
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
 
     if (req.method === "GET") {
-        const role = getRequestRole(req);
-        if (!role) return jsonError(res, 403, "A valid user role is required");
+        let role;
+        try {
+            role = await getRequestRole(req);
+        } catch (error) {
+            console.error("Student query authorization failed:", error);
+            return jsonSupabaseError(res, error, "Unable to validate student session");
+        }
+        if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
         const withFaces = req.query?.with_faces === "1";
         const nisn = req.query?.nisn;
-        if (role === "siswa" && (!parseNisn(nisn) || req.headers["x-nisn"] !== nisn)) {
+        if (role === "siswa" && (!parseNisn(nisn) || getSession(req)?.nisn !== nisn)) {
             return jsonError(res, 403, "Students can only access their own record");
         }
-        if (withFaces && role !== "guru") {
+        if (withFaces && role !== "guru" && role !== "admin") {
             return jsonError(res, 403, "Face descriptors are not available for this request");
         }
         try {
             const columns = withFaces ? STUDENT_COLUMNS_WITH_FACES : STUDENT_COLUMNS;
             const filter = parseNisn(nisn) ? `&nisn=eq.${encodeURIComponent(nisn)}` : "";
-            const students = await supabaseRequest(`students?select=${columns}${filter}&order=name.asc`);
+            const students = await supabaseRequest(
+                `students?select=${columns}${filter}&is_active=eq.true&order=name.asc`
+            );
             return res.status(200).json({ students });
         } catch (error) {
             console.error("Student query failed:", error);
@@ -49,11 +61,36 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-        if (!verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
-        if (!rateLimit(req, "students:POST", 10, 60_000)) {
+        try {
+            if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        } catch (error) {
+            console.error("Student registration authorization failed:", error);
+            return jsonSupabaseError(res, error, "Unable to validate teacher session");
+        }
+        if (!rateLimit(req, "students:POST", 10, 60_000, res)) {
             return jsonError(res, 429, "Too many student registrations. Try again in a minute.");
         }
-        const { nisn, name, class_name, parent_whatsapp, face_descriptors } = req.body || {};
+        const body = req.body || {};
+        const validation = validateSchema({
+            nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
+            name: { type: "string", required: true, max: 120, min: 1 },
+            class_name: { type: "string", required: true, max: 40, min: 1 },
+            parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
+            email: { type: "string", required: true, max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+            password: { type: "string", required: true, max: 128 },
+            face_descriptors: {
+                type: "array", required: true, min: 1, max: 640,
+                validate: item => typeof item === "number" && Number.isFinite(item) ||
+                    Array.isArray(item) && item.length === 128 &&
+                    item.every(value => typeof value === "number" && Number.isFinite(value))
+            }
+        }, body);
+        if (!validation.valid) return jsonError(res, 400, validation.error);
+        const { nisn, name, class_name, parent_whatsapp, face_descriptors, email, password } = body;
+        if (!validatePassword(password)) return jsonError(res, 400, "Password must contain 8 to 128 safe characters");
+        if (typeof parent_whatsapp === "string" && /[\u0000-\u001F\u007F]/.test(parent_whatsapp)) {
+            return jsonError(res, 400, "Invalid parent WhatsApp number");
+        }
         if (!parseNisn(nisn)) return jsonError(res, 400, "NISN must contain 8 to 20 digits");
         if (typeof name !== "string" || !name.trim() || name.trim().length > 120 ||
             /[\u0000-\u001F\u007F]/.test(name)) {
@@ -63,8 +100,7 @@ export default async function handler(req, res) {
             /[\u0000-\u001F\u007F]/.test(class_name)) {
             return jsonError(res, 400, "Class name is required");
         }
-        if (parent_whatsapp !== undefined && parent_whatsapp !== null && parent_whatsapp !== "" &&
-            (typeof parent_whatsapp !== "string" || !/^(08|628)\d{8,13}$/.test(parent_whatsapp))) {
+        if (parent_whatsapp === "") {
             return jsonError(res, 400, "Invalid parent WhatsApp number");
         }
         if (!isValidDescriptors(face_descriptors)) {
@@ -72,19 +108,38 @@ export default async function handler(req, res) {
         }
 
         try {
-            const existing = await supabaseRequest(`students?select=id&nisn=eq.${encodeURIComponent(nisn)}&limit=1`);
-            if (existing.length) return jsonError(res, 409, "A student with this NISN already exists");
-
-            const rows = await supabaseRequest("students?select=id,nisn,name,class_name,parent_whatsapp,face_descriptors,created_at", {
-                method: "POST",
+            const existing = await supabaseRequest(
+                `students?select=id,email,face_descriptors&nisn=eq.${encodeURIComponent(nisn)}&limit=1`
+            );
+            if (existing.length && isValidDescriptors(existing[0].face_descriptors)) {
+                return jsonError(res, 409, "A student with this NISN already has registered face samples");
+            }
+            const teacherEmail = await supabaseRequest(
+                `teachers?select=id&email=eq.${encodeURIComponent(email.trim().toLowerCase())}&limit=1`
+            );
+            if (teacherEmail.length) return jsonError(res, 409, "User email already exists");
+            const values = {
+                nisn,
+                name: name.trim(),
+                class_name: class_name.trim(),
+                parent_whatsapp: parent_whatsapp || null,
+                email: email.trim().toLowerCase(),
+                password_hash: await hashPassword(password),
+                face_descriptors: Array.isArray(face_descriptors[0])
+                    ? face_descriptors
+                    : [face_descriptors]
+            };
+            const query = existing.length
+                ? `students?id=eq.${encodeURIComponent(existing[0].id)}&select=id,nisn,name,class_name,parent_whatsapp,face_descriptors,created_at,email`
+                : "students?select=id,nisn,name,class_name,parent_whatsapp,face_descriptors,created_at,email";
+            const rows = await supabaseRequest(query, {
+                method: existing.length ? "PATCH" : "POST",
                 headers: { Prefer: "return=representation" },
-                body: JSON.stringify({
-                    nisn,
-                    name: name.trim(),
-                    class_name: class_name.trim(),
-                    parent_whatsapp: parent_whatsapp || null,
-                    face_descriptors: Array.isArray(face_descriptors[0]) ? face_descriptors : [face_descriptors]
-                })
+                body: JSON.stringify(values)
+            });
+            await writeAuditLog(getSession(req), existing.length ? "student.face_register" : "student.create",
+                "students", rows[0]?.id, {
+                nisn, email: email.trim().toLowerCase(), name: name.trim(), class_name: class_name.trim()
             });
             return res.status(201).json({ student: rows[0] });
         } catch (error) {
@@ -95,13 +150,22 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-        if (!verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        try {
+            if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        } catch (error) {
+            console.error("Student deletion authorization failed:", error);
+            return jsonSupabaseError(res, error, "Unable to validate teacher session");
+        }
         const nisn = req.query?.nisn;
         const deleteAll = req.query?.all === "1";
         if (!deleteAll && !parseNisn(nisn)) return jsonError(res, 400, "A valid NISN is required");
         try {
+            const actor = getSession(req);
             const filter = deleteAll ? "" : `?nisn=eq.${encodeURIComponent(nisn)}`;
+            const deleted = await supabaseRequest(`students?select=id,nisn${filter}`);
             await supabaseRequest(`students${filter}`, { method: "DELETE" });
+            await writeAuditLog(actor, deleteAll ? "student.delete_all" : "student.delete", "students",
+                deleteAll ? "all" : nisn, { count: deleted.length });
             return res.status(200).json({ ok: true });
         } catch (error) {
             console.error("Student delete failed:", error);

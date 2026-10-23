@@ -38,3 +38,36 @@ Amanah.id adalah aplikasi presensi digital berbasis *Progressive Web App* (PWA) 
    ```bash
    git clone https://github.com/Zarr-Dev/amanahid.git
    cd amanahid
+   ```
+
+## Deployment and account setup
+
+1. Apply `supabase-schema.sql` in the Supabase SQL editor before deploying the API.
+   Existing teacher and student rows remain, but older rows do not have passwords;
+   an Admin must set their email/password from **Users** before they can sign in.
+2. Set these Vercel environment variables:
+   - `APP_ORIGIN`: the exact deployed origin, for example `https://school.example`.
+   - `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: the project URL and server-side service
+     role key. Never expose the secret key in browser code.
+   - `SESSION_SECRET`: a random value with at least 32 characters.
+   - `FONNTE_TOKEN`: optional; required only for WhatsApp notifications.
+3. Create the first Admin manually in Supabase. Replace the placeholders before
+   running this SQL; the stored password is bcrypt cost 12 over the browser's
+   SHA-256 digest, matching the login flow:
+
+   ```sql
+   insert into public.admin_users (email, password_hash, name)
+   values (
+     'admin@example.com',
+     crypt(encode(digest('REPLACE_WITH_ADMIN_PASSWORD', 'sha256'), 'hex'), gen_salt('bf', 12)),
+     'School Admin'
+   );
+   ```
+
+4. Install dependencies with `npm install`. Run the focused security tests with
+   `npm test`.
+
+Teacher and student credentials are provisioned through the Admin dashboard or the
+teacher student-registration form. Browser-local demo credentials and self-selected
+`X-Role` headers are not accepted; API access uses short-lived HMAC-signed sessions.
+The schema also enables deny-all RLS policies on the Admin and audit tables.

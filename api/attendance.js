@@ -1,5 +1,6 @@
 import {
     getRequestRole,
+    getSession,
     isAllowedOrigin,
     jakartaDateTime,
     jsonError,
@@ -9,6 +10,8 @@ import {
     verifyTeacherSession
 } from "../lib/supabase.js";
 import { sendWhatsApp } from "../lib/whatsapp.js";
+import { writeAuditLog } from "../lib/audit.js";
+import { validateSchema } from "../lib/validate.js";
 
 const MAX_ACCURACY = 35;
 const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -39,20 +42,35 @@ function normalizeAttendance(row) {
     };
 }
 
+function failedAttendance(req, res, role, status, payload) {
+    if (!rateLimit(req, `attendance:failed:${role}`, 6, 60_000, res)) {
+        return jsonError(res, 429, "Too many failed attendance attempts. Try again in a minute.");
+    }
+    return res.status(status).json(payload);
+}
+
 export default async function handler(req, res) {
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
-    const role = getRequestRole(req);
+    let role;
+    try {
+        role = await getRequestRole(req);
+    } catch (error) {
+        console.error("Attendance session validation failed:", error);
+        return jsonSupabaseError(res, error, "Unable to validate attendance session");
+    }
 
     if (req.method === "GET") {
-        if (!role) return jsonError(res, 403, "A valid user role is required");
+        if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
         try {
             let query = "attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name)&order=date.desc,time.desc";
             if (role === "siswa") {
-                const nisn = req.headers["x-nisn"];
+                const nisn = getSession(req)?.nisn;
                 if (typeof nisn !== "string" || !/^\d{8,20}$/.test(nisn)) {
                     return jsonError(res, 403, "Student NISN is required");
                 }
-                const students = await supabaseRequest(`students?select=id&nisn=eq.${encodeURIComponent(nisn)}&limit=1`);
+                const students = await supabaseRequest(
+                    `students?select=id&is_active=eq.true&nisn=eq.${encodeURIComponent(nisn)}&limit=1`
+                );
                 if (!students.length) return res.status(200).json({ attendance: [] });
                 query += `&student_id=eq.${encodeURIComponent(students[0].id)}`;
             }
@@ -65,8 +83,17 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-        if (!role) return jsonError(res, 403, "A valid user role is required");
-        const { nisn, lat, lng, accuracy, confidence } = req.body || {};
+        if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
+        const body = req.body || {};
+        const bodyValidation = validateSchema({
+            nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
+            lat: { type: "number", required: true, min: -90, max: 90 },
+            lng: { type: "number", required: true, min: -180, max: 180 },
+            accuracy: { type: "number", required: true, min: 0.01, max: 1_000_000 },
+            confidence: { type: "number", required: true, min: 0.3, max: 1 }
+        }, body);
+        if (!bodyValidation.valid) return jsonError(res, 400, bodyValidation.error);
+        const { nisn, lat, lng, accuracy, confidence } = body;
         if (typeof nisn !== "string" || !/^\d{8,20}$/.test(nisn)) {
             return jsonError(res, 400, "Invalid NISN");
         }
@@ -74,12 +101,16 @@ export default async function handler(req, res) {
             Math.abs(lat) > 90 || Math.abs(lng) > 180 || accuracy <= 0 || confidence < 0.3 || confidence > 1) {
             return jsonError(res, 400, "Invalid location or confidence values");
         }
-        if (role === "siswa" && req.headers["x-nisn"] !== nisn) {
+        if (role === "siswa" && getSession(req)?.nisn !== nisn) {
             return jsonError(res, 403, "Students can only record their own attendance");
         }
         const idempotencyKey = req.headers["x-idempotency-key"];
         if (typeof idempotencyKey !== "string" || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
             return jsonError(res, 400, "A valid X-Idempotency-Key UUID is required");
+        }
+        const maxPerMinute = role === "siswa" ? 10 : role === "guru" ? 30 : 60;
+        if (!rateLimit(req, `attendance:POST:${role}`, maxPerMinute, 60_000, res)) {
+            return jsonError(res, 429, "Too many attendance attempts. Try again in a minute.");
         }
 
         try {
@@ -95,10 +126,6 @@ export default async function handler(req, res) {
                     whatsapp: { sent: false, skipped: true }
                 });
             }
-            if (!rateLimit(req, "attendance:POST", 5, 60_000)) {
-                return jsonError(res, 429, "Too many attendance attempts. Try again in a minute.");
-            }
-
             const settings = await supabaseRequest(
                 "school_settings?select=lat,lng,radius&id=eq.00000000-0000-0000-0000-000000000001&limit=1"
             );
@@ -114,16 +141,24 @@ export default async function handler(req, res) {
             }
             const distance = distanceMeters(school.lat, school.lng, lat, lng);
             if (accuracy > MAX_ACCURACY) {
-                return jsonError(res, 400, `GPS accuracy must be ${MAX_ACCURACY} meters or better`);
+                return failedAttendance(req, res, role, 400, {
+                    error: "GPS_ACCURACY_TOO_LOW",
+                    required: MAX_ACCURACY,
+                    actual: accuracy
+                });
             }
             if (distance > school.radius) {
-                return jsonError(res, 403, `Attendance is outside the ${school.radius}-meter school geofence`);
+                return failedAttendance(req, res, role, 403, {
+                    error: `Attendance is outside the ${school.radius}-meter school geofence`
+                });
             }
 
             const students = await supabaseRequest(
-                `students?select=id,nisn,name,class_name,parent_whatsapp&nisn=eq.${encodeURIComponent(nisn)}&limit=1`
+                `students?select=id,nisn,name,class_name,parent_whatsapp&is_active=eq.true&nisn=eq.${encodeURIComponent(nisn)}&limit=1`
             );
-            if (!students.length) return jsonError(res, 404, "Student is not registered");
+            if (!students.length) {
+                return failedAttendance(req, res, role, 404, { error: "Student is not registered" });
+            }
             const student = students[0];
             const { date, time } = jakartaDateTime();
 
@@ -137,7 +172,9 @@ export default async function handler(req, res) {
                         whatsapp: { sent: false, skipped: true }
                     });
                 }
-                return jsonError(res, 409, "Attendance has already been recorded today");
+                return failedAttendance(req, res, role, 409, {
+                    error: "Attendance has already been recorded today"
+                });
             }
 
             const inserted = await supabaseRequest(
@@ -155,6 +192,9 @@ export default async function handler(req, res) {
                     })
                 }
                 );
+            await writeAuditLog(getSession(req), "attendance.create", "attendance", inserted[0]?.id, {
+                student_id: student.id, date, method: "face-gps"
+            });
 
             let whatsapp = { sent: false, skipped: !student.parent_whatsapp };
             if (student.parent_whatsapp) {
@@ -197,16 +237,23 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-        if (!verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        try {
+            if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        } catch (error) {
+            console.error("Attendance deletion authorization failed:", error);
+            return jsonSupabaseError(res, error, "Unable to validate teacher session");
+        }
         const id = req.query?.id;
         const deleteAll = req.query?.all === "1";
         if (!deleteAll && (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id))) {
             return jsonError(res, 400, "A valid attendance ID is required");
         }
         try {
+            const session = getSession(req);
             await supabaseRequest(`attendance${deleteAll ? "" : `?id=eq.${encodeURIComponent(id)}`}`, {
                 method: "DELETE"
             });
+            await writeAuditLog(session, "attendance.delete", "attendance", id || "all", {});
             return res.status(200).json({ ok: true });
         } catch (error) {
             console.error("Attendance delete failed:", error);

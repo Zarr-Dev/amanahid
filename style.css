@@ -1193,6 +1193,19 @@ body.theme-dark .auth-footer .lang-btn.active {
     text-align: center;
 }
 
+.nav-symbol i {
+    display: inline-block;
+    transition: transform 0.2s;
+}
+
+.nav-link:hover .nav-symbol i {
+    transform: scale(1.1);
+}
+
+.nav-link.active .nav-symbol {
+    color: var(--blue);
+}
+
 .sidebar-bottom {
     margin-top: auto;
 }
@@ -3186,6 +3199,83 @@ html[dir="rtl"] .modal-heading {
 body.theme-dark .role-button {
     background: var(--surface-solid);
     border-color: var(--border);
+}
+
+.network-banner {
+    position: fixed;
+    z-index: 10000;
+    top: 12px;
+    left: 50%;
+    width: min(92vw, 520px);
+    transform: translateX(-50%);
+    padding: 12px 18px;
+    border: 1px solid #b42318;
+    border-radius: 12px;
+    color: #fff;
+    background: #b42318;
+    box-shadow: 0 8px 24px #0003;
+    text-align: center;
+    font-weight: 700;
+}
+
+.face-sample-progress {
+    height: 9px;
+    overflow: hidden;
+    margin: -8px 0 14px;
+    border-radius: 99px;
+    background: #e5e7eb;
+}
+
+.face-sample-progress-bar {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #94a3b8;
+    transition: width .25s ease, background-color .25s ease;
+}
+
+.face-sample-progress-bar[data-count="0"] {
+    background: #94a3b8;
+}
+
+.face-sample-progress-bar[data-count="1"],
+.face-sample-progress-bar[data-count="2"],
+.face-sample-progress-bar[data-count="3"] {
+    background: #2563eb;
+}
+
+.face-sample-progress-bar[data-count="4"],
+.face-sample-progress-bar[data-count="5"] {
+    background: #16a34a;
+}
+
+.admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+}
+
+.admin-stat-grid .panel {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+}
+
+.admin-stat-grid strong {
+    color: var(--blue);
+    font-size: 30px;
+}
+
+.admin-view > .panel {
+    margin-bottom: 16px;
+}
+
+.admin-view .form-stack {
+    max-width: 680px;
+}
+
+.admin-view .table-wrap {
+    max-width: 100%;
 }
 
 @media (max-width: 720px) {
