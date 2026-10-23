@@ -1,5 +1,5 @@
-import { authorizeAdmin } from "../../lib/admin-api.js";
-import { jsonError, jsonSupabaseError, supabaseRequest } from "../../lib/supabase.js";
+import { authorizeAdmin } from "../_lib/admin-api.js";
+import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
 
 function isDate(value) {
     if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;

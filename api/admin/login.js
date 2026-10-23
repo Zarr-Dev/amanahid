@@ -1,7 +1,7 @@
-import { signToken, verifyPassword } from "../../lib/admin-auth.js";
-import { writeAuditLog } from "../../lib/audit.js";
-import { isAllowedOrigin, jsonError, rateLimit, supabaseRequest } from "../../lib/supabase.js";
-import { validateSchema } from "../../lib/validate.js";
+import { signToken, verifyPassword } from "../_lib/admin-auth.js";
+import { writeAuditLog } from "../_lib/audit.js";
+import { isAllowedOrigin, jsonError, rateLimit, supabaseRequest } from "../_lib/supabase.js";
+import { validateSchema } from "../_lib/validate.js";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {

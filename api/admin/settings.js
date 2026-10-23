@@ -1,7 +1,7 @@
-import { authorizeAdmin } from "../../lib/admin-api.js";
-import { writeAuditLog } from "../../lib/audit.js";
-import { jsonError, jsonSupabaseError, supabaseRequest } from "../../lib/supabase.js";
-import { validateSchema } from "../../lib/validate.js";
+import { authorizeAdmin } from "../_lib/admin-api.js";
+import { writeAuditLog } from "../_lib/audit.js";
+import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
+import { validateSchema } from "../_lib/validate.js";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 const DEFAULTS = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 35 };

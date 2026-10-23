@@ -8,10 +8,10 @@ import {
     rateLimit,
     supabaseRequest,
     verifyTeacherSession
-} from "../lib/supabase.js";
-import { sendWhatsApp } from "../lib/whatsapp.js";
-import { writeAuditLog } from "../lib/audit.js";
-import { validateSchema } from "../lib/validate.js";
+} from "./_lib/supabase.js";
+import { sendWhatsApp } from "./_lib/whatsapp.js";
+import { writeAuditLog } from "./_lib/audit.js";
+import { validateSchema } from "./_lib/validate.js";
 
 const MAX_ACCURACY = 35;
 const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

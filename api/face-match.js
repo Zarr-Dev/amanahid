@@ -6,9 +6,9 @@ import {
     getSession,
     rateLimit,
     supabaseRequest
-} from "../lib/supabase.js";
-import { validateSchema } from "../lib/validate.js";
-import { writeAuditLog } from "../lib/audit.js";
+} from "./_lib/supabase.js";
+import { validateSchema } from "./_lib/validate.js";
+import { writeAuditLog } from "./_lib/audit.js";
 
 const FACE_MATCH_THRESHOLD = 0.45;
 

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
-import { hashPassword, signToken, verifyPassword, verifyToken } from "../lib/admin-auth.js";
-import { getRequestRole, rateLimit } from "../lib/supabase.js";
-import { validateSchema } from "../lib/validate.js";
+import { hashPassword, signToken, verifyPassword, verifyToken } from "../api/_lib/admin-auth.js";
+import { getRequestRole, rateLimit } from "../api/_lib/supabase.js";
+import { validateSchema } from "../api/_lib/validate.js";
 import adminUsersHandler from "../api/admin/users.js";
 import adminLoginHandler from "../api/admin/login.js";
 import attendanceHandler from "../api/attendance.js";

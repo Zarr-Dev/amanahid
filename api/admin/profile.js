@@ -1,8 +1,8 @@
-import { hashPassword, isValidAdminPassword, verifyPassword } from "../../lib/admin-auth.js";
-import { authorizeAdmin } from "../../lib/admin-api.js";
-import { writeAuditLog } from "../../lib/audit.js";
-import { jsonError, jsonSupabaseError, supabaseRequest } from "../../lib/supabase.js";
-import { validateSchema } from "../../lib/validate.js";
+import { hashPassword, isValidAdminPassword, verifyPassword } from "../_lib/admin-auth.js";
+import { authorizeAdmin } from "../_lib/admin-api.js";
+import { writeAuditLog } from "../_lib/audit.js";
+import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
+import { validateSchema } from "../_lib/validate.js";
 
 export default async function handler(req, res) {
     const admin = await authorizeAdmin(req, res, "profile");

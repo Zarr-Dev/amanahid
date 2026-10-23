@@ -7,10 +7,10 @@ import {
     getSession,
     supabaseRequest,
     verifyTeacherSession
-} from "../lib/supabase.js";
-import { hashPassword, validatePassword } from "../lib/admin-auth.js";
-import { writeAuditLog } from "../lib/audit.js";
-import { validateSchema } from "../lib/validate.js";
+} from "./_lib/supabase.js";
+import { hashPassword, validatePassword } from "./_lib/admin-auth.js";
+import { writeAuditLog } from "./_lib/audit.js";
+import { validateSchema } from "./_lib/validate.js";
 
 const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at";
 const STUDENT_COLUMNS_WITH_FACES = `${STUDENT_COLUMNS},face_descriptors`;

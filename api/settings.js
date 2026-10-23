@@ -6,9 +6,9 @@ import {
     jsonSupabaseError,
     supabaseRequest,
     verifyTeacherSession
-} from "../lib/supabase.js";
-import { writeAuditLog } from "../lib/audit.js";
-import { validateSchema } from "../lib/validate.js";
+} from "./_lib/supabase.js";
+import { writeAuditLog } from "./_lib/audit.js";
+import { validateSchema } from "./_lib/validate.js";
 
 const SCHOOL_SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 

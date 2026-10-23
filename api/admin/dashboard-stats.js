@@ -1,5 +1,5 @@
-import { authorizeAdmin } from "../../lib/admin-api.js";
-import { jakartaDateTime, jsonError, jsonSupabaseError, supabaseCount } from "../../lib/supabase.js";
+import { authorizeAdmin } from "../_lib/admin-api.js";
+import { jakartaDateTime, jsonError, jsonSupabaseError, supabaseCount } from "../_lib/supabase.js";
 
 function subtractDays(date, days) {
     const result = new Date(`${date}T12:00:00Z`);

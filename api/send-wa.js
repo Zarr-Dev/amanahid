@@ -5,10 +5,10 @@ import {
     jsonError,
     jsonSupabaseError,
     rateLimit
-} from "../lib/supabase.js";
-import { sendWhatsApp } from "../lib/whatsapp.js";
-import { validateSchema } from "../lib/validate.js";
-import { writeAuditLog } from "../lib/audit.js";
+} from "./_lib/supabase.js";
+import { sendWhatsApp } from "./_lib/whatsapp.js";
+import { validateSchema } from "./_lib/validate.js";
+import { writeAuditLog } from "./_lib/audit.js";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {

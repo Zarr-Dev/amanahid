@@ -1,7 +1,7 @@
-import { hashPassword, validatePassword } from "../lib/admin-auth.js";
-import { writeAuditLog } from "../lib/audit.js";
-import { getRequestRole, isAllowedOrigin, jsonError, jsonSupabaseError, rateLimit, supabaseRequest, verifyAdminSession } from "../lib/supabase.js";
-import { validateSchema } from "../lib/validate.js";
+import { hashPassword, validatePassword } from "./_lib/admin-auth.js";
+import { writeAuditLog } from "./_lib/audit.js";
+import { getRequestRole, isAllowedOrigin, jsonError, jsonSupabaseError, rateLimit, supabaseRequest, verifyAdminSession } from "./_lib/supabase.js";
+import { validateSchema } from "./_lib/validate.js";
 
 export default async function handler(req, res) {
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
