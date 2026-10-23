@@ -2418,8 +2418,8 @@ function switchAuthTab(tab) {
         : `${tr("signup")} Amanah.id`;
 }
 
-function openAuthModal(tab) {
-    authModalTrigger = document.activeElement;
+function openAuthModal(tab, trigger = document.activeElement) {
+    authModalTrigger = trigger;
     switchAuthTab(tab);
     $("auth-modal").classList.remove("hidden");
     document.body.classList.add("auth-modal-open");
@@ -2437,21 +2437,50 @@ function closeAuthModal() {
     authModalTrigger = null;
 }
 
+function returnToUserLogin() {
+    $("admin-login-modal").classList.add("hidden");
+    $("admin-login-form").reset();
+    openAuthModal("login", $("tab-login"));
+}
+
 function initSplashScreen() {
     const splash = $("splash-screen");
     if (!splash || splash.classList.contains("hidden")) return;
+    const mark = splash.querySelector(".splash-mark");
+    const headerMark = document.querySelector(".brand-auth .brand-mark");
+    if (mark && headerMark) {
+        const targetRect = headerMark.getBoundingClientRect();
+        splash.style.setProperty(
+            "--splash-target-x",
+            `${targetRect.left + targetRect.width / 2 - window.innerWidth / 2}px`
+        );
+        splash.style.setProperty(
+            "--splash-target-y",
+            `${targetRect.top + targetRect.height / 2 - window.innerHeight / 2}px`
+        );
+        splash.style.setProperty("--splash-target-scale", String(targetRect.width / mark.offsetWidth));
+    }
     splash.classList.add("is-playing");
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!reducedMotion && mark) {
+        mark.playbackRate = 1.55;
+        mark.play().catch(error => {
+            if (error.name !== "AbortError") {
+                console.warn("The animated logo could not play; showing its static poster instead:", error);
+            }
+        });
+    }
     const leaveTimer = window.setTimeout(() => {
         if (splash.classList.contains("hidden")) return;
         splash.classList.add("is-leaving");
         const hideTimer = window.setTimeout(() => {
             if (splash.classList.contains("hidden")) return;
+            mark?.pause();
             splash.classList.add("hidden");
             splash.setAttribute("aria-hidden", "true");
-        }, reducedMotion ? 120 : 500);
+        }, reducedMotion ? 120 : 350);
         state.splashTimers.push(hideTimer);
-    }, reducedMotion ? 350 : 2550);
+    }, reducedMotion ? 350 : 3500);
     state.splashTimers.push(leaveTimer);
 }
 
@@ -2487,17 +2516,23 @@ function setupEvents() {
         if (event.target === $("auth-modal")) closeAuthModal();
     });
     document.addEventListener("keydown", event => {
-        if (event.key === "Escape" && !$("auth-modal").classList.contains("hidden")) closeAuthModal();
-        if (event.key === "Escape") $("admin-login-modal")?.classList.add("hidden");
+        if (event.key !== "Escape") return;
+        if (!$("admin-login-modal").classList.contains("hidden")) returnToUserLogin();
+        else if (!$("auth-modal").classList.contains("hidden")) closeAuthModal();
     });
     $("model-retry").addEventListener("click", () => location.reload());
-    $("admin-login-open").addEventListener("click", () => {
+    $("open-admin-login").addEventListener("click", event => {
+        event.preventDefault();
+        $("auth-modal").classList.add("hidden");
+        $("admin-login-form").reset();
         $("admin-login-modal").classList.remove("hidden");
-        $("admin-login-email").focus();
+        document.body.classList.add("auth-modal-open");
+        requestAnimationFrame(() => $("admin-login-email").focus());
     });
-    $("admin-login-close").addEventListener("click", () => $("admin-login-modal").classList.add("hidden"));
+    $("admin-login-close").addEventListener("click", returnToUserLogin);
+    $("admin-login-back").addEventListener("click", returnToUserLogin);
     $("admin-login-modal").addEventListener("click", event => {
-        if (event.target === $("admin-login-modal")) $("admin-login-modal").classList.add("hidden");
+        if (event.target === $("admin-login-modal")) returnToUserLogin();
     });
 
     $("login-form").addEventListener("submit", async event => {
@@ -2519,7 +2554,7 @@ function setupEvents() {
     $("admin-login-form").addEventListener("submit", async event => {
         event.preventDefault();
         if ($("admin-captcha").value.trim() !== "8") {
-            toast("Captcha salah.", "error");
+            toast("Captcha salah", "error");
             return;
         }
         try {
@@ -2536,7 +2571,7 @@ function setupEvents() {
             await showApp({ ...result.user, token: result.token });
         } catch (error) {
             console.error("Admin login failed:", error);
-            toast(error.message, "error");
+            toast(error.status === 401 ? "Email atau kata sandi Admin salah." : error.message, "error");
         }
     });
 

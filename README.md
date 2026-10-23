@@ -51,18 +51,24 @@ Amanah.id adalah aplikasi presensi digital berbasis *Progressive Web App* (PWA) 
      role key. Never expose the secret key in browser code.
    - `SESSION_SECRET`: a random value with at least 32 characters.
    - `FONNTE_TOKEN`: optional; required only for WhatsApp notifications.
-3. Create the first Admin manually in Supabase. Replace the placeholders before
-   running this SQL; the stored password is bcrypt cost 12 over the browser's
-   SHA-256 digest, matching the login flow:
+3. Create the first Admin manually in Supabase Dashboard → **SQL Editor**. Replace
+   the example email, password, and name with your own values before running this
+   SQL. The frontend sends the password as a SHA-256 hex digest; this SQL hashes
+   that digest with bcrypt cost 12 to match the server login flow:
 
    ```sql
+   -- Replace the email and password with unique credentials before executing.
    insert into public.admin_users (email, password_hash, name)
    values (
-     'admin@example.com',
-     crypt(encode(digest('REPLACE_WITH_ADMIN_PASSWORD', 'sha256'), 'hex'), gen_salt('bf', 12)),
-     'School Admin'
+     'admin@amanah.sch.id',
+     crypt(encode(digest('SuperSecurePass123!', 'sha256'), 'hex'), gen_salt('bf', 12)),
+     'Administrator Amanah'
    );
    ```
+
+   Do not use the example password in a deployed environment. After creating the
+   account, open the website, select **Login**, choose **Login sebagai Admin**,
+   enter the admin email and password, and answer the captcha (`8`).
 
 4. Install dependencies with `npm install`. Run the focused security tests with
    `npm test`.

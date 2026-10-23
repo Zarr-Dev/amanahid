@@ -21,11 +21,10 @@
 <body>
     <div id="splash-screen" class="splash-screen" aria-label="Amanah.id" data-i18n-aria="brandName" aria-live="polite">
         <div class="splash-lockup">
-            <img class="splash-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
-            <div class="splash-copy">
-                <strong>Amanah ID</strong>
-                <span data-i18n="splashSubtitle">Presensi Digital Sekolah</span>
-            </div>
+            <video class="splash-mark" muted playsinline preload="auto" poster="assets/amanah-favicon.png"
+                aria-hidden="true">
+                <source src="assets/amanah-logo-animation.mp4" type="video/mp4">
+            </video>
         </div>
     </div>
     <div id="network-banner" class="network-banner hidden" role="status" aria-live="polite">
@@ -73,9 +72,6 @@
                     <button id="tab-register" class="auth-action auth-action-outline" type="button" role="tab"
                         aria-selected="false" aria-controls="register-form" data-i18n="signup">Sign Up</button>
                 </div>
-                <button id="admin-login-open" class="button subtle" type="button">
-                    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Login Admin
-                </button>
             </section>
 
             <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah.id"
@@ -187,6 +183,8 @@
                 <input id="login-password" type="password" autocomplete="current-password"
                     data-i18n-placeholder="passwordPlaceholder" placeholder="••••••••" required>
                 <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
+                <p style="text-align: center; font-size: 11px; margin-top: 12px;"><a href="#" id="open-admin-login"
+                        style="color: var(--muted); text-decoration: underline;">Login sebagai Admin</a></p>
             </form>
 
             <form id="register-form" class="form-stack hidden">
@@ -230,11 +228,12 @@
                 <label for="admin-login-email">Email</label>
                 <input id="admin-login-email" type="email" autocomplete="username" required>
                 <label for="admin-login-password">Kata sandi</label>
-                <input id="admin-login-password" type="password" autocomplete="current-password" required>
+                <input id="admin-login-password" type="password" autocomplete="off" required>
                 <label for="admin-captcha">Captcha: 3 + 5 = ?</label>
                 <input id="admin-captcha" inputmode="numeric" pattern="[0-9]+" required>
                 <button class="button primary full" type="submit">Masuk sebagai Admin</button>
             </form>
+            <button id="admin-login-back" class="button subtle full" type="button">Kembali ke Login Siswa/Guru</button>
         </section>
     </div>
 
