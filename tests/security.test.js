@@ -214,7 +214,7 @@ test("admin APIs handle empty and null Supabase results", async t => {
     const settingsResponse = responseMock();
     await adminSettingsHandler(request("GET", "settings"), settingsResponse);
     assert.equal(settingsResponse.statusCode, 200);
-    assert.equal(settingsResponse.body.radius, 35);
+    assert.equal(settingsResponse.body.radius, 50);
 
     const auditResponse = responseMock();
     await adminAuditHandler(request("GET", "audit"), auditResponse);
@@ -266,7 +266,7 @@ test("attendance returns machine-readable GPS errors and limits repeated failure
     globalThis.fetch = async url => {
         const requestUrl = String(url);
         const data = requestUrl.includes("school_settings")
-            ? [{ lat: -6.25, lng: 106.6, radius: 35 }]
+            ? [{ lat: -6.25, lng: 106.6, radius: 50 }]
             : requestUrl.includes("students?select=email,nisn,is_active")
                 ? [{ email: "student@example.com", nisn: "12345678", is_active: true }]
                 : [];
