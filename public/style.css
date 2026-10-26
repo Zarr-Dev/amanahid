@@ -2349,15 +2349,6 @@ body.auth-modal-open {
 
 .admin-login-link a:hover { text-decoration: underline; }
 
-@media (max-width: 420px) {
-    .admin-demo-credential {
-        grid-template-columns: minmax(0, 1fr) auto;
-    }
-    .admin-demo-credential > span {
-        grid-column: 1 / -1;
-    }
-}
-
 .profile-modal-card .button {
     margin-top: 13px;
 }
