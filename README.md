@@ -42,6 +42,11 @@ Amanah.id adalah aplikasi presensi digital berbasis *Progressive Web App* (PWA) 
 
 ## Deployment and account setup
 
+For an existing database created with the previous 35 m default, run
+`supabase-geofence-50m-migration.sql` once in Supabase SQL Editor. It updates only
+the previous default value of 35 m; other radius values configured by an administrator
+are preserved. New installations use 50 m by default.
+
 1. Apply `supabase-schema.sql` in the Supabase SQL editor before deploying the API.
    Existing teacher and student rows remain, but older rows do not have passwords;
    an Admin must set their email/password from **Users** before they can sign in.
