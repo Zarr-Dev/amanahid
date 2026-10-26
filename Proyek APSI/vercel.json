@@ -13,9 +13,6 @@
     "api/face-match.js": {
       "maxDuration": 30
     },
-    "api/health.js": {
-      "maxDuration": 10
-    },
     "api/index.js": {
       "maxDuration": 10
     },
@@ -33,6 +30,22 @@
     }
   },
   "routes": [
+    {
+      "src": "^/api/health$",
+      "dest": "/api/index?health=1"
+    },
+    {
+      "src": "^/api/auth/logout$",
+      "dest": "/api/auth/login?action=logout"
+    },
+    {
+      "src": "^/api/admin/dashboard-stats$",
+      "dest": "/api/admin/audit?action=stats"
+    },
+    {
+      "src": "^/api/admin/profile$",
+      "dest": "/api/admin/settings?action=profile"
+    },
     {
       "handle": "filesystem"
     },
