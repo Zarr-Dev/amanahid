@@ -119,8 +119,10 @@ if (/id="(?:tab-register|signup-form|register-form)"/.test(html) || /id="(?:tab-
     process.exit(1);
 }
 const adminUserApi = readFileSync(join(root, "api/admin/users.js"), "utf8");
-if (!adminUserApi.includes('pattern: /^guru$/') || adminUserApi.includes('face_descriptors: []')) {
-    console.error("Admin user creation must be teacher-only; student accounts require face descriptors and teacher authorization.");
+if (!adminUserApi.includes('pattern: /^(guru|siswa)$/') ||
+    !adminUserApi.includes('face_descriptors: []') ||
+    !adminUserApi.includes('nisn: { type: "string"')) {
+    console.error("Admin must be able to create Guru and Siswa accounts; new Siswa accounts must require later face enrollment.");
     process.exit(1);
 }
 
