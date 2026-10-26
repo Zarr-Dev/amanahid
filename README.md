@@ -47,6 +47,17 @@ For an existing database created with the previous 35 m default, run
 the previous default value of 35 m; other radius values configured by an administrator
 are preserved. New installations use 50 m by default.
 
+For an isolated demo/staging database only, run `supabase-demo-accounts.sql` after
+`supabase-schema.sql`. It creates exactly one demo Guru and one demo Siswa account
+and never creates an Admin:
+
+- Guru demo: `demo.guru@amanah.sch.id` / `GuruDemo2026!`
+- Siswa demo: `demo.siswa@amanah.sch.id` / `SiswaDemo2026!`
+
+These credentials are intentionally public and must never be used on a production
+school database. The demo Siswa has no face descriptor, so it tests login and dashboard
+routing only, not real attendance.
+
 1. Apply `supabase-schema.sql` in the Supabase SQL editor before deploying the API.
    Existing teacher and student rows remain, but older rows do not have passwords;
    an Admin must set their email/password from **Users** before they can sign in.
