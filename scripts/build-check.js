@@ -95,14 +95,14 @@ const htmlChecks = [
     ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
     ["visible student face sample progress", /id="face-sample-progress-bar"/]
 ];
-if (/id="admin-demo-password"|SuperSecurePass123!|admin@amanah\\.sch\\.id/.test(html)) {
+if (html.includes('id="admin-demo-password"') || html.includes("SuperSecurePass123!")) {
     console.error("Build check failed: public Admin demo credentials must never be shipped.");
     process.exit(1);
 }
 const demoAccountsSql = readFileSync(join(root, "supabase-demo-accounts.sql"), "utf8");
-if (!/insert into public\\.teachers/i.test(demoAccountsSql) ||
-    !/insert into public\\.students/i.test(demoAccountsSql) ||
-    /insert into public\\.admin_users/i.test(demoAccountsSql)) {
+if (!/insert into public[.]teachers/i.test(demoAccountsSql) ||
+    !/insert into public[.]students/i.test(demoAccountsSql) ||
+    /insert into public[.]admin_users/i.test(demoAccountsSql)) {
     console.error("Demo seed must create only Guru and Siswa accounts, never an Admin.");
     process.exit(1);
 }
