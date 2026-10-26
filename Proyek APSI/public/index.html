@@ -18,7 +18,8 @@
 </head>
 
 <body>
-    <div id="network-banner" class="network-banner hidden" role="status" aria-live="polite">Koneksi ke layanan terputus. Periksa jaringan dan konfigurasi API.</div>
+    <div id="network-banner" class="network-banner hidden" role="status" aria-live="polite">Koneksi ke layanan terputus.
+        Periksa jaringan dan konfigurasi API.</div>
     <div id="splash-screen" class="splash-screen" aria-label="Amanah.id" data-i18n-aria="brandName" aria-live="polite">
         <div class="splash-lockup">
             <video class="splash-mark" src="assets/amanah-logo-animation.mp4" muted playsinline preload="auto"
@@ -185,28 +186,33 @@
             </div>
             <form id="admin-login-form" class="form-stack">
                 <label for="admin-login-email">Email Admin</label>
-                <input id="admin-login-email" type="email" autocomplete="username" placeholder="admin@amanah.sch.id" required>
+                <input id="admin-login-email" type="email" autocomplete="username" placeholder="admin@amanah.sch.id"
+                    required>
                 <label for="admin-login-password">Kata sandi Admin</label>
                 <input id="admin-login-password" type="password" autocomplete="current-password" required>
                 <label for="admin-captcha">Verifikasi keamanan: 3 + 5 = ?</label>
-                <input id="admin-captcha" type="number" inputmode="numeric" min="0" max="9" step="1"
-                    autocomplete="off" placeholder="Masukkan hasil penjumlahan" required>
+                <input id="admin-captcha" type="number" inputmode="numeric" min="0" max="9" step="1" autocomplete="off"
+                    placeholder="Masukkan hasil penjumlahan" required>
                 <button class="button primary full" type="submit">Masuk sebagai Admin</button>
-                <button id="admin-login-back" class="button subtle full" type="button">Kembali ke login pengguna</button>
+                <button id="admin-login-back" class="button subtle full" type="button">Kembali ke login
+                    pengguna</button>
             </form>
             <div class="admin-demo-credentials" aria-label="Kredensial akun demo Admin">
                 <p class="admin-demo-heading">Kredensial demo Admin</p>
                 <div class="admin-demo-credential">
                     <span>Email</span>
                     <code id="admin-demo-email">admin@amanah.sch.id</code>
-                    <button class="button subtle" type="button" data-copy-target="admin-demo-email" aria-label="Salin email demo">Salin email</button>
+                    <button class="button subtle" type="button" data-copy-target="admin-demo-email"
+                        aria-label="Salin email demo">Salin email</button>
                 </div>
                 <div class="admin-demo-credential">
                     <span>Password</span>
                     <code id="admin-demo-password">SuperSecurePass123!</code>
-                    <button class="button subtle" type="button" data-copy-target="admin-demo-password" aria-label="Salin password demo">Salin password</button>
+                    <button class="button subtle" type="button" data-copy-target="admin-demo-password"
+                        aria-label="Salin password demo">Salin password</button>
                 </div>
-                <p class="admin-credentials-note">Akun ini harus tersedia di database Supabase agar login demo berhasil.</p>
+                <p class="admin-credentials-note">Akun ini harus tersedia di database Supabase agar login demo berhasil.
+                </p>
             </div>
         </section>
     </div>
@@ -491,7 +497,8 @@
                         </p>
                         <p id="face-sample-count" class="helper-text face-sample-count" aria-live="polite"
                             data-i18n="faceSamplesCount">0 sampel wajah</p>
-                        <div class="face-sample-progress" role="progressbar" aria-label="Progres sampel wajah" data-i18n-aria="faceSampleProgress" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+                        <div class="face-sample-progress" role="progressbar" aria-label="Progres sampel wajah"
+                            data-i18n-aria="faceSampleProgress" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
                             <div id="face-sample-progress-bar" class="face-sample-progress-bar" data-count="0"></div>
                         </div>
                         <button class="button primary full" type="submit" data-i18n="saveStudent">Simpan siswa</button>
@@ -540,11 +547,13 @@
             </nav>
             <div class="sidebar-bottom">
                 <div class="school-mini"><span class="school-dot"></span>
-                    <div><strong>Al Fityan School</strong><small data-i18n="adminWorkspace">Admin Workspace</small></div>
+                    <div><strong>Al Fityan School</strong><small data-i18n="adminWorkspace">Admin Workspace</small>
+                    </div>
                 </div>
                 <button id="admin-logout" class="profile-shortcut" type="button">
                     <span id="admin-header-avatar" class="avatar">A</span>
-                    <span class="profile-short-text"><strong id="admin-header-user">Admin</strong><small data-i18n="logout">Keluar dari akun</small></span>
+                    <span class="profile-short-text"><strong id="admin-header-user">Admin</strong><small
+                            data-i18n="logout">Keluar dari akun</small></span>
                     <span class="more-dots">↗</span>
                 </button>
             </div>
@@ -561,7 +570,8 @@
                         <button class="lang-btn" type="button" data-lang="en">EN</button>
                         <button class="lang-btn" type="button" data-lang="ar">ع</button>
                     </div>
-                    <button id="admin-health-refresh" class="button subtle" type="button" data-i18n="refreshData">Segarkan data</button>
+                    <button id="admin-health-refresh" class="button subtle" type="button"
+                        data-i18n="refreshData">Segarkan data</button>
                 </div>
             </header>
 
@@ -569,84 +579,184 @@
                 <div class="page-intro">
                     <div><span class="section-kicker" data-i18n="adminOverviewKicker">RINGKASAN</span>
                         <h2 data-i18n="adminAttendanceOverview">Ikhtisar presensi</h2>
-                        <p class="muted" data-i18n="adminOverviewDescription">Pantau akun, aktivitas presensi, dan kesehatan layanan dari satu tempat.</p>
+                        <p class="muted" data-i18n="adminOverviewDescription">Pantau akun, aktivitas presensi, dan
+                            kesehatan layanan dari satu tempat.</p>
                     </div>
                 </div>
                 <div class="admin-stat-grid">
-                    <article class="panel stat-card"><span data-i18n="totalActiveStudents">Total siswa aktif</span><strong id="admin-total-students">0</strong><small data-i18n="supabaseData">Data pada Supabase</small></article>
-                    <article class="panel stat-card"><span data-i18n="totalActiveTeachers">Total guru aktif</span><strong id="admin-total-teachers">0</strong><small data-i18n="teacherAccounts">Akun pengajar</small></article>
-                    <article class="panel stat-card"><span data-i18n="attendanceToday">Presensi hari ini</span><strong id="admin-attendance-today">0</strong><small data-i18n="todayRecords">Catatan hari ini</small></article>
-                    <article class="panel stat-card"><span data-i18n="attendanceLast7Days">Presensi 7 hari</span><strong id="admin-attendance-week">0</strong><small data-i18n="rollingPeriod">Periode bergulir</small></article>
-                    <article class="panel stat-card"><span data-i18n="activeUsers">Pengguna aktif</span><strong id="admin-active-week">0</strong><small data-i18n="loginsLast7Days">Login 7 hari terakhir</small></article>
+                    <article class="panel stat-card"><span data-i18n="totalActiveStudents">Total siswa
+                            aktif</span><strong id="admin-total-students">0</strong><small data-i18n="supabaseData">Data
+                            pada Supabase</small></article>
+                    <article class="panel stat-card"><span data-i18n="totalActiveTeachers">Total guru
+                            aktif</span><strong id="admin-total-teachers">0</strong><small
+                            data-i18n="teacherAccounts">Akun pengajar</small></article>
+                    <article class="panel stat-card"><span data-i18n="attendanceToday">Presensi hari ini</span><strong
+                            id="admin-attendance-today">0</strong><small data-i18n="todayRecords">Catatan hari
+                            ini</small></article>
+                    <article class="panel stat-card"><span data-i18n="attendanceLast7Days">Presensi 7 hari</span><strong
+                            id="admin-attendance-week">0</strong><small data-i18n="rollingPeriod">Periode
+                            bergulir</small></article>
+                    <article class="panel stat-card"><span data-i18n="activeUsers">Pengguna aktif</span><strong
+                            id="admin-active-week">0</strong><small data-i18n="loginsLast7Days">Login 7 hari
+                            terakhir</small></article>
                 </div>
                 <div class="panel">
-                    <div class="panel-heading"><div><h3 data-i18n="serviceHealth">Kesehatan layanan</h3><p class="muted" data-i18n="serviceHealthDescription">Status konfigurasi layanan utama.</p></div></div>
+                    <div class="panel-heading">
+                        <div>
+                            <h3 data-i18n="serviceHealth">Kesehatan layanan</h3>
+                            <p class="muted" data-i18n="serviceHealthDescription">Status konfigurasi layanan utama.</p>
+                        </div>
+                    </div>
                     <div class="admin-health-list">
                         <div><span>Supabase</span><strong id="health-supabase">unknown</strong></div>
-                        <div><span data-i18n="vercelApi">Vercel API</span><strong id="health-vercel">unknown</strong></div>
-                        <div><span data-i18n="whatsappNotifications">Notifikasi WhatsApp</span><strong id="health-fonnte">unknown</strong></div>
+                        <div><span data-i18n="vercelApi">Vercel API</span><strong id="health-vercel">unknown</strong>
+                        </div>
+                        <div><span data-i18n="whatsappNotifications">Notifikasi WhatsApp</span><strong
+                                id="health-fonnte">unknown</strong></div>
                     </div>
                 </div>
             </section>
 
             <section id="admin-view-users" class="admin-view hidden">
-                <div class="page-intro"><div><span class="section-kicker" data-i18n="adminAccountsKicker">MANAJEMEN AKUN</span>
-                    <h2 data-i18n="schoolUsers">Pengguna sekolah</h2><p class="muted" data-i18n="schoolUsersDescription">Admin membuat akun Guru. Pendaftaran akun Siswa hanya tersedia di formulir Guru agar dapat dikaitkan dengan NISN dan sampel wajah.</p>
-                </div></div>
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="adminAccountsKicker">MANAJEMEN AKUN</span>
+                        <h2 data-i18n="schoolUsers">Pengguna sekolah</h2>
+                        <p class="muted" data-i18n="schoolUsersDescription">Admin membuat akun Guru. Pendaftaran akun
+                            Siswa hanya tersedia di formulir Guru agar dapat dikaitkan dengan NISN dan sampel wajah.</p>
+                    </div>
+                </div>
                 <div class="panel">
-                    <div class="panel-heading"><div><h3 data-i18n="createTeacherAccount">Buat akun Guru</h3><p class="muted" data-i18n="newTeacherDescription">Akun Guru baru akan tersimpan di tabel teachers.</p></div></div>
+                    <div class="panel-heading">
+                        <div>
+                            <h3 data-i18n="createTeacherAccount">Buat akun Guru</h3>
+                            <p class="muted" data-i18n="newTeacherDescription">Akun Guru baru akan tersimpan di tabel
+                                teachers.</p>
+                        </div>
+                    </div>
                     <form id="admin-user-form" class="form-stack">
                         <label for="admin-user-name" data-i18n="fullName">Nama lengkap</label>
                         <input id="admin-user-name" type="text" autocomplete="name" maxlength="120" required>
                         <label for="admin-user-email" data-i18n="email">Email akun</label>
                         <input id="admin-user-email" type="email" autocomplete="email" maxlength="254" required>
                         <label for="admin-user-password" data-i18n="initialPassword">Kata sandi awal</label>
-                        <input id="admin-user-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
-                        <button class="button primary" type="submit" data-i18n="createTeacherAccount">Buat akun Guru</button>
+                        <input id="admin-user-password" type="password" autocomplete="new-password" minlength="8"
+                            maxlength="128" required>
+                        <button class="button primary" type="submit" data-i18n="createTeacherAccount">Buat akun
+                            Guru</button>
                     </form>
                 </div>
                 <div class="panel">
-                    <div class="panel-heading"><div><h3 data-i18n="accountsList">Daftar akun</h3><p class="muted" data-i18n="accountsListDescription">Kelola email, nama, kata sandi, atau status akun.</p></div></div>
-                    <div class="table-wrap"><table><thead><tr><th data-i18n="name">Nama</th><th data-i18n="email">Email</th><th data-i18n="adminRole">Peran</th><th data-i18n="status">Status</th><th data-i18n="action">Aksi</th></tr></thead><tbody id="admin-users-tbody"></tbody></table></div>
-                    <div id="admin-users-empty" class="empty-state hidden"><strong data-i18n="noAccounts">Belum ada akun.</strong><p data-i18n="accountsEmptyDescription">Data akan tampil setelah tersimpan di Supabase.</p></div>
+                    <div class="panel-heading">
+                        <div>
+                            <h3 data-i18n="accountsList">Daftar akun</h3>
+                            <p class="muted" data-i18n="accountsListDescription">Kelola email, nama, kata sandi, atau
+                                status akun.</p>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-i18n="name">Nama</th>
+                                    <th data-i18n="email">Email</th>
+                                    <th data-i18n="adminRole">Peran</th>
+                                    <th data-i18n="status">Status</th>
+                                    <th data-i18n="action">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="admin-users-empty" class="empty-state hidden"><strong data-i18n="noAccounts">Belum ada
+                            akun.</strong>
+                        <p data-i18n="accountsEmptyDescription">Data akan tampil setelah tersimpan di Supabase.</p>
+                    </div>
                 </div>
             </section>
 
             <section id="admin-view-settings" class="admin-view hidden">
-                <div class="page-intro"><div><span class="section-kicker" data-i18n="configurationKicker">KONFIGURASI</span><h2 data-i18n="adminSchoolSettings">Pengaturan sekolah</h2><p class="muted" data-i18n="adminSettingsDescription">Perbarui titik geofence dan aturan waktu presensi.</p></div></div>
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="configurationKicker">KONFIGURASI</span>
+                        <h2 data-i18n="adminSchoolSettings">Pengaturan sekolah</h2>
+                        <p class="muted" data-i18n="adminSettingsDescription">Perbarui titik geofence dan aturan waktu
+                            presensi.</p>
+                    </div>
+                </div>
                 <div class="panel">
                     <form id="admin-settings-form" class="form-stack">
-                        <label for="admin-setting-lat" data-i18n="schoolLatitude">Latitude sekolah</label><input id="admin-setting-lat" type="number" step="any" min="-90" max="90" required>
-                        <label for="admin-setting-lng" data-i18n="schoolLongitude">Longitude sekolah</label><input id="admin-setting-lng" type="number" step="any" min="-180" max="180" required>
-                        <label for="admin-setting-radius" data-i18n="geofenceRadius">Radius geofence (meter)</label><input id="admin-setting-radius" type="number" min="10" max="500" required>
-                        <label for="admin-setting-timezone" data-i18n="timezone">Zona waktu</label><input id="admin-setting-timezone" type="text" maxlength="64" required>
-                        <label for="admin-setting-entry-time" data-i18n="schoolEntryTime">Jam masuk sekolah</label><input id="admin-setting-entry-time" type="time" required>
-                        <label for="admin-setting-tolerance" data-i18n="lateTolerance">Toleransi keterlambatan (menit)</label><input id="admin-setting-tolerance" type="number" min="0" max="180" step="1" required>
+                        <label for="admin-setting-lat" data-i18n="schoolLatitude">Latitude sekolah</label><input
+                            id="admin-setting-lat" type="number" step="any" min="-90" max="90" required>
+                        <label for="admin-setting-lng" data-i18n="schoolLongitude">Longitude sekolah</label><input
+                            id="admin-setting-lng" type="number" step="any" min="-180" max="180" required>
+                        <label for="admin-setting-radius" data-i18n="geofenceRadius">Radius geofence
+                            (meter)</label><input id="admin-setting-radius" type="number" min="10" max="500" required>
+                        <label for="admin-setting-timezone" data-i18n="timezone">Zona waktu</label><input
+                            id="admin-setting-timezone" type="text" maxlength="64" required>
+                        <label for="admin-setting-entry-time" data-i18n="schoolEntryTime">Jam masuk
+                            sekolah</label><input id="admin-setting-entry-time" type="time" required>
+                        <label for="admin-setting-tolerance" data-i18n="lateTolerance">Toleransi keterlambatan
+                            (menit)</label><input id="admin-setting-tolerance" type="number" min="0" max="180" step="1"
+                            required>
                         <button class="button primary" type="submit" data-i18n="saveSettings">Simpan pengaturan</button>
                     </form>
                 </div>
             </section>
 
             <section id="admin-view-audit" class="admin-view hidden">
-                <div class="page-intro"><div><span class="section-kicker" data-i18n="adminSecurity">KEAMANAN</span><h2 data-i18n="adminAudit">Audit aktivitas</h2><p class="muted" data-i18n="adminAuditDescription">Riwayat operasi yang tercatat oleh API.</p></div></div>
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="adminSecurity">KEAMANAN</span>
+                        <h2 data-i18n="adminAudit">Audit aktivitas</h2>
+                        <p class="muted" data-i18n="adminAuditDescription">Riwayat operasi yang tercatat oleh API.</p>
+                    </div>
+                </div>
                 <div class="panel">
                     <div class="filters">
-                        <label for="admin-audit-actor"><span data-i18n="auditActorEmail">Email pelaku</span><input id="admin-audit-actor" type="search" placeholder="Cari email" data-i18n-placeholder="searchEmail"></label>
-                        <label for="admin-audit-action"><span data-i18n="action">Aksi</span><input id="admin-audit-action" type="search" placeholder="Mis. admin.login" data-i18n-placeholder="actionPlaceholder"></label>
-                        <label for="admin-audit-from"><span data-i18n="fromDate">Dari tanggal</span><input id="admin-audit-from" type="date"></label>
-                        <label for="admin-audit-to"><span data-i18n="toDate">Sampai tanggal</span><input id="admin-audit-to" type="date"></label>
-                        <button id="admin-audit-filter" class="button primary" type="button" data-i18n="applyFilter">Terapkan filter</button>
+                        <label for="admin-audit-actor"><span data-i18n="auditActorEmail">Email pelaku</span><input
+                                id="admin-audit-actor" type="search" placeholder="Cari email"
+                                data-i18n-placeholder="searchEmail"></label>
+                        <label for="admin-audit-action"><span data-i18n="action">Aksi</span><input
+                                id="admin-audit-action" type="search" placeholder="Mis. admin.login"
+                                data-i18n-placeholder="actionPlaceholder"></label>
+                        <label for="admin-audit-from"><span data-i18n="fromDate">Dari tanggal</span><input
+                                id="admin-audit-from" type="date"></label>
+                        <label for="admin-audit-to"><span data-i18n="toDate">Sampai tanggal</span><input
+                                id="admin-audit-to" type="date"></label>
+                        <button id="admin-audit-filter" class="button primary" type="button"
+                            data-i18n="applyFilter">Terapkan filter</button>
                     </div>
-                    <div class="table-wrap"><table><thead><tr><th data-i18n="dateTime">Waktu</th><th data-i18n="email">Email</th><th data-i18n="adminRole">Peran</th><th data-i18n="action">Aksi</th><th data-i18n="targetTable">Tabel</th></tr></thead><tbody id="admin-audit-tbody"></tbody></table></div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-i18n="dateTime">Waktu</th>
+                                    <th data-i18n="email">Email</th>
+                                    <th data-i18n="adminRole">Peran</th>
+                                    <th data-i18n="action">Aksi</th>
+                                    <th data-i18n="targetTable">Tabel</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-audit-tbody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
             <section id="admin-view-profile" class="admin-view hidden">
-                <div class="page-intro"><div><span class="section-kicker" data-i18n="adminSecurity">KEAMANAN AKUN</span><h2 data-i18n="changeAdminPassword">Ubah kata sandi Admin</h2><p class="muted" data-i18n="adminPasswordDescription">Gunakan kata sandi unik dan kuat untuk akun dengan hak akses tinggi.</p></div></div>
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="adminSecurity">KEAMANAN AKUN</span>
+                        <h2 data-i18n="changeAdminPassword">Ubah kata sandi Admin</h2>
+                        <p class="muted" data-i18n="adminPasswordDescription">Gunakan kata sandi unik dan kuat untuk
+                            akun dengan hak akses tinggi.</p>
+                    </div>
+                </div>
                 <div class="panel">
                     <form id="admin-profile-form" class="form-stack">
-                        <label for="admin-current-password" data-i18n="currentPassword">Kata sandi saat ini</label><input id="admin-current-password" type="password" autocomplete="current-password" required maxlength="128">
-                        <label for="admin-new-password" data-i18n="newPassword">Kata sandi baru</label><input id="admin-new-password" type="password" autocomplete="new-password" required minlength="12" maxlength="128">
+                        <label for="admin-current-password" data-i18n="currentPassword">Kata sandi saat
+                            ini</label><input id="admin-current-password" type="password"
+                            autocomplete="current-password" required maxlength="128">
+                        <label for="admin-new-password" data-i18n="newPassword">Kata sandi baru</label><input
+                            id="admin-new-password" type="password" autocomplete="new-password" required minlength="12"
+                            maxlength="128">
                         <button class="button primary" type="submit" data-i18n="savePassword">Simpan kata sandi</button>
                     </form>
                 </div>

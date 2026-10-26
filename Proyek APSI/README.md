@@ -80,6 +80,7 @@ The schema also enables deny-all RLS policies on the Admin and audit tables.
 ## Login / Vercel deployment troubleshooting
 
 - In Vercel Project Settings, set **Root Directory** to the project root that contains `api/`, `package.json`, and `vercel.json`. Do not set it to `public/`; that folder only contains the frontend files. A platform-generated HTTP 405 on every login request often means the request is not reaching the intended API function.
+- `vercel.json` includes a filesystem-first route fallback so unknown client-side paths render the app shell instead of falling back to the default Vercel 404 page. This keeps deployments from showing the generic black `NOT_FOUND` template when the app is deep-linked.
 - After deploying, open `/api/health`. It should return HTTP 200 and JSON containing `ok: true` and `service: "Amanah.id API"`. If it returns 404/405 or an HTML page, inspect the selected Vercel Root Directory and the deployment build output first.
 - Configure `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SESSION_SECRET` (at least 32 characters) and `APP_ORIGIN` (the exact deployed origin, without a trailing slash) in Vercel Environment Variables. `FONNTE_TOKEN` is required only for WhatsApp delivery. Redeploy after changing environment variables.
 - Run `supabase-schema.sql` in the intended Supabase project before testing accounts. The demo Admin is not automatically created by the app. For an isolated demo database only, you may run `supabase-demo-admin.sql`; that file seeds the publicly known demo credentials and must not be used for production.

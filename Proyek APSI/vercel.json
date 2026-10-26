@@ -31,5 +31,14 @@
     "api/teachers.js": {
       "maxDuration": 15
     }
-  }
+  },
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }
