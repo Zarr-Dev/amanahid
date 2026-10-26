@@ -5,7 +5,7 @@
 let SCHOOL_LOCATION = {
     lat: -6.253590517740096,
     lng: 106.60299502682263,
-    radius: 35,
+    radius: 50,
     name: "Al Fityan School"
 };
 const MAX_GPS_ACCURACY_METERS = 35;
