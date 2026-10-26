@@ -98,7 +98,7 @@ create table if not exists public.school_settings (
         check (id = '00000000-0000-0000-0000-000000000001'::uuid),
     lat numeric not null check (lat between -90 and 90),
     lng numeric not null check (lng between -180 and 180),
-    radius numeric not null default 35 check (radius between 10 and 500),
+    radius numeric not null default 50 check (radius between 10 and 500),
     timezone text not null default 'Asia/Jakarta',
     entry_time time not null default '07:00',
     late_tolerance_min integer not null default 15 check (late_tolerance_min between 0 and 180),
@@ -111,7 +111,7 @@ alter table public.school_settings add column if not exists entry_time time not 
 alter table public.school_settings add column if not exists late_tolerance_min integer not null default 15;
 
 insert into public.school_settings (id, lat, lng, radius)
-values ('00000000-0000-0000-0000-000000000001'::uuid, -6.253590517740096, 106.60299502682263, 35)
+values ('00000000-0000-0000-0000-000000000001'::uuid, -6.253590517740096, 106.60299502682263, 50)
 on conflict (id) do nothing;
 
 -- Deny every direct browser role; only the server-side secret key may access rows.
