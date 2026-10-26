@@ -370,25 +370,61 @@ test("API health endpoint answers GET/HEAD and rejects other methods clearly", a
     assert.deepEqual(postResponse.body, { error: "Method not allowed", method: "POST" });
 });
 
-test("Admin-created user schema explicitly rejects student role", async t => {
+test("Admin can create a Siswa login with NISN and class, but face enrollment remains required", async t => {
     const originalFetch = globalThis.fetch;
     const adminToken = signToken({ email: "admin@example.com", name: "Admin", role: "admin" });
-    globalThis.fetch = async () => new Response(JSON.stringify([
-        { email: "admin@example.com", name: "Admin", is_active: true }
-    ]), { status: 200 });
+    const requests = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        requests.push({ url: requestUrl, method: init.method || "GET", body: init.body });
+        if (requestUrl.includes("admin_users?select=email,name,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "admin@example.com", name: "Admin", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id&email=") ||
+            requestUrl.includes("teachers?select=id&email=") ||
+            requestUrl.includes("students?select=id&nisn=")) {
+            return new Response("[]", { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,nisn,email,name,class_name,created_at") &&
+            init.method === "POST") {
+            return new Response(JSON.stringify([{
+                id: "123e4567-e89b-42d3-a456-426614174000",
+                nisn: "1234567890",
+                email: "student@example.com",
+                name: "Student Demo",
+                class_name: "XI IPA 1",
+                created_at: "2026-10-26T00:00:00Z"
+            }]), { status: 201 });
+        }
+        return new Response("[]", { status: 200 });
+    };
     t.after(() => { globalThis.fetch = originalFetch; });
+
     const req = {
         method: "POST",
         headers: { origin: "https://school.example", "x-admin-token": adminToken },
-        socket: { remoteAddress: "test-admin-student-role-denied" },
-        body: { role: "siswa", email: "student@example.com", name: "Student", password: "SecureExample!234" }
+        socket: { remoteAddress: "test-admin-student-create" },
+        body: {
+            role: "siswa",
+            email: "student@example.com",
+            name: "Student Demo",
+            password: "SecureExample!234",
+            nisn: "1234567890",
+            class_name: "XI IPA 1"
+        }
     };
     const res = responseMock();
     await adminUsersHandler(req, res);
-    assert.equal(res.statusCode, 400);
-    assert.match(res.body.error, /role/i);
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.body.user.role, "siswa");
+    assert.equal(res.body.user.face_enrollment_required, true);
+    const insert = requests.find(request => request.method === "POST" && request.url.includes("students?select=id,nisn"));
+    assert.ok(insert);
+    assert.deepEqual(JSON.parse(insert.body).face_descriptors, []);
+    assert.ok(requests.some(request => request.url.includes("audit_log")));
 });
-
 
 test("user login resolves Guru and Siswa against the matching Supabase tables", async t => {
     const originalFetch = globalThis.fetch;
