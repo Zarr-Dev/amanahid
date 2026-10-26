@@ -85,8 +85,6 @@ const css = readFileSync(join(root, "public/style.css"), "utf8");
 const js = readFileSync(join(root, "public/script.js"), "utf8");
 const htmlChecks = [
     ["admin login modal", /id="admin-login-modal"/],
-    ["visible demo admin email", /id="admin-demo-email">admin@amanah\.sch\.id<\/code>/],
-    ["visible demo admin password", /id="admin-demo-password">SuperSecurePass123!<\/code>/],
     ["numeric captcha field", /id="admin-captcha"[^>]*type="number"/],
     ["splash accessible name and live region", /id="splash-screen"[^>]*aria-label="Amanah\.id"[^>]*aria-live="polite"/],
     ["muted splash video with fallback poster", /<video class="splash-mark"[\s\S]*?muted playsinline preload="auto"[\s\S]*?poster="assets\/amanah-favicon\.png"/],
