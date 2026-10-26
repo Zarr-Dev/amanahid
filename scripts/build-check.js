@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/auth/login.js",
-    "api/index.js"
+    "api/index.js", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -95,6 +95,17 @@ const htmlChecks = [
     ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
     ["visible student face sample progress", /id="face-sample-progress-bar"/]
 ];
+if (/id="admin-demo-password"|SuperSecurePass123!|admin@amanah\\.sch\\.id/.test(html)) {
+    console.error("Build check failed: public Admin demo credentials must never be shipped.");
+    process.exit(1);
+}
+const demoAccountsSql = readFileSync(join(root, "supabase-demo-accounts.sql"), "utf8");
+if (!/insert into public\\.teachers/i.test(demoAccountsSql) ||
+    !/insert into public\\.students/i.test(demoAccountsSql) ||
+    /insert into public\\.admin_users/i.test(demoAccountsSql)) {
+    console.error("Demo seed must create only Guru and Siswa accounts, never an Admin.");
+    process.exit(1);
+}
 for (const [label, pattern] of htmlChecks) {
     if (!pattern.test(html)) {
         console.error(`Build check failed: missing ${label} in public/index.html.`);
