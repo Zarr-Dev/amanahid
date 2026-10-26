@@ -11,18 +11,18 @@ export default async function handler(req, res) {
             res.setHeader("Allow", "POST");
             return jsonError(res, 405, "Method not allowed");
         }
-        const missingConfiguration = getMissingAuthConfiguration();
-    if (missingConfiguration.length) {
-        return jsonError(res, 503, `Autentikasi belum dikonfigurasi di Vercel: ${missingConfiguration.join(", ")}.`);
-    }
-    if (!isAllowedOrigin(req)) return jsonError(res, 403, "Origin aplikasi tidak cocok dengan APP_ORIGIN.");
+        if (!isAllowedOrigin(req)) return jsonError(res, 403, "Origin aplikasi tidak cocok dengan APP_ORIGIN.");
         return res.status(200).json({ ok: true });
     }
     if (req.method !== "POST") {
         res.setHeader("Allow", "POST");
         return jsonError(res, 405, "Method not allowed");
     }
-    if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
+    const missingConfiguration = getMissingAuthConfiguration();
+    if (missingConfiguration.length) {
+        return jsonError(res, 503, `Autentikasi belum dikonfigurasi di Vercel: ${missingConfiguration.join(", ")}.`);
+    }
+    if (!isAllowedOrigin(req)) return jsonError(res, 403, "Origin aplikasi tidak cocok dengan APP_ORIGIN.");
     if (!rateLimit(req, "auth:login", 10, 60_000, res)) {
         return jsonError(res, 429, "Too many login attempts. Try again shortly.");
     }
