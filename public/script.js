@@ -704,6 +704,17 @@ async function showApp(user) {
     const isStudent = user.role === "siswa";
     $("dashboard-guru")?.classList.toggle("hidden", user.role !== "guru");
     $("dashboard-siswa")?.classList.toggle("hidden", !isStudent);
+    const activeDashboard = user.role === "admin"
+        ? $("dashboard-admin")
+        : (isStudent ? $("dashboard-siswa") : $("dashboard-guru"));
+    if (activeDashboard) {
+        activeDashboard.classList.remove("auth-enter");
+        void activeDashboard.offsetWidth;
+        activeDashboard.classList.add("auth-enter");
+        activeDashboard.addEventListener("animationend", () => {
+            activeDashboard.classList.remove("auth-enter");
+        }, { once: true });
+    }
     const displayName = String(user.name ?? user.email ?? "");
     const initial = displayName.trim().charAt(0).toUpperCase() || (isStudent ? "S" : "A");
     if (user.role === "admin") {
@@ -1049,6 +1060,15 @@ function toastAdminError(error) {
     const status = Number.isInteger(error?.status) ? `HTTP ${error.status}` : "Network error";
     const message = error?.originalMessage ?? error?.message ?? "Permintaan Admin gagal.";
     toast(`${status}: ${message}`, "error");
+}
+
+function setAuthFormBusy(form, busy) {
+    const button = form?.querySelector('button[type="submit"]');
+    if (!button) return;
+    button.disabled = Boolean(busy);
+    button.classList.toggle("is-loading", Boolean(busy));
+    if (busy) button.setAttribute("aria-busy", "true");
+    else button.removeAttribute("aria-busy");
 }
 
 async function passwordDigest(password) {
@@ -2828,8 +2848,11 @@ function setupEvents() {
 
     $("login-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const form = event.currentTarget;
+        if (form.querySelector('button[type="submit"]')?.disabled) return;
         const email = $("login-email").value.trim().toLowerCase();
         const password = $("login-password").value;
+        setAuthFormBusy(form, true);
         try {
             const result = await cloudRequest("/api/auth/login", {
                 method: "POST",
@@ -2839,17 +2862,22 @@ function setupEvents() {
         } catch (error) {
             console.error("Login failed:", error);
             toast(error.message || tr("loginFailed"), "error");
+        } finally {
+            setAuthFormBusy(form, false);
         }
     });
 
     $("admin-login-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const form = event.currentTarget;
+        if (form.querySelector('button[type="submit"]')?.disabled) return;
         const captchaValue = $("admin-captcha").value.trim();
         if (captchaValue === "" || captchaValue !== "8") {
             toast("Captcha salah. Masukkan angka 8.", "error");
             $("admin-captcha").focus();
             return;
         }
+        setAuthFormBusy(form, true);
         try {
             const result = await cloudRequest("/api/admin/login", {
                 method: "POST",
@@ -2860,11 +2888,14 @@ function setupEvents() {
                 }
             });
             $("admin-login-modal").classList.add("hidden");
-            $("admin-login-form").reset();
             await showApp({ ...result.user, token: result.token });
+            form.reset();
         } catch (error) {
             console.error("Admin login failed:", error);
+            $("admin-login-modal")?.classList.remove("hidden");
             toastAdminError(error);
+        } finally {
+            setAuthFormBusy(form, false);
         }
     });
 
