@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/auth/login.js",
-    "api/index.js", "supabase-demo-admin.sql"
+    "api/index.js", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -85,8 +85,6 @@ const css = readFileSync(join(root, "public/style.css"), "utf8");
 const js = readFileSync(join(root, "public/script.js"), "utf8");
 const htmlChecks = [
     ["admin login modal", /id="admin-login-modal"/],
-    ["visible demo admin email", /id="admin-demo-email">admin@amanah\.sch\.id<\/code>/],
-    ["visible demo admin password", /id="admin-demo-password">SuperSecurePass123!<\/code>/],
     ["numeric captcha field", /id="admin-captcha"[^>]*type="number"/],
     ["splash accessible name and live region", /id="splash-screen"[^>]*aria-label="Amanah\.id"[^>]*aria-live="polite"/],
     ["muted splash video with fallback poster", /<video class="splash-mark"[\s\S]*?muted playsinline preload="auto"[\s\S]*?poster="assets\/amanah-favicon\.png"/],
@@ -95,6 +93,17 @@ const htmlChecks = [
     ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
     ["visible student face sample progress", /id="face-sample-progress-bar"/]
 ];
+if (html.includes('id="admin-demo-password"') || html.includes("SuperSecurePass123!")) {
+    console.error("Build check failed: public Admin demo credentials must never be shipped.");
+    process.exit(1);
+}
+const demoAccountsSql = readFileSync(join(root, "supabase-demo-accounts.sql"), "utf8");
+if (!/insert into public[.]teachers/i.test(demoAccountsSql) ||
+    !/insert into public[.]students/i.test(demoAccountsSql) ||
+    /insert into public[.]admin_users/i.test(demoAccountsSql)) {
+    console.error("Demo seed must create only Guru and Siswa accounts, never an Admin.");
+    process.exit(1);
+}
 for (const [label, pattern] of htmlChecks) {
     if (!pattern.test(html)) {
         console.error(`Build check failed: missing ${label} in public/index.html.`);
@@ -110,8 +119,10 @@ if (/id="(?:tab-register|signup-form|register-form)"/.test(html) || /id="(?:tab-
     process.exit(1);
 }
 const adminUserApi = readFileSync(join(root, "api/admin/users.js"), "utf8");
-if (!adminUserApi.includes('pattern: /^guru$/') || adminUserApi.includes('face_descriptors: []')) {
-    console.error("Admin user creation must be teacher-only; student accounts require face descriptors and teacher authorization.");
+if (!adminUserApi.includes('pattern: /^(guru|siswa)$/') ||
+    !adminUserApi.includes('face_descriptors: []') ||
+    !adminUserApi.includes('nisn: { type: "string"')) {
+    console.error("Admin must be able to create Guru and Siswa accounts; new Siswa accounts must require later face enrollment.");
     process.exit(1);
 }
 

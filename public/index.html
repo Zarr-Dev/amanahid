@@ -197,23 +197,10 @@
                 <button id="admin-login-back" class="button subtle full" type="button">Kembali ke login
                     pengguna</button>
             </form>
-            <div class="admin-demo-credentials" aria-label="Kredensial akun demo Admin">
-                <p class="admin-demo-heading">Kredensial demo Admin</p>
-                <div class="admin-demo-credential">
-                    <span>Email</span>
-                    <code id="admin-demo-email">admin@amanah.sch.id</code>
-                    <button class="button subtle" type="button" data-copy-target="admin-demo-email"
-                        aria-label="Salin email demo">Salin email</button>
-                </div>
-                <div class="admin-demo-credential">
-                    <span>Password</span>
-                    <code id="admin-demo-password">SuperSecurePass123!</code>
-                    <button class="button subtle" type="button" data-copy-target="admin-demo-password"
-                        aria-label="Salin password demo">Salin password</button>
-                </div>
-                <p class="admin-credentials-note">Akun ini harus tersedia di database Supabase agar login demo berhasil.
-                </p>
-            </div>
+            <p class="auth-login-note admin-security-note">
+                Akun Admin adalah akun resmi sekolah dan dibuat secara manual di Supabase. Akun demo Guru/Siswa hanya
+                tersedia pada lingkungan demo terpisah, bukan pada database produksi sekolah.
+            </p>
         </section>
     </div>
 
@@ -621,19 +608,22 @@
                 <div class="page-intro">
                     <div><span class="section-kicker" data-i18n="adminAccountsKicker">MANAJEMEN AKUN</span>
                         <h2 data-i18n="schoolUsers">Pengguna sekolah</h2>
-                        <p class="muted" data-i18n="schoolUsersDescription">Admin membuat akun Guru. Pendaftaran akun
-                            Siswa hanya tersedia di formulir Guru agar dapat dikaitkan dengan NISN dan sampel wajah.</p>
+                        <p class="muted" data-i18n="schoolUsersDescription">Admin dapat membuat akun Guru dan Siswa. Akun Siswa memerlukan NISN dan kelas; sampel wajah dapat didaftarkan Guru kemudian.</p>
                     </div>
                 </div>
                 <div class="panel">
                     <div class="panel-heading">
                         <div>
-                            <h3 data-i18n="createTeacherAccount">Buat akun Guru</h3>
-                            <p class="muted" data-i18n="newTeacherDescription">Akun Guru baru akan tersimpan di tabel
-                                teachers.</p>
+                            <h3 data-i18n="createTeacherAccount">Buat akun</h3>
+                            <p class="muted" data-i18n="newTeacherDescription">Akun Guru atau Siswa baru akan tersimpan di database.</p>
                         </div>
                     </div>
                     <form id="admin-user-form" class="form-stack">
+                        <label for="admin-user-role" data-i18n="accountRole">Peran akun</label>
+                        <select id="admin-user-role" required>
+                            <option value="guru" data-i18n="teacherRole">Guru</option>
+                            <option value="siswa" data-i18n="studentRole">Siswa</option>
+                        </select>
                         <label for="admin-user-name" data-i18n="fullName">Nama lengkap</label>
                         <input id="admin-user-name" type="text" autocomplete="name" maxlength="120" required>
                         <label for="admin-user-email" data-i18n="email">Email akun</label>
@@ -641,8 +631,16 @@
                         <label for="admin-user-password" data-i18n="initialPassword">Kata sandi awal</label>
                         <input id="admin-user-password" type="password" autocomplete="new-password" minlength="8"
                             maxlength="128" required>
-                        <button class="button primary" type="submit" data-i18n="createTeacherAccount">Buat akun
-                            Guru</button>
+                        <div id="admin-student-fields" class="form-stack admin-student-fields hidden" aria-hidden="true">
+                            <label for="admin-user-nisn" data-i18n="studentNisn">NISN siswa</label>
+                            <input id="admin-user-nisn" type="text" inputmode="numeric" pattern="[0-9]{8,20}"
+                                maxlength="20" autocomplete="off">
+                            <label for="admin-user-class" data-i18n="studentClass">Kelas siswa</label>
+                            <input id="admin-user-class" type="text" maxlength="40">
+                            <p class="helper-text" data-i18n="studentAccountNote">Siswa dapat login setelah dibuat;
+                                presensi wajah aktif setelah Guru mendaftarkan sampel.</p>
+                        </div>
+                        <button class="button primary" type="submit" data-i18n="createTeacherAccount">Buat akun</button>
                     </form>
                 </div>
                 <div class="panel">

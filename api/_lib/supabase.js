@@ -1,5 +1,16 @@
 import { verifyToken } from "./admin-auth.js";
 
+export function getMissingAuthConfiguration() {
+    const missing = [];
+    if (!process.env.APP_ORIGIN) missing.push("APP_ORIGIN");
+    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
+    if (!process.env.SUPABASE_SECRET_KEY) missing.push("SUPABASE_SECRET_KEY");
+    if (typeof process.env.SESSION_SECRET !== "string" || process.env.SESSION_SECRET.length < 32) {
+        missing.push("SESSION_SECRET (minimum 32 characters)");
+    }
+    return missing;
+}
+
 export function isAllowedOrigin(req) {
     const allowedOrigin = process.env.APP_ORIGIN?.replace(/\/+$/, "");
     if (!allowedOrigin) return false;

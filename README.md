@@ -47,6 +47,17 @@ For an existing database created with the previous 35 m default, run
 the previous default value of 35 m; other radius values configured by an administrator
 are preserved. New installations use 50 m by default.
 
+For an isolated demo/staging database only, run `supabase-demo-accounts.sql` after
+`supabase-schema.sql`. It creates exactly one demo Guru and one demo Siswa account
+and never creates an Admin:
+
+- Guru demo: `demo.guru@amanah.sch.id` / `GuruDemo2026!`
+- Siswa demo: `demo.siswa@amanah.sch.id` / `SiswaDemo2026!`
+
+These credentials are intentionally public and must never be used on a production
+school database. The demo Siswa has no face descriptor, so it tests login and dashboard
+routing only, not real attendance.
+
 1. Apply `supabase-schema.sql` in the Supabase SQL editor before deploying the API.
    Existing teacher and student rows remain, but older rows do not have passwords;
    an Admin must set their email/password from **Users** before they can sign in.
@@ -65,15 +76,17 @@ are preserved. New installations use 50 m by default.
    -- Replace the email and password with unique credentials before executing.
    insert into public.admin_users (email, password_hash, name)
    values (
-     'admin@amanah.sch.id',
-     crypt(encode(digest('SuperSecurePass123!', 'sha256'), 'hex'), gen_salt('bf', 12)),
+     'REPLACE_WITH_REAL_ADMIN_EMAIL@your-school.sch.id',
+     crypt(encode(digest('REPLACE_WITH_UNIQUE_ADMIN_PASSWORD', 'sha256'), 'hex'), gen_salt('bf', 12)),
      'Administrator Amanah'
    );
    ```
 
-   Do not use the example password in a deployed environment. After creating the
-   account, open the website, select **Login**, choose **Login sebagai Admin**,
-   enter the admin email and password, and answer the captcha (`8`).
+   Replace both placeholder values before running the SQL. Create only the one
+   official Admin account for the school. There is deliberately no public Admin demo
+   login or seeded Admin password. After creating the account, open the website,
+   choose **Login sebagai Admin**, enter the real Admin credentials, and answer the
+   captcha (`8`).
 
 4. Install dependencies with `npm install`. Run the focused security tests with
    `npm test`.
@@ -87,7 +100,7 @@ The schema also enables deny-all RLS policies on the Admin and audit tables.
 - In Vercel Project Settings, set **Root Directory** to the project root that contains `api/`, `package.json`, and `vercel.json`. Do not set it to `public/`; that folder only contains the frontend files. A platform-generated HTTP 405 on every login request often means the request is not reaching the intended API function.
 - `vercel.json` includes a filesystem-first route fallback so unknown client-side paths render the app shell instead of falling back to the default Vercel 404 page. This keeps deployments from showing the generic black `NOT_FOUND` template when the app is deep-linked.
 - After deploying, open `/api/health`. It should return HTTP 200 and JSON containing `ok: true` and `service: "Amanah.id API"`. If it returns 404/405 or an HTML page, inspect the selected Vercel Root Directory and the deployment build output first.
-- Configure `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SESSION_SECRET` (at least 32 characters) and `APP_ORIGIN` (the exact deployed origin, without a trailing slash) in Vercel Environment Variables. `FONNTE_TOKEN` is required only for WhatsApp delivery. Redeploy after changing environment variables.
-- Run `supabase-schema.sql` in the intended Supabase project before testing accounts. The demo Admin is not automatically created by the app. For an isolated demo database only, you may run `supabase-demo-admin.sql`; that file seeds the publicly known demo credentials and must not be used for production.
+- Configure `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SESSION_SECRET` (at least 32 characters) and `APP_ORIGIN` (the exact deployed origin, without a trailing slash) in Vercel Environment Variables. Missing Supabase settings cause a clear HTTP 503 login diagnostic instead of a misleading credential error. `FONNTE_TOKEN` is optional unless WhatsApp delivery is needed. Redeploy after changing environment variables.
+- Run `supabase-schema.sql` in the intended Supabase project before testing accounts. The official Admin is never auto-created. For an isolated demo/staging database only, run `supabase-demo-accounts.sql` to create one Guru demo and one Siswa demo; it never creates an Admin. Demo credentials are public and must never be seeded into a real school production database. The demo Siswa intentionally has no face descriptor, so it tests login/dashboard routing only and cannot record attendance.
 - Public account self-signup is disabled. Admin provisions Guru accounts. A logged-in Guru creates Siswa accounts using the student form, which requires NISN, an initial password, and face descriptors. This keeps the stored row aligned with the `students` schema and avoids accounts with empty face data.
 - Use a supported Node.js release for deployment; this project declares Node.js `24.x`. Run `npm ci`, `npm run build`, and `npm test` in the project root before deploying.

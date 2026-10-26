@@ -1,0 +1,23 @@
+name: Amanah.id CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, fix/authentication-roles-demo-accounts]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run build checks and security tests
+        run: npm run build

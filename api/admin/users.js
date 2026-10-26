@@ -41,35 +41,76 @@ export default async function handler(req, res) {
         if (req.method === "POST") {
             const body = req.body || {};
             const schema = {
-                role: { type: "string", required: true, max: 10, pattern: /^guru$/ },
+                role: { type: "string", required: true, max: 10, pattern: /^(guru|siswa)$/ },
                 email: { type: "string", required: true, max: 254, pattern: EMAIL },
                 name: { type: "string", required: true, max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
-                password: { type: "string", required: true, max: 128 }
+                password: { type: "string", required: true, max: 128 },
+                nisn: { type: "string", max: 20, pattern: /^\d{8,20}$/ },
+                class_name: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ }
             };
             if (!validBody(res, schema, body)) return;
             if (!validatePassword(body.password)) return jsonError(res, 400, "Password must contain 8 to 128 safe characters");
 
-            // Admin creates teacher accounts only. Student accounts require a teacher session,
-            // NISN, guardian contact and validated face descriptors via POST /api/students.
             const email = body.email.trim().toLowerCase();
-            const duplicates = await supabaseRequest(
-                `students?select=id&email=eq.${encodeURIComponent(email)}&limit=1`
-            );
-            if ((Array.isArray(duplicates) ? duplicates.length : 0) > 0) {
+            const name = body.name.trim();
+            const [studentEmailRows, teacherEmailRows] = await Promise.all([
+                supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
+            ]);
+            if ((Array.isArray(studentEmailRows) && studentEmailRows.length) ||
+                (Array.isArray(teacherEmailRows) && teacherEmailRows.length)) {
                 return jsonError(res, 409, "User email already exists");
             }
+
             const password_hash = await hashPassword(body.password);
-            const rows = await supabaseRequest("teachers?select=id,email,name,created_at", {
+            if (body.role === "guru") {
+                const rows = await supabaseRequest("teachers?select=id,email,name,created_at", {
+                    method: "POST",
+                    headers: { Prefer: "return=representation" },
+                    body: JSON.stringify({ email, name, password_hash, role: "guru", is_active: true })
+                }) ?? [];
+                const created = Array.isArray(rows) ? (rows[0] ?? null) : null;
+                if (!created) return jsonError(res, 502, "Supabase did not return the created user");
+                await writeAuditLog(admin, "guru.create", "teachers", created.id, { email, name, role: "guru" });
+                return res.status(201).json({ user: { ...created, role: "guru", table: "teachers" } });
+            }
+
+            if (!/^\d{8,20}$/.test(body.nisn || "")) {
+                return jsonError(res, 400, "NISN siswa wajib diisi dengan 8 sampai 20 digit");
+            }
+            if (typeof body.class_name !== "string" || !body.class_name.trim()) {
+                return jsonError(res, 400, "Kelas siswa wajib diisi");
+            }
+            const duplicateNisn = await supabaseRequest(
+                `students?select=id&nisn=eq.${encodeURIComponent(body.nisn)}&limit=1`
+            );
+            if (Array.isArray(duplicateNisn) && duplicateNisn.length) {
+                return jsonError(res, 409, "NISN siswa sudah terdaftar");
+            }
+            // The Admin can provision a student login immediately. Face enrollment remains
+            // a separate teacher workflow, so an empty descriptor list cannot pass attendance.
+            const rows = await supabaseRequest("students?select=id,nisn,email,name,class_name,created_at", {
                 method: "POST",
                 headers: { Prefer: "return=representation" },
-                body: JSON.stringify({ email, name: body.name.trim(), password_hash })
+                body: JSON.stringify({
+                    nisn: body.nisn,
+                    name,
+                    class_name: body.class_name.trim(),
+                    parent_whatsapp: null,
+                    face_descriptors: [],
+                    email,
+                    password_hash,
+                    role: "siswa",
+                    is_active: true
+                })
             }) ?? [];
             const created = Array.isArray(rows) ? (rows[0] ?? null) : null;
-            if (!created) return jsonError(res, 502, "Supabase did not return the created user");
-            await writeAuditLog(admin, "guru.create", "teachers", created.id, {
-                email, name: body.name.trim(), role: "guru"
+            if (!created) return jsonError(res, 502, "Supabase did not return the created student");
+            await writeAuditLog(admin, "siswa.create", "students", created.id, {
+                email, name, role: "siswa", nisn: body.nisn, class_name: body.class_name.trim(),
+                face_enrollment_required: true
             });
-            return res.status(201).json({ user: { ...created, role: "guru", table: "teachers" } });
+            return res.status(201).json({ user: { ...created, role: "siswa", table: "students", face_enrollment_required: true } });
         }
         if (req.method === "PUT") {
             const body = req.body || {};

@@ -367,8 +367,8 @@ const ADMIN_T = {
         loginsLast7Days: "Login 7 hari terakhir", serviceHealth: "Kesehatan layanan",
         serviceHealthDescription: "Status konfigurasi layanan utama.", vercelApi: "Vercel API",
         whatsappNotifications: "Notifikasi WhatsApp", adminAccountsKicker: "MANAJEMEN AKUN",
-        schoolUsers: "Pengguna sekolah", schoolUsersDescription: "Admin membuat akun Guru. Pendaftaran akun Siswa hanya tersedia di formulir Guru agar dapat dikaitkan dengan NISN dan sampel wajah.",
-        createTeacherAccount: "Buat akun Guru", newTeacherDescription: "Akun Guru baru akan tersimpan di tabel teachers.",
+        schoolUsers: "Pengguna sekolah", schoolUsersDescription: "Admin dapat membuat akun Guru dan Siswa. Akun Siswa memerlukan NISN dan kelas; sampel wajah dapat didaftarkan Guru kemudian.",
+        accountRole: "Peran akun", teacherRole: "Guru", studentRole: "Siswa", studentNisn: "NISN siswa", studentClass: "Kelas siswa", studentAccountNote: "Siswa dapat login setelah dibuat; presensi wajah aktif setelah Guru mendaftarkan sampel.", createTeacherAccount: "Buat akun", newTeacherDescription: "Akun Guru atau Siswa baru akan tersimpan di database.",
         initialPassword: "Kata sandi awal", accountsList: "Daftar akun",
         accountsListDescription: "Kelola email, nama, kata sandi, atau status akun.", noAccounts: "Belum ada akun.",
         accountsEmptyDescription: "Data akan tampil setelah tersimpan di Supabase.", adminRole: "Peran",
@@ -380,7 +380,7 @@ const ADMIN_T = {
         changeAdminPassword: "Ubah kata sandi Admin", adminPasswordDescription: "Gunakan kata sandi unik dan kuat untuk akun dengan hak akses tinggi.",
         currentPassword: "Kata sandi saat ini", newPassword: "Kata sandi baru", savePassword: "Simpan kata sandi",
         activeStatus: "Aktif", inactiveStatus: "Nonaktif", editAccount: "Ubah", deactivateAccount: "Nonaktifkan",
-        teacherAccountCreated: "Akun Guru berhasil dibuat."
+        teacherAccountCreated: "Akun Guru berhasil dibuat.", studentAccountCreated: "Akun Siswa berhasil dibuat. Guru perlu mendaftarkan sampel wajah sebelum siswa dapat melakukan presensi."
     },
     en: {
         adminWorkspace: "ADMINISTRATOR", adminNavigation: "Admin navigation", faceSampleProgress: "Face sample progress", administratorRole: "Administrator", confirmDeactivateAccount: "Deactivate this account?", promptNewEmail: "New email (leave blank to keep it unchanged):", promptNewName: "New name (leave blank to keep it unchanged):", promptNewPassword: "New password (leave blank to keep it unchanged):", adminOverview: "Overview", adminAccounts: "Manage accounts",
@@ -393,8 +393,8 @@ const ADMIN_T = {
         loginsLast7Days: "Logins in the last 7 days", serviceHealth: "Service health",
         serviceHealthDescription: "Configuration status of core services.", vercelApi: "Vercel API",
         whatsappNotifications: "WhatsApp notifications", adminAccountsKicker: "ACCOUNT MANAGEMENT",
-        schoolUsers: "School users", schoolUsersDescription: "Admins create Teacher accounts. Student accounts can only be registered by a Teacher, with NISN and face samples.",
-        createTeacherAccount: "Create Teacher account", newTeacherDescription: "The new Teacher account will be stored in the teachers table.",
+        schoolUsers: "School users", schoolUsersDescription: "Admins can create Teacher and Student accounts. Student accounts need a NISN and class; a Teacher can register face samples later.",
+        accountRole: "Account role", teacherRole: "Teacher", studentRole: "Student", studentNisn: "Student NISN", studentClass: "Student class", studentAccountNote: "Students can sign in after creation; face attendance is enabled after a Teacher registers a face sample.", createTeacherAccount: "Create account", newTeacherDescription: "The new Teacher or Student account will be stored in the database.",
         initialPassword: "Initial password", accountsList: "Account list",
         accountsListDescription: "Manage email, name, password, or account status.", noAccounts: "No accounts yet.",
         accountsEmptyDescription: "Records will appear after they are saved in Supabase.", adminRole: "Role",
@@ -406,7 +406,7 @@ const ADMIN_T = {
         changeAdminPassword: "Change Admin password", adminPasswordDescription: "Use a unique, strong password for this privileged account.",
         currentPassword: "Current password", newPassword: "New password", savePassword: "Save password",
         activeStatus: "Active", inactiveStatus: "Inactive", editAccount: "Edit", deactivateAccount: "Deactivate",
-        teacherAccountCreated: "Teacher account created successfully."
+        teacherAccountCreated: "Teacher account created successfully.", studentAccountCreated: "Student account created. A Teacher must register face samples before attendance can be recorded."
     },
     ar: {
         adminWorkspace: "مساحة المسؤول", adminNavigation: "تنقل المسؤول", faceSampleProgress: "تقدم عينات الوجه", administratorRole: "المسؤول", confirmDeactivateAccount: "هل تريد تعطيل هذا الحساب؟", promptNewEmail: "البريد الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewName: "الاسم الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewPassword: "كلمة المرور الجديدة (اتركها فارغة لإبقائها كما هي):", adminOverview: "نظرة عامة", adminAccounts: "إدارة الحسابات",
@@ -419,8 +419,8 @@ const ADMIN_T = {
         loginsLast7Days: "تسجيلات الدخول خلال 7 أيام", serviceHealth: "حالة الخدمات",
         serviceHealthDescription: "حالة إعداد الخدمات الأساسية.", vercelApi: "واجهة Vercel",
         whatsappNotifications: "إشعارات WhatsApp", adminAccountsKicker: "إدارة الحسابات",
-        schoolUsers: "مستخدمو المدرسة", schoolUsersDescription: "ينشئ المسؤول حسابات المعلمين. لا تُنشأ حسابات الطلاب إلا عبر المعلم مع رقم NISN وعينات الوجه.",
-        createTeacherAccount: "إنشاء حساب معلم", newTeacherDescription: "سيُحفظ حساب المعلم الجديد في جدول teachers.",
+        schoolUsers: "مستخدمو المدرسة", schoolUsersDescription: "يمكن للمسؤول إنشاء حسابات المعلمين والطلاب. يحتاج حساب الطالب إلى رقم NISN والصف، ويمكن للمعلم تسجيل عينة الوجه لاحقًا.",
+        accountRole: "دور الحساب", teacherRole: "معلم", studentRole: "طالب", studentNisn: "رقم NISN للطالب", studentClass: "صف الطالب", studentAccountNote: "يمكن للطالب تسجيل الدخول بعد إنشاء الحساب؛ ويُفعّل الحضور بالوجه بعد تسجيل عينة الوجه بواسطة المعلم.", createTeacherAccount: "إنشاء حساب", newTeacherDescription: "سيُحفظ حساب المعلم أو الطالب الجديد في قاعدة البيانات.",
         initialPassword: "كلمة المرور الأولية", accountsList: "قائمة الحسابات",
         accountsListDescription: "إدارة البريد والاسم وكلمة المرور وحالة الحساب.", noAccounts: "لا توجد حسابات بعد.",
         accountsEmptyDescription: "ستظهر السجلات بعد حفظها في Supabase.", adminRole: "الدور",
@@ -432,7 +432,7 @@ const ADMIN_T = {
         changeAdminPassword: "تغيير كلمة مرور المسؤول", adminPasswordDescription: "استخدم كلمة مرور قوية وفريدة لهذا الحساب ذي الصلاحيات العالية.",
         currentPassword: "كلمة المرور الحالية", newPassword: "كلمة المرور الجديدة", savePassword: "حفظ كلمة المرور",
         activeStatus: "نشط", inactiveStatus: "غير نشط", editAccount: "تعديل", deactivateAccount: "تعطيل",
-        teacherAccountCreated: "تم إنشاء حساب المعلم بنجاح."
+        teacherAccountCreated: "تم إنشاء حساب المعلم بنجاح.", studentAccountCreated: "تم إنشاء حساب الطالب. يجب على المعلم تسجيل عينة الوجه قبل تسجيل الحضور."
     }
 };
 Object.keys(ADMIN_T).forEach(lang => Object.assign(T[lang], ADMIN_T[lang]));
@@ -704,6 +704,17 @@ async function showApp(user) {
     const isStudent = user.role === "siswa";
     $("dashboard-guru")?.classList.toggle("hidden", user.role !== "guru");
     $("dashboard-siswa")?.classList.toggle("hidden", !isStudent);
+    const activeDashboard = user.role === "admin"
+        ? $("dashboard-admin")
+        : (isStudent ? $("dashboard-siswa") : $("dashboard-guru"));
+    if (activeDashboard) {
+        activeDashboard.classList.remove("auth-enter");
+        void activeDashboard.offsetWidth;
+        activeDashboard.classList.add("auth-enter");
+        activeDashboard.addEventListener("animationend", () => {
+            activeDashboard.classList.remove("auth-enter");
+        }, { once: true });
+    }
     const displayName = String(user.name ?? user.email ?? "");
     const initial = displayName.trim().charAt(0).toUpperCase() || (isStudent ? "S" : "A");
     if (user.role === "admin") {
@@ -1049,6 +1060,15 @@ function toastAdminError(error) {
     const status = Number.isInteger(error?.status) ? `HTTP ${error.status}` : "Network error";
     const message = error?.originalMessage ?? error?.message ?? "Permintaan Admin gagal.";
     toast(`${status}: ${message}`, "error");
+}
+
+function setAuthFormBusy(form, busy) {
+    const button = form?.querySelector('button[type="submit"]');
+    if (!button) return;
+    button.disabled = Boolean(busy);
+    button.classList.toggle("is-loading", Boolean(busy));
+    if (busy) button.setAttribute("aria-busy", "true");
+    else button.removeAttribute("aria-busy");
 }
 
 async function passwordDigest(password) {
@@ -2828,8 +2848,11 @@ function setupEvents() {
 
     $("login-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const form = event.currentTarget;
+        if (form.querySelector('button[type="submit"]')?.disabled) return;
         const email = $("login-email").value.trim().toLowerCase();
         const password = $("login-password").value;
+        setAuthFormBusy(form, true);
         try {
             const result = await cloudRequest("/api/auth/login", {
                 method: "POST",
@@ -2839,17 +2862,22 @@ function setupEvents() {
         } catch (error) {
             console.error("Login failed:", error);
             toast(error.message || tr("loginFailed"), "error");
+        } finally {
+            setAuthFormBusy(form, false);
         }
     });
 
     $("admin-login-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const form = event.currentTarget;
+        if (form.querySelector('button[type="submit"]')?.disabled) return;
         const captchaValue = $("admin-captcha").value.trim();
         if (captchaValue === "" || captchaValue !== "8") {
             toast("Captcha salah. Masukkan angka 8.", "error");
             $("admin-captcha").focus();
             return;
         }
+        setAuthFormBusy(form, true);
         try {
             const result = await cloudRequest("/api/admin/login", {
                 method: "POST",
@@ -2860,11 +2888,14 @@ function setupEvents() {
                 }
             });
             $("admin-login-modal").classList.add("hidden");
-            $("admin-login-form").reset();
             await showApp({ ...result.user, token: result.token });
+            form.reset();
         } catch (error) {
             console.error("Admin login failed:", error);
+            $("admin-login-modal")?.classList.remove("hidden");
             toastAdminError(error);
+        } finally {
+            setAuthFormBusy(form, false);
         }
     });
 
@@ -2878,33 +2909,58 @@ function setupEvents() {
     document.querySelectorAll("#dashboard-admin .nav-link[data-admin-target]").forEach(btn => {
         btn.addEventListener("click", () => showAdminView(btn.dataset.adminTarget));
     });
+    const updateAdminStudentFields = () => {
+        const isStudent = $("admin-user-role").value === "siswa";
+        $("admin-student-fields").classList.toggle("hidden", !isStudent);
+        $("admin-student-fields").setAttribute("aria-hidden", String(!isStudent));
+        $("admin-user-nisn").required = isStudent;
+        $("admin-user-class").required = isStudent;
+    };
+    $("admin-user-role").addEventListener("change", updateAdminStudentFields);
+    updateAdminStudentFields();
     $("admin-user-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const form = event.currentTarget;
+        if (form.querySelector('button[type="submit"]')?.disabled) return;
+        const role = $("admin-user-role").value;
         const body = {
-            role: "guru",
+            role,
             email: $("admin-user-email").value.trim().toLowerCase(),
             name: $("admin-user-name").value.trim(),
             password: $("admin-user-password").value
         };
+        if (role === "siswa") {
+            body.nisn = $("admin-user-nisn").value.trim();
+            body.class_name = $("admin-user-class").value.trim();
+        }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
-            toast("Masukkan email Guru yang valid.", "error");
+            toast("Masukkan email akun yang valid.", "error");
             $("admin-user-email").focus();
             return;
         }
         if (body.password.length < 8 || body.password.length > 128) {
-            toast("Kata sandi awal Guru harus terdiri dari 8–128 karakter.", "error");
+            toast("Kata sandi awal harus terdiri dari 8–128 karakter.", "error");
             $("admin-user-password").focus();
             return;
         }
+        if (role === "siswa" && !/^[0-9]{8,20}$/.test(body.nisn)) {
+            toast("NISN siswa harus terdiri dari 8–20 digit.", "error");
+            $("admin-user-nisn").focus();
+            return;
+        }
+        setAuthFormBusy(form, true);
         try {
             await cloudRequest("/api/admin/users", { method: "POST", body });
-            $("admin-user-form").reset();
+            form.reset();
+            updateAdminStudentFields();
             await loadAdminUsers();
             await loadAdminDashboard();
-            toast(tr("teacherAccountCreated"), "success");
+            toast(tr(role === "siswa" ? "studentAccountCreated" : "teacherAccountCreated"), "success");
         } catch (error) {
             console.error("Admin user creation failed:", error);
             toastAdminError(error);
+        } finally {
+            setAuthFormBusy(form, false);
         }
     });
     $("admin-users-tbody").addEventListener("click", async event => {
