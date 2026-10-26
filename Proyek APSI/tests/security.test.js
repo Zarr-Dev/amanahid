@@ -5,12 +5,12 @@ import { hashPassword, signToken, verifyPassword, verifyToken } from "../api/_li
 import { getRequestRole, rateLimit } from "../api/_lib/supabase.js";
 import { validateSchema } from "../api/_lib/validate.js";
 import adminUsersHandler from "../api/admin/users.js";
-import healthHandler from "../api/health.js";
+import healthHandler from "../api/index.js";
 import adminLoginHandler from "../api/admin/login.js";
 import authLoginHandler from "../api/auth/login.js";
 import adminAuditHandler from "../api/admin/audit.js";
-import adminDashboardStatsHandler from "../api/admin/dashboard-stats.js";
-import adminProfileHandler from "../api/admin/profile.js";
+import adminDashboardStatsHandler from "../api/admin/audit.js";
+import adminProfileHandler from "../api/admin/settings.js";
 import adminSettingsHandler from "../api/admin/settings.js";
 import attendanceHandler from "../api/attendance.js";
 import faceMatchHandler from "../api/face-match.js";
@@ -221,12 +221,15 @@ test("admin APIs handle empty and null Supabase results", async t => {
     assert.equal(auditResponse.statusCode, 200);
     assert.deepEqual(auditResponse.body.entries, []);
 
+    const statsRequest = request("GET", "stats");
+    statsRequest.query.action = "stats";
     const statsResponse = responseMock();
-    await adminDashboardStatsHandler(request("GET", "stats"), statsResponse);
+    await adminDashboardStatsHandler(statsRequest, statsResponse);
     assert.equal(statsResponse.statusCode, 200);
     assert.equal(statsResponse.body.total_students, 0);
 
     const profileRequest = request("PUT", "profile");
+    profileRequest.query.action = "profile";
     profileRequest.body = {
         current_password: "a".repeat(64),
         password: "SecureExample!234"
