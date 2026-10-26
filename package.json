@@ -6,7 +6,7 @@
     "node": "24.x"
   },
   "scripts": {
-    "build": "node scripts/build-check.js",
+    "build": "node scripts/build-check.js && npm test",
     "test": "node --test"
   },
   "dependencies": {

@@ -9,9 +9,9 @@ const requiredFiles = [
     "public/assets/amanah-logo-animation.mp4", "public/assets/amanah-favicon.png",
     "api/_lib/admin-auth.js", "api/_lib/admin-api.js", "api/_lib/audit.js",
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
-    "api/admin/login.js", "api/admin/dashboard-stats.js", "api/admin/users.js",
-    "api/admin/settings.js", "api/admin/audit.js", "api/admin/profile.js", "api/auth/login.js",
-    "api/health.js", "supabase-demo-admin.sql"
+    "api/admin/login.js", "api/admin/users.js",
+    "api/admin/settings.js", "api/admin/audit.js", "api/auth/login.js",
+    "api/index.js", "supabase-demo-admin.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -37,7 +37,7 @@ if (lock.packages?.[""]?.engines?.node !== pkg.engines.node) {
 const vercel = JSON.parse(readFileSync(join(root, "vercel.json"), "utf8"));
 if (!vercel.$schema?.includes("openapi.vercel.sh/vercel.json") ||
     !vercel.functions?.["api/admin/*.js"] || !vercel.functions?.["api/auth/*.js"] ||
-    !vercel.functions?.["api/health.js"]) {
+    !vercel.functions?.["api/index.js"]) {
     console.error("vercel.json schema or explicit serverless function settings are missing.");
     process.exit(1);
 }
@@ -69,6 +69,10 @@ for (const file of routeFiles) {
         console.error(`API route must use an ESM default handler: ${relative(root, file)}`);
         process.exit(1);
     }
+}
+if (routeFiles.length > 12) {
+    console.error(`Build check failed: Vercel Hobby supports at most 12 API functions; found ${routeFiles.length}.`);
+    process.exit(1);
 }
 const allApiSource = apiFiles.map(file => readFileSync(file, "utf8")).join("\n");
 if (/\brequire\s*\(|\bmodule\.exports\b/.test(allApiSource)) {
