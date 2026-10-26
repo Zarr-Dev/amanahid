@@ -6,6 +6,14 @@ import { validateSchema } from "../_lib/validate.js";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default async function handler(req, res) {
+    if (req.query?.action === "logout") {
+        if (req.method !== "POST") {
+            res.setHeader("Allow", "POST");
+            return jsonError(res, 405, "Method not allowed");
+        }
+        if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
+        return res.status(200).json({ ok: true });
+    }
     if (req.method !== "POST") {
         res.setHeader("Allow", "POST");
         return jsonError(res, 405, "Method not allowed");
