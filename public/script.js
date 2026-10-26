@@ -2909,33 +2909,58 @@ function setupEvents() {
     document.querySelectorAll("#dashboard-admin .nav-link[data-admin-target]").forEach(btn => {
         btn.addEventListener("click", () => showAdminView(btn.dataset.adminTarget));
     });
+    const updateAdminStudentFields = () => {
+        const isStudent = $("admin-user-role").value === "siswa";
+        $("admin-student-fields").classList.toggle("hidden", !isStudent);
+        $("admin-student-fields").setAttribute("aria-hidden", String(!isStudent));
+        $("admin-user-nisn").required = isStudent;
+        $("admin-user-class").required = isStudent;
+    };
+    $("admin-user-role").addEventListener("change", updateAdminStudentFields);
+    updateAdminStudentFields();
     $("admin-user-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const form = event.currentTarget;
+        if (form.querySelector('button[type="submit"]')?.disabled) return;
+        const role = $("admin-user-role").value;
         const body = {
-            role: "guru",
+            role,
             email: $("admin-user-email").value.trim().toLowerCase(),
             name: $("admin-user-name").value.trim(),
             password: $("admin-user-password").value
         };
+        if (role === "siswa") {
+            body.nisn = $("admin-user-nisn").value.trim();
+            body.class_name = $("admin-user-class").value.trim();
+        }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
-            toast("Masukkan email Guru yang valid.", "error");
+            toast("Masukkan email akun yang valid.", "error");
             $("admin-user-email").focus();
             return;
         }
         if (body.password.length < 8 || body.password.length > 128) {
-            toast("Kata sandi awal Guru harus terdiri dari 8–128 karakter.", "error");
+            toast("Kata sandi awal harus terdiri dari 8–128 karakter.", "error");
             $("admin-user-password").focus();
             return;
         }
+        if (role === "siswa" && !/^[0-9]{8,20}$/.test(body.nisn)) {
+            toast("NISN siswa harus terdiri dari 8–20 digit.", "error");
+            $("admin-user-nisn").focus();
+            return;
+        }
+        setAuthFormBusy(form, true);
         try {
             await cloudRequest("/api/admin/users", { method: "POST", body });
-            $("admin-user-form").reset();
+            form.reset();
+            updateAdminStudentFields();
             await loadAdminUsers();
             await loadAdminDashboard();
-            toast(tr("teacherAccountCreated"), "success");
+            toast(tr(role === "siswa" ? "studentAccountCreated" : "teacherAccountCreated"), "success");
         } catch (error) {
             console.error("Admin user creation failed:", error);
             toastAdminError(error);
+        } finally {
+            setAuthFormBusy(form, false);
         }
     });
     $("admin-users-tbody").addEventListener("click", async event => {
