@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import { hashPassword, signToken, verifyPassword, verifyToken } from "../api/_lib/admin-auth.js";
-import { getRequestRole, rateLimit } from "../api/_lib/supabase.js";
+import { getMissingAuthConfiguration, getRequestRole, rateLimit } from "../api/_lib/supabase.js";
 import { validateSchema } from "../api/_lib/validate.js";
 import adminUsersHandler from "../api/admin/users.js";
 import healthHandler from "../api/index.js";
@@ -308,6 +308,49 @@ test("attendance returns machine-readable GPS errors and limits repeated failure
     assert.equal(firstResponse.statusCode, 400);
 });
 
+
+test("authentication endpoints clearly report missing production configuration before origin checks", async t => {
+    const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SESSION_SECRET"];
+    const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+    t.after(() => {
+        for (const key of keys) {
+            if (previous[key] === undefined) delete process.env[key];
+            else process.env[key] = previous[key];
+        }
+    });
+    for (const key of keys) delete process.env[key];
+
+    assert.deepEqual(getMissingAuthConfiguration(), [
+        "APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SESSION_SECRET (minimum 32 characters)"
+    ]);
+
+    const adminRes = responseMock();
+    await adminLoginHandler({
+        method: "POST",
+        headers: { origin: "https://school.example" },
+        socket: { remoteAddress: "test-missing-config-admin" },
+        body: { email: "admin@example.com", password: "a".repeat(64), captcha: 8 }
+    }, adminRes);
+    assert.equal(adminRes.statusCode, 503);
+    assert.match(adminRes.body.error, /SUPABASE_URL/);
+    assert.match(adminRes.body.error, /SESSION_SECRET/);
+
+    const userRes = responseMock();
+    await authLoginHandler({
+        method: "POST",
+        headers: { origin: "https://school.example" },
+        socket: { remoteAddress: "test-missing-config-user" },
+        body: { email: "student@example.com", password: "a".repeat(64) }
+    }, userRes);
+    assert.equal(userRes.statusCode, 503);
+    assert.match(userRes.body.error, /SUPABASE_SECRET_KEY/);
+
+    const healthRes = responseMock();
+    await healthHandler({ method: "GET" }, healthRes);
+    assert.equal(healthRes.statusCode, 200);
+    assert.equal(healthRes.body.authentication.configured, false);
+    assert.ok(healthRes.body.authentication.missing.includes("SUPABASE_URL"));
+});
 
 test("API health endpoint answers GET/HEAD and rejects other methods clearly", async () => {
     const getResponse = responseMock();
