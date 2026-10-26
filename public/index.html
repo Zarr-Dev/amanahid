@@ -197,23 +197,10 @@
                 <button id="admin-login-back" class="button subtle full" type="button">Kembali ke login
                     pengguna</button>
             </form>
-            <div class="admin-demo-credentials" aria-label="Kredensial akun demo Admin">
-                <p class="admin-demo-heading">Kredensial demo Admin</p>
-                <div class="admin-demo-credential">
-                    <span>Email</span>
-                    <code id="admin-demo-email">admin@amanah.sch.id</code>
-                    <button class="button subtle" type="button" data-copy-target="admin-demo-email"
-                        aria-label="Salin email demo">Salin email</button>
-                </div>
-                <div class="admin-demo-credential">
-                    <span>Password</span>
-                    <code id="admin-demo-password">SuperSecurePass123!</code>
-                    <button class="button subtle" type="button" data-copy-target="admin-demo-password"
-                        aria-label="Salin password demo">Salin password</button>
-                </div>
-                <p class="admin-credentials-note">Akun ini harus tersedia di database Supabase agar login demo berhasil.
-                </p>
-            </div>
+            <p class="auth-login-note admin-security-note">
+                Akun Admin adalah akun resmi sekolah dan dibuat secara manual di Supabase. Akun demo Guru/Siswa hanya
+                tersedia pada lingkungan demo terpisah, bukan pada database produksi sekolah.
+            </p>
         </section>
     </div>
 
