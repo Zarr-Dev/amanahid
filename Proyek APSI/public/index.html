@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f8ff">
+    <title>Amanah.id | Presensi Digital</title>
+    <link rel="icon" type="image/png" href="assets/amanah-favicon.png">
+    <link rel="apple-touch-icon" href="assets/amanah-favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="network-banner" class="network-banner hidden" role="status" aria-live="polite">Koneksi ke layanan terputus. Periksa jaringan dan konfigurasi API.</div>
+    <div id="splash-screen" class="splash-screen" aria-label="Amanah.id" data-i18n-aria="brandName" aria-live="polite">
+        <div class="splash-lockup">
+            <video class="splash-mark" src="assets/amanah-logo-animation.mp4" muted playsinline preload="auto"
+                poster="assets/amanah-favicon.png" aria-hidden="true" tabindex="-1"></video>
+            <span class="splash-text">Amanah.id</span>
+        </div>
+    </div>
+
+    <!-- Single-page landing and auth; login resolves the account role automatically. -->
+    <main id="auth-screen" class="auth-screen">
+        <header class="auth-header">
+            <a class="brand brand-auth" href="#" aria-label="Amanah.id" data-i18n-aria="brandName">
+                <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
+                <span>Amanah<span class="brand-dot">.id</span></span>
+            </a>
+        </header>
+
+        <div class="auth-layout">
+            <section class="auth-copy" aria-labelledby="auth-hero-title">
+                <p class="auth-eyebrow" data-i18n="authEyebrow">PRESENSI DIGITAL SEKOLAH</p>
+                <h1 id="auth-hero-title"><span class="hero-title-first" data-i18n="heroTitleFirst">Presensi Sekolah Masa
+                        Kini,</span><br><span data-i18n="heroTitleSecond">Anti Titip Absen.</span></h1>
+                <p class="auth-description" data-i18n="heroDescription">
+                    Pantau kehadiran siswa secara real-time dengan verifikasi wajah (Face Recognition) dan lokasi (GPS
+                    Geofencing). Tanpa mesin fingerprint, tanpa biaya hardware.
+                </p>
+
+                <ul class="auth-benefits" aria-label="Fitur Amanah.id" data-i18n-aria="heroBenefitsLabel">
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span
+                            data-i18n="heroBenefitAccuracy">Akurasi wajah tingkat tinggi (ArcFace)</span>
+                    </li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitGps">Mencegah
+                            fake GPS &amp; absen titip</span></li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitPhone">Cukup
+                            gunakan HP siswa masing-masing</span></li>
+                </ul>
+                <div class="auth-actions" aria-label="Pilih akses">
+                    <button id="tab-login" class="auth-action auth-action-primary active" type="button"
+                        data-i18n="login">Masuk ke akun</button>
+                    <button id="open-admin-login-hero" class="auth-action auth-action-outline" type="button">
+                        Login Admin
+                    </button>
+                </div>
+            </section>
+
+            <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah.id"
+                data-i18n-aria="heroDashboardLabel">
+                <div class="visual-glow"></div>
+                <div class="dashboard-mockup">
+                    <div class="mockup-topbar">
+                        <div class="mockup-brand"><img class="mockup-brand-mark" src="assets/amanah-logo.png" alt=""
+                                aria-hidden="true">Amanah.id</div>
+                        <div class="mockup-window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+                    </div>
+                    <div class="mockup-content">
+                        <div class="mockup-greeting">
+                            <span data-i18n="mockDashboard">Dashboard Presensi</span>
+                            <strong data-i18n="mockGreeting">Selamat pagi 👋</strong>
+                        </div>
+                        <div class="mockup-attendance-card">
+                            <div class="mockup-attendance-icon" aria-hidden="true">✓</div>
+                            <div><small data-i18n="mockAttendanceLabel">STATUS KEHADIRAN</small><strong
+                                    data-i18n="mockPresentToday">Hadir hari ini</strong></div>
+                            <span class="mockup-live-dot"></span>
+                        </div>
+                        <div class="mockup-metrics">
+                            <div><span data-i18n="mockTotalStudents">Total siswa</span><strong>284</strong><small
+                                    data-i18n="mockRegistered">Terdaftar</small></div>
+                            <div><span data-i18n="mockCheckedIn">Sudah hadir</span><strong>261</strong><small
+                                    class="metric-positive">+92%</small>
+                            </div>
+                        </div>
+                        <div class="mockup-list-heading"><strong data-i18n="mockLatestAttendance">Presensi
+                                terbaru</strong><span data-i18n="mockViewAll">Lihat semua</span></div>
+                        <div class="mockup-student-row">
+                            <span class="mockup-avatar">NA</span>
+                            <span><strong>Nadia Azzahra</strong><small>XI IPA 2 · 07:12</small></span>
+                            <b data-i18n="attendance">Hadir</b>
+                        </div>
+                        <div class="mockup-student-row">
+                            <span class="mockup-avatar avatar-lilac">RF</span>
+                            <span><strong>Rafi Firmansyah</strong><small>XI IPA 1 · 07:14</small></span>
+                            <b data-i18n="attendance">Hadir</b>
+                        </div>
+                        <div class="mockup-chart" aria-hidden="true">
+                            <span style="--bar: 42%"></span><span style="--bar: 63%"></span>
+                            <span style="--bar: 51%"></span><span style="--bar: 78%"></span>
+                            <span style="--bar: 58%"></span><span style="--bar: 92%"></span>
+                            <span style="--bar: 72%"></span><span style="--bar: 100%"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="floating-card floating-face">
+                    <span class="floating-icon face-icon" aria-hidden="true">◎</span>
+                    <span><strong data-i18n="heroFaceMatch">Wajah Cocok</strong><small
+                            data-i18n="heroFaceVerified">99.8% terverifikasi</small></span>
+                    <span class="floating-check" aria-hidden="true">✓</span>
+                </div>
+                <div class="floating-card floating-location">
+                    <span class="floating-icon location-icon" aria-hidden="true">⌖</span>
+                    <span><strong data-i18n="heroLocationValid">Lokasi Valid</strong><small
+                            data-i18n="heroSchoolDistance">15 m dari sekolah</small></span>
+                </div>
+                <div class="floating-card floating-success">
+                    <span class="floating-icon success-icon" aria-hidden="true">✓</span>
+                    <span><strong data-i18n="heroAttendanceSuccess">Presensi berhasil</strong><small
+                            data-i18n="heroRecordedAutomatically">Tercatat otomatis</small></span>
+                </div>
+                <div class="floating-orb orb-one" aria-hidden="true"></div>
+                <div class="floating-orb orb-two" aria-hidden="true"></div>
+            </section>
+        </div>
+
+        <footer class="auth-footer">
+            <span data-i18n="heroFooter">© 2026 Amanah.id · Presensi digital sekolah</span>
+            <div class="language-row">
+                <button class="lang-btn active" type="button" data-lang="id">ID</button>
+                <button class="lang-btn" type="button" data-lang="en">EN</button>
+                <button class="lang-btn" type="button" data-lang="ar">العربية</button>
+            </div>
+        </footer>
+    </main>
+
+    <div id="auth-modal" class="modal-backdrop auth-modal-backdrop hidden" role="dialog" aria-modal="true"
+        aria-labelledby="auth-modal-title">
+        <section class="modal-card auth-modal-card">
+            <div class="auth-modal-heading">
+                <div>
+                    <span class="auth-modal-kicker">AMANAH.ID</span>
+                    <h2 id="auth-modal-title">Masuk ke Amanah.id</h2>
+                </div>
+                <button id="close-auth-modal" class="icon-button" type="button" aria-label="Tutup"
+                    data-i18n-aria="close">×</button>
+            </div>
+
+            <form id="login-form" class="form-stack">
+                <label for="login-email" data-i18n="email">Email</label>
+                <input id="login-email" type="email" autocomplete="username" data-i18n-placeholder="emailPlaceholder"
+                    placeholder="nama@sekolah.sch.id" required maxlength="254">
+                <label for="login-password" data-i18n="password">Kata sandi</label>
+                <input id="login-password" type="password" autocomplete="current-password"
+                    data-i18n-placeholder="passwordPlaceholder" placeholder="••••••••" required maxlength="128">
+                <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
+            </form>
+
+            <p class="auth-login-note">
+                Akun Guru dibuat oleh Admin. Akun Siswa didaftarkan oleh Guru melalui menu Formulir.
+            </p>
+            <p class="admin-login-link"><a id="open-admin-login" href="#admin-login-modal">Login sebagai Admin</a></p>
+        </section>
+    </div>
+
+    <div id="admin-login-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+        aria-labelledby="admin-login-title">
+        <section class="modal-card auth-modal-card admin-login-modal-card">
+            <div class="auth-modal-heading">
+                <div>
+                    <span class="auth-modal-kicker">AMANAH.ID · ADMIN</span>
+                    <h2 id="admin-login-title">Login sebagai Admin</h2>
+                </div>
+                <button id="admin-login-close" class="icon-button" type="button" aria-label="Tutup"
+                    data-i18n-aria="close">×</button>
+            </div>
+            <form id="admin-login-form" class="form-stack">
+                <label for="admin-login-email">Email Admin</label>
+                <input id="admin-login-email" type="email" autocomplete="username" placeholder="admin@amanah.sch.id" required>
+                <label for="admin-login-password">Kata sandi Admin</label>
+                <input id="admin-login-password" type="password" autocomplete="current-password" required>
+                <label for="admin-captcha">Verifikasi keamanan: 3 + 5 = ?</label>
+                <input id="admin-captcha" type="number" inputmode="numeric" min="0" max="9" step="1"
+                    autocomplete="off" placeholder="Masukkan hasil penjumlahan" required>
+                <button class="button primary full" type="submit">Masuk sebagai Admin</button>
+                <button id="admin-login-back" class="button subtle full" type="button">Kembali ke login pengguna</button>
+            </form>
+            <div class="admin-demo-credentials" aria-label="Kredensial akun demo Admin">
+                <p class="admin-demo-heading">Kredensial demo Admin</p>
+                <div class="admin-demo-credential">
+                    <span>Email</span>
+                    <code id="admin-demo-email">admin@amanah.sch.id</code>
+                    <button class="button subtle" type="button" data-copy-target="admin-demo-email" aria-label="Salin email demo">Salin email</button>
+                </div>
+                <div class="admin-demo-credential">
+                    <span>Password</span>
+                    <code id="admin-demo-password">SuperSecurePass123!</code>
+                    <button class="button subtle" type="button" data-copy-target="admin-demo-password" aria-label="Salin password demo">Salin password</button>
+                </div>
+                <p class="admin-credentials-note">Akun ini harus tersedia di database Supabase agar login demo berhasil.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Teacher dashboard -->
+    <main id="dashboard-guru" class="app-shell hidden">
+        <aside class="sidebar">
+            <a class="brand" id="brand-home" href="#">
+                <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
+                <span>Amanah<span class="brand-dot">.id</span></span>
+            </a>
+            <p class="sidebar-caption" data-i18n="workspace">WORKSPACE</p>
+            <nav class="main-nav" aria-label="Main navigation" data-i18n-aria="mainNavigation">
+                <button class="nav-link active" type="button" data-target="view-presensi"><span
+                        class="nav-symbol">◉</span><span data-i18n="dashboard">Dashboard</span></button>
+                <button class="nav-link" type="button" data-target="view-database"><span
+                        class="nav-symbol">▤</span><span data-i18n="database">Database</span></button>
+                <button class="nav-link" type="button" data-target="view-formulir"><span
+                        class="nav-symbol">＋</span><span data-i18n="formulir">Formulir</span></button>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="school-mini"><span class="school-dot"></span>
+                    <div><strong>Al Fityan School</strong><small data-i18n="geofenceEnabled">GPS geofencing
+                            aktif</small></div>
+                </div>
+                <button id="open-profile" class="profile-shortcut" type="button">
+                    <span id="header-avatar" class="avatar">A</span>
+                    <span class="profile-short-text"><strong id="header-user">Admin</strong><small
+                            data-i18n="viewProfile">Lihat profil</small><small id="network-status-teacher"
+                            class="network-status hidden" data-i18n="networkReconnecting" aria-live="polite">
+                            Menghubungkan ulang...</small></span>
+                    <span class="more-dots">···</span>
+                </button>
+            </div>
+        </aside>
+
+        <section class="main-area">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow" data-i18n="schoolWorkspace">AL FITYAN SCHOOL</p>
+                    <h1 id="page-title" data-i18n="dashboard">Dashboard</h1>
+                </div>
+                <div class="top-actions">
+                    <div class="language-row compact">
+                        <button class="lang-btn active" type="button" data-lang="id">ID</button>
+                        <button class="lang-btn" type="button" data-lang="en">EN</button>
+                        <button class="lang-btn" type="button" data-lang="ar">ع</button>
+                    </div>
+                    <button id="top-profile" class="icon-button" type="button" aria-label="Profile"
+                        data-i18n-aria="myProfile">☰</button>
+                </div>
+            </header>
+
+            <section id="view-presensi" class="view active">
+                <div class="camera-heading">
+                    <div>
+                        <span class="section-kicker" data-i18n="dailyAttendance">PRESENSI HARIAN</span>
+                        <h2 data-i18n="cameraTitle">Kamera presensi</h2>
+                        <p class="muted" data-i18n="cameraDesc">Periksa lokasi sekolah, lalu verifikasi wajah untuk
+                            mencatat kehadiran.</p>
+                    </div>
+                    <button id="btn-map" class="button subtle map-button" type="button"><span
+                            class="map-glyph">⌖</span><span data-i18n="viewMap">Lihat peta</span></button>
+                </div>
+
+                <div class="camera-card">
+                    <div class="camera-topline">
+                        <div class="live-label"><span class="live-dot"></span><span data-i18n="secureCamera">Kamera
+                                aman</span></div>
+                        <span id="model-status" class="model-badge" data-i18n="modelLoading">Memuat AI...</span>
+                    </div>
+
+                    <div id="camera-stage" class="camera-stage">
+                        <video id="video-presensi" autoplay muted playsinline></video>
+                        <canvas id="overlay-presensi"></canvas>
+                        <div id="camera-placeholder" class="camera-placeholder">
+                            <div class="camera-placeholder-icon"><span></span></div>
+                            <strong data-i18n="cameraOff">Kamera belum aktif</strong>
+                            <p data-i18n="cameraOffDesc">Aktifkan sakelar setelah lokasi terverifikasi.</p>
+                        </div>
+                        <div class="camera-corner corner-tl"></div>
+                        <div class="camera-corner corner-tr"></div>
+                        <div class="camera-corner corner-bl"></div>
+                        <div class="camera-corner corner-br"></div>
+                        <div class="stage-bottom">
+                            <span id="camera-status" data-i18n="cameraReady">Kamera siap</span>
+                            <button id="btn-fullscreen" class="fullscreen-button" type="button"
+                                data-i18n-title="fullscreen" title="Layar penuh" aria-label="Fullscreen"
+                                data-i18n-aria="fullscreen">⛶</button>
+                        </div>
+                    </div>
+
+                    <div class="location-strip">
+                        <div class="location-info">
+                            <span class="location-icon">⌖</span>
+                            <div><strong data-i18n="locationVerification">Verifikasi lokasi</strong><small
+                                    id="location-detail" data-i18n="locationNotChecked">Lokasi belum diperiksa</small>
+                            </div>
+                        </div>
+                        <span id="location-badge" class="location-badge pending" data-i18n="locationPending">Belum
+                            diperiksa</span>
+                    </div>
+
+                    <div id="model-error" class="inline-error hidden" role="status">
+                        <span id="model-error-text"></span>
+                        <button id="model-retry" class="button subtle" type="button" data-i18n="retryModel">
+                            Muat ulang halaman
+                        </button>
+                    </div>
+                    <div class="camera-controls">
+                        <div class="switch-copy">
+                            <strong data-i18n="attendanceSwitch">Sakelar presensi</strong>
+                            <small id="switch-hint" data-i18n="switchOffHint">Kamera mati. Lokasi akan diperiksa saat
+                                diaktifkan.</small>
+                        </div>
+                        <button id="btn-attendance-switch" class="camera-switch" type="button" role="switch"
+                            aria-checked="false" aria-label="Toggle attendance camera"
+                            data-i18n-aria="toggleAttendanceCamera" disabled>
+                            <span class="switch-knob"></span><span class="switch-text" data-i18n="off">MATI</span>
+                        </button>
+                    </div>
+                    <div class="ai-progress-wrap">
+                        <div class="progress-label"><span id="status-presensi" data-i18n="waitingFace">Menunggu
+                                kamera</span><span id="ai-percent">0%</span></div>
+                        <div class="progress-track">
+                            <div id="ai-progress" class="progress-fill"></div>
+                        </div>
+                    </div>
+                    <div class="camera-footnote"><span class="footnote-dot"></span><span id="liveness-status"
+                            data-i18n="livenessWaiting">Verifikasi wajah dan gerakan akan dimulai setelah lokasi
+                            lolos.</span></div>
+                </div>
+            </section>
+
+            <section id="view-database" class="view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="recordsCenter">PUSAT DATA</span>
+                        <h2 data-i18n="attendanceDatabase">Database presensi</h2>
+                        <p class="muted" data-i18n="databaseDesc">Cari, saring, dan ekspor riwayat kehadiran serta data
+                            siswa.</p>
+                    </div>
+                    <button id="btn-export" class="button primary" type="button" data-i18n="exportCsv">Ekspor
+                        CSV</button>
+                </div>
+                <div class="stat-grid">
+                    <article class="stat-card"><span data-i18n="registeredStudents">Siswa terdaftar</span><strong
+                            id="db-stat-students">0</strong><small data-i18n="registeredStudentsHint">Data wajah
+                            tersimpan di sesi ini</small></article>
+                    <article class="stat-card"><span data-i18n="todayAttendance">Presensi hari ini</span><strong
+                            id="db-stat-today">0</strong><small data-i18n="todayAttendanceHint">Catatan
+                            kehadiran</small></article>
+                    <article class="stat-card"><span data-i18n="totalRecords">Total catatan</span><strong
+                            id="stat-history">0</strong><small data-i18n="totalRecordsHint">Semua catatan dalam sesi
+                            ini</small></article>
+                </div>
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h3 data-i18n="attendanceHistory">Riwayat presensi</h3>
+                            <p class="muted" data-i18n="historyDesc">Data akan hilang saat halaman dimuat ulang.</p>
+                        </div><button id="btn-delete-all" class="button danger-outline" type="button"
+                            data-i18n="deleteAll">Hapus semua data</button>
+                    </div>
+                    <div class="filters">
+                        <input id="db-search" type="search" data-i18n-placeholder="searchPlaceholder"
+                            placeholder="Cari nama, NISN, atau kelas...">
+                        <label><span data-i18n="fromDate">Dari</span><input id="date-start" type="date"></label>
+                        <label><span data-i18n="toDate">Sampai</span><input id="date-end" type="date"></label>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-i18n="number">No.</th>
+                                    <th data-i18n="nisn">NISN</th>
+                                    <th data-i18n="name">Nama</th>
+                                    <th data-i18n="class">Kelas</th>
+                                    <th data-i18n="status">Status</th>
+                                    <th data-i18n="date">Tanggal</th>
+                                    <th data-i18n="time">Waktu</th>
+                                    <th data-i18n="method">Metode</th>
+                                    <th data-i18n="confidence">Keyakinan</th>
+                                    <th data-i18n="action">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="db-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="db-empty" class="empty-state"><span class="empty-icon">▤</span><strong
+                            data-i18n="noRecords">Belum ada catatan</strong>
+                        <p data-i18n="noRecordsDesc">Riwayat presensi akan muncul di sini setelah verifikasi berhasil.
+                        </p>
+                    </div>
+                    <div class="table-footer"><span id="db-count">0 catatan</span></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h3 data-i18n="studentRegistry">Data siswa</h3>
+                            <p class="muted" data-i18n="studentRegistryDesc">Daftar siswa dan descriptor wajah yang
+                                terdaftar.</p>
+                        </div><span id="student-count-badge" class="count-badge">0</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-i18n="number">No.</th>
+                                    <th data-i18n="nisn">NISN</th>
+                                    <th data-i18n="name">Nama</th>
+                                    <th data-i18n="class">Kelas</th>
+                                    <th data-i18n="parentWhatsApp">WhatsApp orang tua</th>
+                                    <th data-i18n="registeredAt">Waktu daftar</th>
+                                    <th data-i18n="action">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="students-empty" class="empty-state compact-empty"><strong data-i18n="noStudents">Belum ada
+                            siswa terdaftar</strong>
+                        <p data-i18n="registerFromForm">Tambahkan siswa melalui menu Formulir.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-formulir" class="view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="studentManagement">MANAJEMEN SISWA</span>
+                        <h2 data-i18n="studentRegistration">Formulir pendaftaran siswa</h2>
+                        <p class="muted" data-i18n="formDesc">Daftarkan identitas dan sampel wajah untuk pengenalan
+                            presensi.</p>
+                    </div>
+                </div>
+                <div class="registration-layout">
+                    <form id="student-form" class="panel registration-form">
+                        <div class="panel-heading">
+                            <div>
+                                <h3 data-i18n="studentIdentity">Identitas siswa</h3>
+                                <p class="muted" data-i18n="studentIdentityDesc">Isi data dengan benar sebelum
+                                    menyimpan.</p>
+                            </div>
+                        </div>
+                        <label for="input-nisn" data-i18n="nisn">NISN</label><input id="input-nisn" inputmode="numeric"
+                            required minlength="8" maxlength="20" pattern="[0-9]{8,20}"
+                            data-i18n-placeholder="nisnExample" placeholder="Contoh: 0091234567">
+                        <label for="input-nama" data-i18n="fullName">Nama lengkap</label><input id="input-nama" required
+                            maxlength="120">
+                        <label for="input-kelas" data-i18n="class">Kelas</label><input id="input-kelas" required
+                            maxlength="40" data-i18n-placeholder="classExample" placeholder="Contoh: XI IPA 1">
+                        <label for="input-parent-wa" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
+                        <input id="input-parent-wa" type="tel" inputmode="tel" autocomplete="tel"
+                            data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
+                            pattern="(?:08|628)[0-9]{8,13}">
+                        <label for="input-student-email" data-i18n="email">Email akun siswa</label>
+                        <input id="input-student-email" type="email" autocomplete="email" required maxlength="254"
+                            data-i18n-placeholder="emailPlaceholder" placeholder="nama@siswa.sch.id">
+                        <label for="input-student-password" data-i18n="password">Kata sandi awal siswa</label>
+                        <input id="input-student-password" type="password" autocomplete="new-password" required
+                            minlength="8" maxlength="128" data-i18n-placeholder="passwordPlaceholder"
+                            placeholder="Minimal 8 karakter">
+                        <p class="helper-text">Akun ini hanya dibuat oleh Guru. Siswa tidak dapat mendaftar sendiri.</p>
+                        <label data-i18n="faceSample">Sampel wajah</label>
+                        <div class="form-camera-stage">
+                            <video id="video-formulir" autoplay muted playsinline></video><canvas
+                                id="overlay-formulir"></canvas>
+                            <div id="form-camera-placeholder" class="form-camera-placeholder"><span
+                                    class="camera-placeholder-icon small"><span></span></span>
+                                <p data-i18n="faceSampleDesc">Gunakan kamera atau unggah foto dengan satu wajah yang
+                                    terlihat jelas.</p>
+                            </div>
+                        </div>
+                        <div class="form-camera-actions"><button id="btn-start-form-camera" class="button secondary"
+                                type="button" data-i18n="openCamera">Buka kamera</button><button
+                                id="btn-stop-form-camera" class="button subtle" type="button"
+                                data-i18n="closeCamera">Tutup kamera</button><button id="btn-capture-face"
+                                class="button subtle" type="button" disabled data-i18n="captureSample">Simpan sampel
+                                kamera</button></div>
+                        <label for="photo-upload" data-i18n="uploadPhoto">Unggah foto wajah</label><input
+                            id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+                        <p id="form-face-status" class="helper-text" data-i18n="noFaceSample">Belum ada sampel wajah.
+                        </p>
+                        <p id="face-sample-count" class="helper-text face-sample-count" aria-live="polite"
+                            data-i18n="faceSamplesCount">0 sampel wajah</p>
+                        <div class="face-sample-progress" role="progressbar" aria-label="Progres sampel wajah" data-i18n-aria="faceSampleProgress" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+                            <div id="face-sample-progress-bar" class="face-sample-progress-bar" data-count="0"></div>
+                        </div>
+                        <button class="button primary full" type="submit" data-i18n="saveStudent">Simpan siswa</button>
+                    </form>
+                    <aside class="form-aside">
+                        <div class="info-card"><span class="info-symbol">01</span>
+                            <h3 data-i18n="clearFace">Wajah harus jelas</h3>
+                            <p data-i18n="clearFaceDesc">Pastikan hanya satu wajah terlihat, pencahayaan cukup, dan
+                                wajah tidak tertutup.</p>
+                        </div>
+                        <div class="info-card"><span class="info-symbol">02</span>
+                            <h3 data-i18n="privacyFirst">Data bersifat sementara</h3>
+                            <p data-i18n="privacyDesc">Demo menyimpan descriptor wajah di memori browser saja. Data
+                                tidak bertahan setelah halaman dimuat ulang.</p>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- Administrator dashboard. Authentication state and API access are guarded by the admin role. -->
+    <main id="dashboard-admin" class="app-shell hidden">
+        <aside class="sidebar">
+            <a class="brand" id="admin-brand-home" href="#admin">
+                <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
+                <span>Amanah<span class="brand-dot">.id</span></span>
+            </a>
+            <p class="sidebar-caption" data-i18n="adminWorkspace">ADMINISTRATOR</p>
+            <nav class="main-nav" aria-label="Navigasi Admin" data-i18n-aria="adminNavigation">
+                <button class="nav-link active" type="button" data-admin-target="admin-view-dashboard">
+                    <span class="nav-symbol">▦</span><span data-i18n="adminOverview">Ringkasan</span>
+                </button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-users">
+                    <span class="nav-symbol">◎</span><span data-i18n="adminAccounts">Kelola akun</span>
+                </button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-settings">
+                    <span class="nav-symbol">⚙</span><span data-i18n="adminSchoolSettings">Pengaturan sekolah</span>
+                </button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-audit">
+                    <span class="nav-symbol">≡</span><span data-i18n="adminAudit">Audit aktivitas</span>
+                </button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-profile">
+                    <span class="nav-symbol">○</span><span data-i18n="adminSecurity">Keamanan akun</span>
+                </button>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="school-mini"><span class="school-dot"></span>
+                    <div><strong>Al Fityan School</strong><small data-i18n="adminWorkspace">Admin Workspace</small></div>
+                </div>
+                <button id="admin-logout" class="profile-shortcut" type="button">
+                    <span id="admin-header-avatar" class="avatar">A</span>
+                    <span class="profile-short-text"><strong id="admin-header-user">Admin</strong><small data-i18n="logout">Keluar dari akun</small></span>
+                    <span class="more-dots">↗</span>
+                </button>
+            </div>
+        </aside>
+        <section class="main-area">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">AL FITYAN SCHOOL · ADMIN</p>
+                    <h1 id="admin-page-title" data-i18n="adminOverviewTitle">Ringkasan sistem</h1>
+                </div>
+                <div class="top-actions">
+                    <div class="language-row compact">
+                        <button class="lang-btn active" type="button" data-lang="id">ID</button>
+                        <button class="lang-btn" type="button" data-lang="en">EN</button>
+                        <button class="lang-btn" type="button" data-lang="ar">ع</button>
+                    </div>
+                    <button id="admin-health-refresh" class="button subtle" type="button" data-i18n="refreshData">Segarkan data</button>
+                </div>
+            </header>
+
+            <section id="admin-view-dashboard" class="admin-view active">
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="adminOverviewKicker">RINGKASAN</span>
+                        <h2 data-i18n="adminAttendanceOverview">Ikhtisar presensi</h2>
+                        <p class="muted" data-i18n="adminOverviewDescription">Pantau akun, aktivitas presensi, dan kesehatan layanan dari satu tempat.</p>
+                    </div>
+                </div>
+                <div class="admin-stat-grid">
+                    <article class="panel stat-card"><span data-i18n="totalActiveStudents">Total siswa aktif</span><strong id="admin-total-students">0</strong><small data-i18n="supabaseData">Data pada Supabase</small></article>
+                    <article class="panel stat-card"><span data-i18n="totalActiveTeachers">Total guru aktif</span><strong id="admin-total-teachers">0</strong><small data-i18n="teacherAccounts">Akun pengajar</small></article>
+                    <article class="panel stat-card"><span data-i18n="attendanceToday">Presensi hari ini</span><strong id="admin-attendance-today">0</strong><small data-i18n="todayRecords">Catatan hari ini</small></article>
+                    <article class="panel stat-card"><span data-i18n="attendanceLast7Days">Presensi 7 hari</span><strong id="admin-attendance-week">0</strong><small data-i18n="rollingPeriod">Periode bergulir</small></article>
+                    <article class="panel stat-card"><span data-i18n="activeUsers">Pengguna aktif</span><strong id="admin-active-week">0</strong><small data-i18n="loginsLast7Days">Login 7 hari terakhir</small></article>
+                </div>
+                <div class="panel">
+                    <div class="panel-heading"><div><h3 data-i18n="serviceHealth">Kesehatan layanan</h3><p class="muted" data-i18n="serviceHealthDescription">Status konfigurasi layanan utama.</p></div></div>
+                    <div class="admin-health-list">
+                        <div><span>Supabase</span><strong id="health-supabase">unknown</strong></div>
+                        <div><span data-i18n="vercelApi">Vercel API</span><strong id="health-vercel">unknown</strong></div>
+                        <div><span data-i18n="whatsappNotifications">Notifikasi WhatsApp</span><strong id="health-fonnte">unknown</strong></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="admin-view-users" class="admin-view hidden">
+                <div class="page-intro"><div><span class="section-kicker" data-i18n="adminAccountsKicker">MANAJEMEN AKUN</span>
+                    <h2 data-i18n="schoolUsers">Pengguna sekolah</h2><p class="muted" data-i18n="schoolUsersDescription">Admin membuat akun Guru. Pendaftaran akun Siswa hanya tersedia di formulir Guru agar dapat dikaitkan dengan NISN dan sampel wajah.</p>
+                </div></div>
+                <div class="panel">
+                    <div class="panel-heading"><div><h3 data-i18n="createTeacherAccount">Buat akun Guru</h3><p class="muted" data-i18n="newTeacherDescription">Akun Guru baru akan tersimpan di tabel teachers.</p></div></div>
+                    <form id="admin-user-form" class="form-stack">
+                        <label for="admin-user-name" data-i18n="fullName">Nama lengkap</label>
+                        <input id="admin-user-name" type="text" autocomplete="name" maxlength="120" required>
+                        <label for="admin-user-email" data-i18n="email">Email akun</label>
+                        <input id="admin-user-email" type="email" autocomplete="email" maxlength="254" required>
+                        <label for="admin-user-password" data-i18n="initialPassword">Kata sandi awal</label>
+                        <input id="admin-user-password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                        <button class="button primary" type="submit" data-i18n="createTeacherAccount">Buat akun Guru</button>
+                    </form>
+                </div>
+                <div class="panel">
+                    <div class="panel-heading"><div><h3 data-i18n="accountsList">Daftar akun</h3><p class="muted" data-i18n="accountsListDescription">Kelola email, nama, kata sandi, atau status akun.</p></div></div>
+                    <div class="table-wrap"><table><thead><tr><th data-i18n="name">Nama</th><th data-i18n="email">Email</th><th data-i18n="adminRole">Peran</th><th data-i18n="status">Status</th><th data-i18n="action">Aksi</th></tr></thead><tbody id="admin-users-tbody"></tbody></table></div>
+                    <div id="admin-users-empty" class="empty-state hidden"><strong data-i18n="noAccounts">Belum ada akun.</strong><p data-i18n="accountsEmptyDescription">Data akan tampil setelah tersimpan di Supabase.</p></div>
+                </div>
+            </section>
+
+            <section id="admin-view-settings" class="admin-view hidden">
+                <div class="page-intro"><div><span class="section-kicker" data-i18n="configurationKicker">KONFIGURASI</span><h2 data-i18n="adminSchoolSettings">Pengaturan sekolah</h2><p class="muted" data-i18n="adminSettingsDescription">Perbarui titik geofence dan aturan waktu presensi.</p></div></div>
+                <div class="panel">
+                    <form id="admin-settings-form" class="form-stack">
+                        <label for="admin-setting-lat" data-i18n="schoolLatitude">Latitude sekolah</label><input id="admin-setting-lat" type="number" step="any" min="-90" max="90" required>
+                        <label for="admin-setting-lng" data-i18n="schoolLongitude">Longitude sekolah</label><input id="admin-setting-lng" type="number" step="any" min="-180" max="180" required>
+                        <label for="admin-setting-radius" data-i18n="geofenceRadius">Radius geofence (meter)</label><input id="admin-setting-radius" type="number" min="10" max="500" required>
+                        <label for="admin-setting-timezone" data-i18n="timezone">Zona waktu</label><input id="admin-setting-timezone" type="text" maxlength="64" required>
+                        <label for="admin-setting-entry-time" data-i18n="schoolEntryTime">Jam masuk sekolah</label><input id="admin-setting-entry-time" type="time" required>
+                        <label for="admin-setting-tolerance" data-i18n="lateTolerance">Toleransi keterlambatan (menit)</label><input id="admin-setting-tolerance" type="number" min="0" max="180" step="1" required>
+                        <button class="button primary" type="submit" data-i18n="saveSettings">Simpan pengaturan</button>
+                    </form>
+                </div>
+            </section>
+
+            <section id="admin-view-audit" class="admin-view hidden">
+                <div class="page-intro"><div><span class="section-kicker" data-i18n="adminSecurity">KEAMANAN</span><h2 data-i18n="adminAudit">Audit aktivitas</h2><p class="muted" data-i18n="adminAuditDescription">Riwayat operasi yang tercatat oleh API.</p></div></div>
+                <div class="panel">
+                    <div class="filters">
+                        <label for="admin-audit-actor"><span data-i18n="auditActorEmail">Email pelaku</span><input id="admin-audit-actor" type="search" placeholder="Cari email" data-i18n-placeholder="searchEmail"></label>
+                        <label for="admin-audit-action"><span data-i18n="action">Aksi</span><input id="admin-audit-action" type="search" placeholder="Mis. admin.login" data-i18n-placeholder="actionPlaceholder"></label>
+                        <label for="admin-audit-from"><span data-i18n="fromDate">Dari tanggal</span><input id="admin-audit-from" type="date"></label>
+                        <label for="admin-audit-to"><span data-i18n="toDate">Sampai tanggal</span><input id="admin-audit-to" type="date"></label>
+                        <button id="admin-audit-filter" class="button primary" type="button" data-i18n="applyFilter">Terapkan filter</button>
+                    </div>
+                    <div class="table-wrap"><table><thead><tr><th data-i18n="dateTime">Waktu</th><th data-i18n="email">Email</th><th data-i18n="adminRole">Peran</th><th data-i18n="action">Aksi</th><th data-i18n="targetTable">Tabel</th></tr></thead><tbody id="admin-audit-tbody"></tbody></table></div>
+                </div>
+            </section>
+
+            <section id="admin-view-profile" class="admin-view hidden">
+                <div class="page-intro"><div><span class="section-kicker" data-i18n="adminSecurity">KEAMANAN AKUN</span><h2 data-i18n="changeAdminPassword">Ubah kata sandi Admin</h2><p class="muted" data-i18n="adminPasswordDescription">Gunakan kata sandi unik dan kuat untuk akun dengan hak akses tinggi.</p></div></div>
+                <div class="panel">
+                    <form id="admin-profile-form" class="form-stack">
+                        <label for="admin-current-password" data-i18n="currentPassword">Kata sandi saat ini</label><input id="admin-current-password" type="password" autocomplete="current-password" required maxlength="128">
+                        <label for="admin-new-password" data-i18n="newPassword">Kata sandi baru</label><input id="admin-new-password" type="password" autocomplete="new-password" required minlength="12" maxlength="128">
+                        <button class="button primary" type="submit" data-i18n="savePassword">Simpan kata sandi</button>
+                    </form>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- Student dashboard; no teacher data controls are rendered in this section. -->
+    <main id="dashboard-siswa" class="app-shell hidden">
+        <aside class="sidebar">
+            <a class="brand" id="student-brand-home" href="#">
+                <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true"><span>Amanah<span
+                        class="brand-dot">.id</span></span>
+            </a>
+            <p class="sidebar-caption" data-i18n="studentWorkspace">MENU SISWA</p>
+            <nav class="main-nav" aria-label="Student navigation" data-i18n-aria="studentNavigation">
+                <button class="nav-link active" type="button" data-target="view-s-presensi">
+                    <span class="nav-symbol">◉</span><span data-i18n="studentAttendance">Presensi Saya</span>
+                </button>
+                <button class="nav-link" type="button" data-target="view-s-history">
+                    <span class="nav-symbol">▤</span><span data-i18n="studentHistory">Riwayat Saya</span>
+                </button>
+                <button class="nav-link" type="button" data-target="view-s-profile">
+                    <span class="nav-symbol">○</span><span data-i18n="myProfile">Profil</span>
+                </button>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="school-mini"><span class="school-dot"></span>
+                    <div><strong>Al Fityan School</strong><small data-i18n="geofenceEnabled">GPS geofencing
+                            aktif</small></div>
+                </div>
+                <button id="student-open-profile" class="profile-shortcut" type="button">
+                    <span id="student-header-avatar" class="avatar">S</span>
+                    <span class="profile-short-text"><strong id="student-header-user">Siswa</strong>
+                        <small data-i18n="viewProfile">Lihat profil</small><small id="network-status-student"
+                            class="network-status hidden" data-i18n="networkReconnecting" aria-live="polite">
+                            Menghubungkan ulang...</small></span><span class="more-dots">···</span>
+                </button>
+            </div>
+        </aside>
+        <section class="main-area">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow" data-i18n="schoolWorkspace">AL FITYAN SCHOOL</p>
+                    <h1 id="student-page-title" data-i18n="studentAttendance">Presensi Saya</h1>
+                </div>
+                <div class="top-actions">
+                    <div class="language-row compact">
+                        <button class="lang-btn" type="button" data-lang="id">ID</button>
+                        <button class="lang-btn" type="button" data-lang="en">EN</button>
+                        <button class="lang-btn" type="button" data-lang="ar">ع</button>
+                    </div>
+                    <button id="student-top-profile" class="icon-button" type="button" data-i18n-title="myProfile"
+                        title="Profil" aria-label="Profile" data-i18n-title="myProfile"
+                        data-i18n-aria="myProfile">☰</button>
+                </div>
+            </header>
+            <section id="view-s-presensi" class="view active">
+                <div class="student-attendance-card">
+                    <span class="section-kicker" data-i18n="studentAttendance">Presensi Saya</span>
+                    <h2 data-i18n="studentCheckinTitle">Catat kehadiran Anda</h2>
+                    <p class="muted" data-i18n="studentCheckinDesc">Pastikan Anda berada di area sekolah. Lokasi akan
+                        diperiksa sebelum kamera dinyalakan.</p>
+                    <div class="location-strip">
+                        <div class="location-info"><span class="location-icon">⌖</span>
+                            <div><strong data-i18n="locationVerification">Verifikasi lokasi</strong>
+                                <small id="student-location-detail" data-i18n="locationNotChecked">Lokasi belum
+                                    diperiksa</small>
+                            </div>
+                        </div>
+                        <span id="student-location-badge" class="location-badge pending"
+                            data-i18n="locationPending">Belum diperiksa</span>
+                    </div>
+                    <div id="student-camera-stage" class="camera-stage student-camera-stage">
+                        <video id="video-student-attendance" autoplay muted playsinline></video>
+                        <canvas id="overlay-student-attendance"></canvas>
+                        <div id="student-camera-placeholder" class="camera-placeholder">
+                            <div class="camera-placeholder-icon"><span></span></div>
+                            <strong data-i18n="studentCameraOff">Kamera belum aktif</strong>
+                            <p data-i18n="studentCameraOffDesc">Tekan Absen Sekarang untuk memeriksa lokasi dan memulai
+                                verifikasi.</p>
+                        </div>
+                    </div>
+                    <p id="student-attendance-status" class="camera-footnote" data-i18n="studentCheckinDesc">Pastikan
+                        Anda berada di area sekolah.</p>
+                    <button id="btn-student-attendance" class="button primary student-checkin-button" type="button"
+                        data-i18n="checkInNow" disabled>Absen Sekarang</button>
+                </div>
+            </section>
+            <section id="view-s-history" class="view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="studentHistory">Riwayat Saya</span>
+                        <h2 data-i18n="studentHistoryTitle">Riwayat presensi saya</h2>
+                        <p class="muted" data-i18n="studentHistoryDesc">Hanya catatan presensi akun Anda yang
+                            ditampilkan.</p>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="filters student-filters">
+                        <label><span data-i18n="fromDate">Dari</span><input id="student-date-start" type="date"></label>
+                        <label><span data-i18n="toDate">Sampai</span><input id="student-date-end" type="date"></label>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-i18n="number">No.</th>
+                                    <th data-i18n="date">Tanggal</th>
+                                    <th data-i18n="time">Waktu</th>
+                                    <th data-i18n="status">Status</th>
+                                    <th data-i18n="method">Metode</th>
+                                    <th data-i18n="confidence">Keyakinan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-history-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="student-history-empty" class="empty-state"><strong data-i18n="noRecords">Belum ada
+                            catatan</strong>
+                        <p data-i18n="studentHistoryEmpty">Riwayat presensi Anda akan tampil di sini.</p>
+                    </div>
+                </div>
+            </section>
+            <section id="view-s-profile" class="view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="accountSettings">PENGATURAN AKUN</span>
+                        <h2 data-i18n="myProfile">Profil saya</h2>
+                    </div>
+                </div>
+                <div class="panel student-profile-panel">
+                    <div class="profile-identity"><span id="student-profile-avatar" class="avatar large">S</span>
+                        <div><strong id="student-profile-name">Siswa</strong><small id="student-profile-email"></small>
+                        </div>
+                    </div>
+                    <p><strong data-i18n="nisn">NISN</strong>: <span id="student-profile-nisn">—</span></p>
+                    <p><strong data-i18n="class">Kelas</strong>: <span id="student-profile-class">—</span></p>
+                    <label for="student-theme-select" data-i18n="appearance">Tampilan</label>
+                    <select id="student-theme-select">
+                        <option value="light" data-i18n="lightTheme">Terang</option>
+                        <option value="dark" data-i18n="darkTheme">Gelap</option>
+                    </select>
+                    <label for="student-profile-language" data-i18n="language">Bahasa</label>
+                    <select id="student-profile-language">
+                        <option value="id">Indonesia</option>
+                        <option value="en">English</option>
+                        <option value="ar">العربية</option>
+                    </select>
+                    <button id="btn-student-save-profile" class="button primary full" type="button"
+                        data-i18n="saveSettings">Simpan pengaturan</button>
+                    <button id="btn-student-logout" class="button danger-outline full" type="button"
+                        data-i18n="logout">Keluar</button>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <div id="profile-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+        aria-labelledby="profile-modal-title">
+        <section class="modal-card profile-modal-card">
+            <div class="modal-heading">
+                <div><span class="section-kicker" data-i18n="accountSettings">PENGATURAN AKUN</span>
+                    <h2 id="profile-modal-title" data-i18n="myProfile">Profil saya</h2>
+                </div><button id="close-profile" class="icon-button" type="button" aria-label="Close"
+                    data-i18n-aria="close">×</button>
+            </div>
+            <div class="profile-identity"><span id="profile-modal-avatar" class="avatar large">A</span>
+                <div><strong id="profile-name">Admin</strong><small id="profile-email">admin@amanahid.sch.id</small>
+                </div>
+            </div>
+            <label for="theme-select" data-i18n="appearance">Tampilan</label>
+            <select id="theme-select">
+                <option value="light" data-i18n="lightTheme">Terang</option>
+                <option value="dark" data-i18n="darkTheme">Gelap</option>
+            </select>
+            <label for="profile-language" data-i18n="language">Bahasa</label>
+            <select id="profile-language">
+                <option value="id">Indonesia</option>
+                <option value="en">English</option>
+                <option value="ar">العربية</option>
+            </select>
+            <button id="btn-save-profile" class="button primary full" type="button" data-i18n="saveSettings">Simpan
+                pengaturan</button>
+            <button id="btn-logout" class="button danger-outline full" type="button" data-i18n="logout">Keluar</button>
+        </section>
+    </div>
+
+    <div id="map-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="map-title">
+        <section class="modal-card map-modal-card">
+            <div class="modal-heading">
+                <div><span class="section-kicker" data-i18n="locationSecurity">KEAMANAN LOKASI</span>
+                    <h2 id="map-title" data-i18n="schoolMap">Peta area sekolah</h2>
+                    <p id="map-subtitle" class="muted" data-i18n="mapDesc">Titik sekolah dan posisi perangkat Anda.</p>
+                </div><button id="close-map" class="icon-button" type="button" aria-label="Close"
+                    data-i18n-aria="close">×</button>
+            </div>
+            <p id="map-status" class="helper-text hidden" aria-live="polite"></p>
+            <div id="school-map" aria-label="Interactive school map" data-i18n-aria="interactiveSchoolMap"></div>
+            <div class="map-legend"><span><i class="legend-school"></i><span data-i18n="schoolPoint">Titik
+                        sekolah</span></span><span><i class="legend-user"></i><span data-i18n="yourLocation">Lokasi
+                        Anda</span></span><span><i class="legend-radius"></i><span id="allowed-radius"
+                        data-i18n="allowedRadius">Radius diizinkan: 35 m</span></span></div>
+            <p id="map-location-detail" class="helper-text" data-i18n="mapLocationPending">Periksa lokasi untuk
+                menampilkan posisi perangkat.</p>
+            <div id="school-location-editor" class="school-location-editor hidden">
+                <button id="btn-edit-school-location" class="button secondary" type="button"
+                    data-i18n="setSchoolLocation">Atur titik sekolah</button>
+                <div id="school-radius-control" class="school-radius-control hidden">
+                    <label for="school-radius-slider" data-i18n="schoolRadius">Radius sekolah: 35 m</label>
+                    <input id="school-radius-slider" type="range" min="10" max="500" step="5" value="35">
+                    <p id="school-location-edit-status" class="helper-text" aria-live="polite"
+                        data-i18n="locationEditHint">Pilih titik sekolah pada peta, lalu atur radius.</p>
+                    <div class="map-location-actions">
+                        <button id="btn-save-school-location" class="button primary" type="button"
+                            data-i18n="saveLocation">Simpan lokasi</button>
+                        <button id="btn-cancel-school-location" class="button subtle" type="button"
+                            data-i18n="cancel">Batal</button>
+                    </div>
+                </div>
+            </div>
+            <div class="map-location-actions">
+                <button id="btn-check-map-location" class="button primary" type="button"
+                    data-i18n="checkLocation">Periksa lokasi</button>
+                <button id="btn-refresh-map-location" class="button secondary" type="button"
+                    data-i18n="refreshLocation">Perbarui lokasi</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="confirm-dialog" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+        aria-labelledby="confirm-title">
+        <section class="modal-card confirm-card"><span class="confirm-mark">!</span>
+            <h2 id="confirm-title" data-i18n="confirmDeleteTitle">Hapus semua data?</h2>
+            <p data-i18n="confirmDeleteDesc">Semua catatan presensi dan siswa terdaftar dalam sesi ini akan dihapus.</p>
+            <div class="confirm-actions"><button id="cancel-delete" class="button subtle" type="button"
+                    data-i18n="cancel">Batal</button><button id="confirm-delete" class="button danger" type="button"
+                    data-i18n="deleteAll">Hapus semua data</button></div>
+        </section>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js" defer></script>
+</body>
+
+</html>

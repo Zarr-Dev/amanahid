@@ -1,0 +1,35 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/admin/*.js": {
+      "maxDuration": 15
+    },
+    "api/auth/*.js": {
+      "maxDuration": 15
+    },
+    "api/attendance.js": {
+      "maxDuration": 30
+    },
+    "api/face-match.js": {
+      "maxDuration": 30
+    },
+    "api/health.js": {
+      "maxDuration": 10
+    },
+    "api/index.js": {
+      "maxDuration": 10
+    },
+    "api/send-wa.js": {
+      "maxDuration": 15
+    },
+    "api/settings.js": {
+      "maxDuration": 15
+    },
+    "api/students.js": {
+      "maxDuration": 30
+    },
+    "api/teachers.js": {
+      "maxDuration": 15
+    }
+  }
+}
