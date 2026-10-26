@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/auth/login.js",
-    "api/index.js", "supabase-demo-admin.sql"
+    "api/index.js"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
