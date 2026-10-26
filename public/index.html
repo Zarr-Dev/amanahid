@@ -621,6 +621,11 @@
                         </div>
                     </div>
                     <form id="admin-user-form" class="form-stack">
+                        <label for="admin-user-role" data-i18n="accountRole">Peran akun</label>
+                        <select id="admin-user-role" required>
+                            <option value="guru" data-i18n="teacherRole">Guru</option>
+                            <option value="siswa" data-i18n="studentRole">Siswa</option>
+                        </select>
                         <label for="admin-user-name" data-i18n="fullName">Nama lengkap</label>
                         <input id="admin-user-name" type="text" autocomplete="name" maxlength="120" required>
                         <label for="admin-user-email" data-i18n="email">Email akun</label>
@@ -628,8 +633,16 @@
                         <label for="admin-user-password" data-i18n="initialPassword">Kata sandi awal</label>
                         <input id="admin-user-password" type="password" autocomplete="new-password" minlength="8"
                             maxlength="128" required>
-                        <button class="button primary" type="submit" data-i18n="createTeacherAccount">Buat akun
-                            Guru</button>
+                        <div id="admin-student-fields" class="form-stack admin-student-fields hidden" aria-hidden="true">
+                            <label for="admin-user-nisn" data-i18n="studentNisn">NISN siswa</label>
+                            <input id="admin-user-nisn" type="text" inputmode="numeric" pattern="[0-9]{8,20}"
+                                maxlength="20" autocomplete="off">
+                            <label for="admin-user-class" data-i18n="studentClass">Kelas siswa</label>
+                            <input id="admin-user-class" type="text" maxlength="40">
+                            <p class="helper-text" data-i18n="studentAccountNote">Siswa dapat login setelah dibuat;
+                                presensi wajah aktif setelah Guru mendaftarkan sampel.</p>
+                        </div>
+                        <button class="button primary" type="submit" data-i18n="createTeacherAccount">Buat akun</button>
                     </form>
                 </div>
                 <div class="panel">
