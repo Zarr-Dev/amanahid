@@ -5,7 +5,7 @@ import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.
 import { validateSchema } from "../_lib/validate.js";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
-const DEFAULTS = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 35 };
+const DEFAULTS = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 50 };
 
 async function updateAdminPassword(req, res, admin) {
     const body = req.body || {};
