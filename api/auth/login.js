@@ -1,6 +1,6 @@
 import { signToken, verifyPassword } from "../_lib/admin-auth.js";
 import { writeAuditLog } from "../_lib/audit.js";
-import { getMissingAuthConfiguration, isAllowedOrigin, jsonError, rateLimit, supabaseRequest } from "../_lib/supabase.js";
+import { getMissingAuthConfiguration, getSession, isAllowedOrigin, jsonError, rateLimit, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -12,6 +12,17 @@ export default async function handler(req, res) {
             return jsonError(res, 405, "Method not allowed");
         }
         if (!isAllowedOrigin(req)) return jsonError(res, 403, "Origin aplikasi tidak cocok dengan APP_ORIGIN.");
+        const session = getSession(req);
+        if (session?.email && session?.role) {
+            try {
+                await writeAuditLog(session, session.role === "admin" ? "admin.logout" : "auth.logout",
+                    session.role === "admin" ? "admin_users" : session.role === "guru" ? "teachers" : "students",
+                    session.email);
+            } catch (error) {
+                console.error("Logout audit log failed:", error);
+                return jsonError(res, 503, "Sesi belum dapat ditutup dengan aman. Coba lagi.");
+            }
+        }
         return res.status(200).json({ ok: true });
     }
     if (req.method !== "POST") {
