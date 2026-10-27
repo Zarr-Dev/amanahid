@@ -1032,6 +1032,23 @@
         </section>
     </div>
 
+
+    <div id="app-dialog" class="modal-backdrop hidden app-dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title" aria-describedby="app-dialog-description">
+        <section class="modal-card app-dialog-card">
+            <div class="app-dialog-icon" aria-hidden="true"><span id="app-dialog-icon">✦</span></div>
+            <h2 id="app-dialog-title">Konfirmasi</h2>
+            <p id="app-dialog-description" class="muted"></p>
+            <form id="app-dialog-form" class="form-stack">
+                <div id="app-dialog-fields" class="app-dialog-fields"></div>
+                <p id="app-dialog-error" class="app-dialog-error hidden" role="alert"></p>
+                <div class="app-dialog-actions">
+                    <button id="app-dialog-cancel" class="button subtle" type="button">Batal</button>
+                    <button id="app-dialog-submit" class="button primary" type="submit">Simpan</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
