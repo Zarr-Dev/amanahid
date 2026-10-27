@@ -104,3 +104,14 @@ The schema also enables deny-all RLS policies on the Admin and audit tables.
 - Run `supabase-schema.sql` in the intended Supabase project before testing accounts. The official Admin is never auto-created. For an isolated demo/staging database only, run `supabase-demo-accounts.sql` to create one Guru demo and one Siswa demo; it never creates an Admin. Demo credentials are public and must never be seeded into a real school production database. The demo Siswa intentionally has no face descriptor, so it tests login/dashboard routing only and cannot record attendance.
 - Public account self-signup is disabled. Admin provisions Guru accounts. A logged-in Guru creates Siswa accounts using the student form, which requires NISN, an initial password, and face descriptors. This keeps the stored row aligned with the `students` schema and avoids accounts with empty face data.
 - Use a supported Node.js release for deployment; this project declares Node.js `24.x`. Run `npm ci`, `npm run build`, and `npm test` in the project root before deploying.
+
+
+### Supabase schema-cache recovery
+
+If an API route returns PostgREST error `PGRST205` even though the table exists in the correct Supabase project, verify that `SUPABASE_URL` and `SUPABASE_SECRET_KEY` belong to the same project. Then refresh the PostgREST schema cache from the SQL editor:
+
+```sql
+NOTIFY pgrst, 'reload schema';
+```
+
+This refresh does not delete or modify table data. Confirm that the expected tables are present in the project's `public` schema and that the service-role secret is stored only as a Vercel Secret environment variable.

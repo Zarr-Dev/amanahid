@@ -166,7 +166,7 @@ test("admin login issues a signed token and records a login", async t => {
         method: "POST",
         headers: { origin: "https://school.example" },
         socket: { remoteAddress: "test-admin-login" },
-        body: { email: "admin@example.com", password: digest, captcha: 8 }
+        body: { email: "admin@example.com", password: digest }
     };
     const res = responseMock();
     await adminLoginHandler(req, res);
@@ -227,6 +227,9 @@ test("admin APIs handle empty and null Supabase results", async t => {
     await adminDashboardStatsHandler(statsRequest, statsResponse);
     assert.equal(statsResponse.statusCode, 200);
     assert.equal(statsResponse.body.total_students, 0);
+    assert.equal(typeof statsResponse.body.generated_at, "string");
+    assert.equal(statsResponse.body.trend.length, 7);
+    assert.ok(statsResponse.body.trend.every(point => /^\d{4}-\d{2}-\d{2}$/.test(point.date) && point.count === 0));
 
     const profileRequest = request("PUT", "profile");
     profileRequest.query.action = "profile";
@@ -242,8 +245,7 @@ test("admin APIs handle empty and null Supabase results", async t => {
     loginRequest.headers = { origin: "https://school.example" };
     loginRequest.body = {
         email: "admin@example.com",
-        password: "a".repeat(64),
-        captcha: 8
+        password: "a".repeat(64)
     };
     const loginResponse = responseMock();
     await adminLoginHandler(loginRequest, loginResponse);

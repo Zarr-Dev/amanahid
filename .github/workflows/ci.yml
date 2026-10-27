@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, fix/authentication-roles-demo-accounts]
+    branches: [main, fix/authentication-roles-demo-accounts, fix/resolve-admin-backend-deployment]
 
 jobs:
   validate:
