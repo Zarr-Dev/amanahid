@@ -118,7 +118,7 @@ export default async function handler(req, res) {
             const schema = {
                 id: { type: "string", required: true, max: 36, pattern: UUID },
                 table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
-                parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
+                parent_whatsapp: { type: "string", max: 15, pattern: /^(?:|08\d{8,13}|628\d{8,13})$/ },
                 email: { type: "string", max: 254, pattern: EMAIL },
                 name: { type: "string", max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
                 password: { type: "string", max: 128 }
