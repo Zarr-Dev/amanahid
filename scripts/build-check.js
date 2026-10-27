@@ -85,13 +85,17 @@ const css = readFileSync(join(root, "public/style.css"), "utf8");
 const js = readFileSync(join(root, "public/script.js"), "utf8");
 const htmlChecks = [
     ["admin login modal", /id="admin-login-modal"/],
-    ["splash accessible name and live region", /id="splash-screen"[^>]*aria-label="Amanah\.id"[^>]*aria-live="polite"/],
-    ["muted splash video with fallback poster", /<video class="splash-mark"[\s\S]*?muted playsinline preload="auto"[\s\S]*?poster="assets\/amanah-favicon\.png"/],
+    ["splash accessible name and live region", /id="splash-screen"[^>]*aria-label="Amanah ID"[^>]*aria-live="polite"/],
+    ["static splash logo", /<img class="splash-mark" src="assets\/amanah-logo\.png"/],
     ["standalone stylesheet and script", /href="style\.css"[\s\S]*?src="script\.js"/],
     ["administrator dashboard", /id="dashboard-admin"[\s\S]*?id="admin-view-dashboard"[\s\S]*?id="admin-view-users"[\s\S]*?id="admin-view-settings"[\s\S]*?id="admin-view-audit"[\s\S]*?id="admin-view-profile"/],
     ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
     ["Admin parent WhatsApp field", /id="admin-user-parent-whatsapp"/],
-    ["visible student face sample progress", /id="face-sample-progress-bar"/],\n    ["rotating Admin CAPTCHA", /id="admin-captcha-answer"/],\n    ["editable school GPS map", /id="admin-school-map"/],\n    ["Admin account export", /id="admin-export-users"/],\n    ["Admin audit export", /id="admin-export-audit"/]
+    ["visible student face sample progress", /id="face-sample-progress-bar"/],
+    ["rotating Admin CAPTCHA", /id="admin-captcha-answer"/],
+    ["editable school GPS map", /id="admin-school-map"/],
+    ["Admin account export", /id="admin-export-users"/],
+    ["Admin audit export", /id="admin-export-audit"/]
 ];
 if (html.includes('id="admin-demo-password"') || html.includes("SuperSecurePass123!")) {
     console.error("Build check failed: public Admin demo credentials must never be shipped.");
@@ -128,8 +132,8 @@ if (!adminUserApi.includes('pattern: /^(guru|siswa)$/') ||
 
 const cssChecks = [
     ["responsive splash dimensions", /\.splash-mark\s*\{[^}]*width:\s*clamp\(160px,\s*25vw,\s*280px\)/s],
-    ["square splash video", /\.splash-mark\s*\{[^}]*aspect-ratio:\s*1\s*\/\s*1/s],
-    ["splash video blend mode", /\.splash-mark\s*\{[^}]*mix-blend-mode:\s*multiply/s],
+    ["square splash logo", /\.splash-mark\s*\{[^}]*aspect-ratio:\s*1\s*\/\s*1/s],
+    ["bright splash background", /\.splash-screen\s*\{[^}]*background:[^;]*#fff/s],
     ["splash text animation", /@keyframes\s+splash-text-in\s*\{[\s\S]*?translateY\(-10px\)[\s\S]*?translateY\(0\)/],
     ["reduced motion preference", /@media\s*\(prefers-reduced-motion:\s*reduce\)/],
     ["mobile safe-area bottom nav", /height:\s*66px;[\s\S]{0,180}padding-bottom:\s*max\(5px,\s*env\(safe-area-inset-bottom\)\)/],
@@ -156,6 +160,20 @@ if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||
     !/parent_whatsapp:\s*body\.parent_whatsapp\s*\?\s*body\.parent_whatsapp\.replace\(\/\^08\/,\s*"628"\)/.test(adminUserApi) ||
     !allApiSource.includes("sendWhatsApp(target, message)")) {
     console.error("Build check failed: admin token injection, null-safe statistics, or parent WhatsApp delivery wiring is missing.");
+    process.exit(1);
+}
+
+const publicBrandSource = html + "\n" + js;
+if (/Amanah\.id/i.test(publicBrandSource)) {
+    console.error("Build check failed: public UI must use the official brand name Amanah ID.");
+    process.exit(1);
+}
+if (!js.includes("refreshAdminCaptcha()") || !js.includes("syncAdminSettingsMap")) {
+    console.error("Build check failed: rotating Admin CAPTCHA or editable school GPS map is missing.");
+    process.exit(1);
+}
+if (!css.includes("left: 50%;") || !css.includes("transform: translate(-50%, 0);")) {
+    console.error("Build check failed: toast notifications must be centered at the bottom of the viewport.");
     process.exit(1);
 }
 
