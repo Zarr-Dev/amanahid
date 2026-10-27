@@ -2925,6 +2925,13 @@ function setupEvents() {
         if (role === "siswa") {
             body.nisn = $("admin-user-nisn").value.trim();
             body.class_name = $("admin-user-class").value.trim();
+            const parentWhatsApp = $("admin-user-parent-whatsapp").value.trim();
+            if (parentWhatsApp && !/^(08|628)\d{8,13}$/.test(parentWhatsApp)) {
+                toast(tr("invalidWhatsApp"), "error");
+                $("admin-user-parent-whatsapp").focus();
+                return;
+            }
+            if (parentWhatsApp) body.parent_whatsapp = parentWhatsApp.replace(/^08/, "628");
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
             toast("Masukkan email akun yang valid.", "error");
