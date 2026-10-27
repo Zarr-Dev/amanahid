@@ -18,7 +18,7 @@ function validBody(res, schema, body) {
 
 async function allUsers() {
     const [studentRows, teacherRows] = await Promise.all([
-        supabaseRequest("students?select=id,nisn,email,name,class_name,is_active,created_at&order=name.asc"),
+        supabaseRequest("students?select=id,nisn,email,name,class_name,parent_whatsapp,is_active,created_at&order=name.asc"),
         supabaseRequest("teachers?select=id,email,name,is_active,created_at&order=name.asc")
     ]);
     const students = Array.isArray(studentRows)
@@ -46,6 +46,7 @@ export default async function handler(req, res) {
                 name: { type: "string", required: true, max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
                 password: { type: "string", required: true, max: 128 },
                 nisn: { type: "string", max: 20, pattern: /^\d{8,20}$/ },
+                parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
                 class_name: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ }
             };
             if (!validBody(res, schema, body)) return;
@@ -96,7 +97,7 @@ export default async function handler(req, res) {
                     nisn: body.nisn,
                     name,
                     class_name: body.class_name.trim(),
-                    parent_whatsapp: null,
+                    parent_whatsapp: body.parent_whatsapp ? body.parent_whatsapp.replace(/^08/, "628") : null,
                     face_descriptors: [],
                     email,
                     password_hash,
@@ -117,12 +118,13 @@ export default async function handler(req, res) {
             const schema = {
                 id: { type: "string", required: true, max: 36, pattern: UUID },
                 table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
+                parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
                 email: { type: "string", max: 254, pattern: EMAIL },
                 name: { type: "string", max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
                 password: { type: "string", max: 128 }
             };
             if (!validBody(res, schema, body)) return;
-            if (!body.email && !body.name && !body.password) {
+            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) {
                 return jsonError(res, 400, "At least one field must be changed");
             }
             if (body.email) {
@@ -139,8 +141,12 @@ export default async function handler(req, res) {
             if (body.email) values.email = body.email.trim().toLowerCase();
             if (body.name) values.name = body.name.trim();
             if (body.password) values.password_hash = await hashPassword(body.password);
+            if (body.parent_whatsapp !== undefined) {
+                if (body.table !== "students") return jsonError(res, 400, "WhatsApp wali hanya berlaku untuk akun siswa");
+                values.parent_whatsapp = body.parent_whatsapp ? body.parent_whatsapp.replace(/^08/, "628") : null;
+            }
             const rows = await supabaseRequest(
-                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email,name`,
+                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email,name,parent_whatsapp`,
                 { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(values) }
             ) ?? [];
             const updated = Array.isArray(rows) ? (rows[0] ?? null) : null;
