@@ -1040,7 +1040,7 @@ async function initializeAdminSettingsMap() {
     window.setTimeout(() => state.adminSettingsMap?.invalidateSize(), 60);
 }
 
-function loadAdminAudit() {
+async function loadAdminAudit() {
     try {
         const filters = new URLSearchParams();
         if ($("admin-audit-actor").value) filters.set("actor", $("admin-audit-actor").value);
