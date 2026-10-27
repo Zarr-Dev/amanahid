@@ -831,10 +831,29 @@ async function loadAdminDashboard() {
         $("health-supabase").textContent = stats?.health?.supabase ?? "unknown";
         $("health-vercel").textContent = stats?.health?.vercel ?? "unknown";
         $("health-fonnte").textContent = stats?.health?.fonnte ?? "unknown";
+        renderAdminAttendanceTrend(Array.isArray(stats?.trend) ? stats.trend : []);
+        const updated = stats?.generated_at ? new Date(stats.generated_at) : new Date();
+        $("admin-stats-updated").textContent = `Diperbarui ${updated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     } catch (error) {
         console.error("Admin dashboard could not load:", error);
         toastAdminError(error);
     }
+}
+
+function renderAdminAttendanceTrend(points) {
+    const container = $("admin-attendance-trend");
+    if (!container) return;
+    const max = Math.max(1, ...points.map(point => Number(point.count) || 0));
+    const weekday = new Intl.DateTimeFormat("id-ID", { weekday: "short", timeZone: "Asia/Jakarta" });
+    container.innerHTML = points.length ? points.map(point => {
+        const count = Math.max(0, Number(point.count) || 0);
+        const date = new Date(`${point.date}T12:00:00+07:00`);
+        const label = weekday.format(date);
+        const height = Math.max(3, Math.round(count / max * 100));
+        return `<div class="trend-day" title="${escapeHtml(point.date)}: ${count} presensi">
+            <strong>${count}</strong><div class="trend-bar-track"><div class="trend-bar" style="height:${height}%"></div></div><small>${escapeHtml(label)}</small>
+        </div>`;
+    }).join("") : '<p class="muted">Belum ada data tren presensi.</p>';
 }
 
 async function loadAdminUsers() {
@@ -864,13 +883,48 @@ async function loadAdminSettings() {
         $("admin-setting-timezone").value = settings?.timezone ?? "";
         $("admin-setting-entry-time").value = settings?.entry_time ?? "";
         $("admin-setting-tolerance").value = settings?.late_tolerance_min ?? "";
+        initializeAdminSettingsMap();
     } catch (error) {
         console.error("Admin settings could not load:", error);
         toastAdminError(error);
     }
 }
 
-async function loadAdminAudit() {
+async function initializeAdminSettingsMap() {
+    const element = $("admin-settings-map");
+    if (!element || typeof L === "undefined") return;
+    const lat = Number($("admin-setting-lat").value);
+    const lng = Number($("admin-setting-lng").value);
+    const radius = Number($("admin-setting-radius").value);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    if (!state.adminSettingsMap) {
+        state.adminSettingsMap = L.map(element, { zoomControl: true }).setView([lat, lng], 17);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(state.adminSettingsMap);
+        state.adminSettingsMarker = L.marker([lat, lng], { draggable: true }).addTo(state.adminSettingsMap);
+        state.adminSettingsCircle = L.circle([lat, lng], { radius, color: "#3978f6", fillColor: "#3978f6", fillOpacity: 0.12, weight: 2 }).addTo(state.adminSettingsMap);
+        const updateFields = point => {
+            $("admin-setting-lat").value = point.lat.toFixed(12);
+            $("admin-setting-lng").value = point.lng.toFixed(12);
+            $("admin-map-coordinates").textContent = `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
+            state.adminSettingsMarker.setLatLng(point);
+            state.adminSettingsCircle.setLatLng(point);
+        };
+        state.adminSettingsMap.on("click", event => updateFields(event.latlng));
+        state.adminSettingsMarker.on("dragend", event => updateFields(event.target.getLatLng()));
+    } else {
+        state.adminSettingsMap.setView([lat, lng], Math.max(state.adminSettingsMap.getZoom(), 15));
+        state.adminSettingsMarker.setLatLng([lat, lng]);
+        state.adminSettingsCircle.setLatLng([lat, lng]);
+        state.adminSettingsCircle.setRadius(Number.isFinite(radius) ? radius : 50);
+    }
+    $("admin-map-coordinates").textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    window.setTimeout(() => state.adminSettingsMap?.invalidateSize(), 60);
+}
+
+function loadAdminAudit() {
     try {
         const filters = new URLSearchParams();
         if ($("admin-audit-actor").value) filters.set("actor", $("admin-audit-actor").value);
@@ -1232,7 +1286,14 @@ async function loadCloudData(user = state.user) {
 // Teacher database and student-owned history
 function updateStats() {
     const today = localDateKey();
-    const todayCount = state.attendance.filter(a => a.date === today).length;
+    const todaysAttendance = state.attendance.filter(a => a.date === today);
+    const todayCount = todaysAttendance.length;
+    const presentNisn = new Set(todaysAttendance.map(item => item.nisn).filter(Boolean));
+    const activeStudents = state.students.length;
+    const presentStudents = Math.min(activeStudents, presentNisn.size || todayCount);
+    if ($("teacher-active-students")) $("teacher-active-students").textContent = activeStudents;
+    if ($("teacher-present-today")) $("teacher-present-today").textContent = presentStudents;
+    if ($("teacher-absent-today")) $("teacher-absent-today").textContent = Math.max(0, activeStudents - presentStudents);
     $("stat-history").textContent = state.attendance.length;
     $("db-stat-students").textContent = state.students.length;
     $("db-stat-today").textContent = todayCount;
@@ -3007,6 +3068,8 @@ function setupEvents() {
         };
         try {
             await cloudRequest("/api/admin/settings", { method: "PUT", body });
+            SCHOOL_LOCATION = { ...SCHOOL_LOCATION, lat: body.lat, lng: body.lng, radius: body.radius };
+            initializeAdminSettingsMap();
             toast("Pengaturan sekolah berhasil disimpan.", "success");
         } catch (error) {
             toastAdminError(error);
@@ -3014,6 +3077,11 @@ function setupEvents() {
     });
     $("admin-audit-filter").addEventListener("click", () => void loadAdminAudit());
     $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
+    $("teacher-overview-refresh")?.addEventListener("click", () => void loadCloudData(state.user));
+    document.querySelectorAll("[data-admin-target]").forEach(button => {
+        if (button.closest("#dashboard-admin .admin-view")) return;
+        button.addEventListener("click", () => showAdminView(button.dataset.adminTarget));
+    });
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
         const password = $("admin-new-password").value;
