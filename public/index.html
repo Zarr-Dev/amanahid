@@ -254,6 +254,17 @@
             </header>
 
             <section id="view-presensi" class="view active">
+                <div class="teacher-attendance-overview">
+                    <div class="page-intro">
+                        <div><span class="section-kicker">IKHTISAR PRESENSI</span><h2>Ringkasan kehadiran siswa</h2><p class="muted">Status diperbarui saat data presensi disegarkan.</p></div>
+                        <button id="teacher-overview-refresh" class="button subtle" type="button">Segarkan ringkasan</button>
+                    </div>
+                    <div class="teacher-stat-grid">
+                        <article class="panel stat-card"><span>Siswa aktif</span><strong id="teacher-active-students">0</strong><small>Akun siswa aktif di database</small></article>
+                        <article class="panel stat-card"><span>Sudah presensi</span><strong id="teacher-present-today">0</strong><small>Presensi tercatat hari ini</small></article>
+                        <article class="panel stat-card"><span>Belum presensi</span><strong id="teacher-absent-today">0</strong><small>Belum ada catatan hari ini</small></article>
+                    </div>
+                </div>
                 <div class="camera-heading">
                     <div>
                         <span class="section-kicker" data-i18n="dailyAttendance">PRESENSI HARIAN</span>
@@ -587,6 +598,23 @@
                             id="admin-active-week">0</strong><small data-i18n="loginsLast7Days">Login 7 hari
                             terakhir</small></article>
                 </div>
+                <div class="panel admin-analytics-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h3>Tren presensi 7 hari</h3>
+                            <p class="muted">Dihitung dari catatan presensi tersimpan di Supabase.</p>
+                        </div>
+                        <span id="admin-stats-updated" class="helper-text" aria-live="polite">Belum diperbarui</span>
+                    </div>
+                    <div id="admin-attendance-trend" class="attendance-trend" role="img" aria-label="Grafik presensi tujuh hari terakhir">
+                        <p class="muted">Memuat tren presensi…</p>
+                    </div>
+                    <div class="admin-quick-tools" aria-label="Akses cepat Admin">
+                        <button class="button secondary" type="button" data-admin-target="admin-view-users">Kelola akun Guru &amp; Siswa</button>
+                        <button class="button secondary" type="button" data-admin-target="admin-view-settings">Atur lokasi &amp; jam sekolah</button>
+                        <button class="button secondary" type="button" data-admin-target="admin-view-audit">Buka audit aktivitas</button>
+                    </div>
+                </div>
                 <div class="panel">
                     <div class="panel-heading">
                         <div>
@@ -680,6 +708,7 @@
                             presensi.</p>
                     </div>
                 </div>
+                <div class="admin-settings-layout">
                 <div class="panel">
                     <form id="admin-settings-form" class="form-stack">
                         <label for="admin-setting-lat" data-i18n="schoolLatitude">Latitude sekolah</label><input
@@ -697,6 +726,15 @@
                             required>
                         <button class="button primary" type="submit" data-i18n="saveSettings">Simpan pengaturan</button>
                     </form>
+                </div>
+                <div class="panel admin-map-panel">
+                    <div class="panel-heading">
+                        <div><h3>Lokasi geofence</h3><p class="muted">Klik peta untuk memilih titik sekolah. Perubahan disimpan setelah menekan tombol simpan pengaturan.</p></div>
+                    </div>
+                    <div id="admin-settings-map" role="application" aria-label="Peta pengaturan geofence sekolah"></div>
+                    <div class="admin-map-readout"><span>Koordinat terpilih</span><strong id="admin-map-coordinates">-6.253591, 106.602995</strong></div>
+                    <p class="helper-text">Lingkaran menunjukkan radius presensi yang diizinkan. Pastikan titik sesuai lokasi sekolah sebelum menyimpan.</p>
+                </div>
                 </div>
             </section>
 
