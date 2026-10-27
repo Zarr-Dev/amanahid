@@ -483,7 +483,7 @@ function exportTableCsv(tbodyId, filename) {
     const rows = Array.from(table.querySelectorAll("tr")).map(row =>
         Array.from(row.querySelectorAll("th, td")).map((cell, index, cells) => {
             if (tbodyId === "admin-users-tbody" && index === cells.length - 1) return "";
-            let value = cell.innerText.trim().replace(/\\s+/g, " ");
+            let value = cell.innerText.trim().replace(/\s+/g, " ");
             if (/^[=+@-]/.test(value)) value = "'" + value;
             return '"' + value.replace(/"/g, '""') + '"';
         })
@@ -492,7 +492,7 @@ function exportTableCsv(tbodyId, filename) {
         toast("Belum ada data untuk diekspor.", "info");
         return;
     }
-    const csv = "\\uFEFF" + rows.map(row => row.join(",")).join("\\r\\n");
+    const csv = "\uFEFF" + rows.map(row => row.join(",")).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -509,8 +509,9 @@ function exportTableCsv(tbodyId, filename) {
 function syncAdminSettingsMap({ center = false } = {}) {
     const mapElement = $("admin-school-map");
     if (!mapElement || !window.L) return;
-    const lat = Number($("admin-setting-lat") && $("admin-setting-lat").value);
-    const lng = Number($("admin-setting-lng") && $("admin-setting-lng").value);
+    if (!$("admin-setting-lat")?.value.trim() || !$("admin-setting-lng")?.value.trim()) return;
+    const lat = Number($("admin-setting-lat").value);
+    const lng = Number($("admin-setting-lng").value);
     const radius = Number($("admin-setting-radius") && $("admin-setting-radius").value);
     if (!Number.isFinite(lat) || lat < -90 || lat > 90 ||
         !Number.isFinite(lng) || lng < -180 || lng > 180) return;
