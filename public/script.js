@@ -846,7 +846,7 @@ async function loadAdminUsers() {
             <td>${safeText(user.name ?? user.email ?? "—")}</td><td>${safeText(user.email ?? "")}</td>
             <td>${safeText(user.parent_whatsapp ?? "—")}</td>
             <td>${safeText(user.role === "guru" ? tr("roleTeacher") : user.role === "siswa" ? tr("roleStudent") : tr("adminRole"))}</td><td>${safeText(user.is_active ? tr("activeStatus") : tr("inactiveStatus"))}</td>
-            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}">${safeText(tr("editAccount"))}</button>
+            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}">${safeText(tr("editAccount"))}</button>
             <button class="button subtle" type="button" data-admin-disable="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" ${user.is_active ? "" : "disabled"}>${safeText(tr("deactivateAccount"))}</button></td>
         </tr>`).join("");
         $("admin-users-empty").classList.toggle("hidden", users.length > 0);
@@ -2985,7 +2985,18 @@ function setupEvents() {
             if (email) body.email = email.trim();
             if (name) body.name = name.trim();
             if (password) body.password = password;
-            if (!body.email && !body.name && !body.password) return;
+            if (table === "students") {
+                const parentWhatsApp = window.prompt(tr("parentWhatsApp"), button.dataset.parentWhatsapp || "");
+                if (parentWhatsApp !== null) {
+                    const normalized = parentWhatsApp.trim();
+                    if (normalized && !/^(08|628)\d{8,13}$/.test(normalized)) {
+                        toast(tr("invalidWhatsApp"), "error");
+                        return;
+                    }
+                    body.parent_whatsapp = normalized.replace(/^08/, "628");
+                }
+            }
+            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) return;
             try {
                 await cloudRequest("/api/admin/users", { method: "PUT", body });
             } catch (error) {
