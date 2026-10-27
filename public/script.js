@@ -1522,12 +1522,26 @@ function loadModels() {
     state.modelLoadingPromise = (async () => {
         try {
             if (!window.faceapi) throw new Error("face-api.js unavailable");
-            const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(base),
-                faceapi.nets.faceLandmark68Net.loadFromUri(base),
-                faceapi.nets.faceRecognitionNet.loadFromUri(base)
-            ]);
+            const modelBases = [
+                "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights",
+                "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights"
+            ];
+            let modelLoadError;
+            for (const base of modelBases) {
+                try {
+                    await Promise.all([
+                        faceapi.nets.tinyFaceDetector.loadFromUri(base),
+                        faceapi.nets.faceLandmark68Net.loadFromUri(base),
+                        faceapi.nets.faceRecognitionNet.loadFromUri(base)
+                    ]);
+                    modelLoadError = null;
+                    break;
+                } catch (error) {
+                    modelLoadError = error;
+                    console.warn("Face model CDN failed; trying fallback:", error);
+                }
+            }
+            if (modelLoadError) throw modelLoadError;
             state.modelReady = true;
             if ($("model-status")) {
                 $("model-status").className = "model-badge ready";
@@ -3063,23 +3077,44 @@ function setupEvents() {
     $("theme-select").addEventListener("change", () => setTheme($("theme-select").value));
     $("profile-language").addEventListener("change", () => setLanguage($("profile-language").value));
 
-    $("btn-logout").addEventListener("click", () => {
+    const recordLogout = async () => {
+        const role = state.user?.role;
+        if (!role) return;
+        const path = role === "admin" ? "/api/admin/login?action=logout" : "/api/auth/login?action=logout";
+        try {
+            await cloudRequest(path, { method: "POST", timeoutMs: 5000 });
+        } catch (error) {
+            // Local logout must still work if the audit endpoint is temporarily unavailable.
+            console.warn("Logout event could not be confirmed by the server:", error);
+        }
+    };
+    $("btn-logout").addEventListener("click", async () => {
+        await recordLogout();
         stopAllCameras();
         closeProfile();
         state.user = null;
+        sessionStorage.removeItem("amanahid.adminToken");
+        sessionStorage.removeItem("amanahid.sessionToken");
         showAuth();
         toast(tr("loggedOut"), "info");
     });
-    const logoutStudent = () => {
+    const logoutStudent = async () => {
+        await recordLogout();
         stopAllCameras();
         state.user = null;
+        sessionStorage.removeItem("amanahid.sessionToken");
         showAuth();
         toast(tr("loggedOut"), "info");
     };
     $("student-open-profile").addEventListener("click", openProfile);
     $("student-top-profile").addEventListener("click", openProfile);
     $("btn-student-logout").addEventListener("click", logoutStudent);
-    $("admin-logout").addEventListener("click", () => {
+    $("admin-logout").addEventListener("click", async () => {
+        await recordLogout();
+        stopAllCameras();
+        state.user = null;
+        sessionStorage.removeItem("amanahid.adminToken");
+        sessionStorage.removeItem("amanahid.sessionToken");
         showAuth();
         toast(tr("loggedOut"), "info");
     });
