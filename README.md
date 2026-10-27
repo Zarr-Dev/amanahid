@@ -66,7 +66,7 @@ routing only, not real attendance.
    - `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: the project URL and server-side service
      role key. Never expose the secret key in browser code.
    - `SESSION_SECRET`: a random value with at least 32 characters.
-   - `FONNTE_TOKEN`: optional; required only for WhatsApp notifications.
+   - `FONNTE_TOKEN`: optional; required for automatic WhatsApp attendance notifications. Store the Fonnte API token as a Vercel Secret and never expose it in frontend code. Enter each student’s parent WhatsApp number in the teacher registration form or Admin → Users. Indonesian numbers may start with `08` or `628`; the server normalizes them to `628` and sends a notification after attendance is saved. Delivery requires a valid Fonnte token and a connected WhatsApp device.
 3. Create the first Admin manually in Supabase Dashboard → **SQL Editor**. Replace
    the example email, password, and name with your own values before running this
    SQL. The frontend sends the password as a SHA-256 hex digest; this SQL hashes
