@@ -822,7 +822,7 @@ async function loadAdminDashboard() {
         return;
     }
     try {
-        const stats = await cloudRequest("/api/admin/dashboard-stats");
+        const stats = await cloudRequest("/api/admin/audit?action=stats");
         $("admin-total-students").textContent = stats?.total_students ?? 0;
         $("admin-total-teachers").textContent = stats?.total_teachers ?? 0;
         $("admin-attendance-today").textContent = stats?.attendance_today ?? 0;
