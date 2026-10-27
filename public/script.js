@@ -449,10 +449,91 @@ function tr(key, vars = {}) {
 
 function toast(message, type = "info") {
     const el = $("toast");
-    el.textContent = message;
-    el.className = `toast show ${type}`;
+    if (!el) return;
+    el.textContent = String(message ?? "");
+    el.className = `toast show ${["success", "error", "warning"].includes(type) ? type : "info"}`;
+    el.setAttribute("role", type === "error" ? "alert" : "status");
     clearTimeout(state.toastTimer);
-    state.toastTimer = setTimeout(() => el.classList.remove("show"), 4200);
+    state.toastTimer = setTimeout(() => el.classList.remove("show"), type === "error" ? 5600 : 4200);
+}
+
+let appDialogResolve = null;
+let appDialogPreviousFocus = null;
+function closeAppDialog(result = null) {
+    const modal = $("app-dialog");
+    if (!modal || modal.classList.contains("hidden")) return;
+    modal.classList.add("hidden");
+    document.body.classList.remove("app-dialog-open");
+    const resolve = appDialogResolve;
+    appDialogResolve = null;
+    if (typeof resolve === "function") resolve(result);
+    appDialogPreviousFocus?.focus?.();
+}
+function openAppDialog({ title, description = "", fields = [], confirmLabel = "Simpan", cancelLabel = "Batal", danger = false, icon = "✦" }) {
+    const modal = $("app-dialog");
+    const form = $("app-dialog-form");
+    if (!modal || !form) return Promise.resolve(null);
+    if (appDialogResolve) closeAppDialog(null);
+    appDialogPreviousFocus = document.activeElement;
+    $("app-dialog-title").textContent = title;
+    $("app-dialog-description").textContent = description;
+    $("app-dialog-icon").textContent = icon;
+    $("app-dialog-submit").textContent = confirmLabel;
+    $("app-dialog-cancel").textContent = cancelLabel;
+    $("app-dialog-submit").classList.toggle("danger", danger);
+    $("app-dialog-error").classList.add("hidden");
+    const container = $("app-dialog-fields");
+    container.replaceChildren();
+    const controls = {};
+    for (const field of fields) {
+        const label = document.createElement("label");
+        label.className = "app-dialog-field";
+        label.append(document.createTextNode(field.label));
+        const input = document.createElement("input");
+        input.name = field.name;
+        input.type = field.type || "text";
+        input.autocomplete = field.autocomplete || "off";
+        input.placeholder = field.placeholder || "";
+        input.value = field.value || "";
+        input.required = Boolean(field.required);
+        if (field.pattern) input.pattern = field.pattern;
+        if (field.minLength) input.minLength = field.minLength;
+        if (field.maxLength) input.maxLength = field.maxLength;
+        label.append(input);
+        container.append(label);
+        controls[field.name] = input;
+    }
+    modal.classList.remove("hidden");
+    document.body.classList.add("app-dialog-open");
+    requestAnimationFrame(() => (Object.values(controls)[0] || $("app-dialog-cancel")).focus());
+    return new Promise(resolve => { appDialogResolve = resolve; modal._appDialogControls = controls; });
+}
+function setupAppDialog() {
+    const modal = $("app-dialog"), form = $("app-dialog-form");
+    if (!modal || !form || modal.dataset.ready) return;
+    modal.dataset.ready = "true";
+    $("app-dialog-cancel").addEventListener("click", () => closeAppDialog(null));
+    modal.addEventListener("click", event => { if (event.target === modal) closeAppDialog(null); });
+    document.addEventListener("keydown", event => {
+        if (modal.classList.contains("hidden")) return;
+        if (event.key === "Escape") { event.preventDefault(); closeAppDialog(null); }
+        if (event.key === "Tab") {
+            const focusable = [...modal.querySelectorAll("input, button")].filter(el => !el.disabled);
+            if (!focusable.length) return;
+            const first = focusable[0], last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+    });
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        const values = {};
+        for (const [name, input] of Object.entries(modal._appDialogControls || {})) {
+            if (!input.reportValidity()) return;
+            values[name] = input.value;
+        }
+        closeAppDialog(values);
+    });
 }
 
 function setLanguage(lang) {
@@ -2970,39 +3051,51 @@ function setupEvents() {
         const id = button.dataset.adminEdit || button.dataset.adminDisable;
         const table = button.dataset.table;
         if (button.hasAttribute("data-admin-disable")) {
-            if (!window.confirm(tr("confirmDeactivateAccount"))) return;
+            const confirmed = await openAppDialog({
+                title: "Nonaktifkan akun?",
+                description: "Akun tidak dapat digunakan sampai diaktifkan kembali. Tindakan ini tercatat dalam audit aktivitas.",
+                confirmLabel: "Nonaktifkan", cancelLabel: "Batal", danger: true, icon: "!"
+            });
+            if (confirmed === null) return;
             try {
                 await cloudRequest("/api/admin/users", { method: "DELETE", body: { id, table } });
-            } catch (error) {
-                toastAdminError(error);
-                return;
-            }
+                toast("Akun berhasil dinonaktifkan.", "success");
+            } catch (error) { toastAdminError(error); return; }
         } else {
-            const email = window.prompt(tr("promptNewEmail"));
-            const name = window.prompt(tr("promptNewName"));
-            const password = window.prompt(tr("promptNewPassword"));
+            const fields = [
+                { name: "email", label: "Email baru", type: "email", placeholder: "email@sekolah.id", autocomplete: "email" },
+                { name: "name", label: "Nama lengkap baru", type: "text", placeholder: "Nama pengguna", autocomplete: "name" },
+                { name: "password", label: "Kata sandi baru", type: "password", placeholder: "Kosongkan jika tidak diubah", autocomplete: "new-password", minLength: 8 }
+            ];
+            if (table === "students") fields.push({
+                name: "parent_whatsapp", label: "WhatsApp orang tua", type: "tel",
+                placeholder: "08xxxxxxxxxx atau 628xxxxxxxxxx",
+                value: button.dataset.parentWhatsapp || "", pattern: "(08|628)[0-9]{8,13}"
+            });
+            const result = await openAppDialog({
+                title: "Ubah akun",
+                description: "Isi hanya data yang ingin diubah. Kolom kosong tidak akan mengubah data saat ini.",
+                fields, confirmLabel: "Simpan perubahan", cancelLabel: "Batal", icon: "✎"
+            });
+            if (result === null) return;
             const body = { id, table };
-            if (email) body.email = email.trim();
-            if (name) body.name = name.trim();
-            if (password) body.password = password;
-            if (table === "students") {
-                const parentWhatsApp = window.prompt(tr("parentWhatsApp"), button.dataset.parentWhatsapp || "");
-                if (parentWhatsApp !== null) {
-                    const normalized = parentWhatsApp.trim();
-                    if (normalized && !/^(08|628)\d{8,13}$/.test(normalized)) {
-                        toast(tr("invalidWhatsApp"), "error");
-                        return;
-                    }
-                    body.parent_whatsapp = normalized.replace(/^08/, "628");
+            if (result.email.trim()) body.email = result.email.trim();
+            if (result.name.trim()) body.name = result.name.trim();
+            if (result.password) body.password = result.password;
+            if (result.parent_whatsapp !== undefined) {
+                const normalized = result.parent_whatsapp.trim();
+                if (normalized && !/^(08|628)\d{8,13}$/.test(normalized)) {
+                    toast(tr("invalidWhatsApp"), "error"); return;
                 }
+                body.parent_whatsapp = normalized.replace(/^08/, "628");
             }
-            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) return;
+            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) {
+                toast("Tidak ada perubahan yang dimasukkan.", "info"); return;
+            }
             try {
                 await cloudRequest("/api/admin/users", { method: "PUT", body });
-            } catch (error) {
-                toastAdminError(error);
-                return;
-            }
+                toast("Data akun berhasil diperbarui.", "success");
+            } catch (error) { toastAdminError(error); return; }
         }
         await loadAdminUsers();
         await loadAdminDashboard();
@@ -3255,6 +3348,7 @@ function setupEvents() {
 }
 
 function initialize() {
+    setupAppDialog();
     initSplashScreen();
     setTheme("light");
     setLanguage("id");
