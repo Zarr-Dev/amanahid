@@ -144,3 +144,6 @@ alter table public.audit_log enable row level security;
 drop policy if exists "deny all direct access" on public.audit_log;
 create policy "deny all direct access" on public.audit_log
     for all using (false) with check (false);
+
+-- Refresh PostgREST metadata after the schema is installed or updated.
+NOTIFY pgrst, 'reload schema';
