@@ -1522,12 +1522,26 @@ function loadModels() {
     state.modelLoadingPromise = (async () => {
         try {
             if (!window.faceapi) throw new Error("face-api.js unavailable");
-            const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(base),
-                faceapi.nets.faceLandmark68Net.loadFromUri(base),
-                faceapi.nets.faceRecognitionNet.loadFromUri(base)
-            ]);
+            const modelBases = [
+                "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights",
+                "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights"
+            ];
+            let modelLoadError;
+            for (const base of modelBases) {
+                try {
+                    await Promise.all([
+                        faceapi.nets.tinyFaceDetector.loadFromUri(base),
+                        faceapi.nets.faceLandmark68Net.loadFromUri(base),
+                        faceapi.nets.faceRecognitionNet.loadFromUri(base)
+                    ]);
+                    modelLoadError = null;
+                    break;
+                } catch (error) {
+                    modelLoadError = error;
+                    console.warn("Face model CDN failed; trying fallback:", error);
+                }
+            }
+            if (modelLoadError) throw modelLoadError;
             state.modelReady = true;
             if ($("model-status")) {
                 $("model-status").className = "model-badge ready";
