@@ -178,17 +178,3 @@ if (!css.includes("left: 50%;") || !css.includes("transform: translate(-50%, 0);
 }
 
 console.log(`Build check passed: ${jsFiles.length} JavaScript files, ${routeFiles.length} ESM API routes, frontend requirements, assets, and Vercel configuration validated.`);
-
-const publicBrandSource = html + "\\n" + js;
-if (/Amanah\\.id/i.test(publicBrandSource)) {
-    console.error("Build check failed: public UI must use the official brand name Amanah ID.");
-    process.exit(1);
-}
-if (!js.includes("refreshAdminCaptcha()") || !js.includes("syncAdminSettingsMap")) {
-    console.error("Build check failed: rotating Admin CAPTCHA or editable school GPS map is missing.");
-    process.exit(1);
-}
-if (!css.includes("left: 50%;") || !css.includes("transform: translate(-50%, 0);")) {
-    console.error("Build check failed: toast notifications must be centered at the bottom of the viewport.");
-    process.exit(1);
-}
