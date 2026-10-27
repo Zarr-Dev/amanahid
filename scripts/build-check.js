@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const requiredFiles = [
     "package.json", "package-lock.json", "vercel.json", "public/index.html", "public/style.css", "public/script.js",
-    "public/assets/amanah-logo-animation.mp4", "public/assets/amanah-favicon.png",
+    "public/assets/amanah-favicon.png",
     "api/_lib/admin-auth.js", "api/_lib/admin-api.js", "api/_lib/audit.js",
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
@@ -91,7 +91,7 @@ const htmlChecks = [
     ["administrator dashboard", /id="dashboard-admin"[\s\S]*?id="admin-view-dashboard"[\s\S]*?id="admin-view-users"[\s\S]*?id="admin-view-settings"[\s\S]*?id="admin-view-audit"[\s\S]*?id="admin-view-profile"/],
     ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
     ["Admin parent WhatsApp field", /id="admin-user-parent-whatsapp"/],
-    ["visible student face sample progress", /id="face-sample-progress-bar"/]
+    ["visible student face sample progress", /id="face-sample-progress-bar"/],\n    ["rotating Admin CAPTCHA", /id="admin-captcha-answer"/],\n    ["editable school GPS map", /id="admin-school-map"/],\n    ["Admin account export", /id="admin-export-users"/],\n    ["Admin audit export", /id="admin-export-audit"/]
 ];
 if (html.includes('id="admin-demo-password"') || html.includes("SuperSecurePass123!")) {
     console.error("Build check failed: public Admin demo credentials must never be shipped.");
@@ -160,3 +160,17 @@ if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||
 }
 
 console.log(`Build check passed: ${jsFiles.length} JavaScript files, ${routeFiles.length} ESM API routes, frontend requirements, assets, and Vercel configuration validated.`);
+
+const publicBrandSource = html + "\\n" + js;
+if (/Amanah\\.id/i.test(publicBrandSource)) {
+    console.error("Build check failed: public UI must use the official brand name Amanah ID.");
+    process.exit(1);
+}
+if (!js.includes("refreshAdminCaptcha()") || !js.includes("syncAdminSettingsMap")) {
+    console.error("Build check failed: rotating Admin CAPTCHA or editable school GPS map is missing.");
+    process.exit(1);
+}
+if (!css.includes("left: 50%;") || !css.includes("transform: translate(-50%, 0);")) {
+    console.error("Build check failed: toast notifications must be centered at the bottom of the viewport.");
+    process.exit(1);
+}
