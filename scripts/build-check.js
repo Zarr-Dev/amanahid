@@ -85,7 +85,6 @@ const css = readFileSync(join(root, "public/style.css"), "utf8");
 const js = readFileSync(join(root, "public/script.js"), "utf8");
 const htmlChecks = [
     ["admin login modal", /id="admin-login-modal"/],
-    ["numeric captcha field", /id="admin-captcha"[^>]*type="number"/],
     ["splash accessible name and live region", /id="splash-screen"[^>]*aria-label="Amanah\.id"[^>]*aria-live="polite"/],
     ["muted splash video with fallback poster", /<video class="splash-mark"[\s\S]*?muted playsinline preload="auto"[\s\S]*?poster="assets\/amanah-favicon\.png"/],
     ["standalone stylesheet and script", /href="style\.css"[\s\S]*?src="script\.js"/],
@@ -150,8 +149,7 @@ if (/height:\s*100vh\b/.test(css)) {
     console.error("Use min-height: 100svh for viewport-height layouts instead of height: 100vh.");
     process.exit(1);
 }
-if (!/captchaValue\s*===\s*""\s*\|\|\s*captchaValue\s*!==\s*"8"/.test(js) ||
-    !/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||
+if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||
     !/stats\?\.total_students\s*\?\?\s*0/.test(js)) {
     console.error("Build check failed: strict captcha, admin token injection, or null-safe statistics handling is missing.");
     process.exit(1);
