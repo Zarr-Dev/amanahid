@@ -21,7 +21,7 @@ if (missing.length) {
 
 const packageText = readFileSync(join(root, "package.json"), "utf8");
 const pkg = JSON.parse(packageText);
-if (pkg.type !== "module" || (packageText.match(/"type"if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||s*:/g) ?? []).length !== 1) {
+if (pkg.type !== "module" || (packageText.match(/"type"\s*:/g) ?? []).length !== 1) {
     console.error("package.json must declare exactly one root type: module field.");
     process.exit(1);
 }
