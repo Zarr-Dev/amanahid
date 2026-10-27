@@ -449,10 +449,92 @@ function tr(key, vars = {}) {
 
 function toast(message, type = "info") {
     const el = $("toast");
-    el.textContent = message;
-    el.className = `toast show ${type}`;
+    if (!el) return;
+    el.textContent = String(message ?? "");
+    el.className = `toast show ${["success", "error", "warning"].includes(type) ? type : "info"}`;
+    el.setAttribute("role", type === "error" ? "alert" : "status");
     clearTimeout(state.toastTimer);
-    state.toastTimer = setTimeout(() => el.classList.remove("show"), 4200);
+    state.toastTimer = setTimeout(() => el.classList.remove("show"), type === "error" ? 5600 : 4200);
+}
+
+let appDialogResolve = null;
+let appDialogPreviousFocus = null;
+function closeAppDialog(result = null) {
+    const modal = $("app-dialog");
+    if (!modal || modal.classList.contains("hidden")) return;
+    modal.classList.add("hidden");
+    document.body.classList.remove("app-dialog-open");
+    const resolve = appDialogResolve;
+    appDialogResolve = null;
+    if (typeof resolve === "function") resolve(result);
+    appDialogPreviousFocus?.focus?.();
+}
+function openAppDialog({ title, description = "", fields = [], confirmLabel = "Simpan", cancelLabel = "Batal", danger = false, icon = "✦" }) {
+    const modal = $("app-dialog");
+    const form = $("app-dialog-form");
+    if (!modal || !form) return Promise.resolve(null);
+    if (appDialogResolve) closeAppDialog(null);
+    appDialogPreviousFocus = document.activeElement;
+    $("app-dialog-title").textContent = title;
+    $("app-dialog-description").textContent = description;
+    $("app-dialog-icon").textContent = icon;
+    $("app-dialog-submit").textContent = confirmLabel;
+    $("app-dialog-cancel").textContent = cancelLabel;
+    $("app-dialog-submit").classList.toggle("danger", danger);
+    $("app-dialog-error").classList.add("hidden");
+    const container = $("app-dialog-fields");
+    container.replaceChildren();
+    const controls = {};
+    for (const field of fields) {
+        const label = document.createElement("label");
+        label.className = "app-dialog-field";
+        label.textContent = field.label;
+        const input = document.createElement("input");
+        input.name = field.name;
+        input.type = field.type || "text";
+        input.autocomplete = field.autocomplete || "off";
+        input.placeholder = field.placeholder || "";
+        input.value = field.value || "";
+        input.required = Boolean(field.required);
+        if (field.minLength) input.minLength = field.minLength;
+        if (field.maxLength) input.maxLength = field.maxLength;
+        label.append(input);
+        container.append(label);
+        controls[field.name] = input;
+    }
+    modal.classList.remove("hidden");
+    document.body.classList.add("app-dialog-open");
+    requestAnimationFrame(() => (Object.values(controls)[0] || $("app-dialog-cancel")).focus());
+    return new Promise(resolve => { appDialogResolve = resolve; modal._appDialogControls = controls; });
+}
+function setupAppDialog() {
+    const modal = $("app-dialog");
+    const form = $("app-dialog-form");
+    if (!modal || !form || modal.dataset.ready) return;
+    modal.dataset.ready = "true";
+    $("app-dialog-cancel").addEventListener("click", () => closeAppDialog(null));
+    modal.addEventListener("click", event => { if (event.target === modal) closeAppDialog(null); });
+    document.addEventListener("keydown", event => {
+        if (modal.classList.contains("hidden")) return;
+        if (event.key === "Escape") { event.preventDefault(); closeAppDialog(null); }
+        if (event.key === "Tab") {
+            const focusable = [...modal.querySelectorAll("input, button")].filter(el => !el.disabled);
+            if (!focusable.length) return;
+            const first = focusable[0], last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+    });
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        const controls = modal._appDialogControls || {};
+        const values = {};
+        for (const [name, input] of Object.entries(controls)) {
+            if (!input.reportValidity()) return;
+            values[name] = input.value;
+        }
+        closeAppDialog(values);
+    });
 }
 
 function setLanguage(lang) {
@@ -3093,24 +3175,47 @@ function setupEvents() {
         const id = button.dataset.adminEdit || button.dataset.adminDisable;
         const table = button.dataset.table;
         if (button.hasAttribute("data-admin-disable")) {
-            if (!window.confirm(tr("confirmDeactivateAccount"))) return;
+            const confirmed = await openAppDialog({
+                title: "Nonaktifkan akun?",
+                description: "Akun ini tidak akan dapat digunakan sampai diaktifkan kembali. Tindakan ini dapat ditinjau di audit aktivitas.",
+                confirmLabel: "Nonaktifkan",
+                cancelLabel: "Batal",
+                danger: true,
+                icon: "!"
+            });
+            if (confirmed === null) return;
             try {
                 await cloudRequest("/api/admin/users", { method: "DELETE", body: { id, table } });
+                toast("Akun berhasil dinonaktifkan.", "success");
             } catch (error) {
                 toastAdminError(error);
                 return;
             }
         } else {
-            const email = window.prompt(tr("promptNewEmail"));
-            const name = window.prompt(tr("promptNewName"));
-            const password = window.prompt(tr("promptNewPassword"));
+            const result = await openAppDialog({
+                title: "Ubah akun",
+                description: "Isi hanya data yang ingin diubah. Biarkan kolom kosong untuk mempertahankan data saat ini.",
+                confirmLabel: "Simpan perubahan",
+                cancelLabel: "Batal",
+                fields: [
+                    { name: "email", label: "Email baru", type: "email", placeholder: "email@sekolah.id", autocomplete: "email" },
+                    { name: "name", label: "Nama lengkap baru", type: "text", placeholder: "Nama pengguna", autocomplete: "name" },
+                    { name: "password", label: "Kata sandi baru", type: "password", placeholder: "Kosongkan jika tidak diubah", autocomplete: "new-password", minLength: 8 }
+                ],
+                icon: "✎"
+            });
+            if (result === null) return;
             const body = { id, table };
-            if (email) body.email = email.trim();
-            if (name) body.name = name.trim();
-            if (password) body.password = password;
-            if (!body.email && !body.name && !body.password) return;
+            if (result.email.trim()) body.email = result.email.trim();
+            if (result.name.trim()) body.name = result.name.trim();
+            if (result.password) body.password = result.password;
+            if (!body.email && !body.name && !body.password) {
+                toast("Tidak ada perubahan yang dimasukkan.", "info");
+                return;
+            }
             try {
                 await cloudRequest("/api/admin/users", { method: "PUT", body });
+                toast("Data akun berhasil diperbarui.", "success");
             } catch (error) {
                 toastAdminError(error);
                 return;
@@ -3373,6 +3478,7 @@ function setupEvents() {
 }
 
 function initialize() {
+    setupAppDialog();
     initSplashScreen();
     setTheme("light");
     setLanguage("id");
