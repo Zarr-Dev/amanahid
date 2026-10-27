@@ -3414,3 +3414,37 @@ button,
     border-radius: 14px;
     background: var(--surface-soft);
 }
+
+
+/* Analytics and role dashboards */
+.admin-analytics-panel { margin-top: 18px; }
+.admin-analytics-panel .panel-heading { align-items: flex-start; }
+.attendance-trend { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; align-items: end; min-height: 190px; padding: 16px 4px 4px; }
+.trend-day { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; height: 100%; justify-content: end; }
+.trend-bar-track { height: 130px; width: min(100%, 44px); display: flex; align-items: end; overflow: hidden; border-radius: 10px; background: var(--surface-soft); }
+.trend-bar { width: 100%; min-height: 3px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, #68a0ff, var(--blue)); transition: height .25s ease; }
+.trend-day strong { font-size: 12px; color: var(--text); }
+.trend-day small { color: var(--muted); font-size: 11px; }
+.admin-quick-tools { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.admin-settings-layout { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(320px, 1.1fr); gap: 18px; align-items: stretch; }
+.admin-settings-layout > .panel { min-width: 0; }
+.admin-map-panel { display: flex; flex-direction: column; }
+#admin-settings-map { width: 100%; min-height: 430px; flex: 1; border-radius: 14px; overflow: hidden; background: var(--surface-soft); border: 1px solid var(--border); z-index: 0; }
+.admin-map-readout { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--surface-soft); font-size: 12px; }
+.admin-map-readout span { color: var(--muted); }
+.admin-map-readout strong { font-size: 12px; }
+.teacher-attendance-overview { margin-bottom: 24px; }
+.teacher-attendance-overview .page-intro { margin-bottom: 16px; }
+.teacher-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.teacher-stat-grid .stat-card { padding: 22px; }
+.teacher-stat-grid .stat-card strong { display: block; margin: 10px 0; color: var(--blue); font-size: 32px; }
+@media (max-width: 980px) {
+  .admin-settings-layout { grid-template-columns: 1fr; }
+  #admin-settings-map { min-height: 320px; }
+}
+@media (max-width: 640px) {
+  .attendance-trend { gap: 5px; }
+  .trend-bar-track { width: 28px; }
+  .admin-quick-tools { flex-direction: column; }
+  .teacher-stat-grid { grid-template-columns: 1fr; gap: 10px; }
+}
