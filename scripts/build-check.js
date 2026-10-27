@@ -90,6 +90,7 @@ const htmlChecks = [
     ["standalone stylesheet and script", /href="style\.css"[\s\S]*?src="script\.js"/],
     ["administrator dashboard", /id="dashboard-admin"[\s\S]*?id="admin-view-dashboard"[\s\S]*?id="admin-view-users"[\s\S]*?id="admin-view-settings"[\s\S]*?id="admin-view-audit"[\s\S]*?id="admin-view-profile"/],
     ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
+    ["Admin parent WhatsApp field", /id="admin-user-parent-whatsapp"/],
     ["visible student face sample progress", /id="face-sample-progress-bar"/]
 ];
 if (html.includes('id="admin-demo-password"') || html.includes("SuperSecurePass123!")) {
@@ -150,8 +151,11 @@ if (/height:\s*100vh\b/.test(css)) {
     process.exit(1);
 }
 if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||
-    !/stats\?\.total_students\s*\?\?\s*0/.test(js)) {
-    console.error("Build check failed: admin token injection or null-safe statistics handling is missing.");
+    !/stats\?\.total_students\s*\?\?\s*0/.test(js) ||
+    !/body\.parent_whatsapp\s*=\s*parentWhatsApp\.replace\(\/\^08\/,\s*"628"\)/.test(js) ||
+    !/parent_whatsapp:\s*body\.parent_whatsapp\s*\?\s*body\.parent_whatsapp\.replace\(\/\^08\/,\s*"628"\)/.test(adminUserApi) ||
+    !allApiSource.includes("sendWhatsApp(target, message)")) {
+    console.error("Build check failed: admin token injection, null-safe statistics, or parent WhatsApp delivery wiring is missing.");
     process.exit(1);
 }
 
