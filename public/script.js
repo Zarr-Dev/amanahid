@@ -3109,7 +3109,12 @@ function setupEvents() {
     $("student-open-profile").addEventListener("click", openProfile);
     $("student-top-profile").addEventListener("click", openProfile);
     $("btn-student-logout").addEventListener("click", logoutStudent);
-    $("admin-logout").addEventListener("click", () => {
+    $("admin-logout").addEventListener("click", async () => {
+        await recordLogout();
+        stopAllCameras();
+        state.user = null;
+        sessionStorage.removeItem("amanahid.adminToken");
+        sessionStorage.removeItem("amanahid.sessionToken");
         showAuth();
         toast(tr("loggedOut"), "info");
     });
