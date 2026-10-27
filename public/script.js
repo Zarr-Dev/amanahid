@@ -3077,16 +3077,32 @@ function setupEvents() {
     $("theme-select").addEventListener("change", () => setTheme($("theme-select").value));
     $("profile-language").addEventListener("change", () => setLanguage($("profile-language").value));
 
-    $("btn-logout").addEventListener("click", () => {
+    const recordLogout = async () => {
+        const role = state.user?.role;
+        if (!role) return;
+        const path = role === "admin" ? "/api/admin/login?action=logout" : "/api/auth/login?action=logout";
+        try {
+            await cloudRequest(path, { method: "POST", timeoutMs: 5000 });
+        } catch (error) {
+            // Local logout must still work if the audit endpoint is temporarily unavailable.
+            console.warn("Logout event could not be confirmed by the server:", error);
+        }
+    };
+    $("btn-logout").addEventListener("click", async () => {
+        await recordLogout();
         stopAllCameras();
         closeProfile();
         state.user = null;
+        sessionStorage.removeItem("amanahid.adminToken");
+        sessionStorage.removeItem("amanahid.sessionToken");
         showAuth();
         toast(tr("loggedOut"), "info");
     });
-    const logoutStudent = () => {
+    const logoutStudent = async () => {
+        await recordLogout();
         stopAllCameras();
         state.user = null;
+        sessionStorage.removeItem("amanahid.sessionToken");
         showAuth();
         toast(tr("loggedOut"), "info");
     };
