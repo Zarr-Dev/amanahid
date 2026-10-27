@@ -844,6 +844,7 @@ async function loadAdminUsers() {
             ? response.users.filter(user => user && typeof user === "object") : [];
         $("admin-users-tbody").innerHTML = users.map(user => `<tr>
             <td>${safeText(user.name ?? user.email ?? "—")}</td><td>${safeText(user.email ?? "")}</td>
+            <td>${safeText(user.parent_whatsapp ?? "—")}</td>
             <td>${safeText(user.role === "guru" ? tr("roleTeacher") : user.role === "siswa" ? tr("roleStudent") : tr("adminRole"))}</td><td>${safeText(user.is_active ? tr("activeStatus") : tr("inactiveStatus"))}</td>
             <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}">${safeText(tr("editAccount"))}</button>
             <button class="button subtle" type="button" data-admin-disable="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" ${user.is_active ? "" : "disabled"}>${safeText(tr("deactivateAccount"))}</button></td>
