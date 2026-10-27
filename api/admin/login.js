@@ -20,7 +20,6 @@ export default async function handler(req, res) {
     const validation = validateSchema({
         email: { type: "string", required: true, max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
         password: { type: "string", required: true, max: 64, pattern: /^[a-f0-9]{64}$/ },
-        captcha: { type: "number", required: true, min: 8, max: 8 }
     }, body);
     if (!validation.valid) return jsonError(res, 400, validation.error);
 
