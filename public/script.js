@@ -96,7 +96,7 @@ const ROLE_T = {
 const EXTRA_T = {
     id: {
         welcomeTitle: "Presensi sekolah, lebih mudah.",
-        welcomeDesc: "Amanah.id mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
+        welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
         registeredStudentsHint: "Data wajah terdaftar di Supabase",
         historyDesc: "Riwayat tersimpan di cloud dan dapat diakses lintas perangkat.",
         privacyFirst: "Descriptor wajah, bukan foto",
@@ -128,7 +128,7 @@ const EXTRA_T = {
     },
     en: {
         welcomeTitle: "School attendance, made simple.",
-        welcomeDesc: "Amanah.id records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
+        welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
         registeredStudentsHint: "Face data stored in Supabase",
         historyDesc: "Attendance history is stored in the cloud and available across devices.",
         privacyFirst: "Face descriptors, not photos",
@@ -225,6 +225,10 @@ const state = {
     userMarker: null,
     schoolCircle: null,
     toastTimer: null,
+    adminCaptchaAnswer: null,
+    adminSettingsMap: null,
+    adminSettingsMarker: null,
+    adminSettingsCircle: null,
     lastNose: null,
     movementFrames: 0,
     attendanceRecorded: false,
@@ -261,14 +265,14 @@ Object.keys(ROLE_T).forEach(lang => Object.assign(T[lang], ROLE_T[lang]));
 
 const LANDING_T = {
     id: {
-        brandName: "Amanah.id", splashSubtitle: "Presensi Digital Sekolah",
+        brandName: "Amanah ID", splashSubtitle: "Presensi Digital Sekolah",
         heroTitleFirst: "Presensi Sekolah Masa Kini,", heroTitleSecond: "Anti Titip Absen.",
         heroDescription: "Pantau kehadiran siswa secara real-time dengan verifikasi wajah dan lokasi GPS. Tanpa mesin fingerprint atau biaya perangkat keras.",
-        heroBenefitsLabel: "Fitur Amanah.id", heroBenefitAccuracy: "Akurasi wajah tingkat tinggi",
+        heroBenefitsLabel: "Fitur Amanah ID", heroBenefitAccuracy: "Akurasi wajah tingkat tinggi",
         heroBenefitGps: "Mencegah GPS palsu dan titip absen", heroBenefitPhone: "Cukup gunakan ponsel siswa",
-        aboutTitle: "Tentang Amanah.id",
-        aboutDescription: "Amanah.id membantu sekolah mencatat kehadiran dengan verifikasi wajah dan lokasi.",
-        chooseAccess: "Pilih akses", heroDashboardLabel: "Contoh dashboard presensi Amanah.id",
+        aboutTitle: "Tentang Amanah ID",
+        aboutDescription: "Amanah ID membantu sekolah mencatat kehadiran dengan verifikasi wajah dan lokasi.",
+        chooseAccess: "Pilih akses", heroDashboardLabel: "Contoh dashboard presensi Amanah ID",
         mockDashboard: "Dashboard Presensi", mockGreeting: "Selamat pagi 👋",
         mockAttendanceLabel: "STATUS KEHADIRAN", mockPresentToday: "Hadir hari ini",
         mockTotalStudents: "Total siswa", mockRegistered: "Terdaftar", mockCheckedIn: "Sudah hadir",
@@ -276,7 +280,7 @@ const LANDING_T = {
         heroFaceMatch: "Wajah cocok", heroFaceVerified: "99.8% terverifikasi",
         heroLocationValid: "Lokasi valid", heroSchoolDistance: "15 m dari sekolah",
         heroAttendanceSuccess: "Presensi berhasil", heroRecordedAutomatically: "Tercatat otomatis",
-        heroFooter: "© 2026 Amanah.id · Presensi digital sekolah",
+        heroFooter: "© 2026 Amanah ID · Presensi digital sekolah",
         emailPlaceholder: "nama@sekolah.sch.id", passwordPlaceholder: "Masukkan kata sandi",
         nisnExample: "Contoh: 0091234567", classExample: "Contoh: XI IPA 1",
         chooseAuthTab: "Pilih masuk atau daftar", close: "Tutup",
@@ -291,15 +295,15 @@ const LANDING_T = {
         profile: "Profil", toggleAttendanceCamera: "Aktifkan atau matikan kamera presensi"
     },
     en: {
-        brandName: "Amanah.id", splashSubtitle: "Digital School Attendance",
+        brandName: "Amanah ID", splashSubtitle: "Digital School Attendance",
         heroTitleFirst: "Modern School Attendance,", heroTitleSecond: "No Proxy Check-ins.",
         heroDescription: "Track student attendance in real time with face and GPS verification. No fingerprint machines or hardware costs.",
-        heroBenefitsLabel: "Amanah.id features", heroBenefitAccuracy: "High-accuracy face recognition",
+        heroBenefitsLabel: "Amanah ID features", heroBenefitAccuracy: "High-accuracy face recognition",
         heroBenefitGps: "Prevents GPS spoofing and proxy check-ins",
         heroBenefitPhone: "Students only need their phones",
-        aboutTitle: "About Amanah.id",
-        aboutDescription: "Amanah.id helps schools record attendance with face and location verification.",
-        chooseAccess: "Choose access", heroDashboardLabel: "Amanah.id attendance dashboard preview",
+        aboutTitle: "About Amanah ID",
+        aboutDescription: "Amanah ID helps schools record attendance with face and location verification.",
+        chooseAccess: "Choose access", heroDashboardLabel: "Amanah ID attendance dashboard preview",
         mockDashboard: "Attendance dashboard", mockGreeting: "Good morning 👋",
         mockAttendanceLabel: "ATTENDANCE STATUS", mockPresentToday: "Present today",
         mockTotalStudents: "Total students", mockRegistered: "Registered", mockCheckedIn: "Checked in",
@@ -307,7 +311,7 @@ const LANDING_T = {
         heroFaceMatch: "Face matched", heroFaceVerified: "99.8% verified",
         heroLocationValid: "Location verified", heroSchoolDistance: "15 m from school",
         heroAttendanceSuccess: "Attendance recorded", heroRecordedAutomatically: "Saved automatically",
-        heroFooter: "© 2026 Amanah.id · Digital school attendance",
+        heroFooter: "© 2026 Amanah ID · Digital school attendance",
         emailPlaceholder: "name@school.edu", passwordPlaceholder: "Enter your password",
         nisnExample: "Example: 0091234567", classExample: "Example: Grade 11 Science 1",
         chooseAuthTab: "Choose login or sign up", close: "Close",
@@ -456,6 +460,102 @@ function toast(message, type = "info") {
     clearTimeout(state.toastTimer);
     state.toastTimer = setTimeout(() => el.classList.remove("show"), type === "error" ? 5600 : 4200);
 }
+
+function refreshAdminCaptcha() {
+    const question = $("admin-captcha-question");
+    const answer = $("admin-captcha-answer");
+    if (!question || !answer) return;
+    const left = Math.floor(Math.random() * 8) + 2;
+    const right = Math.floor(Math.random() * 8) + 1;
+    state.adminCaptchaAnswer = left + right;
+    question.textContent = "Verifikasi keamanan: " + left + " + " + right + " = ?";
+    answer.value = "";
+    answer.setCustomValidity("");
+}
+
+function exportTableCsv(tbodyId, filename) {
+    const tbody = $(tbodyId);
+    const table = tbody && tbody.closest("table");
+    if (!table) {
+        toast("Tabel belum tersedia untuk diekspor.", "warning");
+        return;
+    }
+    const rows = Array.from(table.querySelectorAll("tr")).map(row =>
+        Array.from(row.querySelectorAll("th, td")).map((cell, index, cells) => {
+            if (tbodyId === "admin-users-tbody" && index === cells.length - 1) return "";
+            let value = cell.innerText.trim().replace(/\s+/g, " ");
+            if (/^[=+@-]/.test(value)) value = "'" + value;
+            return '"' + value.replace(/"/g, '""') + '"';
+        })
+    );
+    if (rows.length < 2 || !rows.slice(1).some(row => row.some(cell => cell !== '""'))) {
+        toast("Belum ada data untuk diekspor.", "info");
+        return;
+    }
+    const csv = "\uFEFF" + rows.map(row => row.join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.hidden = true;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast("Berkas CSV berhasil disiapkan.", "success");
+}
+
+function syncAdminSettingsMap({ center = false } = {}) {
+    const mapElement = $("admin-school-map");
+    if (!mapElement || !window.L) return;
+    if (!$("admin-setting-lat")?.value.trim() || !$("admin-setting-lng")?.value.trim()) return;
+    const lat = Number($("admin-setting-lat").value);
+    const lng = Number($("admin-setting-lng").value);
+    const radius = Number($("admin-setting-radius") && $("admin-setting-radius").value);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90 ||
+        !Number.isFinite(lng) || lng < -180 || lng > 180) return;
+    const point = [lat, lng];
+    if (!state.adminSettingsMap) {
+        state.adminSettingsMap = L.map(mapElement, { zoomControl: true }).setView(point, 17);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(state.adminSettingsMap);
+        state.adminSettingsMarker = L.marker(point).addTo(state.adminSettingsMap);
+        state.adminSettingsCircle = L.circle(point, {
+            radius: Number.isFinite(radius) ? radius : 50,
+            color: "#3978f6",
+            fillColor: "#3978f6",
+            fillOpacity: .12,
+            weight: 2
+        }).addTo(state.adminSettingsMap);
+        state.adminSettingsMap.on("click", event => {
+            $("admin-setting-lat").value = event.latlng.lat.toFixed(7);
+            $("admin-setting-lng").value = event.latlng.lng.toFixed(7);
+            syncAdminSettingsMap({ center: false });
+            const status = $("admin-school-map-status");
+            if (status) status.textContent = "Titik GPS diperbarui. Simpan pengaturan untuk menerapkannya.";
+        });
+        $("admin-map-center")?.addEventListener("click", () => syncAdminSettingsMap({ center: true }));
+        ["admin-setting-lat", "admin-setting-lng", "admin-setting-radius"].forEach(id => {
+            $(id)?.addEventListener("change", () => syncAdminSettingsMap({ center: false }));
+        });
+    } else {
+        state.adminSettingsMarker.setLatLng(point);
+        state.adminSettingsCircle.setLatLng(point);
+        if (Number.isFinite(radius) && radius >= 10 && radius <= 500) {
+            state.adminSettingsCircle.setRadius(radius);
+        }
+        if (center) state.adminSettingsMap.setView(point, Math.max(state.adminSettingsMap.getZoom(), 17));
+    }
+    const latLabel = $("admin-map-lat-label");
+    const lngLabel = $("admin-map-lng-label");
+    if (latLabel) latLabel.textContent = lat.toFixed(7);
+    if (lngLabel) lngLabel.textContent = lng.toFixed(7);
+    window.setTimeout(() => state.adminSettingsMap?.invalidateSize(), 80);
+}
+
 
 let appDialogResolve = null;
 let appDialogPreviousFocus = null;
@@ -946,6 +1046,7 @@ async function loadAdminSettings() {
         $("admin-setting-timezone").value = settings?.timezone ?? "";
         $("admin-setting-entry-time").value = settings?.entry_time ?? "";
         $("admin-setting-tolerance").value = settings?.late_tolerance_min ?? "";
+        syncAdminSettingsMap({ center: true });
     } catch (error) {
         console.error("Admin settings could not load:", error);
         toastAdminError(error);
@@ -2733,7 +2834,7 @@ async function refreshMapLocation() {
 function openAuthModal(trigger = document.activeElement) {
     authModalTrigger = trigger;
     $("login-form").reset();
-    $("auth-modal-title").textContent = `${tr("login")} Amanah.id`;
+    $("auth-modal-title").textContent = `${tr("login")} Amanah ID`;
     $("auth-modal").classList.remove("hidden");
     document.body.classList.add("auth-modal-open");
     requestAnimationFrame(() => $("login-email").focus());
@@ -2770,15 +2871,14 @@ function initSplashScreen() {
     const fontReady = document.fonts?.ready || Promise.resolve();
     let fontTimeout;
     const fontsReady = new Promise(resolve => {
-        fontTimeout = window.setTimeout(resolve, 1200);
+        fontTimeout = window.setTimeout(resolve, 900);
         Promise.resolve(fontReady).then(resolve, resolve);
     }).finally(() => window.clearTimeout(fontTimeout));
     const safetyTimer = window.setTimeout(() => {
         clearSplashTimers();
-        mark?.pause();
         splash.classList.add("is-leaving", "hidden");
         splash.setAttribute("aria-hidden", "true");
-    }, 6000);
+    }, 5000);
     state.splashTimers.push(safetyTimer);
 
     void fontsReady.then(() => new Promise(resolve => {
@@ -2797,64 +2897,33 @@ function initSplashScreen() {
                 const markOffsetY = markRect.top + markRect.height / 2 - groupCenterY;
                 const targetCenterX = targetRect.left + targetRect.width / 2;
                 const targetCenterY = targetRect.top + targetRect.height / 2;
-                splash.style.setProperty(
-                    "--splash-target-x",
-                    `${targetCenterX - groupCenterX - scale * markOffsetX}px`
-                );
-                splash.style.setProperty(
-                    "--splash-target-y",
-                    `${targetCenterY - groupCenterY - scale * markOffsetY}px`
-                );
+                splash.style.setProperty("--splash-target-x", (targetCenterX - groupCenterX - scale * markOffsetX) + "px");
+                splash.style.setProperty("--splash-target-y", (targetCenterY - groupCenterY - scale * markOffsetY) + "px");
                 splash.style.setProperty("--splash-target-scale", String(scale));
             }
         }
         splash.classList.add("is-playing");
-
         const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-        const poster = mark?.getAttribute("poster") || "assets/amanah-favicon.png";
-        if (mark) {
-            mark.muted = true;
-            mark.playsInline = true;
-            mark.preload = "auto";
-            mark.poster = poster;
-            mark.addEventListener("error", () => {
-                mark.pause();
-                mark.poster = poster;
-                console.warn("Splash animation video failed; using its static poster.");
-            }, { once: true });
-        }
-        if (!reducedMotion && mark?.play) {
-            mark.playbackRate = 1.55;
-            mark.play().catch(error => {
-                mark.pause();
-                mark.poster = poster;
-                if (error?.name !== "AbortError") {
-                    console.warn("The animated logo could not play; showing its static poster instead:", error);
-                }
-            });
-        }
-
         const motionElements = [lockup, mark, brand].filter(Boolean);
         const animationMs = reducedMotion ? 1 : Math.max(0, ...motionElements.map(element => {
             const style = getComputedStyle(element);
             return cssTimeInMs(style.animationDuration) + cssTimeInMs(style.animationDelay);
         }));
-        const splashTransitionMs = cssTimeInMs(getComputedStyle(splash).transitionDuration);
+        const transitionMs = cssTimeInMs(getComputedStyle(splash).transitionDuration);
         const leaveTimer = window.setTimeout(() => {
             if (!splash.isConnected || splash.classList.contains("hidden")) return;
             splash.classList.add("is-leaving");
             const hideTimer = window.setTimeout(() => {
                 if (!splash.isConnected || splash.classList.contains("hidden")) return;
-                mark?.pause();
                 splash.classList.add("hidden");
                 splash.setAttribute("aria-hidden", "true");
                 clearSplashTimers();
-            }, splashTransitionMs + 50);
+            }, transitionMs + 50);
             state.splashTimers.push(hideTimer);
-        }, animationMs + 50);
+        }, animationMs + 100);
         state.splashTimers.push(leaveTimer);
     }).catch(error => {
-        console.error("Splash screen could not be initialized; hiding it safely:", error);
+        console.error("Splash animation could not be initialized; hiding it safely:", error);
         clearSplashTimers();
         splash.classList.add("is-leaving", "hidden");
         splash.setAttribute("aria-hidden", "true");
@@ -2900,6 +2969,7 @@ function setupEvents() {
     $("tab-login").addEventListener("click", () => openAuthModal($("tab-login")));
     $("open-admin-login-hero").addEventListener("click", () => {
         $("admin-login-form").reset();
+        refreshAdminCaptcha();
         $("admin-login-modal").classList.remove("hidden");
         document.body.classList.add("auth-modal-open");
         requestAnimationFrame(() => $("admin-login-email").focus());
@@ -2918,6 +2988,7 @@ function setupEvents() {
         event.preventDefault();
         $("auth-modal").classList.add("hidden");
         $("admin-login-form").reset();
+        refreshAdminCaptcha();
         $("admin-login-modal").classList.remove("hidden");
         document.body.classList.add("auth-modal-open");
         requestAnimationFrame(() => $("admin-login-email").focus());
@@ -2953,6 +3024,13 @@ function setupEvents() {
         event.preventDefault();
         const form = event.currentTarget;
         if (form.querySelector('button[type="submit"]')?.disabled) return;
+        if (Number($("admin-captcha-answer").value) !== state.adminCaptchaAnswer) {
+            $("admin-login-password").value = "";
+            toast("Jawaban verifikasi tidak sesuai. Soal telah diperbarui.", "error");
+            refreshAdminCaptcha();
+            $("admin-captcha-answer").focus();
+            return;
+        }
         setAuthFormBusy(form, true);
         try {
             const result = await cloudRequest("/api/admin/login", {
@@ -2968,11 +3046,14 @@ function setupEvents() {
         } catch (error) {
             console.error("Admin login failed:", error);
             $("admin-login-modal")?.classList.remove("hidden");
+            $("admin-login-password").value = "";
             toastAdminError(error);
         } finally {
+            refreshAdminCaptcha();
             setAuthFormBusy(form, false);
         }
     });
+    $("admin-captcha-refresh").addEventListener("click", refreshAdminCaptcha);
 
     document.querySelectorAll(".lang-btn").forEach(btn => {
         btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
@@ -3112,12 +3193,17 @@ function setupEvents() {
         };
         try {
             await cloudRequest("/api/admin/settings", { method: "PUT", body });
+            syncAdminSettingsMap({ center: true });
+            const mapStatus = $("admin-school-map-status");
+            if (mapStatus) mapStatus.textContent = "Pengaturan lokasi sekolah telah disimpan.";
             toast("Pengaturan sekolah berhasil disimpan.", "success");
         } catch (error) {
             toastAdminError(error);
         }
     });
     $("admin-audit-filter").addEventListener("click", () => void loadAdminAudit());
+    $("admin-export-users").addEventListener("click", () => exportTableCsv("admin-users-tbody", "amanah-id-daftar-akun.csv"));
+    $("admin-export-audit").addEventListener("click", () => exportTableCsv("admin-audit-tbody", "amanah-id-audit-aktivitas.csv"));
     $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
