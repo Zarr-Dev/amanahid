@@ -1198,7 +1198,14 @@ function startNetworkHeartbeat() {
     $("network-banner")?.classList.add("hidden");
     void checkNetworkHeartbeat();
     state.networkHeartbeatTimer = window.setInterval(() => {
-        if (state.user) void checkNetworkHeartbeat();
+        if (!state.user) return;
+        void checkNetworkHeartbeat();
+        if (state.user.role === "admin" && document.querySelector("#admin-view-dashboard.active")) {
+            void loadAdminDashboard();
+        }
+        if (state.user.role === "guru" && document.querySelector("#view-presensi.active")) {
+            void refreshTeacherAttendanceOverview();
+        }
     }, 30_000);
 }
 
@@ -1298,6 +1305,28 @@ async function loadCloudData(user = state.user) {
     } catch (error) {
         console.error("Cloud data load failed:", error);
         if (token === state.cloudLoadToken && state.user === user) toast(tr("cloudLoadFailed"), "error");
+    }
+}
+
+async function refreshTeacherAttendanceOverview() {
+    const user = state.user;
+    if (!user || user.role !== "guru") return;
+    try {
+        const [studentResult, attendanceResult] = await Promise.all([
+            cloudRequest("/api/students", { role: "guru" }),
+            cloudRequest("/api/attendance", { role: "guru" })
+        ]);
+        if (state.user !== user) return;
+        const students = Array.isArray(studentResult?.students) ? studentResult.students : [];
+        const attendance = Array.isArray(attendanceResult?.attendance) ? attendanceResult.attendance : [];
+        const today = localDateKey();
+        const presentNisn = new Set(attendance.filter(row => row.date === today).map(row => row.nisn).filter(Boolean));
+        const presentCount = Math.min(students.length, presentNisn.size || attendance.filter(row => row.date === today).length);
+        if ($("teacher-active-students")) $("teacher-active-students").textContent = String(students.length);
+        if ($("teacher-present-today")) $("teacher-present-today").textContent = String(presentCount);
+        if ($("teacher-absent-today")) $("teacher-absent-today").textContent = String(Math.max(0, students.length - presentCount));
+    } catch (error) {
+        console.warn("Teacher attendance overview refresh failed:", error);
     }
 }
 
