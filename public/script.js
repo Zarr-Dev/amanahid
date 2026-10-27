@@ -2871,12 +2871,6 @@ function setupEvents() {
         event.preventDefault();
         const form = event.currentTarget;
         if (form.querySelector('button[type="submit"]')?.disabled) return;
-        const captchaValue = $("admin-captcha").value.trim();
-        if (captchaValue === "" || captchaValue !== "8") {
-            toast("Captcha salah. Masukkan angka 8.", "error");
-            $("admin-captcha").focus();
-            return;
-        }
         setAuthFormBusy(form, true);
         try {
             const result = await cloudRequest("/api/admin/login", {
@@ -2884,7 +2878,6 @@ function setupEvents() {
                 body: {
                     email: $("admin-login-email").value.trim().toLowerCase(),
                     password: await passwordDigest($("admin-login-password").value),
-                    captcha: Number(captchaValue)
                 }
             });
             $("admin-login-modal").classList.add("hidden");
