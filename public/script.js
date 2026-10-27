@@ -932,6 +932,22 @@ async function initializeAdminSettingsMap() {
         };
         state.adminSettingsMap.on("click", event => updateFields(event.latlng));
         state.adminSettingsMarker.on("dragend", event => updateFields(event.target.getLatLng()));
+        ["admin-setting-lat", "admin-setting-lng", "admin-setting-radius"].forEach(id => {
+            $(id).addEventListener("input", () => {
+                const nextLat = Number($("admin-setting-lat").value);
+                const nextLng = Number($("admin-setting-lng").value);
+                const nextRadius = Number($("admin-setting-radius").value);
+                if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng) ||
+                    nextLat < -90 || nextLat > 90 || nextLng < -180 || nextLng > 180) return;
+                const point = [nextLat, nextLng];
+                state.adminSettingsMarker.setLatLng(point);
+                state.adminSettingsCircle.setLatLng(point);
+                if (Number.isFinite(nextRadius) && nextRadius >= 10 && nextRadius <= 500) {
+                    state.adminSettingsCircle.setRadius(nextRadius);
+                }
+                $("admin-map-coordinates").textContent = `${nextLat.toFixed(6)}, ${nextLng.toFixed(6)}`;
+            });
+        });
     } else {
         state.adminSettingsMap.setView([lat, lng], Math.max(state.adminSettingsMap.getZoom(), 15));
         state.adminSettingsMarker.setLatLng([lat, lng]);
