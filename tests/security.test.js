@@ -245,8 +245,7 @@ test("admin APIs handle empty and null Supabase results", async t => {
     loginRequest.headers = { origin: "https://school.example" };
     loginRequest.body = {
         email: "admin@example.com",
-        password: "a".repeat(64),
-        captcha: 8
+        password: "a".repeat(64)
     };
     const loginResponse = responseMock();
     await adminLoginHandler(loginRequest, loginResponse);
