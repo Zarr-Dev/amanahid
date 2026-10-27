@@ -634,6 +634,10 @@
                                 maxlength="20" autocomplete="off">
                             <label for="admin-user-class" data-i18n="studentClass">Kelas siswa</label>
                             <input id="admin-user-class" type="text" maxlength="40">
+                            <label for="admin-user-parent-whatsapp" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
+                            <input id="admin-user-parent-whatsapp" type="tel" inputmode="tel" autocomplete="tel"
+                                maxlength="15" pattern="(?:08|628)[0-9]{8,13}"
+                                data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx">
                             <p class="helper-text" data-i18n="studentAccountNote">Siswa dapat login setelah dibuat;
                                 presensi wajah aktif setelah Guru mendaftarkan sampel.</p>
                         </div>
