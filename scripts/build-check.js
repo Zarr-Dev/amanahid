@@ -21,7 +21,7 @@ if (missing.length) {
 
 const packageText = readFileSync(join(root, "package.json"), "utf8");
 const pkg = JSON.parse(packageText);
-if (pkg.type !== "module" || (packageText.match(/"type"\s*:/g) ?? []).length !== 1) {
+if (pkg.type !== "module" || (packageText.match(/"type"if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||s*:/g) ?? []).length !== 1) {
     console.error("package.json must declare exactly one root type: module field.");
     process.exit(1);
 }
@@ -151,7 +151,7 @@ if (/height:\s*100vh\b/.test(css)) {
 }
 if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||
     !/stats\?\.total_students\s*\?\?\s*0/.test(js)) {
-    console.error("Build check failed: strict captcha, admin token injection, or null-safe statistics handling is missing.");
+    console.error("Build check failed: admin token injection or null-safe statistics handling is missing.");
     process.exit(1);
 }
 
