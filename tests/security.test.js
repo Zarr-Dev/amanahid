@@ -229,7 +229,7 @@ test("admin APIs handle empty and null Supabase results", async t => {
     assert.equal(statsResponse.body.total_students, 0);
     assert.equal(typeof statsResponse.body.generated_at, "string");
     assert.equal(statsResponse.body.trend.length, 7);
-    assert.ok(statsResponse.body.trend.every(point => /^\\d{4}-\\d{2}-\\d{2}$/.test(point.date) && point.count === 0));
+    assert.ok(statsResponse.body.trend.every(point => /^\d{4}-\d{2}-\d{2}$/.test(point.date) && point.count === 0));
 
     const profileRequest = request("PUT", "profile");
     profileRequest.query.action = "profile";
