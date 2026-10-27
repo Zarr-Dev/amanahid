@@ -843,17 +843,35 @@ async function loadAdminDashboard() {
 function renderAdminAttendanceTrend(points) {
     const container = $("admin-attendance-trend");
     if (!container) return;
+    container.replaceChildren();
+    if (!points.length) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "Belum ada data tren presensi.";
+        container.append(empty);
+        return;
+    }
     const max = Math.max(1, ...points.map(point => Number(point.count) || 0));
     const weekday = new Intl.DateTimeFormat("id-ID", { weekday: "short", timeZone: "Asia/Jakarta" });
-    container.innerHTML = points.length ? points.map(point => {
+    for (const point of points) {
         const count = Math.max(0, Number(point.count) || 0);
         const date = new Date(`${point.date}T12:00:00+07:00`);
-        const label = weekday.format(date);
-        const height = Math.max(3, Math.round(count / max * 100));
-        return `<div class="trend-day" title="${escapeHtml(point.date)}: ${count} presensi">
-            <strong>${count}</strong><div class="trend-bar-track"><div class="trend-bar" style="height:${height}%"></div></div><small>${escapeHtml(label)}</small>
-        </div>`;
-    }).join("") : '<p class="muted">Belum ada data tren presensi.</p>';
+        const day = document.createElement("div");
+        day.className = "trend-day";
+        day.title = `${point.date}: ${count} presensi`;
+        const number = document.createElement("strong");
+        number.textContent = String(count);
+        const track = document.createElement("div");
+        track.className = "trend-bar-track";
+        const bar = document.createElement("div");
+        bar.className = "trend-bar";
+        bar.style.height = `${Math.max(3, Math.round(count / max * 100))}%`;
+        track.append(bar);
+        const label = document.createElement("small");
+        label.textContent = weekday.format(date);
+        day.append(number, track, label);
+        container.append(day);
+    }
 }
 
 async function loadAdminUsers() {
@@ -3078,8 +3096,7 @@ function setupEvents() {
     $("admin-audit-filter").addEventListener("click", () => void loadAdminAudit());
     $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
     $("teacher-overview-refresh")?.addEventListener("click", () => void loadCloudData(state.user));
-    document.querySelectorAll("[data-admin-target]").forEach(button => {
-        if (button.closest("#dashboard-admin .admin-view")) return;
+    document.querySelectorAll(".admin-quick-tools [data-admin-target]").forEach(button => {
         button.addEventListener("click", () => showAdminView(button.dataset.adminTarget));
     });
     $("admin-profile-form").addEventListener("submit", async event => {
