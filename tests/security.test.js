@@ -166,7 +166,7 @@ test("admin login issues a signed token and records a login", async t => {
         method: "POST",
         headers: { origin: "https://school.example" },
         socket: { remoteAddress: "test-admin-login" },
-        body: { email: "admin@example.com", password: digest, captcha: 8 }
+        body: { email: "admin@example.com", password: digest }
     };
     const res = responseMock();
     await adminLoginHandler(req, res);
