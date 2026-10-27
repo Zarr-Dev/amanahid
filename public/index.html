@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f5f8ff">
-    <title>Amanah.id | Presensi Digital</title>
+    <title>Amanah ID | Presensi Digital</title>
     <link rel="icon" type="image/png" href="assets/amanah-favicon.png">
     <link rel="apple-touch-icon" href="assets/amanah-favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,20 +20,19 @@
 <body>
     <div id="network-banner" class="network-banner hidden" role="status" aria-live="polite">Koneksi ke layanan terputus.
         Periksa jaringan dan konfigurasi API.</div>
-    <div id="splash-screen" class="splash-screen" aria-label="Amanah.id" data-i18n-aria="brandName" aria-live="polite">
+    <div id="splash-screen" class="splash-screen" aria-label="Amanah ID" data-i18n-aria="brandName" aria-live="polite">
         <div class="splash-lockup">
-            <video class="splash-mark" src="assets/amanah-logo-animation.mp4" muted playsinline preload="auto"
-                poster="assets/amanah-favicon.png" aria-hidden="true" tabindex="-1"></video>
-            <span class="splash-text">Amanah.id</span>
+            <img class="splash-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true" decoding="async">
+            <span class="splash-text">Amanah ID</span>
         </div>
     </div>
 
     <!-- Single-page landing and auth; login resolves the account role automatically. -->
     <main id="auth-screen" class="auth-screen">
         <header class="auth-header">
-            <a class="brand brand-auth" href="#" aria-label="Amanah.id" data-i18n-aria="brandName">
+            <a class="brand brand-auth" href="#" aria-label="Amanah ID" data-i18n-aria="brandName">
                 <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
-                <span>Amanah<span class="brand-dot">.id</span></span>
+                <span>Amanah ID</span>
             </a>
         </header>
 
@@ -47,7 +46,7 @@
                     Geofencing). Tanpa mesin fingerprint, tanpa biaya hardware.
                 </p>
 
-                <ul class="auth-benefits" aria-label="Fitur Amanah.id" data-i18n-aria="heroBenefitsLabel">
+                <ul class="auth-benefits" aria-label="Fitur Amanah ID" data-i18n-aria="heroBenefitsLabel">
                     <li><span class="benefit-check" aria-hidden="true">✓</span><span
                             data-i18n="heroBenefitAccuracy">Akurasi wajah tingkat tinggi (ArcFace)</span>
                     </li>
@@ -65,13 +64,13 @@
                 </div>
             </section>
 
-            <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah.id"
+            <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah ID"
                 data-i18n-aria="heroDashboardLabel">
                 <div class="visual-glow"></div>
                 <div class="dashboard-mockup">
                     <div class="mockup-topbar">
                         <div class="mockup-brand"><img class="mockup-brand-mark" src="assets/amanah-logo.png" alt=""
-                                aria-hidden="true">Amanah.id</div>
+                                aria-hidden="true">Amanah ID</div>
                         <div class="mockup-window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
                     </div>
                     <div class="mockup-content">
@@ -135,7 +134,7 @@
         </div>
 
         <footer class="auth-footer">
-            <span data-i18n="heroFooter">© 2026 Amanah.id · Presensi digital sekolah</span>
+            <span data-i18n="heroFooter">© 2026 Amanah ID · Presensi digital sekolah</span>
             <div class="language-row">
                 <button class="lang-btn active" type="button" data-lang="id">ID</button>
                 <button class="lang-btn" type="button" data-lang="en">EN</button>
@@ -149,8 +148,8 @@
         <section class="modal-card auth-modal-card">
             <div class="auth-modal-heading">
                 <div>
-                    <span class="auth-modal-kicker">AMANAH.ID</span>
-                    <h2 id="auth-modal-title">Masuk ke Amanah.id</h2>
+                    <span class="auth-modal-kicker">Amanah ID</span>
+                    <h2 id="auth-modal-title">Masuk ke Amanah ID</h2>
                 </div>
                 <button id="close-auth-modal" class="icon-button" type="button" aria-label="Tutup"
                     data-i18n-aria="close">×</button>
@@ -178,18 +177,28 @@
         <section class="modal-card auth-modal-card admin-login-modal-card">
             <div class="auth-modal-heading">
                 <div>
-                    <span class="auth-modal-kicker">AMANAH.ID · ADMIN</span>
+                    <span class="auth-modal-kicker">Amanah ID · ADMIN</span>
                     <h2 id="admin-login-title">Login sebagai Admin</h2>
                 </div>
                 <button id="admin-login-close" class="icon-button" type="button" aria-label="Tutup"
                     data-i18n-aria="close">×</button>
             </div>
             <form id="admin-login-form" class="form-stack">
-                <label for="admin-login-email">Email Admin</label>
-                <input id="admin-login-email" type="email" autocomplete="username" placeholder="admin@amanah.sch.id"
-                    required>
-                <label for="admin-login-password">Kata sandi Admin</label>
-                <input id="admin-login-password" type="password" autocomplete="current-password" required>
+                <label for="admin-login-email">Email resmi administrator</label>
+                <input id="admin-login-email" type="email" autocomplete="off" placeholder="Masukkan email resmi administrator"
+                    required maxlength="254">
+                <label for="admin-login-password">Kata sandi administrator</label>
+                <input id="admin-login-password" type="password" autocomplete="off" required maxlength="128">
+                <div class="admin-captcha">
+                    <div class="admin-captcha-heading">
+                        <label id="admin-captcha-question" for="admin-captcha-answer">Verifikasi keamanan: 4 + 3 = ?</label>
+                        <button id="admin-captcha-refresh" class="button subtle captcha-refresh" type="button"
+                            aria-label="Ganti soal verifikasi">Ganti soal</button>
+                    </div>
+                    <input id="admin-captcha-answer" type="number" inputmode="numeric" autocomplete="off"
+                        placeholder="Jawaban verifikasi" required aria-describedby="admin-captcha-help">
+                    <p id="admin-captcha-help" class="helper-text">Soal diperbarui setiap kali login dicoba.</p>
+                </div>
                 <button class="button primary full" type="submit">Masuk sebagai Admin</button>
                 <button id="admin-login-back" class="button subtle full" type="button">Kembali ke login
                     pengguna</button>
@@ -206,7 +215,7 @@
         <aside class="sidebar">
             <a class="brand" id="brand-home" href="#">
                 <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
-                <span>Amanah<span class="brand-dot">.id</span></span>
+                <span>Amanah ID</span>
             </a>
             <p class="sidebar-caption" data-i18n="workspace">WORKSPACE</p>
             <nav class="main-nav" aria-label="Main navigation" data-i18n-aria="mainNavigation">
@@ -509,7 +518,7 @@
         <aside class="sidebar">
             <a class="brand" id="admin-brand-home" href="#admin">
                 <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
-                <span>Amanah<span class="brand-dot">.id</span></span>
+                <span>Amanah ID</span>
             </a>
             <p class="sidebar-caption" data-i18n="adminWorkspace">ADMINISTRATOR</p>
             <nav class="main-nav" aria-label="Navigasi Admin" data-i18n-aria="adminNavigation">
@@ -608,6 +617,9 @@
                         <p class="muted" data-i18n="schoolUsersDescription">Admin dapat membuat akun Guru dan Siswa. Akun Siswa memerlukan NISN dan kelas; sampel wajah dapat didaftarkan Guru kemudian.</p>
                     </div>
                 </div>
+                <div class="admin-export-actions">
+                    <button id="admin-export-users" class="button secondary" type="button">Unduh daftar akun (CSV)</button>
+                </div>
                 <div class="panel">
                     <div class="panel-heading">
                         <div>
@@ -682,23 +694,37 @@
                             presensi.</p>
                     </div>
                 </div>
-                <div class="panel">
-                    <form id="admin-settings-form" class="form-stack">
-                        <label for="admin-setting-lat" data-i18n="schoolLatitude">Latitude sekolah</label><input
-                            id="admin-setting-lat" type="number" step="any" min="-90" max="90" required>
-                        <label for="admin-setting-lng" data-i18n="schoolLongitude">Longitude sekolah</label><input
-                            id="admin-setting-lng" type="number" step="any" min="-180" max="180" required>
-                        <label for="admin-setting-radius" data-i18n="geofenceRadius">Radius geofence
-                            (meter)</label><input id="admin-setting-radius" type="number" min="10" max="500" required>
-                        <label for="admin-setting-timezone" data-i18n="timezone">Zona waktu</label><input
-                            id="admin-setting-timezone" type="text" maxlength="64" required>
-                        <label for="admin-setting-entry-time" data-i18n="schoolEntryTime">Jam masuk
-                            sekolah</label><input id="admin-setting-entry-time" type="time" required>
-                        <label for="admin-setting-tolerance" data-i18n="lateTolerance">Toleransi keterlambatan
-                            (menit)</label><input id="admin-setting-tolerance" type="number" min="0" max="180" step="1"
-                            required>
-                        <button class="button primary" type="submit" data-i18n="saveSettings">Simpan pengaturan</button>
-                    </form>
+                <div class="admin-settings-layout">
+                    <div class="panel admin-settings-form-panel">
+                        <form id="admin-settings-form" class="form-stack">
+                            <label for="admin-setting-lat" data-i18n="schoolLatitude">Latitude sekolah</label>
+                            <input id="admin-setting-lat" type="number" step="any" min="-90" max="90" required>
+                            <label for="admin-setting-lng" data-i18n="schoolLongitude">Longitude sekolah</label>
+                            <input id="admin-setting-lng" type="number" step="any" min="-180" max="180" required>
+                            <label for="admin-setting-radius" data-i18n="geofenceRadius">Radius geofence (meter)</label>
+                            <input id="admin-setting-radius" type="number" min="10" max="500" required>
+                            <label for="admin-setting-timezone" data-i18n="timezone">Zona waktu</label>
+                            <input id="admin-setting-timezone" type="text" maxlength="64" required>
+                            <label for="admin-setting-entry-time" data-i18n="schoolEntryTime">Jam masuk sekolah</label>
+                            <input id="admin-setting-entry-time" type="time" required>
+                            <label for="admin-setting-tolerance" data-i18n="lateTolerance">Toleransi keterlambatan (menit)</label>
+                            <input id="admin-setting-tolerance" type="number" min="0" max="180" step="1" required>
+                            <button class="button primary" type="submit" data-i18n="saveSettings">Simpan pengaturan</button>
+                        </form>
+                    </div>
+                    <aside class="panel admin-settings-map-panel">
+                        <div class="panel-heading">
+                            <div><h3>Titik GPS sekolah</h3><p class="muted">Pilih titik pada peta untuk mengisi latitude dan longitude.</p></div>
+                            <button id="admin-map-center" class="button subtle" type="button">Pusatkan</button>
+                        </div>
+                        <div id="admin-school-map" class="admin-school-map" role="application"
+                            aria-label="Peta untuk mengatur titik GPS sekolah"></div>
+                        <p id="admin-school-map-status" class="helper-text" role="status" aria-live="polite">Klik peta untuk memilih titik lokasi sekolah.</p>
+                        <div class="admin-map-coordinate-summary">
+                            <span>Latitude <strong id="admin-map-lat-label">Belum ditentukan</strong></span>
+                            <span>Longitude <strong id="admin-map-lng-label">Belum ditentukan</strong></span>
+                        </div>
+                    </aside>
                 </div>
             </section>
 
@@ -721,8 +747,8 @@
                                 id="admin-audit-from" type="date"></label>
                         <label for="admin-audit-to"><span data-i18n="toDate">Sampai tanggal</span><input
                                 id="admin-audit-to" type="date"></label>
-                        <button id="admin-audit-filter" class="button primary" type="button"
-                            data-i18n="applyFilter">Terapkan filter</button>
+                        <button id="admin-audit-filter" class="button primary" type="button" data-i18n="applyFilter">Terapkan filter</button>
+                        <button id="admin-export-audit" class="button secondary" type="button">Unduh audit (CSV)</button>
                     </div>
                     <div class="table-wrap">
                         <table>
