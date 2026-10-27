@@ -3414,3 +3414,30 @@ button,
     border-radius: 14px;
     background: var(--surface-soft);
 }
+
+
+/* App-owned dialogs and centered bottom toast */
+.app-dialog-backdrop { z-index: 3000; padding: 18px; background: rgba(13, 27, 49, .58); backdrop-filter: blur(9px); animation: app-overlay-in .18s ease-out; }
+.app-dialog-card { width: min(100%, 480px); padding: clamp(22px, 4vw, 30px); border-radius: 24px; box-shadow: 0 30px 100px rgba(8, 24, 50, .28); animation: app-dialog-in .24s cubic-bezier(.2,.8,.2,1); }
+.app-dialog-icon { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 14px; border-radius: 15px; background: var(--blue-soft); color: var(--blue); font-size: 22px; font-weight: 800; }
+.app-dialog-card h2 { margin: 0 0 8px; font-size: clamp(20px, 3vw, 25px); }
+.app-dialog-card #app-dialog-description { margin: 0 0 18px; line-height: 1.6; }
+.app-dialog-fields { display: grid; gap: 14px; }
+.app-dialog-field { display: grid; gap: 7px; color: var(--text); font-size: 12px; font-weight: 750; }
+.app-dialog-field input { width: 100%; min-height: 46px; padding: 11px 13px; border: 1px solid var(--border); border-radius: 12px; outline: none; color: var(--text); background: var(--surface-solid); transition: border-color .18s, box-shadow .18s, background .18s; }
+.app-dialog-field input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(57,120,246,.13); }
+.app-dialog-error { margin: 0; color: var(--red); font-size: 12px; }
+.app-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.app-dialog-actions .button { min-width: 104px; }
+.app-dialog-actions .button.danger { background: var(--red); color: white; }
+body.app-dialog-open { overflow: hidden; }
+.toast { inset-inline: auto; left: 50%; right: auto; bottom: max(22px, env(safe-area-inset-bottom)); width: max-content; max-width: min(460px, calc(100vw - 28px)); text-align: center; padding: 13px 20px; border-radius: 16px; opacity: 0; visibility: hidden; transform: translate(-50%, 18px) scale(.97); transition: opacity .22s ease, transform .22s cubic-bezier(.2,.8,.2,1), visibility .22s; box-shadow: 0 14px 45px rgba(10,30,60,.18); }
+.toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0) scale(1); }
+.toast.error { border-color: #f0aab4; box-shadow: 0 14px 45px rgba(180,40,65,.12); }
+.toast.success { border-color: #a7e2cc; box-shadow: 0 14px 45px rgba(20,150,100,.12); }
+.button, .nav-item, .panel, .stat-card { transition: transform .2s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease; }
+.button:active { transform: translateY(1px) scale(.985); }
+@keyframes app-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes app-dialog-in { from { opacity: 0; transform: translateY(12px) scale(.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 520px) { .app-dialog-card { padding: 21px; border-radius: 20px; } .app-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; } .app-dialog-actions .button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .app-dialog-backdrop, .app-dialog-card, .toast, .button, .panel, .stat-card { animation: none !important; transition: none !important; } }
