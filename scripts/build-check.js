@@ -10,7 +10,7 @@ const requiredFiles = [
     "api/_lib/admin-auth.js", "api/_lib/admin-api.js", "api/_lib/audit.js",
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
-    "api/admin/settings.js", "api/admin/audit.js", "api/auth/login.js",
+    "api/admin/settings.js", "api/admin/audit.js", "api/admin/test-tools.js", "api/auth/login.js",
     "api/index.js", "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
@@ -96,6 +96,10 @@ const htmlChecks = [
     ["visible student face sample progress", /id="face-sample-progress-bar"/],
     ["student absence form", /id="student-absence-form"/],
     ["teacher absence request table", /id="absence-requests-tbody"/],
+    ["admin test lab", /id="admin-view-tests"/],
+    ["admin camera diagnostics", /id="admin-test-camera-start"/],
+    ["admin WhatsApp test preview", /id="admin-test-whatsapp-preview"/],
+    ["admin GPS diagnostics", /id="admin-test-gps-run"/],
     ["rotating Admin CAPTCHA", /id="admin-captcha-answer"/],
     ["editable school GPS map", /id="admin-school-map"/],
     ["Admin account export", /id="admin-export-users"/],
@@ -184,6 +188,18 @@ if (!js.includes("const anyPending = Object.values(feedback).some(item => item?.
     process.exit(1);
 }
 
+if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 416, scoreThreshold: 0.45")) {
+    console.error("Build check failed: pinned face model or detection settings are missing.");
+    process.exit(1);
+}
+if (!js.includes("phase === \"pending\" ? \"disabled\"") || !js.includes("feature-spinner")) {
+    console.error("Build check failed: per-switch loading feedback is missing.");
+    process.exit(1);
+}
+if (!existsSync(join(root, "api/admin/test-tools.js"))) {
+    console.error("Build check failed: admin Fonnte test endpoint is missing.");
+    process.exit(1);
+}
 if (!js.includes("function faceAngleBucket") || !allApiSource.includes("GPS_FIX_STALE") || !js.includes("faceSampleAngles.includes(angle)")) {
     console.error("Build check failed: face-angle capture or fresh GPS checks are missing.");
     process.exit(1);
