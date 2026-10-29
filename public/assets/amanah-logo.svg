@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+<title id="title">Amanah ID</title>
+<defs><style>.b{fill:#3978f6}</style></defs>
+<path class="b" fill-rule="evenodd" d="M128 7a121 121 0 1 0 0 242 121 121 0 0 0 0-242Zm0 39a82 82 0 1 1 0 164 82 82 0 0 1 0-164Z"/>
+<circle class="b" cx="128" cy="128" r="43"/>
+<path class="b" d="M65 44a7 7 0 0 1 10 0l53 58L226 9a8 8 0 0 1 11 0l16 17a8 8 0 0 1 0 11L136 154a8 8 0 0 1-12 0L49 70a8 8 0 0 1 0-11Z" transform="translate(0 0)"/>
+</svg>
