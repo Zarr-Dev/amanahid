@@ -3672,3 +3672,10 @@ body.app-dialog-open { overflow: hidden; }
 .feature-error-text { color: #bd2634 !important; }
 .admin-switch input:disabled + .admin-switch-track { cursor: wait; opacity: .75; }
 @media (prefers-reduced-motion: reduce) { .feature-spinner { animation-duration: 1.5s; } .feature-result { animation: none; } }
+
+/* Student absence request form */
+.absence-form-panel .registration-form { width: 100%; max-width: 760px; margin-inline: auto; }
+.absence-form-panel textarea { width: 100%; min-height: 130px; resize: vertical; font: inherit; }
+.absence-form-panel .helper-text { line-height: 1.5; }
+.face-sample-progress-bar[data-count="5"] { background: #16a34a; }
+.face-sample-progress-bar[data-count="4"] { background: #2563eb; }
