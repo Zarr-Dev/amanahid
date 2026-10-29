@@ -209,6 +209,27 @@ const EXTRA_T = {
         testOtherFail: "Layanan tidak merespons.",
         testPhoneInvalid: "Masukkan nomor uji yang valid dalam format 628xxxxxxxxxx.",
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji."
+        testFonnteConfigured: "Token Fonnte tersedia",
+        testFonnteMissing: "Token Fonnte belum dikonfigurasi",
+        testAllowlistEmpty: tr("testAllowlistEmpty"),
+        testAllowlistLoadFailed: "Gagal memuat daftar nomor uji",
+        testGpsChecking: "Memeriksa lokasi perangkat...",
+        testGpsInside: "Lokasi berada dalam radius sekolah dan akurasi memenuhi batas.",
+        testGpsOutside: "Lokasi di luar radius atau akurasi tidak memenuhi batas.",
+        testGpsPermission: "Izin lokasi ditolak.",
+        testGpsTimeout: "Pemeriksaan lokasi kehabisan waktu.",
+        testGpsFailed: "Lokasi gagal diperiksa.",
+        testServiceChecking: "Memeriksa endpoint...",
+        testServiceApi: "Vercel API",
+        testServiceFonnte: "Konfigurasi Fonnte",
+        testMetricModel: "Model AI",
+        testMetricFaces: "Wajah",
+        testMetricFps: "FPS",
+        testMetricLatitude: "Latitude",
+        testMetricLongitude: "Longitude",
+        testMetricAccuracy: "Akurasi",
+        testMetricDistance: "Jarak sekolah",
+        testFonnteList: "Nomor uji yang diizinkan:"
     },
     en: {
         welcomeTitle: "School attendance, made simple.",
@@ -325,6 +346,27 @@ const EXTRA_T = {
         testOtherFail: "Service did not respond.",
         testPhoneInvalid: "Enter a valid test number in 628xxxxxxxxxx format.",
         testWhatsappNoConsent: "Confirm consent before sending the test message."
+        testFonnteConfigured: "Fonnte token is configured",
+        testFonnteMissing: "Fonnte token is not configured",
+        testAllowlistEmpty: "No approved test numbers configured",
+        testAllowlistLoadFailed: "Could not load the test-number list",
+        testGpsChecking: "Checking device location...",
+        testGpsInside: "Location is within the school radius and accuracy meets the limit.",
+        testGpsOutside: "Location is outside the radius or accuracy is insufficient.",
+        testGpsPermission: "Location permission was denied.",
+        testGpsTimeout: "The location check timed out.",
+        testGpsFailed: "Location could not be checked.",
+        testServiceChecking: "Checking endpoints...",
+        testServiceApi: "Vercel API",
+        testServiceFonnte: "Fonnte configuration",
+        testMetricModel: "AI model",
+        testMetricFaces: "Faces",
+        testMetricFps: "FPS",
+        testMetricLatitude: "Latitude",
+        testMetricLongitude: "Longitude",
+        testMetricAccuracy: "Accuracy",
+        testMetricDistance: "Distance to school",
+        testFonnteList: "Approved test numbers:"
     },
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
@@ -441,6 +483,27 @@ const EXTRA_T = {
         testOtherFail: "لم تستجب الخدمة.",
         testPhoneInvalid: "أدخل رقم اختبار صالحًا بالتنسيق 628xxxxxxxxxx.",
         testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار."
+        testFonnteConfigured: "رمز Fonnte مُعدّ",
+        testFonnteMissing: "لم يتم إعداد رمز Fonnte",
+        testAllowlistEmpty: "لم تُضف أرقام اختبار معتمدة",
+        testAllowlistLoadFailed: "تعذر تحميل قائمة أرقام الاختبار",
+        testGpsChecking: "جارٍ التحقق من موقع الجهاز...",
+        testGpsInside: "الموقع داخل نطاق المدرسة والدقة ضمن الحد المسموح.",
+        testGpsOutside: "الموقع خارج النطاق أو الدقة غير كافية.",
+        testGpsPermission: "تم رفض إذن الموقع.",
+        testGpsTimeout: "انتهت مهلة التحقق من الموقع.",
+        testGpsFailed: "تعذر التحقق من الموقع.",
+        testServiceChecking: "جارٍ فحص نقاط الخدمة...",
+        testServiceApi: "واجهة Vercel",
+        testServiceFonnte: "إعداد Fonnte",
+        testMetricModel: "نموذج الذكاء الاصطناعي",
+        testMetricFaces: "الوجوه",
+        testMetricFps: "إطار/ثانية",
+        testMetricLatitude: "خط العرض",
+        testMetricLongitude: "خط الطول",
+        testMetricAccuracy: "الدقة",
+        testMetricDistance: "المسافة إلى المدرسة",
+        testFonnteList: "أرقام الاختبار المعتمدة:"
     }
 };
 
@@ -1447,7 +1510,7 @@ async function startAdminTestCamera() {
 async function loadAdminTestTools() {
     try {
         const result = await cloudRequest("/api/admin/test-tools");
-        $("admin-test-fonnte-state").textContent = result.fonnte_configured ? "Token tersedia" : "Token belum dikonfigurasi";
+        $("admin-test-fonnte-state").textContent = result.fonnte_configured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
         $("admin-test-whatsapp-allowlist").textContent = result.allowed_recipients?.length
             ? result.allowed_recipients.join(", ") : "Belum ada nomor uji yang diizinkan";
         if (result.template && $("admin-test-whatsapp-template")) $("admin-test-whatsapp-template").value = result.template;
@@ -1458,7 +1521,7 @@ async function loadAdminTestTools() {
         }
     } catch (error) {
         $("admin-test-fonnte-state").textContent = "Tidak dapat diperiksa";
-        $("admin-test-whatsapp-allowlist").textContent = "Gagal memuat daftar nomor";
+        $("admin-test-whatsapp-allowlist").textContent = tr("testAllowlistLoadFailed");
         $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
     }
 }
@@ -1502,7 +1565,7 @@ async function sendAdminWhatsAppTest() {
 
 async function testAdminGps() {
     const status = $("admin-test-gps-status");
-    status.textContent = tr("studentStartingGps") || "Memeriksa lokasi perangkat...";
+    status.textContent = tr("testGpsChecking");
     try {
         await loadSchoolSettings({ preserveOnError: true });
         if (!navigator.geolocation) throw new Error("Geolocation API tidak tersedia.");
@@ -1520,19 +1583,19 @@ async function testAdminGps() {
         $("admin-test-gps-accuracy").textContent = Math.round(accuracy) + " m";
         $("admin-test-gps-distance").textContent = Math.round(distance) + " m";
         status.textContent = accuracy <= MAX_GPS_ACCURACY_METERS && distance <= SCHOOL_LOCATION.radius
-            ? "Lokasi berada di dalam radius dan akurasi memenuhi batas."
-            : "Lokasi di luar radius atau akurasi tidak memenuhi batas.";
+            ? tr("testGpsInside")
+            : tr("testGpsOutside");
     } catch (error) {
-        status.textContent = error?.code === 1 ? "Izin lokasi ditolak." : error?.code === 3 ? "Pemeriksaan lokasi kehabisan waktu." : error.message || "Lokasi gagal diperiksa.";
+        status.textContent = error?.code === 1 ? tr("testGpsPermission") : error?.code === 3 ? tr("testGpsTimeout") : error.message || tr("testGpsFailed");
     }
 }
 
 async function runAdminServiceChecks() {
     const root = $("admin-test-services-results");
-    root.textContent = "Memeriksa endpoint...";
+    root.textContent = tr("testServiceChecking");
     const checks = [
-        ["Vercel API", async () => await cloudRequest("/api")],
-        ["Konfigurasi Fonnte", async () => await cloudRequest("/api/admin/test-tools")]
+        [tr("testServiceApi"), async () => await cloudRequest("/api")],
+        [tr("testServiceFonnte"), async () => await cloudRequest("/api/admin/test-tools")]
     ];
     const results = await Promise.all(checks.map(async ([name, run]) => {
         try { await run(); return { name, ok: true }; }
