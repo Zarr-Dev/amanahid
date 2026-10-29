@@ -1527,6 +1527,7 @@ async function loadAdminTestTools() {
         $("admin-test-fonnte-state").textContent = "Tidak dapat diperiksa";
         $("admin-test-whatsapp-allowlist").textContent = tr("testAllowlistLoadFailed");
         $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
+        $("admin-test-whatsapp-send").disabled = true;
     }
 }
 
