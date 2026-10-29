@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/auth/login.js",
-    "api/index.js", "supabase-demo-accounts.sql"
+    "api/index.js", "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -94,6 +94,9 @@ const htmlChecks = [
     ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
     ["Admin parent WhatsApp field", /id="admin-user-parent-whatsapp"/],
     ["visible student face sample progress", /id="face-sample-progress-bar"/],
+    ["student absence form", /id="student-absence-form"/],
+    ["teacher absence request table", /id="absence-requests-tbody"/],
+    ["manual face sample button removed", !/id="btn-capture-face"/],
     ["rotating Admin CAPTCHA", /id="admin-captcha-answer"/],
     ["editable school GPS map", /id="admin-school-map"/],
     ["Admin account export", /id="admin-export-users"/],
@@ -142,7 +145,8 @@ const cssChecks = [
     ["reduced motion preference", /@media\s*\(prefers-reduced-motion:\s*reduce\)/],
     ["mobile safe-area bottom nav", /height:\s*66px;[\s\S]{0,180}padding-bottom:\s*max\(5px,\s*env\(safe-area-inset-bottom\)\)/],
     ["touch-scrollable tables", /\.table-wrap\s*\{[^}]*overflow-x:\s*auto;[^}]*-webkit-overflow-scrolling:\s*touch;/s],
-    ["large screen content width cap", /@media\s*\(min-width:\s*1600px\)[\s\S]*?\.app-shell\s*\{\s*max-width:\s*1600px;/]
+    ["large screen content width cap", /@media\s*\(min-width:\s*1600px\)[\s\S]*?\.app-shell\s*\{\s*max-width:\s*1600px;/],
+    ["absence form styling", /\.absence-form-panel\s+\.registration-form/]
 ];
 for (const [label, pattern] of cssChecks) {
     if (!pattern.test(css)) {
@@ -174,6 +178,15 @@ if (/Amanah\.id/i.test(publicBrandSource)) {
 }
 if (!js.includes("const anyPending = Object.values(feedback).some(item => item?.type === \"pending\")") || !js.includes("locked || anyPending ? \"disabled\" : \"\"")) {
     console.error("Build check failed: Admin feature toggles must prevent overlapping saves and concurrent settings overwrites.");
+    process.exit(1);
+}
+
+if (!js.includes("function faceAngleBucket") || !js.includes("GPS_FIX_STALE") || !js.includes("faceSampleAngles.includes(angle)")) {
+    console.error("Build check failed: face-angle capture or fresh GPS checks are missing.");
+    process.exit(1);
+}
+if (!js.includes("async function submitStudentAbsence") || !js.includes("loadAbsenceRequests")) {
+    console.error("Build check failed: student absence request workflow is missing.");
     process.exit(1);
 }
 
