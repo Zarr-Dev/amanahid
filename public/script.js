@@ -2338,9 +2338,6 @@ function updateFaceSampleCount() {
     if ($("face-sample-count")) {
         $("face-sample-count").textContent = tr("faceSamplesCount", { count: state.faceSamples.length });
     }
-    if ($("btn-capture-face")) {
-        $("btn-capture-face").disabled = !state.faceCandidate || state.faceSamples.length >= MAX_FACE_SAMPLES;
-    }
     const progress = $("face-sample-progress-bar");
     if (progress) {
         const complete = state.faceSamples.length === MAX_FACE_SAMPLES && ["front", "left", "right", "up", "down"].every(angle => state.faceSampleAngles.includes(angle));
