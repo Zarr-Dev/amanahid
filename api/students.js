@@ -60,6 +60,58 @@ export default async function handler(req, res) {
         }
     }
 
+    if (req.method === "PATCH") {
+        try {
+            if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        } catch (error) {
+            console.error("Student face update authorization failed:", error);
+            return jsonSupabaseError(res, error, "Unable to validate teacher session");
+        }
+        if (!rateLimit(req, "students:PATCH:faces", 10, 60_000, res)) {
+            return jsonError(res, 429, "Too many face update attempts. Try again later.");
+        }
+        const body = req.body || {};
+        const nisn = body.nisn;
+        const face_descriptors = body.face_descriptors;
+        if (!parseNisn(nisn) || !isValidDescriptors(face_descriptors) ||
+            !Array.isArray(face_descriptors) || face_descriptors.length !== 5 ||
+            !face_descriptors.every(sample => Array.isArray(sample) && sample.length === 128)) {
+            return jsonError(res, 400, "A valid NISN and five face-angle descriptors are required");
+        }
+        try {
+            const students = await supabaseRequest(
+                "students?select=id,nisn,name,face_descriptors&nisn=eq." + encodeURIComponent(nisn) + "&is_active=eq.true&limit=1"
+            );
+            if (!students.length) return jsonError(res, 404, "Student account was not found");
+            const otherStudents = await supabaseRequest(
+                "students?select=nisn,face_descriptors&is_active=eq.true&limit=1000"
+            );
+            const duplicateIdentity = otherStudents.some(other => {
+                if (other.nisn === nisn || !isValidDescriptors(other.face_descriptors)) return false;
+                const samples = Array.isArray(other.face_descriptors[0]) ? other.face_descriptors : [other.face_descriptors];
+                return face_descriptors.some(sample => samples.some(otherSample => {
+                    let squared = 0;
+                    for (let i = 0; i < 128; i++) squared += (sample[i] - otherSample[i]) ** 2;
+                    return Math.sqrt(squared) < 0.28;
+                }));
+            });
+            if (duplicateIdentity) return jsonError(res, 409, "These face samples closely match a different student. Verify the identity before replacing the face data.");
+            const updated = await supabaseRequest(
+                "students?id=eq." + encodeURIComponent(students[0].id) + "&select=id,nisn,name,class_name,parent_whatsapp,face_descriptors,created_at,email",
+                {
+                    method: "PATCH",
+                    headers: { Prefer: "return=representation" },
+                    body: JSON.stringify({ face_descriptors })
+                }
+            );
+            await writeAuditLog(getSession(req), "student.face_update", "students", students[0].id, { nisn });
+            return res.status(200).json({ student: updated[0] });
+        } catch (error) {
+            console.error("Student face update failed:", error);
+            return jsonSupabaseError(res, error, "Unable to update student face data");
+        }
+    }
+
     if (req.method === "POST") {
         try {
             if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
