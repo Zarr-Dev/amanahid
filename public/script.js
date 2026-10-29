@@ -190,6 +190,7 @@ const EXTRA_T = {
         testWhatsappDesc: "Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.",
         testWhatsappNumber: "Nomor uji WhatsApp",
         testWhatsappTemplate: "Template pesan",
+        testWhatsappDefaultTemplate: "Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.",
         testWhatsappPreview: "Pratinjau pesan",
         testWhatsappConfirm: "Saya menyetujui pengiriman satu pesan uji ke nomor yang ditampilkan.",
         testWhatsappSend: "Kirim satu pesan uji",
@@ -327,6 +328,7 @@ const EXTRA_T = {
         testWhatsappDesc: "Preview the message and test only approved numbers.",
         testWhatsappNumber: "Test WhatsApp number",
         testWhatsappTemplate: "Message template",
+        testWhatsappDefaultTemplate: "Amanah ID: this is a WhatsApp notification test. No attendance or student data has been changed.",
         testWhatsappPreview: "Message preview",
         testWhatsappConfirm: "I approve sending one test message to the displayed number.",
         testWhatsappSend: "Send one test message",
@@ -464,6 +466,7 @@ const EXTRA_T = {
         testWhatsappDesc: "عاين الرسالة واختبر الأرقام المعتمدة فقط.",
         testWhatsappNumber: "رقم واتساب للاختبار",
         testWhatsappTemplate: "قالب الرسالة",
+        testWhatsappDefaultTemplate: "أمانة ID: هذه رسالة اختبار لإشعارات واتساب. لم يتم تغيير أي سجل حضور أو بيانات طالب.",
         testWhatsappPreview: "معاينة الرسالة",
         testWhatsappConfirm: "أوافق على إرسال رسالة اختبار واحدة إلى الرقم المعروض.",
         testWhatsappSend: "إرسال رسالة اختبار واحدة",
@@ -1513,7 +1516,8 @@ async function loadAdminTestTools() {
         $("admin-test-fonnte-state").textContent = result.fonnte_configured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
         $("admin-test-whatsapp-allowlist").textContent = result.allowed_recipients?.length
             ? result.allowed_recipients.join(", ") : "Belum ada nomor uji yang diizinkan";
-        if (result.template && $("admin-test-whatsapp-template")) $("admin-test-whatsapp-template").value = result.template;
+        const templateInput = $("admin-test-whatsapp-template");
+        if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
         updateAdminWhatsAppPreview();
         $("admin-test-whatsapp-send").disabled = !result.fonnte_configured || !result.allowed_recipients?.length;
         if (!result.fonnte_configured || !result.allowed_recipients?.length) {
@@ -4003,7 +4007,10 @@ function setupEvents() {
     $("admin-test-gps-run")?.addEventListener("click", () => void testAdminGps());
     $("admin-test-open-settings")?.addEventListener("click", () => showAdminView("admin-view-settings"));
     $("admin-test-services-run")?.addEventListener("click", () => void runAdminServiceChecks());
-    $("admin-test-whatsapp-template")?.addEventListener("input", updateAdminWhatsAppPreview);
+    $("admin-test-whatsapp-template")?.addEventListener("input", () => {
+        $("admin-test-whatsapp-template").dataset.userEdited = "true";
+        updateAdminWhatsAppPreview();
+    });
     $("admin-test-whatsapp-send")?.addEventListener("click", () => void sendAdminWhatsAppTest());
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
