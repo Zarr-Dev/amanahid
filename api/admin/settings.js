@@ -5,7 +5,16 @@ import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.
 import { validateSchema } from "../_lib/validate.js";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
+const FEATURES_ID = "00000000-0000-0000-0000-000000000002";
 const DEFAULTS = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 50 };
+const FEATURE_DEFAULTS = {
+  camera_attendance: true, gps_geofencing: true, face_recognition: true, liveness_check: true, face_enrollment: true, face_sample_limit: true,
+  student_login: true, teacher_login: true, admin_login: true, student_account_creation: true, teacher_account_creation: true, account_deactivation: true,
+  attendance_recording: true, duplicate_attendance_block: true, attendance_history: true, attendance_export: true, parent_notifications: true, late_detection: true,
+  admin_audit_log: true, admin_account_export: true, admin_password_change: true, rate_limiting: true, session_expiry: true, origin_validation: true,
+  maintenance_banner: false, public_status_panel: true, reduced_motion_support: true, language_switcher: true, responsive_layout: true, splash_animation: true,
+  gps_accuracy_guard: true, geofence_radius_edit: true, school_schedule_rules: true, privacy_notice: true, service_health_panel: true, strict_server_validation: true
+};
 
 async function updateAdminPassword(req, res, admin) {
     const body = req.body || {};
@@ -47,6 +56,38 @@ export default async function handler(req, res) {
             return jsonError(res, 405, "Method not allowed");
         }
         return updateAdminPassword(req, res, admin);
+    }
+    if (req.query?.action === "features") {
+        try {
+            if (req.method === "GET") {
+                const rows = await supabaseRequest(`system_settings?id=eq.${FEATURES_ID}&select=feature_flags,updated_at,updated_by&limit=1`);
+                const row = Array.isArray(rows) ? rows[0] : null;
+                return res.status(200).json({ features: { ...FEATURE_DEFAULTS, ...(row?.feature_flags || {}) }, updated_at: row?.updated_at || null });
+            }
+            if (req.method === "PUT") {
+                const body = req.body || {};
+                if (!body.features || typeof body.features !== "object" || Array.isArray(body.features)) return jsonError(res, 400, "A feature settings object is required");
+                const keys = Object.keys(FEATURE_DEFAULTS);
+                if (Object.keys(body.features).some(key => !keys.includes(key)) || keys.some(key => typeof body.features[key] !== "boolean")) {
+                    return jsonError(res, 400, "Feature settings must contain only the known boolean flags");
+                }
+                const features = Object.fromEntries(keys.map(key => [key, body.features[key]]));
+                const rows = await supabaseRequest("system_settings?on_conflict=id&select=feature_flags,updated_at,updated_by", {
+                    method: "POST",
+                    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+                    body: JSON.stringify({ id: FEATURES_ID, feature_flags: features, updated_by: admin.email, updated_at: new Date().toISOString() })
+                });
+                const updated = Array.isArray(rows) ? rows[0] : null;
+                if (!updated) return jsonError(res, 500, "Feature settings were not returned after save");
+                await writeAuditLog(admin, "system.features.update", "system_settings", FEATURES_ID, { enabled_count: Object.values(features).filter(Boolean).length, total_count: keys.length });
+                return res.status(200).json({ features: { ...FEATURE_DEFAULTS, ...updated.feature_flags }, updated_at: updated.updated_at });
+            }
+            res.setHeader("Allow", "GET, PUT");
+            return jsonError(res, 405, "Method not allowed");
+        } catch (error) {
+            console.error("Admin feature settings failed:", error);
+            return jsonSupabaseError(res, error, "Unable to manage system feature settings");
+        }
     }
     try {
         if (req.method === "GET") {
