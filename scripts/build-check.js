@@ -181,7 +181,7 @@ if (!js.includes("const anyPending = Object.values(feedback).some(item => item?.
     process.exit(1);
 }
 
-if (!js.includes("function faceAngleBucket") || !js.includes("GPS_FIX_STALE") || !js.includes("faceSampleAngles.includes(angle)")) {
+if (!js.includes("function faceAngleBucket") || !allApiSource.includes("GPS_FIX_STALE") || !js.includes("faceSampleAngles.includes(angle)")) {
     console.error("Build check failed: face-angle capture or fresh GPS checks are missing.");
     process.exit(1);
 }
