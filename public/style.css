@@ -3642,3 +3642,12 @@ body.app-dialog-open { overflow: hidden; }
   .splash-text { font-size: clamp(42px, 12vw, 58px); }
   .admin-governance-heading { flex-direction: column; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen.is-playing .splash-lockup,
+  .splash-screen.is-playing .splash-mark,
+  .splash-screen.is-playing .splash-text {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+  }
+}
