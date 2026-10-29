@@ -90,16 +90,24 @@ export default async function handler(req, res) {
             lat: { type: "number", required: true, min: -90, max: 90 },
             lng: { type: "number", required: true, min: -180, max: 180 },
             accuracy: { type: "number", required: true, min: 0.01, max: 1_000_000 },
+            gpsTimestamp: { type: "number", required: true, min: 1_600_000_000_000, max: 2_200_000_000_000 },
+            speed: { type: "number", required: true, min: 0, max: 55 },
             confidence: { type: "number", required: true, min: 0.3, max: 1 }
         }, body);
         if (!bodyValidation.valid) return jsonError(res, 400, bodyValidation.error);
-        const { nisn, lat, lng, accuracy, confidence } = body;
+        const { nisn, lat, lng, accuracy, gpsTimestamp, speed, confidence } = body;
         if (typeof nisn !== "string" || !/^\d{8,20}$/.test(nisn)) {
             return jsonError(res, 400, "Invalid NISN");
         }
-        if (![lat, lng, accuracy, confidence].every(value => typeof value === "number" && Number.isFinite(value)) ||
+        if (![lat, lng, accuracy, gpsTimestamp, speed, confidence].every(value => typeof value === "number" && Number.isFinite(value)) ||
             Math.abs(lat) > 90 || Math.abs(lng) > 180 || accuracy <= 0 || confidence < 0.3 || confidence > 1) {
             return jsonError(res, 400, "Invalid location or confidence values");
+        }
+        if (Math.abs(Date.now() - gpsTimestamp) > 30_000) {
+            return failedAttendance(req, res, role, 400, { error: "GPS_FIX_STALE", message: "Location data is stale. Check GPS again." });
+        }
+        if (speed > 55) {
+            return failedAttendance(req, res, role, 400, { error: "GPS_SPEED_ANOMALY", message: "Location movement looks implausible." });
         }
         if (role === "siswa" && getSession(req)?.nisn !== nisn) {
             return jsonError(res, 403, "Students can only record their own attendance");
