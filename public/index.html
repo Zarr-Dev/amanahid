@@ -732,6 +732,7 @@
                             <label for="admin-setting-tolerance" data-i18n="lateTolerance">Toleransi keterlambatan (menit)</label>
                             <input id="admin-setting-tolerance" type="number" min="0" max="180" step="1" required>
                             <button class="button primary" type="submit" data-i18n="saveSettings">Simpan pengaturan</button>
+                            <p id="admin-settings-status" class="helper-text" role="status" aria-live="polite"></p>
                         </form>
                     </div>
                     <aside class="panel admin-settings-map-panel">
@@ -793,7 +794,7 @@
                             <p class="muted" data-i18n="testGpsDesc">Periksa koordinat perangkat dan jaraknya dari titik sekolah yang tersimpan.</p></div></div>
                         <div class="admin-test-gps-values"><span>Latitude <strong id="admin-test-gps-lat">-</strong></span><span>Longitude <strong id="admin-test-gps-lng">-</strong></span><span>Akurasi <strong id="admin-test-gps-accuracy">-</strong></span><span>Jarak sekolah <strong id="admin-test-gps-distance">-</strong></span></div>
                         <button id="admin-test-gps-run" class="button secondary" type="button" data-i18n="testGpsRun">Uji lokasi saat ini</button>
-                        <button id="admin-test-open-settings" class="button subtle" type="button">Atur titik GPS sekolah</button>
+                        <button id="admin-test-open-settings" class="button subtle" type="button" data-i18n="testGpsOpenSettings">Atur titik GPS sekolah</button>
                         <p id="admin-test-gps-status" class="helper-text" role="status" aria-live="polite" data-i18n="testGpsStatus">Lokasi belum diuji.</p>
                         <p class="muted">Pengujian ini membaca geolokasi browser. Hasilnya bukan bukti anti-Fake-GPS.</p>
                     </section>
