@@ -96,7 +96,6 @@ const htmlChecks = [
     ["visible student face sample progress", /id="face-sample-progress-bar"/],
     ["student absence form", /id="student-absence-form"/],
     ["teacher absence request table", /id="absence-requests-tbody"/],
-    ["manual face sample button removed", !/id="btn-capture-face"/],
     ["rotating Admin CAPTCHA", /id="admin-captcha-answer"/],
     ["editable school GPS map", /id="admin-school-map"/],
     ["Admin account export", /id="admin-export-users"/],
@@ -111,6 +110,10 @@ if (!/insert into public[.]teachers/i.test(demoAccountsSql) ||
     !/insert into public[.]students/i.test(demoAccountsSql) ||
     /insert into public[.]admin_users/i.test(demoAccountsSql)) {
     console.error("Demo seed must create only Guru and Siswa accounts, never an Admin.");
+    process.exit(1);
+}
+if (html.includes('id="btn-capture-face"')) {
+    console.error("Build check failed: the manual face sample button must be removed.");
     process.exit(1);
 }
 for (const [label, pattern] of htmlChecks) {
