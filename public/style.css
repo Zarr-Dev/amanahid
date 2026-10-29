@@ -3598,3 +3598,47 @@ body.app-dialog-open { overflow: hidden; }
         padding: 14px;
     }
 }
+
+
+/* Amanah ID 2026 polish: fixed desktop navigation, focused content scrolling and governance controls. */
+@media (min-width: 721px) {
+  .app-shell { height: 100svh; min-height: 100svh; overflow: hidden; align-items: start; }
+  .app-shell > .sidebar { position: sticky; top: 0; align-self: start; height: 100svh; min-height: 0; overflow: hidden; }
+  .app-shell > .main-area { height: 100svh; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; }
+}
+.brand-mark, .mockup-brand-mark { object-fit: contain; mix-blend-mode: normal; }
+.splash-lockup { gap: clamp(14px, 2vw, 24px); }
+.splash-mark { width: clamp(120px, 15vw, 160px); flex-basis: clamp(120px, 15vw, 160px); border-radius: 28%; mix-blend-mode: normal; filter: drop-shadow(0 18px 36px rgba(39, 94, 208, .15)); }
+.splash-text { font-size: clamp(48px, 7vw, 64px); font-weight: 700; letter-spacing: -.045em; color: #14294b; text-shadow: none; }
+.splash-screen.is-playing .splash-text { animation: splash-text-in .7s cubic-bezier(.16, 1, .3, 1) .2s both; }
+.splash-screen.is-playing .splash-mark { animation: splash-mark-in .65s cubic-bezier(.16, 1, .3, 1) both; }
+.splash-screen.is-playing .splash-lockup { animation: splash-land 3.1s cubic-bezier(.22, .72, .18, 1) 0s both; }
+@keyframes splash-mark-in { 0% { opacity: 0; transform: scale(.72) rotate(-12deg); } 60% { opacity: 1; transform: scale(1.04) rotate(2deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes splash-land { 0%, 42% { transform: translate3d(0, 0, 0) scale(1); } 68% { transform: translate3d(0, -5vh, 0) scale(.92); } 100% { transform: translate3d(var(--splash-target-x, 0px), var(--splash-target-y, 0px), 0) scale(var(--splash-target-scale, .34)); } }
+.admin-governance-panel { margin-top: 18px; padding: clamp(16px, 2vw, 24px); min-width: 0; }
+.admin-governance-heading { align-items: flex-start; gap: 16px; }
+.admin-governance-heading h3 { margin: 4px 0 7px; }
+.admin-governance-heading p { margin-bottom: 0; max-width: 680px; }
+.admin-governance-status { margin: 12px 0; font-size: 12px; color: var(--muted); }
+.admin-governance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.admin-governance-category { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: linear-gradient(145deg, #fff, #f7faff); }
+.admin-governance-category h4 { margin: 0 0 12px; color: var(--text); font: 600 15px "Fredoka", sans-serif; }
+.admin-governance-control { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #e8edf7; }
+.admin-governance-control:first-of-type { border-top: 0; }
+.admin-governance-control label { margin: 0; font-size: 12px; line-height: 1.45; font-weight: 600; cursor: pointer; }
+.admin-governance-control small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
+.admin-switch { flex: 0 0 auto; position: relative; width: 44px; height: 26px; min-width: 44px; min-height: 26px; }
+.admin-switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.admin-switch-track { position: absolute; inset: 0; border-radius: 99px; background: #cbd5e5; transition: background .18s ease; cursor: pointer; }
+.admin-switch-track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px #152a4b30; transition: transform .18s ease; }
+.admin-switch input:checked + .admin-switch-track { background: var(--blue); }
+.admin-switch input:checked + .admin-switch-track::after { transform: translateX(18px); }
+.admin-switch input:focus-visible + .admin-switch-track { outline: 3px solid #3978f650; outline-offset: 3px; }
+@media (max-width: 980px) { .admin-governance-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 720px) {
+  .app-shell { height: auto; min-height: 100svh; overflow: visible; }
+  .app-shell > .main-area { height: auto; min-height: 100svh; overflow: visible; }
+  .splash-lockup { flex-direction: column; gap: 14px; }
+  .splash-text { font-size: clamp(42px, 12vw, 58px); }
+  .admin-governance-heading { flex-direction: column; }
+}
