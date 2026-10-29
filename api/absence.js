@@ -131,6 +131,7 @@ export default async function handler(req, res) {
                 whatsapp
             });
         } catch (error) {
+            if (error?.code === "23505") return jsonError(res, 409, "A pending absence request already exists for this date");
             console.error("Absence request save failed:", error);
             return jsonSupabaseError(res, error, "Unable to save absence request");
         }
