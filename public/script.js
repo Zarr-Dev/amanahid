@@ -3789,6 +3789,7 @@ function initialize() {
     initSplashScreen();
     setTheme("light");
     setLanguage("id");
+    if ($("absence-date")) $("absence-date").value = localDateKey();
     observeHeroTitleSize();
     showAuth({ clearSession: false });
     setupEvents();
