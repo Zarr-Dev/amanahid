@@ -3651,3 +3651,17 @@ body.app-dialog-open { overflow: hidden; }
     animation-delay: 0ms !important;
   }
 }
+
+
+/* Accessible per-switch feedback: loading, success, and failure stay local to the control. */
+.admin-switch-wrap { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 7px; min-width: 70px; }
+.feature-spinner { width: 15px; height: 15px; flex: 0 0 15px; border: 2px solid #b9c9e7; border-top-color: var(--blue); border-radius: 50%; animation: feature-spin .7s linear infinite; }
+@keyframes feature-spin { to { transform: rotate(360deg); } }
+.feature-result { display: inline-flex; width: 19px; height: 19px; flex: 0 0 19px; align-items: center; justify-content: center; border-radius: 50%; font-size: 12px; font-weight: 800; animation: feature-result-in .16s ease-out both; }
+.feature-result-ok { color: #087a50; background: #d9f8e9; }
+.feature-result-error { color: #fff; background: #d92d3a; }
+@keyframes feature-result-in { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+.admin-governance-control.has-error { background: #fff7f7; border-radius: 8px; padding-inline: 7px; }
+.feature-error-text { color: #bd2634 !important; }
+.admin-switch input:disabled + .admin-switch-track { cursor: wait; opacity: .75; }
+@media (prefers-reduced-motion: reduce) { .feature-spinner { animation-duration: 1.5s; } .feature-result { animation: none; } }
