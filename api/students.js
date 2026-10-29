@@ -114,6 +114,22 @@ export default async function handler(req, res) {
             if (existing.length && isValidDescriptors(existing[0].face_descriptors)) {
                 return jsonError(res, 409, "A student with this NISN already has registered face samples");
             }
+            const registeredStudents = await supabaseRequest(
+                "students?select=id,nisn,face_descriptors&is_active=eq.true&limit=1000"
+            );
+            const submittedSamples = Array.isArray(face_descriptors[0]) ? face_descriptors : [face_descriptors];
+            const duplicateIdentity = registeredStudents.some(other => {
+                if (other.nisn === nisn || !isValidDescriptors(other.face_descriptors)) return false;
+                const otherSamples = Array.isArray(other.face_descriptors[0]) ? other.face_descriptors : [other.face_descriptors];
+                return submittedSamples.some(sample => otherSamples.some(otherSample => {
+                    let squared = 0;
+                    for (let i = 0; i < 128; i++) squared += (sample[i] - otherSample[i]) ** 2;
+                    return Math.sqrt(squared) < 0.28;
+                }));
+            });
+            if (duplicateIdentity) {
+                return jsonError(res, 409, "These face samples closely match a different registered student. Verify the identity with a teacher before continuing.");
+            }
             const teacherEmail = await supabaseRequest(
                 `teachers?select=id&email=eq.${encodeURIComponent(email.trim().toLowerCase())}&limit=1`
             );
