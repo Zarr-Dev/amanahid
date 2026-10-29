@@ -2373,6 +2373,7 @@ function stopFormCamera() {
 function stopAllCameras() {
     stopAttendanceCamera();
     stopFormCamera();
+    if (typeof stopAdminTestCamera === "function") stopAdminTestCamera();
 }
 
 async function getCameraStream() {
