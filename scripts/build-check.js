@@ -10,7 +10,7 @@ const requiredFiles = [
     "api/_lib/admin-auth.js", "api/_lib/admin-api.js", "api/_lib/audit.js",
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
-    "api/admin/settings.js", "api/admin/audit.js", "api/admin/test-tools.js", "api/auth/login.js",
+    "api/admin/settings.js", "api/admin/audit.js", "api/_lib/test-tools.js", "api/auth/login.js",
     "api/index.js", "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
@@ -182,6 +182,7 @@ const publicBrandSource = html + "\n" + js;
 if (/Amanah\.id/i.test(publicBrandSource)) {
     console.error("Build check failed: public UI must use the official brand name Amanah ID.");
     process.exit(1);
+}
 if (!js.includes('phase === "pending" ? "disabled"') ||
     !js.includes("state.adminFeatureSaveQueue") ||
     !js.includes("body: payload });")) {
@@ -197,8 +198,8 @@ if (!js.includes("phase === \"pending\" ? \"disabled\"") || !js.includes("featur
     console.error("Build check failed: per-switch loading feedback is missing.");
     process.exit(1);
 }
-if (!existsSync(join(root, "api/admin/test-tools.js"))) {
-    console.error("Build check failed: admin Fonnte test endpoint is missing.");
+if (!existsSync(join(root, "api/_lib/test-tools.js"))) {
+    console.error("Build check failed: admin Fonnte test handler is missing.");
     process.exit(1);
 }
 if (!js.includes("function faceAngleBucket") || !allApiSource.includes("GPS_FIX_STALE") || !js.includes("faceSampleAngles.includes(angle)")) {

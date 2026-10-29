@@ -1,4 +1,3 @@
-import { authorizeAdmin } from "../_lib/admin-api.js";
 import { rateLimit, jsonError, jsonSupabaseError } from "../_lib/supabase.js";
 import { sendWhatsApp } from "../_lib/whatsapp.js";
 import { writeAuditLog } from "../_lib/audit.js";
@@ -14,11 +13,9 @@ function configuredRecipients() {
         .slice(0, 10);
 }
 
-export default async function handler(req, res) {
+export async function handleAdminTestTools(req, res, admin) {
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    const admin = await authorizeAdmin(req, res, "test-tools");
-    if (!admin) return;
 
     const recipients = configuredRecipients();
     if (req.method === "GET") {

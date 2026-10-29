@@ -47,6 +47,10 @@
       "dest": "/api/admin/settings?action=profile"
     },
     {
+      "src": "^/api/admin/test-tools$",
+      "dest": "/api/admin/settings?action=test-tools"
+    },
+    {
       "handle": "filesystem"
     },
     {

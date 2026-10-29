@@ -3,6 +3,7 @@ import { hashPassword, isValidAdminPassword, verifyPassword } from "../_lib/admi
 import { writeAuditLog } from "../_lib/audit.js";
 import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
+import { handleAdminTestTools } from "../_lib/test-tools.js";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 const FEATURES_ID = "00000000-0000-0000-0000-000000000002";
@@ -48,9 +49,11 @@ async function updateAdminPassword(req, res, admin) {
 }
 
 export default async function handler(req, res) {
-    const admin = await authorizeAdmin(req, res, "settings");
+    const action = req.query?.action;
+    const admin = await authorizeAdmin(req, res, action === "test-tools" ? "test-tools" : "settings");
     if (!admin) return;
-    if (req.query?.action === "profile") {
+    if (action === "test-tools") return handleAdminTestTools(req, res, admin);
+    if (action === "profile") {
         if (req.method !== "PUT") {
             res.setHeader("Allow", "PUT");
             return jsonError(res, 405, "Method not allowed");
