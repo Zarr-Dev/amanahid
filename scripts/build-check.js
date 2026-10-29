@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const requiredFiles = [
     "package.json", "package-lock.json", "vercel.json", "public/index.html", "public/style.css", "public/script.js",
-    "public/assets/amanah-favicon.png",
+    "public/assets/amanah-favicon.png", "public/assets/amanah-favicon.svg",
     "api/_lib/admin-auth.js", "api/_lib/admin-api.js", "api/_lib/audit.js",
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
@@ -87,6 +87,8 @@ const htmlChecks = [
     ["admin login modal", /id="admin-login-modal"/],
     ["splash accessible name and live region", /<div\b(?=[^>]*\bid="splash-screen")(?=[^>]*\baria-label="Amanah ID")(?=[^>]*\baria-live="polite")[^>]*>/],
     ["static splash logo", /<img class="splash-mark" src="assets\/amanah-logo\.svg"/],
+    ["official SVG favicon", /rel="icon" type="image\/svg\+xml" href="assets\/amanah-favicon\.svg"/],
+    ["two-tone Amanah ID wordmark", /class="brand-name-amanah"[\s\S]*?class="brand-name-id"/],
     ["standalone stylesheet and script", /href="style\.css"[\s\S]*?src="script\.js"/],
     ["administrator dashboard", /id="dashboard-admin"[\s\S]*?id="admin-view-dashboard"[\s\S]*?id="admin-view-users"[\s\S]*?id="admin-view-settings"[\s\S]*?id="admin-view-audit"[\s\S]*?id="admin-view-profile"/],
     ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
@@ -133,6 +135,8 @@ if (!adminUserApi.includes('pattern: /^(guru|siswa)$/') ||
 const cssChecks = [
     ["responsive splash dimensions", /\.splash-mark\s*\{[^}]*width:\s*clamp\(160px,\s*25vw,\s*280px\)/s],
     ["square splash logo", /\.splash-mark\s*\{[^}]*aspect-ratio:\s*1\s*\/\s*1/s],
+    ["theme-aware wordmark", /\.brand-name-amanah\s*\{[^}]*var\(--brand-word-color/s],
+    ["dark theme wordmark contrast", /body\.theme-dark\s*\{[^}]*--brand-word-color:\s*#f8fafc/s],
     ["bright splash background", /\.splash-screen\s*\{[^}]*background:[^;]*#fff/s],
     ["splash text animation", /@keyframes\s+splash-text-in\s*\{[\s\S]*?translateY\(-10px\)[\s\S]*?translateY\(0\)/],
     ["reduced motion preference", /@media\s*\(prefers-reduced-motion:\s*reduce\)/],
@@ -168,6 +172,11 @@ if (/Amanah\.id/i.test(publicBrandSource)) {
     console.error("Build check failed: public UI must use the official brand name Amanah ID.");
     process.exit(1);
 }
+if (!js.includes("const anyPending = Object.values(feedback).some(item => item?.type === \"pending\")") || !js.includes("locked || anyPending ? \"disabled\" : \"\"")) {
+    console.error("Build check failed: Admin feature toggles must prevent overlapping saves and concurrent settings overwrites.");
+    process.exit(1);
+}
+
 if (!js.includes("refreshAdminCaptcha()") || !js.includes("syncAdminSettingsMap")) {
     console.error("Build check failed: rotating Admin CAPTCHA or editable school GPS map is missing.");
     process.exit(1);
