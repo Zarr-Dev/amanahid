@@ -85,7 +85,7 @@ const css = readFileSync(join(root, "public/style.css"), "utf8");
 const js = readFileSync(join(root, "public/script.js"), "utf8");
 const htmlChecks = [
     ["admin login modal", /id="admin-login-modal"/],
-    ["splash accessible name and live region", /id="splash-screen"[^>]*aria-label="Amanah ID"[^>]*aria-live="polite"/],
+    ["splash accessible name and live region", /<div\b(?=[^>]*\bid="splash-screen")(?=[^>]*\baria-label="Amanah ID")(?=[^>]*\baria-live="polite")[^>]*>/],
     ["static splash logo", /<img class="splash-mark" src="assets\/amanah-logo\.png"/],
     ["standalone stylesheet and script", /href="style\.css"[\s\S]*?src="script\.js"/],
     ["administrator dashboard", /id="dashboard-admin"[\s\S]*?id="admin-view-dashboard"[\s\S]*?id="admin-view-users"[\s\S]*?id="admin-view-settings"[\s\S]*?id="admin-view-audit"[\s\S]*?id="admin-view-profile"/],
