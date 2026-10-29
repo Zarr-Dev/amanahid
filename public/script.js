@@ -125,6 +125,48 @@ const EXTRA_T = {
         serverBusyReconnect: "Server sedang sibuk, mencoba menghubungkan ulang...",
         networkReconnecting: "Menghubungkan ulang...",
         attendanceWhatsappFailed: "Presensi tercatat, tetapi notifikasi WhatsApp gagal dikirim."
+        absenceFormNav: "Formulir izin",
+        absenceFormKicker: "KETIDAKHADIRAN",
+        absenceFormTitle: "Formulir ketidakhadiran",
+        absenceFormDesc: "Ajukan izin, sakit, atau catatan ketidakhadiran untuk ditinjau guru.",
+        absenceDate: "Tanggal ketidakhadiran",
+        absenceType: "Jenis",
+        absenceSick: "Sakit",
+        absencePermission: "Izin",
+        absenceOther: "Lainnya",
+        absenceNote: "Catatan",
+        absenceNotePlaceholder: "Jelaskan alasan ketidakhadiran secara singkat.",
+        absencePrivacyNote: "Jangan masukkan informasi medis yang tidak diperlukan. Pengajuan akan disimpan dan menunggu peninjauan guru.",
+        absenceSubmit: "Kirim formulir",
+        absenceSending: "Mengirim formulir...",
+        absenceSubmitted: "Formulir tersimpan dan menunggu peninjauan guru.",
+        absenceRequired: "Lengkapi tanggal dan catatan terlebih dahulu.",
+        absenceSubmitFailed: "Formulir tidak dapat dikirim.",
+        absenceLoadFailed: "Pengajuan ketidakhadiran gagal dimuat.",
+        absenceWhatsappFailed: "Formulir tersimpan, tetapi notifikasi WhatsApp gagal dikirim.",
+        absenceRequestsTitle: "Pengajuan ketidakhadiran",
+        absenceRequestsDesc: "Permohonan siswa yang tersimpan di database.",
+        absenceRequestsEmpty: "Belum ada pengajuan.",
+        absenceType_sick: "Sakit",
+        absenceType_permission: "Izin",
+        absenceType_other: "Lainnya",
+        absenceStatus_pending: "Menunggu",
+        absenceStatus_approved: "Disetujui",
+        absenceStatus_rejected: "Ditolak",
+        approveAbsence: "Setujui",
+        rejectAbsence: "Tolak",
+        absenceReviewSaved: "Status pengajuan diperbarui.",
+        absenceReviewFailed: "Status pengajuan gagal diperbarui.",
+        faceTurnAngle: "Hadapkan wajah ke depan, lalu ambil sisi kiri, kanan, atas, dan bawah.",
+        faceDetectedAngle: "Wajah terdeteksi. Sudut: {angle}. Tahan sebentar.",
+        faceAngleAlreadyCaptured: "Sudut {angle} sudah tertangkap. Ubah arah wajah.",
+        faceAngleSaved: "Sudut {angle} tersimpan.",
+        faceAngle_front: "depan",
+        faceAngle_left: "kiri",
+        faceAngle_right: "kanan",
+        faceAngle_up: "atas",
+        faceAngle_down: "bawah",
+        duplicateImageFile: "File gambar yang sama sudah dipilih."
     },
     en: {
         welcomeTitle: "School attendance, made simple.",
@@ -157,6 +199,48 @@ const EXTRA_T = {
         serverBusyReconnect: "The server is busy. Reconnecting...",
         networkReconnecting: "Reconnecting...",
         attendanceWhatsappFailed: "Attendance was recorded, but the WhatsApp notification failed."
+        absenceFormNav: "Absence form",
+        absenceFormKicker: "ABSENCE REQUEST",
+        absenceFormTitle: "Absence request form",
+        absenceFormDesc: "Submit a sick leave, permission, or other absence note for teacher review.",
+        absenceDate: "Absence date",
+        absenceType: "Type",
+        absenceSick: "Sick",
+        absencePermission: "Permission",
+        absenceOther: "Other",
+        absenceNote: "Note",
+        absenceNotePlaceholder: "Briefly explain the absence.",
+        absencePrivacyNote: "Do not include unnecessary medical details. The request will be saved and await teacher review.",
+        absenceSubmit: "Submit request",
+        absenceSending: "Submitting request...",
+        absenceSubmitted: "Request saved and awaiting teacher review.",
+        absenceRequired: "Complete the date and note first.",
+        absenceSubmitFailed: "The request could not be submitted.",
+        absenceLoadFailed: "Absence requests could not be loaded.",
+        absenceWhatsappFailed: "The request was saved, but the WhatsApp notification failed.",
+        absenceRequestsTitle: "Absence requests",
+        absenceRequestsDesc: "Student requests stored in the database.",
+        absenceRequestsEmpty: "There are no requests yet.",
+        absenceType_sick: "Sick",
+        absenceType_permission: "Permission",
+        absenceType_other: "Other",
+        absenceStatus_pending: "Pending",
+        absenceStatus_approved: "Approved",
+        absenceStatus_rejected: "Rejected",
+        approveAbsence: "Approve",
+        rejectAbsence: "Reject",
+        absenceReviewSaved: "Request status updated.",
+        absenceReviewFailed: "Request status could not be updated.",
+        faceTurnAngle: "Face forward, then capture the left, right, up, and down angles.",
+        faceDetectedAngle: "Face detected. Angle: {angle}. Hold still briefly.",
+        faceAngleAlreadyCaptured: "The {angle} angle is already captured. Turn your face.",
+        faceAngleSaved: "The {angle} angle was saved.",
+        faceAngle_front: "front",
+        faceAngle_left: "left",
+        faceAngle_right: "right",
+        faceAngle_up: "up",
+        faceAngle_down: "down",
+        duplicateImageFile: "This exact image file was already selected."
     },
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
@@ -189,6 +273,48 @@ const EXTRA_T = {
         serverBusyReconnect: "الخادم مشغول. جارٍ إعادة الاتصال...",
         networkReconnecting: "جارٍ إعادة الاتصال...",
         attendanceWhatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب."
+        absenceFormNav: "نموذج الغياب",
+        absenceFormKicker: "طلب غياب",
+        absenceFormTitle: "نموذج طلب الغياب",
+        absenceFormDesc: "قدّم طلب مرض أو إذن أو ملاحظة غياب لمراجعة المعلم.",
+        absenceDate: "تاريخ الغياب",
+        absenceType: "النوع",
+        absenceSick: "مرض",
+        absencePermission: "إذن",
+        absenceOther: "أخرى",
+        absenceNote: "ملاحظة",
+        absenceNotePlaceholder: "اشرح سبب الغياب باختصار.",
+        absencePrivacyNote: "لا تُدخل تفاصيل طبية غير ضرورية. سيُحفظ الطلب بانتظار مراجعة المعلم.",
+        absenceSubmit: "إرسال الطلب",
+        absenceSending: "جارٍ إرسال الطلب...",
+        absenceSubmitted: "تم حفظ الطلب وهو بانتظار مراجعة المعلم.",
+        absenceRequired: "يرجى إدخال التاريخ والملاحظة أولًا.",
+        absenceSubmitFailed: "تعذر إرسال الطلب.",
+        absenceLoadFailed: "تعذر تحميل طلبات الغياب.",
+        absenceWhatsappFailed: "تم حفظ الطلب، لكن تعذر إرسال إشعار واتساب.",
+        absenceRequestsTitle: "طلبات الغياب",
+        absenceRequestsDesc: "طلبات الطلاب المحفوظة في قاعدة البيانات.",
+        absenceRequestsEmpty: "لا توجد طلبات حتى الآن.",
+        absenceType_sick: "مرض",
+        absenceType_permission: "إذن",
+        absenceType_other: "أخرى",
+        absenceStatus_pending: "قيد الانتظار",
+        absenceStatus_approved: "مقبول",
+        absenceStatus_rejected: "مرفوض",
+        approveAbsence: "قبول",
+        rejectAbsence: "رفض",
+        absenceReviewSaved: "تم تحديث حالة الطلب.",
+        absenceReviewFailed: "تعذر تحديث حالة الطلب.",
+        faceTurnAngle: "انظر إلى الأمام ثم التقط زوايا الوجه: اليسار واليمين والأعلى والأسفل.",
+        faceDetectedAngle: "تم اكتشاف الوجه. الزاوية: {angle}. ابقَ ثابتًا قليلًا.",
+        faceAngleAlreadyCaptured: "تم التقاط زاوية {angle} بالفعل. غيّر اتجاه الوجه.",
+        faceAngleSaved: "تم حفظ زاوية {angle}.",
+        faceAngle_front: "الأمام",
+        faceAngle_left: "اليسار",
+        faceAngle_right: "اليمين",
+        faceAngle_up: "الأعلى",
+        faceAngle_down: "الأسفل",
+        duplicateImageFile: "تم اختيار ملف الصورة نفسه من قبل."
     }
 };
 
@@ -1490,6 +1616,7 @@ async function loadCloudData(user = state.user) {
             face_descriptors: descriptorsByNisn.get(student.nisn)
         }));
         state.attendance = attendanceResult.attendance;
+        if (user.role === "guru") void loadAbsenceRequests();
         renderStudentList();
         renderDatabase();
         renderStudentHistory();
@@ -2648,6 +2775,75 @@ async function readUploadedFaces(files) {
     }
 }
 
+async function submitStudentAbsence(event) {
+    event.preventDefault();
+    if (!state.user || state.user.role !== "siswa") {
+        toast(tr("absenceSubmitFailed"), "error");
+        return;
+    }
+    const button = $("btn-submit-absence");
+    const status = $("absence-form-status");
+    const body = { date: $("absence-date").value, type: $("absence-type").value, note: $("absence-note").value.trim() };
+    if (!body.date || !body.note) {
+        toast(tr("absenceRequired"), "error");
+        return;
+    }
+    button.disabled = true;
+    status.textContent = tr("absenceSending");
+    try {
+        const result = await cloudRequest("/api/absence", { method: "POST", role: "siswa", body });
+        status.textContent = tr("absenceSubmitted");
+        $("absence-note").value = "";
+        toast(tr("absenceSubmitted"), "success");
+        if (result.whatsapp?.error) toast(tr("absenceWhatsappFailed"), "error");
+    } catch (error) {
+        status.textContent = error.message || tr("absenceSubmitFailed");
+        toast(status.textContent, "error");
+    } finally {
+        button.disabled = false;
+    }
+}
+
+async function loadAbsenceRequests() {
+    const tbody = $("absence-requests-tbody");
+    if (!tbody || state.user?.role !== "guru") return;
+    try {
+        const result = await cloudRequest("/api/absence", { role: "guru" });
+        const rows = Array.isArray(result.requests) ? result.requests : [];
+        tbody.innerHTML = rows.map(item => {
+            const typeLabel = tr("absenceType_" + item.absence_type);
+            const statusLabel = tr("absenceStatus_" + item.status);
+            const action = item.status === "pending"
+                ? '<button class="button subtle" type="button" data-absence-review="approved" data-absence-id="' + safeText(item.id) + '">' + safeText(tr("approveAbsence")) + '</button> <button class="button danger-outline" type="button" data-absence-review="rejected" data-absence-id="' + safeText(item.id) + '">' + safeText(tr("rejectAbsence")) + '</button>'
+                : safeText(statusLabel);
+            return '<tr><td>' + safeText(item.name) + '</td><td>' + safeText(item.class_name) + '</td><td>' +
+                safeText(formatDate(item.absence_date)) + '</td><td>' + safeText(typeLabel) + '</td><td>' +
+                safeText(item.note) + '</td><td>' + safeText(statusLabel) + '</td><td>' + action + '</td></tr>';
+        }).join("");
+        $("absence-requests-empty")?.classList.toggle("hidden", rows.length > 0);
+    } catch (error) {
+        console.error("Absence request load failed:", error);
+        toast(tr("absenceLoadFailed"), "error");
+    }
+}
+
+async function handleAbsenceReview(event) {
+    const button = event.target.closest("[data-absence-review]");
+    if (!button) return;
+    button.disabled = true;
+    try {
+        await cloudRequest("/api/absence", {
+            method: "PATCH", role: "guru",
+            body: { id: button.dataset.absenceId, status: button.dataset.absenceReview }
+        });
+        toast(tr("absenceReviewSaved"), "success");
+        await loadAbsenceRequests();
+    } catch (error) {
+        toast(error.message || tr("absenceReviewFailed"), "error");
+        button.disabled = false;
+    }
+}
+
 // Teacher student registration and map
 async function registerStudent(event) {
     event.preventDefault();
@@ -3461,6 +3657,9 @@ function setupEvents() {
     });
 
     $("student-form").addEventListener("submit", registerStudent);
+    $("student-absence-form")?.addEventListener("submit", submitStudentAbsence);
+    $("btn-refresh-absence-requests")?.addEventListener("click", loadAbsenceRequests);
+    $("absence-requests-tbody")?.addEventListener("click", handleAbsenceReview);
     $("input-parent-wa").addEventListener("invalid", event => {
         event.preventDefault();
         toast(tr("invalidWhatsApp"), "error");
