@@ -200,6 +200,7 @@ const EXTRA_T = {
         testGpsTitle: "Uji GPS dan geofence",
         testGpsDesc: "Periksa koordinat perangkat dan jaraknya dari titik sekolah yang tersimpan.",
         testGpsRun: "Uji lokasi saat ini",
+        testGpsOpenSettings: "Atur titik GPS sekolah",
         testGpsStatus: "Lokasi belum diuji.",
         testOtherTitle: "Pemeriksaan layanan",
         testOtherRun: "Periksa layanan",
@@ -315,6 +316,7 @@ const EXTRA_T = {
         testGpsTitle: "GPS and geofence test",
         testGpsDesc: "Check device coordinates and distance from the saved school location.",
         testGpsRun: "Test current location",
+        testGpsOpenSettings: "Edit school GPS point",
         testGpsStatus: "Location has not been tested.",
         testOtherTitle: "Service checks",
         testOtherRun: "Check services",
@@ -430,6 +432,7 @@ const EXTRA_T = {
         testGpsTitle: "اختبار GPS والنطاق الجغرافي",
         testGpsDesc: "تحقق من إحداثيات الجهاز والمسافة عن موقع المدرسة المحفوظ.",
         testGpsRun: "اختبار الموقع الحالي",
+        testGpsOpenSettings: "تعديل موقع GPS للمدرسة",
         testGpsStatus: "لم يتم اختبار الموقع بعد.",
         testOtherTitle: "فحوصات الخدمة",
         testOtherRun: "فحص الخدمات",
@@ -3903,14 +3906,24 @@ function setupEvents() {
             entry_time: $("admin-setting-entry-time").value,
             late_tolerance_min: Number($("admin-setting-tolerance").value)
         };
+        const submitButton = $("admin-settings-form").querySelector('button[type="submit"]');
+        const status = $("admin-settings-status");
+        const originalLabel = submitButton?.textContent || tr("saveSettings");
+        if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Menyimpan…"; }
+        if (status) status.textContent = "Menyimpan titik GPS dan aturan sekolah…";
         try {
-            await cloudRequest("/api/admin/settings", { method: "PUT", body });
+            const saved = await cloudRequest("/api/admin/settings", { method: "PUT", body });
+            SCHOOL_LOCATION = { ...SCHOOL_LOCATION, ...saved };
             syncAdminSettingsMap({ center: true });
             const mapStatus = $("admin-school-map-status");
             if (mapStatus) mapStatus.textContent = "Pengaturan lokasi sekolah telah disimpan.";
+            if (status) status.textContent = "Titik GPS, radius, dan aturan sekolah berhasil disimpan.";
             toast("Pengaturan sekolah berhasil disimpan.", "success");
         } catch (error) {
+            if (status) status.textContent = error.message || "Pengaturan sekolah gagal disimpan.";
             toastAdminError(error);
+        } finally {
+            if (submitButton) { submitButton.disabled = false; submitButton.textContent = originalLabel; }
         }
     });
     $("admin-audit-filter").addEventListener("click", () => void loadAdminAudit());
