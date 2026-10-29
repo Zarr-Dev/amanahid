@@ -182,9 +182,10 @@ const publicBrandSource = html + "\n" + js;
 if (/Amanah\.id/i.test(publicBrandSource)) {
     console.error("Build check failed: public UI must use the official brand name Amanah ID.");
     process.exit(1);
-}
-if (!js.includes("const anyPending = Object.values(feedback).some(item => item?.type === \"pending\")") || !js.includes("locked || anyPending ? \"disabled\" : \"\"")) {
-    console.error("Build check failed: Admin feature toggles must prevent overlapping saves and concurrent settings overwrites.");
+if (!js.includes('phase === "pending" ? "disabled"') ||
+    !js.includes("state.adminFeatureSaveQueue") ||
+    !js.includes("body: payload });")) {
+    console.error("Build check failed: Admin feature toggles must show per-switch loading and serialize JSON updates.");
     process.exit(1);
 }
 
