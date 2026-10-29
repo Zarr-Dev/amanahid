@@ -816,6 +816,8 @@ function showAuth({ clearSession = true } = {}) {
     state.students = [];
     state.attendance = [];
     state.faceSamples = [];
+    state.faceSampleAngles = [];
+    state.faceImageHashes = new Set();
     state.faceCandidate = null;
     state.faceCandidateQuality = null;
     state.lastLocation = null;
@@ -1680,7 +1682,8 @@ async function checkGeofence() {
 
                 state.lastLocation = {
                     lat: latitude, lng: longitude, accuracy,
-                    distance: roundedDistance, inside, checkedAt: Date.now()
+                    distance: roundedDistance, inside, checkedAt: Date.now(),
+                    positionTimestamp: timestamp, speed: reportedSpeed
                 };
 
                 renderLocationBadge();
@@ -2415,6 +2418,8 @@ async function processAttendanceFrame() {
                 lat: location.lat,
                 lng: location.lng,
                 accuracy: location.accuracy,
+                gpsTimestamp: location.positionTimestamp,
+                speed: location.speed || 0,
                 confidence
             },
             idempotencyKey: state.attendanceIdempotencyKey
@@ -2612,7 +2617,19 @@ async function readUploadedFace(file) {
         const quality = detection.score * (
             1 - Math.min(1, Math.abs(detection.box.width - 160) / 160)
         );
-        if (saveFaceSample(detection.descriptor, quality)) {
+        if (!angle) {
+            $("form-face-status").textContent = tr("faceTurnAngle");
+            toast(tr("faceTurnAngle"), "error");
+            return;
+        }
+        const hash = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+        const imageHash = Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, "0")).join("");
+        if (state.faceImageHashes.has(imageHash)) {
+            toast(tr("duplicateImageFile"), "error");
+            return;
+        }
+        if (saveFaceSample(detection.descriptor, quality, angle)) {
+            state.faceImageHashes.add(imageHash);
             toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
         }
     } catch (error) {
@@ -3438,11 +3455,6 @@ function setupEvents() {
         toast(tr("cameraFormOff"), "info");
     });
 
-    $("btn-capture-face").addEventListener("click", () => {
-        if (state.faceCandidate && saveFaceSample(state.faceCandidate)) {
-            toast(tr("faceSampleReady"), "success");
-        }
-    });
     $("photo-upload").addEventListener("change", event => {
         readUploadedFaces(Array.from(event.target.files || []));
         event.target.value = "";
