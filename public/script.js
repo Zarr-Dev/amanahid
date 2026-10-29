@@ -1216,6 +1216,7 @@ const ADMIN_VIEW_TITLES = {
     "admin-view-dashboard": "adminOverviewTitle",
     "admin-view-users": "schoolUsers",
     "admin-view-settings": "adminSchoolSettings",
+    "admin-view-tests": "adminTestToolsTitle",
     "admin-view-audit": "adminAudit",
     "admin-view-profile": "changeAdminPassword"
 };
@@ -3923,6 +3924,7 @@ function setupEvents() {
     $("admin-test-camera-start")?.addEventListener("click", () => void startAdminTestCamera());
     $("admin-test-camera-stop")?.addEventListener("click", stopAdminTestCamera);
     $("admin-test-gps-run")?.addEventListener("click", () => void testAdminGps());
+    $("admin-test-open-settings")?.addEventListener("click", () => showAdminView("admin-view-settings"));
     $("admin-test-services-run")?.addEventListener("click", () => void runAdminServiceChecks());
     $("admin-test-whatsapp-template")?.addEventListener("input", updateAdminWhatsAppPreview);
     $("admin-test-whatsapp-send")?.addEventListener("click", () => void sendAdminWhatsAppTest());
