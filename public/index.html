@@ -22,7 +22,7 @@
         Periksa jaringan dan konfigurasi API.</div>
     <div id="splash-screen" class="splash-screen" aria-label="Amanah ID" data-i18n-aria="brandName" aria-live="polite">
         <div class="splash-lockup">
-            <img class="splash-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true" decoding="async">
+            <img class="splash-mark" src="assets/amanah-mark.svg" alt="" aria-hidden="true" decoding="async">
             <span class="splash-text">Amanah ID</span>
         </div>
     </div>
@@ -31,7 +31,7 @@
     <main id="auth-screen" class="auth-screen">
         <header class="auth-header">
             <a class="brand brand-auth" href="#" aria-label="Amanah ID" data-i18n-aria="brandName">
-                <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
+                <img class="brand-mark" src="assets/amanah-mark.svg" alt="" aria-hidden="true">
                 <span>Amanah ID</span>
             </a>
         </header>
@@ -69,7 +69,7 @@
                 <div class="visual-glow"></div>
                 <div class="dashboard-mockup">
                     <div class="mockup-topbar">
-                        <div class="mockup-brand"><img class="mockup-brand-mark" src="assets/amanah-logo.png" alt=""
+                        <div class="mockup-brand"><img class="mockup-brand-mark" src="assets/amanah-mark.svg" alt=""
                                 aria-hidden="true">Amanah ID</div>
                         <div class="mockup-window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
                     </div>
@@ -214,7 +214,7 @@
     <main id="dashboard-guru" class="app-shell hidden">
         <aside class="sidebar">
             <a class="brand" id="brand-home" href="#">
-                <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
+                <img class="brand-mark" src="assets/amanah-mark.svg" alt="" aria-hidden="true">
                 <span>Amanah ID</span>
             </a>
             <p class="sidebar-caption" data-i18n="workspace">WORKSPACE</p>
@@ -517,7 +517,7 @@
     <main id="dashboard-admin" class="app-shell hidden">
         <aside class="sidebar">
             <a class="brand" id="admin-brand-home" href="#admin">
-                <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true">
+                <img class="brand-mark" src="assets/amanah-mark.svg" alt="" aria-hidden="true">
                 <span>Amanah ID</span>
             </a>
             <p class="sidebar-caption" data-i18n="adminWorkspace">ADMINISTRATOR</p>
@@ -608,6 +608,17 @@
                                 id="health-fonnte">unknown</strong></div>
                     </div>
                 </div>
+                <section class="panel admin-governance-panel" aria-labelledby="admin-governance-title">
+                    <div class="panel-heading admin-governance-heading">
+                        <div><span class="section-kicker">SYSTEM GOVERNANCE</span>
+                            <h3 id="admin-governance-title">Kontrol operasional Amanah ID</h3>
+                            <p class="muted">36 kontrol dalam 6 kategori. Perubahan disimpan di Supabase dan dicatat dalam audit.</p>
+                        </div>
+                        <button id="admin-governance-reset" class="button subtle" type="button">Muat ulang</button>
+                    </div>
+                    <p id="admin-governance-status" class="admin-governance-status" role="status" aria-live="polite">Memuat kebijakan sistem…</p>
+                    <div id="admin-governance-controls" class="admin-governance-grid"></div>
+                </section>
             </section>
 
             <section id="admin-view-users" class="admin-view hidden">
@@ -794,7 +805,7 @@
     <main id="dashboard-siswa" class="app-shell hidden">
         <aside class="sidebar">
             <a class="brand" id="student-brand-home" href="#">
-                <img class="brand-mark" src="assets/amanah-logo.png" alt="" aria-hidden="true"><span>Amanah<span
+                <img class="brand-mark" src="assets/amanah-mark.svg" alt="" aria-hidden="true"><span>Amanah<span
                         class="brand-dot">.id</span></span>
             </a>
             <p class="sidebar-caption" data-i18n="studentWorkspace">MENU SISWA</p>
