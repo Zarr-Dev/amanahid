@@ -1031,11 +1031,14 @@ function renderAdminFeatures() {
  const root = $("admin-governance-controls");
  if (!root) return;
  const features = state.adminFeatures || {};
+ const feedback = state.adminFeatureStatus || {};
  root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(group.title)}</h4>${group.items.map(([key,label,description]) => {
    const locked = ["admin_audit_log","rate_limiting","session_expiry","origin_validation","strict_server_validation"].includes(key);
    const checked = locked || features[key] !== false;
-   const detail = locked ? description + " (wajib aktif; tidak dapat dinonaktifkan)." : description;
-   return `<div class="admin-governance-control"><label for="feature-${key}">${safeText(label)}<small>${safeText(detail)}</small></label><span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked ? "disabled" : ""} aria-label="${safeText(label)}"><span class="admin-switch-track"></span></span></div>`;
+   const detail = feedback[key]?.message || (locked ? description + " (wajib aktif; tidak dapat dinonaktifkan)." : description);
+   const phase = feedback[key]?.type || "";
+   const icon = phase === "pending" ? '<span class="feature-spinner" aria-hidden="true"></span>' : phase === "success" ? '<span class="feature-result feature-result-ok" aria-hidden="true">✓</span>' : phase === "error" ? '<span class="feature-result feature-result-error" aria-hidden="true">!</span>' : "";
+   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></span></span></div>`;
  }).join("")}</section>`).join("");
 }
 async function loadAdminFeatures() {
@@ -1054,23 +1057,48 @@ async function loadAdminFeatures() {
 }
 async function saveAdminFeatureToggle(input) {
  const key = input?.dataset?.featureKey;
- if (!key || !state.adminFeatures) return;
- const previous = !input.checked;
- input.disabled = true;
+ if (!key || !state.adminFeatures || state.adminFeatureStatus?.[key]?.type === "pending") return;
+ const previous = state.adminFeatures[key] !== false;
+ const requested = input.checked;
  const status = $("admin-governance-status");
- status.textContent = "Menyimpan perubahan kebijakan…";
- state.adminFeatures[key] = input.checked;
+ state.adminFeatureStatus = state.adminFeatureStatus || {};
+ state.adminFeatureStatus[key] = { type: "pending", message: "Menyimpan perubahan…" };
+ state.adminFeatures[key] = requested;
+ renderAdminFeatures();
+ if (status) status.textContent = "Menyimpan perubahan kebijakan ke server…";
  try {
    const result = await cloudRequest("/api/admin/settings?action=features", { method: "PUT", body: JSON.stringify({ features: state.adminFeatures }) });
    state.adminFeatures = result.features || state.adminFeatures;
+   state.adminFeatureStatus[key] = { type: "success", message: "Tersimpan ke server." };
    renderAdminFeatures();
-   status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Perubahan tersimpan dan diaudit`;
+   if (status) status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Perubahan tersimpan dan diaudit`;
    toast("Pengaturan sistem berhasil disimpan.", "success");
+   window.setTimeout(() => {
+     if (state.adminFeatureStatus?.[key]?.type === "success") {
+       delete state.adminFeatureStatus[key];
+       renderAdminFeatures();
+     }
+   }, 3000);
  } catch (error) {
    state.adminFeatures[key] = previous;
+   const raw = String(error?.message || "");
+   const reason = /401|403|unauthori|forbidden|session|sesi/i.test(raw)
+     ? "Sesi Admin tidak valid atau akses ditolak."
+     : /timeout|network|fetch|offline|failed to fetch/i.test(raw)
+       ? "Koneksi terputus atau server tidak merespons."
+       : /supabase|database|500|503/i.test(raw)
+         ? "Database/backend gagal menyimpan pengaturan."
+         : "Server menolak perubahan. Periksa sesi Admin dan konfigurasi backend.";
+   state.adminFeatureStatus[key] = { type: "error", message: reason };
    renderAdminFeatures();
-   status.textContent = "Gagal menyimpan. Perubahan dibatalkan; periksa koneksi dan konfigurasi Supabase.";
-   toast("Pengaturan sistem gagal disimpan.", "error");
+   if (status) status.textContent = `Gagal menyimpan “${key}”: ${reason}`;
+   toast(reason, "error");
+   window.setTimeout(() => {
+     if (state.adminFeatureStatus?.[key]?.type === "error") {
+       delete state.adminFeatureStatus[key];
+       renderAdminFeatures();
+     }
+   }, 3000);
  }
 }
 
