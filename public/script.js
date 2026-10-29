@@ -2684,9 +2684,8 @@ async function processFormFrame() {
             const detection = detections[0];
             const angle = faceAngleBucket(detection);
             const nose = detection.landmarks.getNose()?.[3];
-            const quality = detection.score * (
-                1 - Math.min(1, Math.abs(detection.box.width - 160) / 160)
-            );
+            const sourceWidth = video.videoWidth || 480;
+            const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
             state.faceCandidate = Array.from(detection.descriptor);
             state.faceCandidateQuality = quality;
             $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
@@ -2757,9 +2756,8 @@ async function readUploadedFace(file) {
 
         const detection = detections[0];
         const angle = faceAngleBucket(detection);
-        const quality = detection.score * (
-            1 - Math.min(1, Math.abs(detection.box.width - 160) / 160)
-        );
+        const sourceWidth = image.naturalWidth || image.width || 640;
+        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
         if (!angle) {
             $("form-face-status").textContent = tr("faceTurnAngle");
             toast(tr("faceTurnAngle"), "error");
