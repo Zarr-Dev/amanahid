@@ -213,6 +213,8 @@ const state = {
     attendanceBusy: false,
     formBusy: false,
     faceSamples: [],
+    faceSampleAngles: [],
+    faceImageHashes: new Set(),
     faceCandidate: null,
     faceCandidateQuality: null,
     formStableFrames: 0,
@@ -2195,13 +2197,32 @@ function updateFaceSampleCount() {
     }
     const progress = $("face-sample-progress-bar");
     if (progress) {
+        const complete = state.faceSamples.length === MAX_FACE_SAMPLES && ["front", "left", "right", "up", "down"].every(angle => state.faceSampleAngles.includes(angle));
         progress.style.width = `${state.faceSamples.length / MAX_FACE_SAMPLES * 100}%`;
-        progress.dataset.count = state.faceSamples.length;
+        progress.dataset.count = complete ? "5" : String(Math.min(3, state.faceSamples.length));
         progress.setAttribute("aria-valuenow", String(state.faceSamples.length));
     }
 }
 
-function saveFaceSample(descriptor, quality = state.faceCandidateQuality) {
+function faceAngleBucket(detection) {
+    const points = detection?.landmarks?.positions;
+    const box = detection?.box;
+    if (!Array.isArray(points) || points.length < 48 || !box?.width || !box?.height) return null;
+    const mean = indices => ({ x: indices.reduce((sum, index) => sum + points[index].x, 0) / indices.length, y: indices.reduce((sum, index) => sum + points[index].y, 0) / indices.length });
+    const leftEye = mean([36,37,38,39,40,41]);
+    const rightEye = mean([42,43,44,45,46,47]);
+    const nose = points[30];
+    const yaw = (nose.x - (leftEye.x + rightEye.x) / 2) / Math.max(1, Math.abs(rightEye.x - leftEye.x));
+    const pitch = (nose.y - (leftEye.y + rightEye.y) / 2) / box.height;
+    if (yaw < -0.13) return 'left';
+    if (yaw > 0.13) return 'right';
+    if (pitch < 0.19) return 'up';
+    if (pitch > 0.31) return 'down';
+    if (Math.abs(yaw) <= 0.13 && pitch >= 0.19 && pitch <= 0.31) return 'front';
+    return null;
+}
+
+function saveFaceSample(descriptor, quality = state.faceCandidateQuality, angle = null) {
     const values = Array.from(descriptor || []);
     if (values.length !== 128 || !values.every(Number.isFinite)) {
         toast(tr("faceUploadError"), "error");
@@ -2216,6 +2237,14 @@ function saveFaceSample(descriptor, quality = state.faceCandidateQuality) {
         toast(tr("faceSampleLimit"), "info");
         return false;
     }
+    if (!['front', 'left', 'right', 'up', 'down'].includes(angle)) {
+        $('form-face-status').textContent = tr('faceTurnAngle');
+        return false;
+    }
+    if (state.faceSampleAngles.includes(angle)) {
+        $('form-face-status').textContent = tr('faceAngleAlreadyCaptured', { angle: tr('faceAngle_' + angle) });
+        return false;
+    }
     const descriptorVector = new Float32Array(values);
     if (state.faceSamples.some(sample =>
         faceapi.euclideanDistance(descriptorVector, new Float32Array(sample)) < 0.05
@@ -2225,10 +2254,11 @@ function saveFaceSample(descriptor, quality = state.faceCandidateQuality) {
         return false;
     }
     state.faceSamples.push(values);
+    state.faceSampleAngles.push(angle);
     state.faceCandidate = null;
     state.faceCandidateQuality = null;
     updateFaceSampleCount();
-    $("form-face-status").textContent = tr("faceSampleReady");
+    $("form-face-status").textContent = tr("faceAngleSaved", { angle: tr("faceAngle_" + angle) });
     return true;
 }
 
@@ -2504,13 +2534,14 @@ async function processFormFrame() {
         drawDetections(video, $("overlay-formulir"), detections);
         if (detections.length === 1) {
             const detection = detections[0];
+            const angle = faceAngleBucket(detection);
             const nose = detection.landmarks.getNose()?.[3];
             const quality = detection.score * (
                 1 - Math.min(1, Math.abs(detection.box.width - 160) / 160)
             );
             state.faceCandidate = Array.from(detection.descriptor);
             state.faceCandidateQuality = quality;
-            $("form-face-status").textContent = tr("faceDetected");
+            $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
             if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
                 quality < 0.7 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
                 state.formStableFrames = 0;
@@ -2523,7 +2554,7 @@ async function processFormFrame() {
                 }
                 state.lastFormNose = { x: nose.x, y: nose.y };
                 if (state.formStableFrames >= 3) {
-                    if (saveFaceSample(detection.descriptor, quality)) {
+                    if (angle && saveFaceSample(detection.descriptor, quality, angle)) {
                         toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
                     }
                     state.formStableFrames = 0;
@@ -2577,6 +2608,7 @@ async function readUploadedFace(file) {
         }
 
         const detection = detections[0];
+        const angle = faceAngleBucket(detection);
         const quality = detection.score * (
             1 - Math.min(1, Math.abs(detection.box.width - 160) / 160)
         );
