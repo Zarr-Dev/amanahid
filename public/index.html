@@ -39,8 +39,7 @@
         <div class="auth-layout">
             <section class="auth-copy" aria-labelledby="auth-hero-title">
                 <p class="auth-eyebrow" data-i18n="authEyebrow">PRESENSI DIGITAL SEKOLAH</p>
-                <h1 id="auth-hero-title"><span class="hero-title-first" data-i18n="heroTitleFirst">Presensi Sekolah Masa
-                        Kini,</span><br><span data-i18n="heroTitleSecond">Anti Titip Absen.</span></h1>
+                <h1 id="auth-hero-title"><span class="hero-title-first" data-i18n="heroTitleFirst">Presensi Sekolah Masa Kini,</span> <span data-i18n="heroTitleSecond">Anti Titip Absen.</span></h1>
                 <p class="auth-description" data-i18n="heroDescription">
                     Pantau kehadiran siswa secara real-time dengan verifikasi wajah (Face Recognition) dan lokasi (GPS
                     Geofencing). Tanpa mesin fingerprint, tanpa biaya hardware.
@@ -430,6 +429,17 @@
                         <p data-i18n="registerFromForm">Tambahkan siswa melalui menu Formulir.</p>
                     </div>
                 </div>
+                <div class="panel">
+                    <div class="panel-heading"><div><h3 data-i18n="absenceRequestsTitle">Pengajuan ketidakhadiran</h3>
+                        <p class="muted" data-i18n="absenceRequestsDesc">Permohonan siswa yang tersimpan di database.</p></div>
+                        <button id="btn-refresh-absence-requests" class="button subtle" type="button" data-i18n="refresh">Muat ulang</button>
+                    </div>
+                    <div class="table-wrap"><table><thead><tr>
+                        <th data-i18n="name">Nama</th><th data-i18n="class">Kelas</th><th data-i18n="absenceDate">Tanggal</th>
+                        <th data-i18n="absenceType">Jenis</th><th data-i18n="absenceNote">Catatan</th><th data-i18n="status">Status</th><th data-i18n="action">Aksi</th>
+                    </tr></thead><tbody id="absence-requests-tbody"></tbody></table></div>
+                    <div id="absence-requests-empty" class="empty-state compact-empty"><strong data-i18n="absenceRequestsEmpty">Belum ada pengajuan.</strong></div>
+                </div>
             </section>
 
             <section id="view-formulir" class="view hidden">
@@ -816,6 +826,9 @@
                 <button class="nav-link" type="button" data-target="view-s-history">
                     <span class="nav-symbol">▤</span><span data-i18n="studentHistory">Riwayat Saya</span>
                 </button>
+                <button class="nav-link" type="button" data-target="view-s-absence">
+                    <span class="nav-symbol">＋</span><span data-i18n="absenceFormNav">Formulir izin</span>
+                </button>
                 <button class="nav-link" type="button" data-target="view-s-profile">
                     <span class="nav-symbol">○</span><span data-i18n="myProfile">Profil</span>
                 </button>
@@ -915,6 +928,31 @@
                             catatan</strong>
                         <p data-i18n="studentHistoryEmpty">Riwayat presensi Anda akan tampil di sini.</p>
                     </div>
+                </div>
+            </section>
+            <section id="view-s-absence" class="view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker" data-i18n="absenceFormKicker">KETIDAKHADIRAN</span>
+                        <h2 data-i18n="absenceFormTitle">Formulir ketidakhadiran</h2>
+                        <p class="muted" data-i18n="absenceFormDesc">Ajukan izin, sakit, atau catatan ketidakhadiran untuk ditinjau guru.</p>
+                    </div>
+                </div>
+                <div class="panel absence-form-panel">
+                    <form id="student-absence-form" class="registration-form">
+                        <label for="absence-date" data-i18n="absenceDate">Tanggal ketidakhadiran</label>
+                        <input id="absence-date" name="date" type="date" required>
+                        <label for="absence-type" data-i18n="absenceType">Jenis</label>
+                        <select id="absence-type" name="type" required>
+                            <option value="sick" data-i18n="absenceSick">Sakit</option>
+                            <option value="permission" data-i18n="absencePermission">Izin</option>
+                            <option value="other" data-i18n="absenceOther">Lainnya</option>
+                        </select>
+                        <label for="absence-note" data-i18n="absenceNote">Catatan</label>
+                        <textarea id="absence-note" name="note" rows="5" maxlength="1000" required data-i18n-placeholder="absenceNotePlaceholder" placeholder="Jelaskan alasan ketidakhadiran secara singkat."></textarea>
+                        <p class="muted" data-i18n="absencePrivacyNote">Jangan masukkan informasi medis yang tidak diperlukan. Pengajuan akan disimpan dan menunggu peninjauan guru.</p>
+                        <button id="btn-submit-absence" class="button primary full" type="submit" data-i18n="absenceSubmit">Kirim formulir</button>
+                        <p id="absence-form-status" class="helper-text" role="status" aria-live="polite"></p>
+                    </form>
                 </div>
             </section>
             <section id="view-s-profile" class="view hidden">
