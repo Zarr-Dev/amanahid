@@ -166,7 +166,8 @@ const EXTRA_T = {
         faceAngle_right: "kanan",
         faceAngle_up: "atas",
         faceAngle_down: "bawah",
-        duplicateImageFile: "File gambar yang sama sudah dipilih."
+        duplicateImageFile: "File gambar yang sama sudah dipilih.",
+        faceSampleDesc: "Ambil wajah dari depan, lalu miringkan sedikit ke kiri, kanan, atas, dan bawah. Setiap sudut dikumpulkan otomatis.",
     },
     en: {
         welcomeTitle: "School attendance, made simple.",
@@ -240,7 +241,8 @@ const EXTRA_T = {
         faceAngle_right: "right",
         faceAngle_up: "up",
         faceAngle_down: "down",
-        duplicateImageFile: "This exact image file was already selected."
+        duplicateImageFile: "This exact image file was already selected.",
+        faceSampleDesc: "Capture the face from the front, then turn slightly left, right, up, and down. Each angle is collected automatically.",
     },
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
@@ -314,7 +316,8 @@ const EXTRA_T = {
         faceAngle_right: "اليمين",
         faceAngle_up: "الأعلى",
         faceAngle_down: "الأسفل",
-        duplicateImageFile: "تم اختيار ملف الصورة نفسه من قبل."
+        duplicateImageFile: "تم اختيار ملف الصورة نفسه من قبل.",
+        faceSampleDesc: "التقط الوجه من الأمام ثم أدره قليلًا إلى اليسار واليمين والأعلى والأسفل. تُجمع كل زاوية تلقائيًا.",
     }
 };
 
@@ -2913,6 +2916,8 @@ async function registerStudent(event) {
     }
 
     state.faceSamples = [];
+    state.faceSampleAngles = [];
+    state.faceImageHashes = new Set();
     state.faceCandidate = null;
     state.faceCandidateQuality = null;
     state.formStableFrames = 0;
@@ -3716,6 +3721,8 @@ function setupEvents() {
         state.attendance = [];
         state.students = [];
         state.faceSamples = [];
+        state.faceSampleAngles = [];
+        state.faceImageHashes = new Set();
         state.faceCandidate = null;
         updateFaceSampleCount();
         $("confirm-dialog").classList.add("hidden");
