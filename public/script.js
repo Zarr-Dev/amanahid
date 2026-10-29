@@ -1248,6 +1248,8 @@ function showAdminView(viewId) {
     if (viewId === "admin-view-settings") void loadAdminSettings();
     if (viewId === "admin-view-audit") void loadAdminAudit();
     if (viewId === "admin-view-dashboard") void loadAdminFeatures();
+    if (viewId === "admin-view-tests") void loadAdminTestTools();
+    if (viewId !== "admin-view-tests") stopAdminTestCamera();
 }
 
 async function loadAdminDashboard() {
@@ -1285,14 +1287,13 @@ function renderAdminFeatures() {
  if (!root) return;
  const features = state.adminFeatures || {};
  const feedback = state.adminFeatureStatus || {};
- const anyPending = Object.values(feedback).some(item => item?.type === "pending");
  root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(group.title)}</h4>${group.items.map(([key,label,description]) => {
    const locked = ["admin_audit_log","rate_limiting","session_expiry","origin_validation","strict_server_validation"].includes(key);
    const checked = locked || features[key] !== false;
    const detail = feedback[key]?.message || (locked ? description + " (wajib aktif; tidak dapat dinonaktifkan)." : description);
    const phase = feedback[key]?.type || "";
    const icon = phase === "pending" ? '<span class="feature-spinner" aria-hidden="true"></span>' : phase === "success" ? '<span class="feature-result feature-result-ok" aria-hidden="true">✓</span>' : phase === "error" ? '<span class="feature-result feature-result-error" aria-hidden="true">!</span>' : "";
-   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || anyPending ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></span></span></div>`;
+   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></span></span></div>`;
  }).join("")}</section>`).join("");
 }
 async function loadAdminFeatures() {
@@ -1320,9 +1321,16 @@ async function saveAdminFeatureToggle(input) {
  state.adminFeatures[key] = requested;
  renderAdminFeatures();
  if (status) status.textContent = "Menyimpan perubahan kebijakan ke server…";
- try {
-   const result = await cloudRequest("/api/admin/settings?action=features", { method: "PUT", body: JSON.stringify({ features: state.adminFeatures }) });
-   state.adminFeatures = result.features || state.adminFeatures;
+ state.adminFeatureSaveQueue = state.adminFeatureSaveQueue || Promise.resolve();
+ const operation = state.adminFeatureSaveQueue.then(async () => {
+   const payload = { features: { ...state.adminFeatures } };
+   const result = await cloudRequest("/api/admin/settings?action=features", { method: "PUT", body: JSON.stringify(payload) });
+   const saved = result.features || payload.features;
+   // Keep newer edits that are waiting in the queue while adopting the server response.
+   for (const [pendingKey, item] of Object.entries(state.adminFeatureStatus || {})) {
+     if (item?.type === "pending") saved[pendingKey] = state.adminFeatures[pendingKey];
+   }
+   state.adminFeatures = saved;
    state.adminFeatureStatus[key] = { type: "success", message: "Tersimpan ke server." };
    renderAdminFeatures();
    if (status) status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Perubahan tersimpan dan diaudit`;
@@ -1333,7 +1341,7 @@ async function saveAdminFeatureToggle(input) {
        renderAdminFeatures();
      }
    }, 3000);
- } catch (error) {
+ }).catch(error => {
    state.adminFeatures[key] = previous;
    const raw = String(error?.message || "");
    const reason = /401|403|unauthori|forbidden|session|sesi/i.test(raw)
@@ -1353,7 +1361,182 @@ async function saveAdminFeatureToggle(input) {
        renderAdminFeatures();
      }
    }, 3000);
- }
+ });
+ state.adminFeatureSaveQueue = operation.catch(() => {});
+ await operation;
+}
+
+let adminTestStream = null;
+let adminTestTimer = null;
+let adminTestBusy = false;
+let adminTestFrames = 0;
+let adminTestFpsStarted = 0;
+
+function stopAdminTestCamera() {
+    if (adminTestTimer) window.clearInterval(adminTestTimer);
+    adminTestTimer = null;
+    if (adminTestStream) adminTestStream.getTracks().forEach(track => track.stop());
+    adminTestStream = null;
+    adminTestBusy = false;
+    const video = $("admin-test-video");
+    if (video) video.srcObject = null;
+    $("admin-test-camera-placeholder")?.classList.remove("hidden");
+    if ($("admin-test-camera-start")) $("admin-test-camera-start").disabled = false;
+    if ($("admin-test-camera-stop")) $("admin-test-camera-stop").disabled = true;
+}
+
+async function startAdminTestCamera() {
+    if (adminTestStream) return;
+    const status = $("admin-test-camera-status");
+    const modelState = $("admin-test-model-state");
+    $("admin-test-camera-start").disabled = true;
+    status.textContent = tr("testModelLoading");
+    modelState.textContent = tr("testModelLoading");
+    try {
+        if (!await loadModels()) throw new Error("model");
+        modelState.textContent = tr("testModelReady");
+        const stream = await getCameraStream();
+        if (!$("admin-view-tests")?.classList.contains("active")) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
+        adminTestStream = stream;
+        const video = $("admin-test-video");
+        video.srcObject = stream;
+        await video.play();
+        $("admin-test-camera-placeholder")?.classList.add("hidden");
+        $("admin-test-camera-start").disabled = true;
+        $("admin-test-camera-stop").disabled = false;
+        status.textContent = tr("testCameraNoFace");
+        adminTestFrames = 0;
+        adminTestFpsStarted = performance.now();
+        adminTestTimer = window.setInterval(async () => {
+            if (adminTestBusy || !adminTestStream || video.readyState < 2) return;
+            adminTestBusy = true;
+            try {
+                const detections = await detectFaces(video);
+                if (!adminTestStream) return;
+                drawDetections(video, $("admin-test-overlay"), detections);
+                $("admin-test-face-count").textContent = String(detections.length);
+                status.textContent = detections.length === 0 ? tr("testCameraNoFace")
+                    : detections.length === 1 ? tr("testCameraOneFace") : tr("testCameraMultipleFaces");
+                adminTestFrames += 1;
+                const elapsed = (performance.now() - adminTestFpsStarted) / 1000;
+                if (elapsed >= 2) {
+                    $("admin-test-camera-fps").textContent = String(Math.round(adminTestFrames / elapsed));
+                    adminTestFrames = 0;
+                    adminTestFpsStarted = performance.now();
+                }
+            } catch (error) {
+                status.textContent = cameraErrorText(error);
+            } finally {
+                adminTestBusy = false;
+            }
+        }, 250);
+    } catch (error) {
+        stopAdminTestCamera();
+        $("admin-test-model-state").textContent = tr("testModelFailed");
+        status.textContent = error?.message === "model" ? tr("testModelFailed") : cameraErrorText(error);
+    }
+}
+
+async function loadAdminTestTools() {
+    try {
+        const result = await cloudRequest("/api/admin/test-tools");
+        $("admin-test-fonnte-state").textContent = result.fonnte_configured ? "Token tersedia" : "Token belum dikonfigurasi";
+        $("admin-test-whatsapp-allowlist").textContent = result.allowed_recipients?.length
+            ? result.allowed_recipients.join(", ") : "Belum ada nomor uji yang diizinkan";
+        if (result.template && $("admin-test-whatsapp-template")) $("admin-test-whatsapp-template").value = result.template;
+        updateAdminWhatsAppPreview();
+        $("admin-test-whatsapp-send").disabled = !result.fonnte_configured || !result.allowed_recipients?.length;
+        if (!result.fonnte_configured || !result.allowed_recipients?.length) {
+            $("admin-test-whatsapp-status").textContent = "Atur FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS di environment Production untuk mengaktifkan tes.";
+        }
+    } catch (error) {
+        $("admin-test-fonnte-state").textContent = "Tidak dapat diperiksa";
+        $("admin-test-whatsapp-allowlist").textContent = "Gagal memuat daftar nomor";
+        $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
+    }
+}
+
+function updateAdminWhatsAppPreview() {
+    const template = $("admin-test-whatsapp-template");
+    const preview = $("admin-test-whatsapp-preview");
+    if (template && preview) preview.textContent = template.value.trim();
+}
+
+async function sendAdminWhatsAppTest() {
+    const target = $("admin-test-whatsapp-number").value.replace(/\D/g, "");
+    const message = $("admin-test-whatsapp-template").value.trim();
+    const status = $("admin-test-whatsapp-status");
+    if (!/^628\d{8,13}$/.test(target)) {
+        status.textContent = tr("testPhoneInvalid");
+        return;
+    }
+    if (!$("admin-test-whatsapp-consent").checked) {
+        status.textContent = tr("testWhatsappNoConsent");
+        return;
+    }
+    const button = $("admin-test-whatsapp-send");
+    button.disabled = true;
+    status.textContent = tr("testWhatsappSending");
+    try {
+        const result = await cloudRequest("/api/admin/test-tools", {
+            method: "POST",
+            body: { target, message, confirm: true }
+        });
+        status.textContent = result.accepted ? tr("testWhatsappSent") : tr("testWhatsappFailed");
+        toast(status.textContent, result.accepted ? "success" : "error");
+    } catch (error) {
+        status.textContent = error.message || tr("testWhatsappFailed");
+        toast(status.textContent, "error");
+    } finally {
+        button.disabled = false;
+        $("admin-test-whatsapp-consent").checked = false;
+    }
+}
+
+async function testAdminGps() {
+    const status = $("admin-test-gps-status");
+    status.textContent = tr("studentStartingGps") || "Memeriksa lokasi perangkat...";
+    try {
+        await loadSchoolSettings({ preserveOnError: true });
+        if (!navigator.geolocation) throw new Error("Geolocation API tidak tersedia.");
+        const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true, timeout: 12000, maximumAge: 0
+        }));
+        const { latitude, longitude, accuracy } = position.coords;
+        const rad = value => value * Math.PI / 180;
+        const dLat = rad(latitude - SCHOOL_LOCATION.lat);
+        const dLng = rad(longitude - SCHOOL_LOCATION.lng);
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(SCHOOL_LOCATION.lat)) * Math.cos(rad(latitude)) * Math.sin(dLng / 2) ** 2;
+        const distance = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        $("admin-test-gps-lat").textContent = latitude.toFixed(6);
+        $("admin-test-gps-lng").textContent = longitude.toFixed(6);
+        $("admin-test-gps-accuracy").textContent = Math.round(accuracy) + " m";
+        $("admin-test-gps-distance").textContent = Math.round(distance) + " m";
+        status.textContent = accuracy <= MAX_GPS_ACCURACY_METERS && distance <= SCHOOL_LOCATION.radius
+            ? "Lokasi berada di dalam radius dan akurasi memenuhi batas."
+            : "Lokasi di luar radius atau akurasi tidak memenuhi batas.";
+    } catch (error) {
+        status.textContent = error?.code === 1 ? "Izin lokasi ditolak." : error?.code === 3 ? "Pemeriksaan lokasi kehabisan waktu." : error.message || "Lokasi gagal diperiksa.";
+    }
+}
+
+async function runAdminServiceChecks() {
+    const root = $("admin-test-services-results");
+    root.textContent = "Memeriksa endpoint...";
+    const checks = [
+        ["Vercel API", async () => await cloudRequest("/api")],
+        ["Konfigurasi Fonnte", async () => await cloudRequest("/api/admin/test-tools")]
+    ];
+    const results = await Promise.all(checks.map(async ([name, run]) => {
+        try { await run(); return { name, ok: true }; }
+        catch { return { name, ok: false }; }
+    }));
+    root.innerHTML = results.map(item => '<div class="admin-test-service-row"><span>' + safeText(item.name) +
+        '</span><strong class="' + (item.ok ? "is-ok" : "is-error") + '">' +
+        safeText(item.ok ? tr("testOtherPass") : tr("testOtherFail")) + '</strong></div>').join("");
 }
 
 async function loadAdminUsers() {
@@ -2045,7 +2228,7 @@ function loadModels() {
     state.modelLoadingPromise = (async () => {
         try {
             if (!window.faceapi) throw new Error("face-api.js unavailable");
-            const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
+            const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@v0.22.2/weights";
             await Promise.all([
                 faceapi.nets.tinyFaceDetector.loadFromUri(base),
                 faceapi.nets.faceLandmark68Net.loadFromUri(base),
@@ -2417,7 +2600,7 @@ function drawDetections(video, canvas, detections) {
 
 async function detectFaces(video) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.45 });
     return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks().withFaceDescriptors();
 }
 
@@ -3737,6 +3920,12 @@ function setupEvents() {
         if (input) void saveAdminFeatureToggle(input);
     });
     $("admin-governance-reset")?.addEventListener("click", () => void loadAdminFeatures());
+    $("admin-test-camera-start")?.addEventListener("click", () => void startAdminTestCamera());
+    $("admin-test-camera-stop")?.addEventListener("click", stopAdminTestCamera);
+    $("admin-test-gps-run")?.addEventListener("click", () => void testAdminGps());
+    $("admin-test-services-run")?.addEventListener("click", () => void runAdminServiceChecks());
+    $("admin-test-whatsapp-template")?.addEventListener("input", updateAdminWhatsAppPreview);
+    $("admin-test-whatsapp-send")?.addEventListener("click", () => void sendAdminWhatsAppTest());
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
         const password = $("admin-new-password").value;
