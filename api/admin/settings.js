@@ -72,6 +72,7 @@ export default async function handler(req, res) {
                     return jsonError(res, 400, "Feature settings must contain only the known boolean flags");
                 }
                 const features = Object.fromEntries(keys.map(key => [key, body.features[key]]));
+                for (const key of ["admin_audit_log", "rate_limiting", "session_expiry", "origin_validation", "strict_server_validation"]) features[key] = true;
                 const rows = await supabaseRequest("system_settings?on_conflict=id&select=feature_flags,updated_at,updated_by", {
                     method: "POST",
                     headers: { Prefer: "resolution=merge-duplicates,return=representation" },
