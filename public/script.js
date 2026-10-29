@@ -2923,8 +2923,9 @@ async function registerStudent(event) {
         toast(tr("invalidWhatsApp"), "error");
         return;
     }
-    if (!state.faceSamples.length) {
-        toast(tr("needFace"), "error");
+    if (state.faceSamples.length !== 5 ||
+        !["front", "left", "right", "up", "down"].every(angle => state.faceSampleAngles.includes(angle))) {
+        toast(tr("faceTurnAngle"), "error");
         return;
     }
 
