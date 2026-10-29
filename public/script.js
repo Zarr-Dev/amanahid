@@ -994,6 +994,7 @@ function showAdminView(viewId) {
     if (viewId === "admin-view-users") void loadAdminUsers();
     if (viewId === "admin-view-settings") void loadAdminSettings();
     if (viewId === "admin-view-audit") void loadAdminAudit();
+    if (viewId === "admin-view-dashboard") void loadAdminFeatures();
 }
 
 async function loadAdminDashboard() {
@@ -1016,6 +1017,59 @@ async function loadAdminDashboard() {
         console.error("Admin dashboard could not load:", error);
         toastAdminError(error);
     }
+}
+
+const ADMIN_FEATURE_GROUPS = [
+ { title:"1. Presensi & biometrik", items:[["camera_attendance","Kamera presensi","Mengizinkan akses kamera pada alur presensi."],["gps_geofencing","GPS geofencing","Mengaktifkan pembatasan radius sekolah."],["face_recognition","Pencocokan wajah","Mengizinkan proses pencocokan descriptor wajah."],["liveness_check","Pemeriksaan gerakan kepala","Mengaktifkan pemeriksaan keaktifan dasar."],["face_enrollment","Pendaftaran sampel wajah","Mengizinkan pendaftaran sampel siswa."],["face_sample_limit","Batas sampel wajah","Menegakkan batas sampel per siswa."]]},
+ { title:"2. Akun & peran", items:[["student_login","Login siswa","Mengizinkan autentikasi role siswa."],["teacher_login","Login guru","Mengizinkan autentikasi role guru."],["admin_login","Login administrator","Mengizinkan autentikasi role admin."],["student_account_creation","Pembuatan akun siswa","Mengizinkan admin membuat akun siswa."],["teacher_account_creation","Pembuatan akun guru","Mengizinkan admin membuat akun guru."],["account_deactivation","Penonaktifan akun","Mengizinkan status akun nonaktif diberlakukan."]]},
+ { title:"3. Data & presensi", items:[["attendance_recording","Pencatatan presensi","Mengizinkan pencatatan kehadiran baru."],["duplicate_attendance_block","Blokir presensi ganda","Mencegah catatan ganda pada hari yang sama."],["attendance_history","Riwayat presensi","Mengizinkan akses ke riwayat presensi."],["attendance_export","Ekspor data presensi","Mengizinkan ekspor CSV yang tersedia."],["parent_notifications","Notifikasi orang tua","Mengizinkan pemicu notifikasi WhatsApp."],["late_detection","Deteksi keterlambatan","Mengaktifkan aturan waktu masuk dan toleransi terlambat."]]},
+ { title:"4. Keamanan & audit", items:[["admin_audit_log","Audit aktivitas admin","Mencatat perubahan penting oleh administrator."],["admin_account_export","Ekspor akun","Mengizinkan ekspor daftar akun admin."],["admin_password_change","Perubahan sandi admin","Mengizinkan pengelolaan sandi admin."],["rate_limiting","Pembatasan percobaan","Mengaktifkan rate limit pada endpoint terkait."],["session_expiry","Kedaluwarsa sesi","Mewajibkan sesi valid dan belum kedaluwarsa."],["origin_validation","Validasi origin","Menolak request dari origin yang tidak diizinkan."]]},
+ { title:"5. Pengalaman website", items:[["maintenance_banner","Banner pemeliharaan","Menampilkan peringatan pemeliharaan saat diimplementasikan."],["public_status_panel","Panel status layanan","Menampilkan status layanan yang aman untuk publik."],["reduced_motion_support","Dukungan reduced motion","Menghormati preferensi aksesibilitas perangkat."],["language_switcher","Pemilih bahasa","Mengizinkan pergantian bahasa antarmuka."],["responsive_layout","Tata letak responsif","Mengizinkan layout responsif desktop dan mobile."],["splash_animation","Animasi pembuka","Mengaktifkan animasi splash Amanah ID."]]},
+ { title:"6. Lokasi, jadwal & tata kelola", items:[["gps_accuracy_guard","Pemeriksaan akurasi GPS","Memeriksa akurasi lokasi sebelum presensi."],["geofence_radius_edit","Pengubahan radius geofence","Mengizinkan admin mengubah radius sekolah."],["school_schedule_rules","Aturan jadwal sekolah","Mengaktifkan jam masuk dan toleransi terlambat."],["privacy_notice","Pemberitahuan privasi","Menampilkan informasi pemrosesan data biometrik."],["service_health_panel","Panel kesehatan layanan","Menampilkan status backend dan integrasi."],["strict_server_validation","Validasi server ketat","Mewajibkan validasi payload pada endpoint terkait."]]}
+];
+function renderAdminFeatures() {
+ const root = $("admin-governance-controls");
+ if (!root) return;
+ const features = state.adminFeatures || {};
+ root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(group.title)}</h4>${group.items.map(([key,label,description]) => {
+   const checked = features[key] !== false;
+   return `<div class="admin-governance-control"><label for="feature-${key}">${safeText(label)}<small>${safeText(description)}</small></label><span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} aria-label="${safeText(label)}"><span class="admin-switch-track"></span></span></div>`;
+ }).join("")}</section>`).join("");
+}
+async function loadAdminFeatures() {
+ const status = $("admin-governance-status");
+ if (!status) return;
+ status.textContent = "Memuat kebijakan sistem…";
+ try {
+   const result = await cloudRequest("/api/admin/settings?action=features");
+   state.adminFeatures = result.features || {};
+   renderAdminFeatures();
+   status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Tersimpan di Supabase`;
+ } catch (error) {
+   status.textContent = "Pengaturan gagal dimuat. Periksa konfigurasi backend dan izin Admin.";
+   console.error("Admin feature controls failed to load:", error);
+ }
+}
+async function saveAdminFeatureToggle(input) {
+ const key = input?.dataset?.featureKey;
+ if (!key || !state.adminFeatures) return;
+ const previous = !input.checked;
+ input.disabled = true;
+ const status = $("admin-governance-status");
+ status.textContent = "Menyimpan perubahan kebijakan…";
+ state.adminFeatures[key] = input.checked;
+ try {
+   const result = await cloudRequest("/api/admin/settings?action=features", { method: "PUT", body: JSON.stringify({ features: state.adminFeatures }) });
+   state.adminFeatures = result.features || state.adminFeatures;
+   renderAdminFeatures();
+   status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Perubahan tersimpan dan diaudit`;
+   toast("Pengaturan sistem berhasil disimpan.", "success");
+ } catch (error) {
+   state.adminFeatures[key] = previous;
+   renderAdminFeatures();
+   status.textContent = "Gagal menyimpan. Perubahan dibatalkan; periksa koneksi dan konfigurasi Supabase.";
+   toast("Pengaturan sistem gagal disimpan.", "error");
+ }
 }
 
 async function loadAdminUsers() {
@@ -2867,7 +2921,7 @@ function initSplashScreen() {
     const mark = splash.querySelector(".splash-mark");
     const brand = splash.querySelector(".splash-text");
     const lockup = splash.querySelector(".splash-lockup");
-    const headerMark = document.querySelector(".brand-auth .brand-mark");
+    const headerMark = document.querySelector(".brand-auth");
     const fontReady = document.fonts?.ready || Promise.resolve();
     let fontTimeout;
     const fontsReady = new Promise(resolve => {
@@ -2887,18 +2941,15 @@ function initSplashScreen() {
         if (!splash.isConnected || splash.classList.contains("hidden")) return;
         if (mark && headerMark && lockup) {
             const targetRect = headerMark.getBoundingClientRect();
-            const markRect = mark.getBoundingClientRect();
             const lockupRect = lockup.getBoundingClientRect();
-            if (targetRect.width > 0 && targetRect.height > 0 && markRect.width > 0 && markRect.height > 0) {
-                const scale = targetRect.width / markRect.width;
+            if (targetRect.width > 0 && targetRect.height > 0 && lockupRect.width > 0 && lockupRect.height > 0) {
+                const scale = Math.min(1, targetRect.width / lockupRect.width);
                 const groupCenterX = lockupRect.left + lockupRect.width / 2;
                 const groupCenterY = lockupRect.top + lockupRect.height / 2;
-                const markOffsetX = markRect.left + markRect.width / 2 - groupCenterX;
-                const markOffsetY = markRect.top + markRect.height / 2 - groupCenterY;
                 const targetCenterX = targetRect.left + targetRect.width / 2;
                 const targetCenterY = targetRect.top + targetRect.height / 2;
-                splash.style.setProperty("--splash-target-x", (targetCenterX - groupCenterX - scale * markOffsetX) + "px");
-                splash.style.setProperty("--splash-target-y", (targetCenterY - groupCenterY - scale * markOffsetY) + "px");
+                splash.style.setProperty("--splash-target-x", (targetCenterX - groupCenterX) + "px");
+                splash.style.setProperty("--splash-target-y", (targetCenterY - groupCenterY) + "px");
                 splash.style.setProperty("--splash-target-scale", String(scale));
             }
         }
@@ -3205,6 +3256,11 @@ function setupEvents() {
     $("admin-export-users").addEventListener("click", () => exportTableCsv("admin-users-tbody", "amanah-id-daftar-akun.csv"));
     $("admin-export-audit").addEventListener("click", () => exportTableCsv("admin-audit-tbody", "amanah-id-audit-aktivitas.csv"));
     $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
+    $("admin-governance-controls")?.addEventListener("change", event => {
+        const input = event.target.closest("input[data-feature-key]");
+        if (input) void saveAdminFeatureToggle(input);
+    });
+    $("admin-governance-reset")?.addEventListener("click", () => void loadAdminFeatures());
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
         const password = $("admin-new-password").value;
