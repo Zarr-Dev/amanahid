@@ -1572,7 +1572,8 @@ async function testAdminGps() {
     const status = $("admin-test-gps-status");
     status.textContent = tr("testGpsChecking");
     try {
-        await loadSchoolSettings({ preserveOnError: true });
+        const settingsAvailable = await loadSchoolSettings({ preserveOnError: true });
+        if (!settingsAvailable || !state.schoolSettingsLoaded) throw new Error("School GPS settings could not be loaded.");
         if (!navigator.geolocation) throw new Error("Geolocation API tidak tersedia.");
         const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true, timeout: 12000, maximumAge: 0
