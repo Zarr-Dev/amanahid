@@ -49,12 +49,6 @@ export default async function handler(req, res) {
 
     try {
         await sendWhatsApp(target, message);
-        await writeAuditLog(admin, "admin.fonnte_test.send", "whatsapp_test", null, {
-            recipient_suffix: target.slice(-4),
-            message_length: message.length,
-            result: "accepted"
-        });
-        return res.status(200).json({ ok: true, accepted: true });
     } catch (error) {
         console.error("Admin Fonnte test failed:", error);
         try {
@@ -67,4 +61,15 @@ export default async function handler(req, res) {
         }
         return jsonError(res, 502, "Fonnte could not accept the test message");
     }
+    try {
+        await writeAuditLog(admin, "admin.fonnte_test.send", "whatsapp_test", null, {
+            recipient_suffix: target.slice(-4),
+            message_length: message.length,
+            result: "accepted"
+        });
+    } catch (auditError) {
+        // A post-send audit failure must not falsely report that the message itself failed.
+        console.error("Fonnte test audit failed after provider acceptance:", auditError);
+    }
+    return res.status(200).json({ ok: true, accepted: true });
 }
