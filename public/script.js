@@ -1032,8 +1032,10 @@ function renderAdminFeatures() {
  if (!root) return;
  const features = state.adminFeatures || {};
  root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(group.title)}</h4>${group.items.map(([key,label,description]) => {
-   const checked = features[key] !== false;
-   return `<div class="admin-governance-control"><label for="feature-${key}">${safeText(label)}<small>${safeText(description)}</small></label><span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} aria-label="${safeText(label)}"><span class="admin-switch-track"></span></span></div>`;
+   const locked = ["admin_audit_log","rate_limiting","session_expiry","origin_validation","strict_server_validation"].includes(key);
+   const checked = locked || features[key] !== false;
+   const detail = locked ? description + " (wajib aktif; tidak dapat dinonaktifkan)." : description;
+   return `<div class="admin-governance-control"><label for="feature-${key}">${safeText(label)}<small>${safeText(detail)}</small></label><span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked ? "disabled" : ""} aria-label="${safeText(label)}"><span class="admin-switch-track"></span></span></div>`;
  }).join("")}</section>`).join("");
 }
 async function loadAdminFeatures() {
@@ -1933,6 +1935,13 @@ function cameraErrorText(error) {
     return tr("cameraStartFailed");
 }
 
+async function loadRuntimeFeatures() {
+ if (state.runtimeFeatures) return state.runtimeFeatures;
+ const response = await cloudRequest("/api?action=features");
+ if (!response?.features || typeof response.features !== "object") throw new Error("Runtime feature configuration is unavailable");
+ state.runtimeFeatures = response.features;
+ return state.runtimeFeatures;
+}
 async function startAttendanceCamera() {
     if (state.attendanceStream || state.attendanceStarting) return;
     if (!state.user) return;
@@ -1946,6 +1955,13 @@ async function startAttendanceCamera() {
     const startToken = ++state.attendanceStartToken;
 
     try {
+        const runtimeFeatures = await loadRuntimeFeatures();
+        const requiredFeatures = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"];
+        const disabledFeature = requiredFeatures.find(key => runtimeFeatures[key] === false);
+        if (disabledFeature) {
+            toast("Fitur presensi sedang dinonaktifkan oleh administrator.", "error");
+            return;
+        }
         const settingsLoaded = await loadSchoolSettings();
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
             state.cloudDataPromise !== cloudDataPromise) return;
