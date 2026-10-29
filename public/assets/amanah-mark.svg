@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">Amanah ID</title>
+<defs><linearGradient id="a" x1="16" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse"><stop stop-color="#63a4ff"/><stop offset="1" stop-color="#2858d7"/></linearGradient></defs>
+<rect x="7" y="7" width="114" height="114" rx="34" fill="url(#a)"/>
+<path d="M31 66.5 51.5 86 97 40.5" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="100" stroke-dashoffset="0"/>
+<circle cx="64" cy="64" r="48" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="2"/>
+</svg>
