@@ -1328,7 +1328,7 @@ async function saveAdminFeatureToggle(input) {
  state.adminFeatureSaveQueue = state.adminFeatureSaveQueue || Promise.resolve();
  const operation = state.adminFeatureSaveQueue.then(async () => {
    const payload = { features: { ...state.adminFeatures } };
-   const result = await cloudRequest("/api/admin/settings?action=features", { method: "PUT", body: JSON.stringify(payload) });
+   const result = await cloudRequest("/api/admin/settings?action=features", { method: "PUT", body: payload });
    const saved = result.features || payload.features;
    // Keep newer edits that are waiting in the queue while adopting the server response.
    for (const [pendingKey, item] of Object.entries(state.adminFeatureStatus || {})) {
