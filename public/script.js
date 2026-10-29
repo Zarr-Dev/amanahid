@@ -13,7 +13,19 @@ const FACE_MATCH_THRESHOLD = 0.45;
 const MAX_FACE_SAMPLES = 5;
 
 const ROLE_T = {
-    id: {
+            duplicateImageFile: "File gamb        duplicateImageFile: "تم اختيار ملف الصورة نفسه من قبل.",
+        replaceFace: "استبدال الوجه",
+        faceUpdateMode: "وضع استبدال الوجه نشط. التقط زوايا الوجه الخمس.",
+        faceUpdateSaved: "تم تحديث بيانات وجه الطالب.",
+        faceUpdateFailed: "تعذر تحديث بيانات وجه الطالب." yang sama sudah dipilih.",
+        replaceFace: "Ganti wajah",
+        faceUpdateMode: "Mode p        duplicateImageFile: "This exact image file was already selected.",
+        replaceFace: "Replace face",
+        faceUpdateMode: "Face replacement mode is active. Capture all five face angles.",
+        faceUpdateSaved: "Student face data was updated.",
+        faceUpdateFailed: "Student face data could not be updated."ggantian wajah aktif. Ambil lima sudut wajah.",
+        faceUpdateSaved: "Data wajah siswa berhasil diperbarui.",
+        faceUpdateFailed: "Data wajah siswa gagal diperbarui.": {
         roleTeacher: "Guru", roleStudent: "Siswa", teacherDashboard: "Dashboard Guru",
         studentWorkspace: "MENU SISWA", studentAttendance: "Presensi Saya", studentHistory: "Riwayat Saya",
         studentCheckinTitle: "Catat kehadiran Anda",
@@ -344,6 +356,7 @@ const state = {
     faceSamples: [],
     faceSampleAngles: [],
     faceImageHashes: new Set(),
+    faceUpdateNisn: null,
     faceCandidate: null,
     faceCandidateQuality: null,
     formStableFrames: 0,
@@ -1706,7 +1719,7 @@ function renderStudentList() {
       <td>${safeText(s.className)}</td>
       <td>${safeText(s.parentWhatsApp || "—")}</td>
       <td>${safeText(s.registeredDate)}</td>
-      <td><button class="row-action" type="button" data-delete-student="${safeText(s.nisn)}">${safeText(tr("delete"))}</button></td>
+      <td><button class="row-action" type="button" data-edit-student-face="${safeText(s.nisn)}">${safeText(tr("replaceFace"))}</button> <button class="row-action" type="button" data-delete-student="${safeText(s.nisn)}">${safeText(tr("delete"))}</button></td>
     </tr>`).join("");
     $("students-empty").classList.toggle("hidden", state.students.length > 0);
     $("student-count-badge").textContent = state.students.length;
@@ -2872,6 +2885,35 @@ async function registerStudent(event) {
         $("input-nama").focus();
         return;
     }
+    if (state.faceUpdateNisn) {
+        if (!state.faceSamples.length || state.faceSamples.length !== 5 ||
+            !["front", "left", "right", "up", "down"].every(angle => state.faceSampleAngles.includes(angle))) {
+            toast(tr("faceTurnAngle"), "error");
+            return;
+        }
+        try {
+            const result = await cloudRequest("/api/students", {
+                method: "PATCH", role: "guru",
+                body: { nisn: state.faceUpdateNisn, face_descriptors: state.faceSamples.map(sample => [...sample]) }
+            });
+            state.students = state.students.map(student => student.nisn === state.faceUpdateNisn
+                ? normalizeCloudStudent(result.student) : student);
+            state.faceSamples = [];
+            state.faceSampleAngles = [];
+            state.faceImageHashes = new Set();
+            state.faceCandidate = null;
+            state.faceCandidateQuality = null;
+            setFaceUpdateMode(false);
+            $("student-form").reset();
+            $("form-face-status").textContent = tr("noFaceSample");
+            updateFaceSampleCount();
+            renderStudentList();
+            toast(tr("faceUpdateSaved"), "success");
+        } catch (error) {
+            toast(error.message || tr("faceUpdateFailed"), "error");
+        }
+        return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         toast("Masukkan email akun siswa yang valid.", "error");
         $("input-student-email").focus();
@@ -2930,6 +2972,42 @@ async function registerStudent(event) {
     updateStudentProfile();
     updateStats();
     toast(tr("studentSaved"), "success");
+}
+
+function setFaceUpdateMode(enabled) {
+    state.faceUpdateNisn = enabled ? state.faceUpdateNisn : null;
+    ["input-nisn", "input-nama", "input-kelas", "input-parent-wa"].forEach(id => {
+        const input = $(id);
+        if (input) input.disabled = enabled;
+    });
+    ["input-student-email", "input-student-password"].forEach(id => {
+        const input = $(id);
+        const label = document.querySelector('label[for="' + id + '"]');
+        if (input) { input.disabled = enabled; input.required = !enabled; input.classList.toggle("hidden", enabled); }
+        if (label) label.classList.toggle("hidden", enabled);
+    });
+    const submit = $("student-form")?.querySelector('button[type="submit"]');
+    if (submit) submit.textContent = enabled ? tr("replaceFace") : tr("saveStudent");
+}
+
+function beginFaceUpdate(nisn) {
+    const student = state.students.find(item => item.nisn === nisn);
+    if (!student) return;
+    stopAllCameras();
+    state.faceSamples = [];
+    state.faceSampleAngles = [];
+    state.faceImageHashes = new Set();
+    state.faceCandidate = null;
+    state.faceCandidateQuality = null;
+    state.faceUpdateNisn = nisn;
+    $("input-nisn").value = student.nisn;
+    $("input-nama").value = student.name;
+    $("input-kelas").value = student.className;
+    $("input-parent-wa").value = student.parentWhatsApp || "";
+    setFaceUpdateMode(true);
+    $("form-face-status").textContent = tr("faceUpdateMode");
+    updateFaceSampleCount();
+    document.querySelector('[data-target="view-formulir"]')?.click();
 }
 
 async function removeStudent(nisn) {
@@ -3696,6 +3774,11 @@ function setupEvents() {
     });
 
     $("students-tbody").addEventListener("click", event => {
+        const editFace = event.target.closest("[data-edit-student-face]");
+        if (editFace) {
+            beginFaceUpdate(editFace.dataset.editStudentFace);
+            return;
+        }
         const button = event.target.closest("[data-delete-student]");
         if (button) removeStudent(button.dataset.deleteStudent);
     });
