@@ -772,7 +772,7 @@
                             <button id="admin-test-camera-stop" class="button subtle" type="button" data-i18n="testCameraStop" disabled>Hentikan tes</button>
                         </div>
                         <p id="admin-test-camera-status" class="helper-text" role="status" aria-live="polite" data-i18n="testCameraStatus">Kamera belum diuji.</p>
-                        <div class="admin-test-metrics"><span>Model AI <strong id="admin-test-model-state">Belum diuji</strong></span><span>Wajah <strong id="admin-test-face-count">0</strong></span><span>FPS <strong id="admin-test-camera-fps">0</strong></span></div>
+                        <div class="admin-test-metrics"><span><span data-i18n="testMetricModel">Model AI</span> <strong id="admin-test-model-state">Belum diuji</strong></span><span><span data-i18n="testMetricFaces">Wajah</span> <strong id="admin-test-face-count">0</strong></span><span><span data-i18n="testMetricFps">FPS</span> <strong id="admin-test-camera-fps">0</strong></span></div>
                     </section>
                     <section class="panel admin-test-card">
                         <div class="panel-heading"><div><h3 data-i18n="testWhatsappTitle">Uji notifikasi WhatsApp</h3>
@@ -780,7 +780,7 @@
                         <p class="helper-text">Fonnte <strong id="admin-test-fonnte-state">Memeriksa konfigurasi…</strong></p>
                         <label for="admin-test-whatsapp-number" data-i18n="testWhatsappNumber">Nomor uji WhatsApp</label>
                         <input id="admin-test-whatsapp-number" type="tel" inputmode="numeric" autocomplete="off" placeholder="628xxxxxxxxxx" maxlength="15">
-                        <p class="helper-text">Nomor yang diizinkan: <span id="admin-test-whatsapp-allowlist">Memuat daftar…</span></p>
+                        <p class="helper-text"><span data-i18n="testFonnteList">Nomor uji yang diizinkan:</span> <span id="admin-test-whatsapp-allowlist">Memuat daftar…</span></p>
                         <label for="admin-test-whatsapp-template" data-i18n="testWhatsappTemplate">Template pesan</label>
                         <textarea id="admin-test-whatsapp-template" rows="4" maxlength="300">Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.</textarea>
                         <label for="admin-test-whatsapp-preview" data-i18n="testWhatsappPreview">Pratinjau pesan</label>
@@ -792,7 +792,7 @@
                     <section class="panel admin-test-card">
                         <div class="panel-heading"><div><h3 data-i18n="testGpsTitle">Uji GPS dan geofence</h3>
                             <p class="muted" data-i18n="testGpsDesc">Periksa koordinat perangkat dan jaraknya dari titik sekolah yang tersimpan.</p></div></div>
-                        <div class="admin-test-gps-values"><span>Latitude <strong id="admin-test-gps-lat">-</strong></span><span>Longitude <strong id="admin-test-gps-lng">-</strong></span><span>Akurasi <strong id="admin-test-gps-accuracy">-</strong></span><span>Jarak sekolah <strong id="admin-test-gps-distance">-</strong></span></div>
+                        <div class="admin-test-gps-values"><span><span data-i18n="testMetricLatitude">Latitude</span> <strong id="admin-test-gps-lat">-</strong></span><span><span data-i18n="testMetricLongitude">Longitude</span> <strong id="admin-test-gps-lng">-</strong></span><span><span data-i18n="testMetricAccuracy">Akurasi</span> <strong id="admin-test-gps-accuracy">-</strong></span><span><span data-i18n="testMetricDistance">Jarak sekolah</span> <strong id="admin-test-gps-distance">-</strong></span></div>
                         <button id="admin-test-gps-run" class="button secondary" type="button" data-i18n="testGpsRun">Uji lokasi saat ini</button>
                         <button id="admin-test-open-settings" class="button subtle" type="button" data-i18n="testGpsOpenSettings">Atur titik GPS sekolah</button>
                         <p id="admin-test-gps-status" class="helper-text" role="status" aria-live="polite" data-i18n="testGpsStatus">Lokasi belum diuji.</p>
