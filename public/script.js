@@ -4248,8 +4248,9 @@ function setupEvents() {
 }
 
 function initialize() {
-    setupAppDialog();
+    // Start the splash failsafe before optional UI setup so a setup error cannot leave a blank overlay.
     initSplashScreen();
+    setupAppDialog();
     setTheme("light");
     setLanguage("id");
     if ($("absence-date")) $("absence-date").value = localDateKey();

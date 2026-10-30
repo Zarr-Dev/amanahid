@@ -12,21 +12,22 @@ export function getMissingAuthConfiguration() {
 }
 
 export function isAllowedOrigin(req) {
-    const allowedOrigin = process.env.APP_ORIGIN?.replace(/\/+$/, "");
-    if (!allowedOrigin) return false;
+    const allowedOrigins = new Set([
+        process.env.APP_ORIGIN?.replace(/\/+$/, ""),
+        "https://amanahid.netlify.app"
+    ].filter(Boolean));
 
     const requestOrigin = req.headers.origin;
-    if (requestOrigin) return requestOrigin === allowedOrigin;
+    if (requestOrigin) return allowedOrigins.has(requestOrigin.replace(/\/+$/, ""));
 
     const referer = req.headers.referer;
     if (!referer) return false;
     try {
-        return new URL(referer).origin === allowedOrigin;
+        return allowedOrigins.has(new URL(referer).origin);
     } catch {
         return false;
     }
 }
-
 const rateLimitBuckets = new Map();
 
 export function rateLimit(req, key, maxRequests, windowMs, res) {
