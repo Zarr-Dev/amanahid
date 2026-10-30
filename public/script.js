@@ -4248,9 +4248,9 @@ function setupEvents() {
 }
 
 function initialize() {
-    // Start the splash failsafe before optional UI setup so a setup error cannot leave a blank overlay.
-    initSplashScreen();
+    // Preserve the known-good initialization order from before the Netlify integration.
     setupAppDialog();
+    initSplashScreen();
     setTheme("light");
     setLanguage("id");
     if ($("absence-date")) $("absence-date").value = localDateKey();
