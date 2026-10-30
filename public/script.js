@@ -212,7 +212,7 @@ const EXTRA_T = {
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
         testFonnteConfigured: "Token Fonnte tersedia",
         testFonnteMissing: "Token Fonnte belum dikonfigurasi",
-        testAllowlistEmpty: tr("testAllowlistEmpty"),
+        testAllowlistEmpty: "Belum ada nomor uji yang disetujui Admin",
         testAllowlistLoadFailed: "Gagal memuat daftar nomor uji",
         testGpsChecking: "Memeriksa lokasi perangkat...",
         testGpsInside: "Lokasi berada dalam radius sekolah dan akurasi memenuhi batas.",
