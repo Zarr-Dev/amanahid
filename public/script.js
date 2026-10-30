@@ -347,7 +347,7 @@ const EXTRA_T = {
         testOtherPass: "Service responded.",
         testOtherFail: "Service did not respond.",
         testPhoneInvalid: "Enter a valid test number in 628xxxxxxxxxx format.",
-        testWhatsappNoConsent: "Confirm consent before sending the test message."
+        testWhatsappNoConsent: "Confirm consent before sending the test message.",
         testFonnteConfigured: "Fonnte token is configured",
         testFonnteMissing: "Fonnte token is not configured",
         testAllowlistEmpty: "No approved test numbers configured",
@@ -485,7 +485,7 @@ const EXTRA_T = {
         testOtherPass: "استجابت الخدمة.",
         testOtherFail: "لم تستجب الخدمة.",
         testPhoneInvalid: "أدخل رقم اختبار صالحًا بالتنسيق 628xxxxxxxxxx.",
-        testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار."
+        testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار.",
         testFonnteConfigured: "رمز Fonnte مُعدّ",
         testFonnteMissing: "لم يتم إعداد رمز Fonnte",
         testAllowlistEmpty: "لم تُضف أرقام اختبار معتمدة",
