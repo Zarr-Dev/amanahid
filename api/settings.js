@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     if (action === "health") {
         if (req.method !== "GET" && req.method !== "HEAD") {
             res.setHeader("Allow", "GET, HEAD");
-            return jsonError(res, 405, "Method not allowed");
+            return res.status(405).json({ error: "Method not allowed", method: req.method });
         }
         const missing = getMissingAuthConfiguration();
         const payload = {

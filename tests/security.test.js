@@ -5,7 +5,7 @@ import { hashPassword, signToken, verifyPassword, verifyToken } from "../api/_li
 import { getMissingAuthConfiguration, getRequestRole, rateLimit } from "../api/_lib/supabase.js";
 import { validateSchema } from "../api/_lib/validate.js";
 import adminUsersHandler from "../api/admin/users.js";
-import healthHandler from "../api/index.js";
+import healthHandler from "../api/settings.js";
 import adminLoginHandler from "../api/admin/login.js";
 import authLoginHandler from "../api/auth/login.js";
 import adminAuditHandler from "../api/admin/audit.js";
@@ -348,7 +348,7 @@ test("authentication endpoints clearly report missing production configuration b
     assert.match(userRes.body.error, /SUPABASE_SECRET_KEY/);
 
     const healthRes = responseMock();
-    await healthHandler({ method: "GET" }, healthRes);
+    await healthHandler({ method: "GET", headers: { origin: "https://school.example" }, query: { action: "health" } }, healthRes);
     assert.equal(healthRes.statusCode, 200);
     assert.equal(healthRes.body.authentication.configured, false);
     assert.ok(healthRes.body.authentication.missing.includes("SUPABASE_URL"));
@@ -356,18 +356,18 @@ test("authentication endpoints clearly report missing production configuration b
 
 test("API health endpoint answers GET/HEAD and rejects other methods clearly", async () => {
     const getResponse = responseMock();
-    await healthHandler({ method: "GET" }, getResponse);
+    await healthHandler({ method: "GET", headers: { origin: "https://school.example" }, query: { action: "health" } }, getResponse);
     assert.equal(getResponse.statusCode, 200);
     assert.equal(getResponse.body.ok, true);
     assert.equal(getResponse.body.service, "Amanah.id API");
     assert.match(getResponse.body.runtime, /^v?\d+\./);
 
     const headResponse = responseMock();
-    await healthHandler({ method: "HEAD" }, headResponse);
+    await healthHandler({ method: "HEAD", headers: { origin: "https://school.example" }, query: { action: "health" } }, headResponse);
     assert.equal(headResponse.statusCode, 200);
 
     const postResponse = responseMock();
-    await healthHandler({ method: "POST" }, postResponse);
+    await healthHandler({ method: "POST", headers: { origin: "https://school.example" }, query: { action: "health" } }, postResponse);
     assert.equal(postResponse.statusCode, 405);
     assert.deepEqual(postResponse.body, { error: "Method not allowed", method: "POST" });
 });
