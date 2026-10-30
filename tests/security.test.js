@@ -263,6 +263,30 @@ test("admin APIs handle empty and null Supabase results", async t => {
     assert.equal(invalidCaptchaResponse.statusCode, 400);
 });
 
+test("student attendance rejects requests without a recent server-verified face proof", async t => {
+    const originalFetch = globalThis.fetch;
+    let fetchCalls = 0;
+    globalThis.fetch = async url => {
+        fetchCalls++;
+        const requestUrl = String(url);
+        const rows = requestUrl.includes("students?select=email,nisn,is_active")
+            ? [{ email: "student@example.com", nisn: "12345678", is_active: true }]
+            : [];
+        return new Response(JSON.stringify(rows), { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const token = signToken({ email: "student@example.com", name: "Student", role: "siswa", nisn: "12345678" });
+    const res = responseMock();
+    await attendanceHandler({
+        method: "POST",
+        headers: { origin: "https://school.example", "x-session-token": token, "x-idempotency-key": "00000000-0000-4000-8000-000000000099" },
+        socket: { remoteAddress: "test-attendance-no-face-proof" },
+        body: { nisn: "12345678", lat: -6.25, lng: 106.6, accuracy: 10, gpsTimestamp: Date.now(), speed: 0, confidence: 1 }
+    }, res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /server-verified face match/i);
+    assert.equal(fetchCalls, 1, "the endpoint must reject before querying attendance or inserting a record");
+});
 test("attendance returns machine-readable GPS errors and limits repeated failures", async t => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async url => {
@@ -284,6 +308,10 @@ test("attendance returns machine-readable GPS errors and limits repeated failure
             headers: {
                 origin: "https://school.example",
                 "x-session-token": token,
+                "x-face-proof": signToken({
+                    email: "student@example.com", role: "siswa", nisn: "12345678",
+                    purpose: "attendance_face", faceVerified: true, confidence: 0.9
+                }, 120_000),
                 "x-idempotency-key": `00000000-0000-4000-8000-${String(attempt + 1).padStart(12, "0")}`
             },
             socket: { remoteAddress: ip },
