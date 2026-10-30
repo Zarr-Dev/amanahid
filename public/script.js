@@ -2849,46 +2849,34 @@ async function processAttendanceFrame() {
         let student;
         let confidence;
         let faceProofToken = null;
-        if (requestUser.role === "siswa") {
-            if (Date.now() - state.lastFaceMatchAt < 2500) return;
-            state.lastFaceMatchAt = Date.now();
-            const result = await cloudRequest("/api/face-match", {
-                method: "POST",
-                role: "siswa",
-                nisn: requestUser.nisn,
-                body: { nisn: requestUser.nisn, descriptor: Array.from(detection.descriptor) }
-            });
-            if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
-            if (!result.registered) {
-                setAttendanceMessage(tr("studentUnlinked"));
-                return;
+        if (Date.now() - state.lastFaceMatchAt < 2500) return;
+        state.lastFaceMatchAt = Date.now();
+        const result = await cloudRequest("/api/face-match", {
+            method: "POST",
+            role: requestUser.role,
+            nisn: requestUser.nisn,
+            body: {
+                ...(requestUser.role === "siswa" ? { nisn: requestUser.nisn } : {}),
+                descriptor: Array.from(detection.descriptor)
             }
-            if (!result.match) {
-                setAttendanceMessage(tr("faceNoMatch"));
-                return;
-            }
-            if (typeof result.proofToken !== "string" || !result.proofToken) {
-                setAttendanceMessage(tr("faceNoMatch"));
-                return;
-            }
-            faceProofToken = result.proofToken;
-            student = candidates.find(item => item.nisn === requestUser.nisn);
-            confidence = result.confidence;
-        } else {
-            const matcher = createFaceMatcher(candidates);
-            if (!matcher) {
-                setAttendanceMessage(tr("faceNotRegistered"));
-                return;
-            }
-            const best = matcher.findBestMatch(detection.descriptor);
-            if (best.label === "unknown") {
-                setAttendanceMessage(tr("faceNoMatch"));
-                updateProgress(0, tr("faceNoMatch"));
-                return;
-            }
-            student = candidates.find(item => item.nisn === best.label);
-            confidence = Math.max(0, Math.min(1, 1 - best.distance));
+        });
+        if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
+        if (!result.registered) {
+            setAttendanceMessage(tr("studentUnlinked"));
+            return;
         }
+        if (!result.match || typeof result.proofToken !== "string" || !result.proofToken) {
+            setAttendanceMessage(tr("faceNoMatch"));
+            updateProgress(0, tr("faceNoMatch"));
+            return;
+        }
+        student = candidates.find(item => item.nisn === result.nisn);
+        if (!student) {
+            setAttendanceMessage(tr("faceNotRegistered"));
+            return;
+        }
+        confidence = result.confidence;
+        faceProofToken = result.proofToken;
         if (!student) return;
 
         const location = await checkGeofence();
