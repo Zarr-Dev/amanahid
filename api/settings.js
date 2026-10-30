@@ -21,7 +21,6 @@ function isValidSettings({ lat, lng, radius }) {
 }
 
 export default async function handler(req, res) {
-    if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
     const action = req.query?.action;
     if (action === "health") {
         if (req.method !== "GET" && req.method !== "HEAD") {
@@ -64,6 +63,8 @@ export default async function handler(req, res) {
         }
     }
 
+
+    if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
 
     if (req.method === "GET") {
         try {

@@ -289,7 +289,7 @@ test("attendance returns machine-readable GPS errors and limits repeated failure
             socket: { remoteAddress: ip },
             body: {
                 nisn: "12345678", lat: -6.25, lng: 106.6,
-                accuracy: 36, confidence: 0.9
+                accuracy: 36, gpsTimestamp: Date.now(), speed: 0, confidence: 0.9
             }
         };
         const res = responseMock();
