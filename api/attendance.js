@@ -9,6 +9,7 @@ import {
     supabaseRequest,
     verifyTeacherSession
 } from "./_lib/supabase.js";
+import { verifyToken } from "./_lib/admin-auth.js";
 import { sendWhatsApp } from "./_lib/whatsapp.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
@@ -85,6 +86,22 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
         if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
         const body = req.body || {};
+        const session = getSession(req);
+        const faceProof = role === "siswa" ? verifyToken(req.headers["x-face-proof"]) : null;
+        if (role === "siswa" && (
+            !faceProof ||
+            faceProof.purpose !== "attendance_face" ||
+            faceProof.faceVerified !== true ||
+            faceProof.role !== "siswa" ||
+            faceProof.email !== session?.email ||
+            faceProof.nisn !== session?.nisn ||
+            typeof faceProof.confidence !== "number" ||
+            !Number.isFinite(faceProof.confidence) ||
+            faceProof.confidence < 0.3 ||
+            faceProof.confidence > 1
+        )) {
+            return jsonError(res, 403, "A valid recent server-verified face match is required");
+        }
         const bodyValidation = validateSchema({
             nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
             lat: { type: "number", required: true, min: -90, max: 90 },
@@ -199,7 +216,7 @@ export default async function handler(req, res) {
                         student_id: student.id,
                         date,
                         time,
-                        confidence,
+                        confidence: role === "siswa" ? faceProof.confidence : confidence,
                         method: "face-gps",
                         idempotency_key: idempotencyKey
                     })
