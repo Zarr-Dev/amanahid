@@ -83,8 +83,10 @@ if (/\brequire\s*\(|\bmodule\.exports\b/.test(allApiSource)) {
 const html = readFileSync(join(root, "public/index.html"), "utf8");
 const css = readFileSync(join(root, "public/style.css"), "utf8");
 const js = readFileSync(join(root, "public/script.js"), "utf8");
-const extraTranslations = js.match(/const EXTRA_T = \\{([\\s\\S]*?)\\n\\};/)?.[1];
-if (!extraTranslations || /:\\s*tr\\s*\\(/.test(extraTranslations)) {
+const extraStart = js.indexOf("const EXTRA_T = {");
+const extraEnd = js.indexOf("\n};", extraStart);
+const extraTranslations = extraStart >= 0 && extraEnd > extraStart ? js.slice(extraStart, extraEnd) : "";
+if (!extraTranslations || extraTranslations.includes(": tr(")) {
     console.error("Build check failed: EXTRA_T must not call tr() while its own translation object is initializing.");
     process.exit(1);
 }
