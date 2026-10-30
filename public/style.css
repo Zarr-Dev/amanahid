@@ -3714,3 +3714,17 @@ body.app-dialog-open { overflow: hidden; }
   .admin-switch-track, .admin-switch-track::after { transition-duration: .01ms !important; }
 }
 
+
+
+/* Emergency splash timeout: keep the landing page reachable if startup scripts fail. */
+.splash-screen {
+    animation: splash-emergency-hide 0s linear 6s forwards;
+}
+
+@keyframes splash-emergency-hide {
+    to {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
