@@ -142,7 +142,7 @@ export default async function handler(req, res) {
             const features = Array.isArray(featureRows) ? (featureRows[0]?.feature_flags || {}) : {};
             const requiredFeatures = ["attendance_recording", "camera_attendance", "gps_geofencing", "face_recognition", "liveness_check"];
             const disabledFeature = requiredFeatures.find(key => features[key] === false);
-            if (disabledFeature) return jsonError(res, 403, "Attendance is disabled by the administrator", { feature: disabledFeature });
+            if (disabledFeature) return res.status(403).json({ error: "Attendance is disabled by the administrator", feature: disabledFeature });
             const repeated = await supabaseRequest(
                 `attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name)&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`
             );
