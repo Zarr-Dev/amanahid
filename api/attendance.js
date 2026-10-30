@@ -51,6 +51,7 @@ function failedAttendance(req, res, role, status, payload) {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
     let role;
     try {
@@ -107,14 +108,14 @@ export default async function handler(req, res) {
             accuracy: { type: "number", required: true, min: 0.01, max: 1_000_000 },
             gpsTimestamp: { type: "number", required: true, min: 1_600_000_000_000, max: 2_200_000_000_000 },
             speed: { type: "number", required: true, min: 0, max: 55 },
-            confidence: { type: "number", required: true, min: 0.3, max: 1 }
+            confidence: { type: "number", min: 0.3, max: 1 }
         }, body);
         if (!bodyValidation.valid) return jsonError(res, 400, bodyValidation.error);
         const { nisn, lat, lng, accuracy, gpsTimestamp, speed, confidence } = body;
         if (typeof nisn !== "string" || !/^\d{8,20}$/.test(nisn)) {
             return jsonError(res, 400, "Invalid NISN");
         }
-        if (![lat, lng, accuracy, gpsTimestamp, speed, confidence].every(value => typeof value === "number" && Number.isFinite(value)) ||
+        if (![lat, lng, accuracy, gpsTimestamp, speed].every(value => typeof value === "number" && Number.isFinite(value)) ||
             Math.abs(lat) > 90 || Math.abs(lng) > 180 || accuracy <= 0 || confidence < 0.3 || confidence > 1) {
             return jsonError(res, 400, "Invalid location or confidence values");
         }
