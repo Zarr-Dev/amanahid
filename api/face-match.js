@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
     const body = req.body || {};
     const validation = validateSchema({
-        nisn: { type: "string", max: 20, pattern: /^\\d{8,20}$/ },
+        nisn: { type: "string", max: 20, pattern: /^\d{8,20}$/ },
         descriptor: {
             type: "array", required: true, min: DESCRIPTOR_LENGTH, max: DESCRIPTOR_LENGTH,
             validate: value => typeof value === "number" && Number.isFinite(value)
