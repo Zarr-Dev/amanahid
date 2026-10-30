@@ -8,6 +8,7 @@ import {
     supabaseRequest
 } from "./_lib/supabase.js";
 import { validateSchema } from "./_lib/validate.js";
+import { signToken } from "./_lib/admin-auth.js";
 import { writeAuditLog } from "./_lib/audit.js";
 
 const FACE_MATCH_THRESHOLD = 0.45;
@@ -73,10 +74,22 @@ export default async function handler(req, res) {
         await writeAuditLog(getSession(req), "face.verify", "students", nisn, {
             match, registered: true
         });
+        const confidence = Math.max(0, Math.min(1, 1 - distance));
+        const proofToken = match
+            ? signToken({
+                email: getSession(req).email,
+                role: "siswa",
+                nisn,
+                purpose: "attendance_face",
+                faceVerified: true,
+                confidence
+            }, 120_000)
+            : null;
         return res.status(200).json({
             match,
             registered: true,
-            confidence: Math.max(0, Math.min(1, 1 - distance))
+            confidence,
+            ...(proofToken ? { proofToken } : {})
         });
     } catch (error) {
         console.error("Student face match failed:", error);
