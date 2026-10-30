@@ -83,6 +83,11 @@ if (/\brequire\s*\(|\bmodule\.exports\b/.test(allApiSource)) {
 const html = readFileSync(join(root, "public/index.html"), "utf8");
 const css = readFileSync(join(root, "public/style.css"), "utf8");
 const js = readFileSync(join(root, "public/script.js"), "utf8");
+const extraTranslations = js.match(/const EXTRA_T = \\{([\\s\\S]*?)\\n\\};/)?.[1];
+if (!extraTranslations || /:\\s*tr\\s*\\(/.test(extraTranslations)) {
+    console.error("Build check failed: EXTRA_T must not call tr() while its own translation object is initializing.");
+    process.exit(1);
+}
 const htmlChecks = [
     ["admin login modal", /id="admin-login-modal"/],
     ["splash accessible name and live region", /<div\b(?=[^>]*\bid="splash-screen")(?=[^>]*\baria-label="Amanah ID")(?=[^>]*\baria-live="polite")[^>]*>/],
