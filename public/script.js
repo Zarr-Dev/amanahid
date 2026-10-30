@@ -4248,8 +4248,12 @@ function setupEvents() {
 }
 
 function initialize() {
-    // Preserve the known-good initialization order from before the Netlify integration.
-    setupAppDialog();
+    // The optional dialog must never prevent the main application from binding its controls.
+    try {
+        setupAppDialog();
+    } catch (error) {
+        console.error("Optional dialog initialization failed:", error);
+    }
     initSplashScreen();
     setTheme("light");
     setLanguage("id");
