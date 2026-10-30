@@ -1710,7 +1710,7 @@ function safeText(value) {
 
 async function cloudRequest(path, {
     method = "GET", body, role = state.user?.role, nisn = state.user?.nisn,
-    timeoutMs = 15_000, idempotencyKey
+    timeoutMs = 15_000, idempotencyKey, faceProofToken
 } = {}) {
     const headers = {};
     if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -1730,6 +1730,7 @@ async function cloudRequest(path, {
         if (token) headers["X-Session-Token"] = token;
     }
     if (idempotencyKey) headers["X-Idempotency-Key"] = idempotencyKey;
+    if (faceProofToken) headers["X-Face-Proof"] = faceProofToken;
 
     let lastError;
     let attempt = 0;
@@ -2847,6 +2848,7 @@ async function processAttendanceFrame() {
 
         let student;
         let confidence;
+        let faceProofToken = null;
         if (requestUser.role === "siswa") {
             if (Date.now() - state.lastFaceMatchAt < 2500) return;
             state.lastFaceMatchAt = Date.now();
@@ -2865,6 +2867,11 @@ async function processAttendanceFrame() {
                 setAttendanceMessage(tr("faceNoMatch"));
                 return;
             }
+            if (typeof result.proofToken !== "string" || !result.proofToken) {
+                setAttendanceMessage(tr("faceNoMatch"));
+                return;
+            }
+            faceProofToken = result.proofToken;
             student = candidates.find(item => item.nisn === requestUser.nisn);
             confidence = result.confidence;
         } else {
@@ -2926,7 +2933,8 @@ async function processAttendanceFrame() {
                 speed: location.speed || 0,
                 confidence
             },
-            idempotencyKey: state.attendanceIdempotencyKey
+            idempotencyKey: state.attendanceIdempotencyKey,
+            faceProofToken
         });
         if (state.user !== requestUser || state.attendanceStream !== requestStream) return;
         state.attendance = [saved.attendance, ...state.attendance.filter(item => item.id !== saved.attendance.id)];
