@@ -4248,27 +4248,59 @@ function setupEvents() {
 }
 
 function initialize() {
-    // The optional dialog must never prevent the main application from binding its controls.
+    // Bind controls before optional rendering/localization so one startup error
+    // cannot leave the entire interface looking interactive but inert.
     try {
         setupAppDialog();
     } catch (error) {
         console.error("Optional dialog initialization failed:", error);
     }
-    initSplashScreen();
-    setTheme("light");
-    setLanguage("id");
-    if ($("absence-date")) $("absence-date").value = localDateKey();
-    observeHeroTitleSize();
-    showAuth({ clearSession: false });
-    setupEvents();
-    renderDatabase();
-    renderStudentList();
-    renderStudentHistory();
-    updateStats();
-    setSwitch(false);
-    updateFaceSampleCount();
-    $("model-status").textContent = tr("modelLoading");
-    restoreSession();
+
+    try {
+        initSplashScreen();
+    } catch (error) {
+        console.error("Splash initialization failed:", error);
+        const splash = $("splash-screen");
+        splash?.classList.add("hidden");
+        splash?.setAttribute("aria-hidden", "true");
+    }
+
+    try {
+        setTheme("light");
+    } catch (error) {
+        console.error("Theme initialization failed:", error);
+    }
+
+    try {
+        setupEvents();
+    } catch (error) {
+        console.error("Control binding failed:", error);
+        toast("Sebagian kontrol gagal diinisialisasi. Muat ulang halaman dan periksa Console.", "error");
+    }
+
+    try {
+        setLanguage("id");
+    } catch (error) {
+        console.error("Language initialization failed:", error);
+    }
+
+    try {
+        if ($("absence-date")) $("absence-date").value = localDateKey();
+        observeHeroTitleSize();
+        showAuth({ clearSession: false });
+        renderDatabase();
+        renderStudentList();
+        renderStudentHistory();
+        updateStats();
+        setSwitch(false);
+        updateFaceSampleCount();
+        const modelStatus = $("model-status");
+        if (modelStatus) modelStatus.textContent = tr("modelLoading");
+        restoreSession();
+    } catch (error) {
+        console.error("Application initialization failed:", error);
+        toast("Aplikasi mengalami kendala saat memuat. Periksa koneksi dan muat ulang halaman.", "error");
+    }
 }
 
 initialize();
