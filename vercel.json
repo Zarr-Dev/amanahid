@@ -13,9 +13,6 @@
     "api/face-match.js": {
       "maxDuration": 30
     },
-    "api/index.js": {
-      "maxDuration": 10
-    },
     "api/send-wa.js": {
       "maxDuration": 15
     },
@@ -31,8 +28,12 @@
   },
   "routes": [
     {
+      "src": "^/api$",
+      "dest": "/api/settings"
+    },
+    {
       "src": "^/api/health$",
-      "dest": "/api/index?health=1"
+      "dest": "/api/settings?action=health"
     },
     {
       "src": "^/api/auth/logout$",

@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/_lib/test-tools.js", "api/auth/login.js",
-    "api/index.js", "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase-demo-accounts.sql"
+    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -37,7 +37,7 @@ if (lock.packages?.[""]?.engines?.node !== pkg.engines.node) {
 const vercel = JSON.parse(readFileSync(join(root, "vercel.json"), "utf8"));
 if (!vercel.$schema?.includes("openapi.vercel.sh/vercel.json") ||
     !vercel.functions?.["api/admin/*.js"] || !vercel.functions?.["api/auth/*.js"] ||
-    !vercel.functions?.["api/index.js"]) {
+    !vercel.functions?.["api/settings.js"]) {
     console.error("vercel.json schema or explicit serverless function settings are missing.");
     process.exit(1);
 }
