@@ -87,19 +87,17 @@ export default async function handler(req, res) {
         if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
         const body = req.body || {};
         const session = getSession(req);
-        const faceProof = role === "siswa" ? verifyToken(req.headers["x-face-proof"]) : null;
-        if (role === "siswa" && (
-            !faceProof ||
+        const faceProof = verifyToken(req.headers["x-face-proof"]);
+        if (!faceProof || (role !== "siswa" && role !== "guru") ||
             faceProof.purpose !== "attendance_face" ||
             faceProof.faceVerified !== true ||
-            faceProof.role !== "siswa" ||
+            faceProof.role !== role ||
             faceProof.email !== session?.email ||
-            faceProof.nisn !== session?.nisn ||
+            faceProof.nisn !== body.nisn ||
             typeof faceProof.confidence !== "number" ||
             !Number.isFinite(faceProof.confidence) ||
             faceProof.confidence < 0.3 ||
-            faceProof.confidence > 1
-        )) {
+            faceProof.confidence > 1) {
             return jsonError(res, 403, "A valid recent server-verified face match is required");
         }
         const bodyValidation = validateSchema({
@@ -216,7 +214,7 @@ export default async function handler(req, res) {
                         student_id: student.id,
                         date,
                         time,
-                        confidence: role === "siswa" ? faceProof.confidence : confidence,
+                        confidence: faceProof.confidence,
                         method: "face-gps",
                         idempotency_key: idempotencyKey
                     })
