@@ -263,6 +263,44 @@ test("admin APIs handle empty and null Supabase results", async t => {
     assert.equal(invalidCaptchaResponse.statusCode, 400);
 });
 
+test("server face matching issues a short-lived attendance proof for the matched student", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherToken = signToken({ email: "guru@example.com", name: "Guru", role: "guru" });
+    const descriptor = Array.from({ length: 128 }, (_, index) => index / 1000);
+    let auditWritten = false;
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([{ email: "guru@example.com", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=nisn,name,face_descriptors,is_active")) {
+            return new Response(JSON.stringify([{
+                nisn: "12345678", name: "Student", is_active: true, face_descriptors: [descriptor]
+            }]), { status: 200 });
+        }
+        if (requestUrl.includes("audit_log") && init.method === "POST") {
+            auditWritten = true;
+            return new Response("[]", { status: 201 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const res = responseMock();
+    await faceMatchHandler({
+        method: "POST",
+        headers: { origin: "https://school.example", "x-session-token": teacherToken },
+        socket: { remoteAddress: "test-teacher-face-match" },
+        body: { descriptor }
+    }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.match, true);
+    assert.equal(res.body.nisn, "12345678");
+    const proof = verifyToken(res.body.proofToken);
+    assert.equal(proof?.purpose, "attendance_face");
+    assert.equal(proof?.role, "guru");
+    assert.equal(proof?.nisn, "12345678");
+    assert.equal(auditWritten, true);
+});
 test("student attendance rejects requests without a recent server-verified face proof", async t => {
     const originalFetch = globalThis.fetch;
     let fetchCalls = 0;
