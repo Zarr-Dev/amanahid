@@ -31,10 +31,13 @@ export function isValidAdminPassword(password) {
         /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
 }
 
-export function signToken(claims) {
+export function signToken(claims, durationMs = SESSION_DURATION_MS) {
+    if (!Number.isSafeInteger(durationMs) || durationMs < 1 || durationMs > SESSION_DURATION_MS) {
+        throw new Error("Token duration is outside the allowed range");
+    }
     const payload = Buffer.from(JSON.stringify({
         ...claims,
-        exp: Date.now() + SESSION_DURATION_MS
+        exp: Date.now() + durationMs
     })).toString("base64url");
     const signature = createHmac("sha256", getSessionSecret()).update(payload).digest("base64url");
     return `${payload}.${signature}`;
