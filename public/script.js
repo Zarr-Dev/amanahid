@@ -209,7 +209,7 @@ const EXTRA_T = {
         testOtherPass: "Layanan merespons.",
         testOtherFail: "Layanan tidak merespons.",
         testPhoneInvalid: "Masukkan nomor uji yang valid dalam format 628xxxxxxxxxx.",
-        testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji."
+        testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
         testFonnteConfigured: "Token Fonnte tersedia",
         testFonnteMissing: "Token Fonnte belum dikonfigurasi",
         testAllowlistEmpty: tr("testAllowlistEmpty"),
