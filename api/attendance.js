@@ -239,7 +239,7 @@ export default async function handler(req, res) {
                 student_id: student.id, date, method: "face-gps"
             });
 
-            let whatsapp = { sent: false, skipped: !student.parent_whatsapp };
+            let whatsapp = { sent: false, skipped: !student.parent_whatsapp || !features.parent_notifications, reason: features.parent_notifications ? undefined : "disabled_by_admin" };
             if (student.parent_whatsapp && features.parent_notifications) {
                 const target = student.parent_whatsapp.replace(/\D/g, "").replace(/^08/, "628");
                 const message = `Presensi ${student.name} (${student.nisn}) berhasil tercatat pada ${date} pukul ${time} di Al-Fityan School.`;
