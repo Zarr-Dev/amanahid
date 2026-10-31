@@ -154,7 +154,10 @@ export default async function handler(req, res) {
 
         try {
             const features = await getFeatureFlags();
-            const requiredFeatures = ["attendance_recording", "camera_attendance", "gps_geofencing", "face_recognition", "liveness_check"];
+            const requiredFeatures = [
+                "attendance_recording", "camera_attendance", "gps_geofencing",
+                "face_recognition", "liveness_check", "face_ambiguity_guard", "gps_boundary_guard"
+            ];
             const disabledFeature = requiredFeatures.find(key => features[key] === false);
             if (disabledFeature) return res.status(403).json({ error: "Attendance is disabled by the administrator", feature: disabledFeature });
             const repeated = await supabaseRequest(
