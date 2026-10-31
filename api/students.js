@@ -11,6 +11,7 @@ import {
 import { hashPassword, validatePassword } from "./_lib/admin-auth.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
+import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
 
 const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at";
 const STUDENT_COLUMNS_WITH_FACES = `${STUDENT_COLUMNS},face_descriptors`;
@@ -70,6 +71,8 @@ export default async function handler(req, res) {
         if (!rateLimit(req, "students:PATCH:faces", 10, 60_000, res)) {
             return jsonError(res, 429, "Too many face update attempts. Try again later.");
         }
+        const features = await getFeatureFlags();
+        if (!features.face_enrollment) return featureDisabled(res, "face_enrollment", "Pendaftaran wajah sedang dinonaktifkan");
         const body = req.body || {};
         const nisn = body.nisn;
         const face_descriptors = body.face_descriptors;
