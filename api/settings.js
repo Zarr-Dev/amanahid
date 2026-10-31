@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         try {
             const rows = await supabaseRequest("school_settings?select=id&limit=1");
             if (!Array.isArray(rows) || !rows.length) throw new Error("School settings are not initialized");
-            const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "").split(",").map(value => value.replace(/\\D/g, "")).filter(value => /^628\\d{8,13}$/.test(value));
+            const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "").split(",").map(value => value.replace(/\D/g, "")).filter(value => /^628\d{8,13}$/.test(value));
             const payload = {
                 ok: true,
                 service: "Amanah.id API",
