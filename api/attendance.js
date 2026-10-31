@@ -154,7 +154,10 @@ export default async function handler(req, res) {
 
         try {
             const features = await getFeatureFlags();
-            const requiredFeatures = ["attendance_recording", "camera_attendance", "gps_geofencing", "face_recognition", "liveness_check"];
+            const requiredFeatures = [
+                "attendance_recording", "camera_attendance", "gps_geofencing",
+                "face_recognition", "liveness_check", "face_ambiguity_guard", "gps_boundary_guard"
+            ];
             const disabledFeature = requiredFeatures.find(key => features[key] === false);
             if (disabledFeature) return res.status(403).json({ error: "Attendance is disabled by the administrator", feature: disabledFeature });
             const repeated = await supabaseRequest(
@@ -188,6 +191,17 @@ export default async function handler(req, res) {
                     error: "GPS_ACCURACY_TOO_LOW",
                     required: MAX_ACCURACY,
                     actual: accuracy
+                });
+            }
+            if (features.gps_boundary_guard &&
+                distance - accuracy <= school.radius &&
+                distance + accuracy > school.radius) {
+                return failedAttendance(req, res, role, 400, {
+                    error: "GPS_BOUNDARY_UNCERTAIN",
+                    radius: school.radius,
+                    distance: Math.round(distance),
+                    accuracy: Math.round(accuracy),
+                    message: "The GPS uncertainty range overlaps the school geofence boundary. Refresh location from a clearer position."
                 });
             }
             if (distance > school.radius) {

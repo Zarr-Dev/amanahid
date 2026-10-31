@@ -236,7 +236,40 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Akurasi",
         testMetricDistance: "Jarak sekolah",
-        testFonnteList: "Nomor uji yang diizinkan:"
+        testFonnteList: "Nomor uji yang diizinkan:",
+        testAllowlistEmpty: "Belum ada nomor uji yang diizinkan Admin.",
+        testFonnteConfigHint: "Konfigurasikan FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS pada environment Production untuk mengaktifkan pengujian.",
+        testFonnteStatusUnavailable: "Status konfigurasi WhatsApp tidak dapat diperiksa.",
+        faceMatchAmbiguous: "Dua atau lebih profil wajah terlalu mirip untuk diputuskan dengan aman. Minta guru mengulang pemindaian dalam pencahayaan yang lebih baik.",
+        faceQualityLow: "Wajah belum cukup jelas. Hadapkan wajah ke kamera, dekatkan secukupnya, dan perbaiki pencahayaan.",
+        livenessFaceForward: "Hadapkan wajah lurus ke kamera dan tahan sebentar.",
+        livenessTurnLeft: "Gerakkan kepala perlahan ke kiri, lalu tahan sebentar.",
+        livenessTurnRight: "Gerakkan kepala perlahan ke kanan, lalu tahan sebentar.",
+        livenessReturnFront: "Kembalikan wajah menghadap lurus ke kamera.",
+        gpsBoundaryUncertain: "Rentang ketidakpastian GPS bersinggungan dengan batas geofence. Ambil lokasi baru di area terbuka sebelum mencoba lagi.",
+        adminMapDeviceTitle: "Diagnostik lokasi perangkat",
+        adminMapDeviceDistance: "Jarak perangkat ke sekolah",
+        adminMapGpsAccuracy: "Akurasi GPS",
+        adminMapSchoolRadius: "Radius sekolah",
+        adminMapUpdated: "Pemeriksaan terakhir",
+        adminMapNeverChecked: "Lokasi perangkat belum diperiksa. Pemeriksaan hanya dilakukan setelah tombol ditekan.",
+        adminMapCheckDeviceLocation: "Periksa lokasi perangkat",
+        adminMapCheckingDeviceLocation: "Memeriksa lokasi perangkat…",
+        adminMapLocationSuccess: "Lokasi perangkat berhasil diperiksa.",
+        adminMapLocationPermission: "Izin lokasi ditolak. Izinkan akses lokasi di browser.",
+        adminMapLocationTimeout: "Pemeriksaan lokasi kehabisan waktu. Coba di area yang lebih terbuka.",
+        adminMapLocationUnavailable: "Posisi perangkat tidak tersedia.",
+        adminMapLocationFailure: "Lokasi perangkat gagal diperiksa.",
+        adminMapBadFix: "Data GPS tidak valid. Periksa layanan lokasi perangkat.",
+        adminMapLowAccuracy: "Akurasi GPS ±{accuracy} m masih rendah; hasil jarak hanya perkiraan.",
+        adminMapInside: "Perangkat berada di dalam radius dengan margin estimasi {margin}.",
+        adminMapOutside: "Perangkat berada di luar radius dengan jarak estimasi minimum {margin}.",
+        adminMapBoundary: "Belum dapat dipastikan: rentang akurasi GPS memotong batas geofence.",
+        adminMapLastFix: "Diperiksa pukul {time}.",
+        adminMapPointChanged: "Titik GPS diperbarui. Simpan pengaturan untuk menerapkannya.",
+        adminMapSaved: "Pengaturan lokasi sekolah telah disimpan.",
+        adminSettingsSaving: "Menyimpan titik GPS dan aturan sekolah…",
+        adminSettingsSaved: "Titik GPS, radius, dan aturan sekolah berhasil disimpan."
     },
     en: {
         welcomeTitle: "School attendance, made simple.",
@@ -375,7 +408,40 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Accuracy",
         testMetricDistance: "Distance to school",
-        testFonnteList: "Approved test numbers:"
+        testFonnteList: "Approved test numbers:",
+        testAllowlistEmpty: "No Admin-approved test numbers are configured.",
+        testFonnteConfigHint: "Set FONNTE_TOKEN and FONNTE_TEST_RECIPIENTS in the Production environment to enable testing.",
+        testFonnteStatusUnavailable: "WhatsApp configuration status could not be checked.",
+        faceMatchAmbiguous: "Two or more face profiles are too similar to distinguish safely. Ask a teacher to repeat the scan in better lighting.",
+        faceQualityLow: "The face is not clear enough. Face the camera, move a little closer, and improve the lighting.",
+        livenessFaceForward: "Face the camera directly and hold still briefly.",
+        livenessTurnLeft: "Slowly turn your head to the left and hold briefly.",
+        livenessTurnRight: "Slowly turn your head to the right and hold briefly.",
+        livenessReturnFront: "Turn your face back toward the camera.",
+        gpsBoundaryUncertain: "The GPS uncertainty range overlaps the geofence boundary. Refresh the location in an open area before trying again.",
+        adminMapDeviceTitle: "Device location diagnostics",
+        adminMapDeviceDistance: "Device-to-school distance",
+        adminMapGpsAccuracy: "GPS accuracy",
+        adminMapSchoolRadius: "School radius",
+        adminMapUpdated: "Last check",
+        adminMapNeverChecked: "Device location has not been checked. Location is requested only after you press the button.",
+        adminMapCheckDeviceLocation: "Check device location",
+        adminMapCheckingDeviceLocation: "Checking device location…",
+        adminMapLocationSuccess: "Device location was checked successfully.",
+        adminMapLocationPermission: "Location permission was denied. Allow location access in your browser.",
+        adminMapLocationTimeout: "The location check timed out. Try again in a more open area.",
+        adminMapLocationUnavailable: "The device position is unavailable.",
+        adminMapLocationFailure: "Could not check the device location.",
+        adminMapBadFix: "The GPS fix is invalid. Check your device location service.",
+        adminMapLowAccuracy: "GPS accuracy ±{accuracy} m is low; the distance result is only an estimate.",
+        adminMapInside: "The device is inside the radius with an estimated margin of {margin}.",
+        adminMapOutside: "The device is outside the radius by at least an estimated {margin}.",
+        adminMapBoundary: "Uncertain: the GPS accuracy range intersects the geofence boundary.",
+        adminMapLastFix: "Checked at {time}.",
+        adminMapPointChanged: "The GPS point was updated. Save the settings to apply it.",
+        adminMapSaved: "School location settings have been saved.",
+        adminSettingsSaving: "Saving the GPS point and school rules…",
+        adminSettingsSaved: "The GPS point, radius, and school rules were saved successfully."
     },
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
@@ -514,7 +580,40 @@ const EXTRA_T = {
         testMetricLongitude: "خط الطول",
         testMetricAccuracy: "الدقة",
         testMetricDistance: "المسافة إلى المدرسة",
-        testFonnteList: "أرقام الاختبار المعتمدة:"
+        testFonnteList: "أرقام الاختبار المعتمدة:",
+        testAllowlistEmpty: "لم يتم إعداد أرقام اختبار معتمدة من المسؤول.",
+        testFonnteConfigHint: "اضبط FONNTE_TOKEN وFONNTE_TEST_RECIPIENTS في بيئة Production لتفعيل الاختبار.",
+        testFonnteStatusUnavailable: "تعذر التحقق من حالة إعداد WhatsApp.",
+        faceMatchAmbiguous: "ملفان أو أكثر للوجه متشابهان جدًا ولا يمكن الاختيار بأمان. اطلب من المعلم إعادة المسح في إضاءة أفضل.",
+        faceQualityLow: "الوجه غير واضح بما يكفي. واجه الكاميرا واقترب قليلًا وحسّن الإضاءة.",
+        livenessFaceForward: "وجّه وجهك مباشرة إلى الكاميرا واثبت قليلًا.",
+        livenessTurnLeft: "أدر رأسك ببطء إلى اليسار واثبت قليلًا.",
+        livenessTurnRight: "أدر رأسك ببطء إلى اليمين واثبت قليلًا.",
+        livenessReturnFront: "أعد توجيه وجهك مباشرة إلى الكاميرا.",
+        gpsBoundaryUncertain: "يتداخل نطاق عدم يقين GPS مع حد النطاق الجغرافي. حدّث الموقع في مكان مفتوح قبل المحاولة مرة أخرى.",
+        adminMapDeviceTitle: "تشخيص موقع الجهاز",
+        adminMapDeviceDistance: "المسافة من الجهاز إلى المدرسة",
+        adminMapGpsAccuracy: "دقة GPS",
+        adminMapSchoolRadius: "نطاق المدرسة",
+        adminMapUpdated: "آخر فحص",
+        adminMapNeverChecked: "لم يتم فحص موقع الجهاز. لن يُطلب الموقع إلا بعد الضغط على الزر.",
+        adminMapCheckDeviceLocation: "فحص موقع الجهاز",
+        adminMapCheckingDeviceLocation: "جارٍ فحص موقع الجهاز…",
+        adminMapLocationSuccess: "تم فحص موقع الجهاز بنجاح.",
+        adminMapLocationPermission: "تم رفض إذن الموقع. اسمح للمتصفح بالوصول إلى الموقع.",
+        adminMapLocationTimeout: "انتهت مهلة فحص الموقع. حاول مجددًا في مكان مفتوح.",
+        adminMapLocationUnavailable: "موقع الجهاز غير متاح.",
+        adminMapLocationFailure: "تعذر فحص موقع الجهاز.",
+        adminMapBadFix: "بيانات GPS غير صالحة. تحقق من خدمة الموقع في الجهاز.",
+        adminMapLowAccuracy: "دقة GPS ±{accuracy} م منخفضة؛ المسافة المعروضة تقديرية فقط.",
+        adminMapInside: "الجهاز داخل النطاق بهامش تقديري قدره {margin}.",
+        adminMapOutside: "الجهاز خارج النطاق بمسافة دنيا تقديرية قدرها {margin}.",
+        adminMapBoundary: "غير مؤكد: نطاق دقة GPS يتقاطع مع حد النطاق الجغرافي.",
+        adminMapLastFix: "تم الفحص في {time}.",
+        adminMapPointChanged: "تم تحديث نقطة GPS. احفظ الإعدادات لتطبيقها.",
+        adminMapSaved: "تم حفظ إعدادات موقع المدرسة.",
+        adminSettingsSaving: "جارٍ حفظ نقطة GPS وقواعد المدرسة…",
+        adminSettingsSaved: "تم حفظ نقطة GPS والنطاق وقواعد المدرسة بنجاح."
     }
 };
 
@@ -557,6 +656,12 @@ const state = {
     adminSettingsMap: null,
     adminSettingsMarker: null,
     adminSettingsCircle: null,
+    adminSettingsDeviceFix: null,
+    adminSettingsDeviceMarker: null,
+    adminSettingsAccuracyCircle: null,
+    livenessChallenge: null,
+    adminAllowedWhatsappRecipients: [],
+    adminFonnteConfigured: false,
     lastNose: null,
     movementFrames: 0,
     attendanceRecorded: false,
@@ -712,7 +817,9 @@ const ADMIN_T = {
         changeAdminPassword: "Ubah kata sandi Admin", adminPasswordDescription: "Gunakan kata sandi unik dan kuat untuk akun dengan hak akses tinggi.",
         currentPassword: "Kata sandi saat ini", newPassword: "Kata sandi baru", savePassword: "Simpan kata sandi",
         activeStatus: "Aktif", inactiveStatus: "Nonaktif", editAccount: "Ubah", deactivateAccount: "Nonaktifkan",
-        teacherAccountCreated: "Akun Guru berhasil dibuat.", studentAccountCreated: "Akun Siswa berhasil dibuat. Guru perlu mendaftarkan sampel wajah sebelum siswa dapat melakukan presensi."
+        teacherAccountCreated: "Akun Guru berhasil dibuat.", studentAccountCreated: "Akun Siswa berhasil dibuat. Guru perlu mendaftarkan sampel wajah sebelum siswa dapat melakukan presensi.",
+        systemGovernance: "PENGELOLAAN SISTEM", governanceTitle: "Kontrol operasional Amanah ID", governanceDescription: "38 kontrol dalam 6 kategori. Pengaturan disimpan di Supabase dan setiap perubahan dicatat dalam audit.", governanceReload: "Muat ulang",
+        adminMapSchoolTitle: "Titik GPS sekolah", adminMapSchoolDescription: "Pilih titik sekolah pada peta atau masukkan koordinat secara manual.", adminMapCenter: "Pusatkan", adminMapPointStatus: "Klik peta untuk memilih titik lokasi sekolah."
     },
     en: {
         adminWorkspace: "ADMINISTRATOR", adminNavigation: "Admin navigation", faceSampleProgress: "Face sample progress", administratorRole: "Administrator", confirmDeactivateAccount: "Deactivate this account?", promptNewEmail: "New email (leave blank to keep it unchanged):", promptNewName: "New name (leave blank to keep it unchanged):", promptNewPassword: "New password (leave blank to keep it unchanged):", adminOverview: "Overview", adminAccounts: "Manage accounts",
@@ -738,7 +845,9 @@ const ADMIN_T = {
         changeAdminPassword: "Change Admin password", adminPasswordDescription: "Use a unique, strong password for this privileged account.",
         currentPassword: "Current password", newPassword: "New password", savePassword: "Save password",
         activeStatus: "Active", inactiveStatus: "Inactive", editAccount: "Edit", deactivateAccount: "Deactivate",
-        teacherAccountCreated: "Teacher account created successfully.", studentAccountCreated: "Student account created. A Teacher must register face samples before attendance can be recorded."
+        teacherAccountCreated: "Teacher account created successfully.", studentAccountCreated: "Student account created. A Teacher must register face samples before attendance can be recorded.",
+        systemGovernance: "SYSTEM GOVERNANCE", governanceTitle: "Amanah ID operational controls", governanceDescription: "38 controls across 6 categories. Settings are stored in Supabase and every change is recorded in the audit log.", governanceReload: "Reload",
+        adminMapSchoolTitle: "School GPS point", adminMapSchoolDescription: "Choose the school point on the map or enter its coordinates manually.", adminMapCenter: "Recenter", adminMapPointStatus: "Click the map to select the school location."
     },
     ar: {
         adminWorkspace: "مساحة المسؤول", adminNavigation: "تنقل المسؤول", faceSampleProgress: "تقدم عينات الوجه", administratorRole: "المسؤول", confirmDeactivateAccount: "هل تريد تعطيل هذا الحساب؟", promptNewEmail: "البريد الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewName: "الاسم الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewPassword: "كلمة المرور الجديدة (اتركها فارغة لإبقائها كما هي):", adminOverview: "نظرة عامة", adminAccounts: "إدارة الحسابات",
@@ -764,7 +873,9 @@ const ADMIN_T = {
         changeAdminPassword: "تغيير كلمة مرور المسؤول", adminPasswordDescription: "استخدم كلمة مرور قوية وفريدة لهذا الحساب ذي الصلاحيات العالية.",
         currentPassword: "كلمة المرور الحالية", newPassword: "كلمة المرور الجديدة", savePassword: "حفظ كلمة المرور",
         activeStatus: "نشط", inactiveStatus: "غير نشط", editAccount: "تعديل", deactivateAccount: "تعطيل",
-        teacherAccountCreated: "تم إنشاء حساب المعلم بنجاح.", studentAccountCreated: "تم إنشاء حساب الطالب. يجب على المعلم تسجيل عينة الوجه قبل تسجيل الحضور."
+        teacherAccountCreated: "تم إنشاء حساب المعلم بنجاح.", studentAccountCreated: "تم إنشاء حساب الطالب. يجب على المعلم تسجيل عينة الوجه قبل تسجيل الحضور.",
+        systemGovernance: "إدارة النظام", governanceTitle: "عناصر التحكم التشغيلية في أمانة ID", governanceDescription: "38 عنصر تحكم ضمن 6 فئات. تُحفظ الإعدادات في Supabase ويُسجل كل تغيير في سجل التدقيق.", governanceReload: "إعادة تحميل",
+        adminMapSchoolTitle: "نقطة GPS للمدرسة", adminMapSchoolDescription: "اختر موقع المدرسة على الخريطة أو أدخل الإحداثيات يدويًا.", adminMapCenter: "إعادة التمركز", adminMapPointStatus: "انقر على الخريطة لاختيار موقع المدرسة."
     }
 };
 Object.keys(ADMIN_T).forEach(lang => Object.assign(T[lang], ADMIN_T[lang]));
@@ -836,7 +947,9 @@ function exportTableCsv(tbodyId, filename) {
 
 function syncAdminSettingsMap({ center = false } = {}) {
     const mapElement = $("admin-school-map");
-    if (!mapElement || !window.L) return;
+    if (!mapElement) return;
+    updateAdminMapDistanceSummary();
+    if (!window.L) return;
     if (!$("admin-setting-lat")?.value.trim() || !$("admin-setting-lng")?.value.trim()) return;
     const lat = Number($("admin-setting-lat").value);
     const lng = Number($("admin-setting-lng").value);
@@ -863,7 +976,7 @@ function syncAdminSettingsMap({ center = false } = {}) {
             $("admin-setting-lng").value = event.latlng.lng.toFixed(7);
             syncAdminSettingsMap({ center: false });
             const status = $("admin-school-map-status");
-            if (status) status.textContent = "Titik GPS diperbarui. Simpan pengaturan untuk menerapkannya.";
+            if (status) status.textContent = tr("adminMapPointChanged");
         });
         $("admin-map-center")?.addEventListener("click", () => syncAdminSettingsMap({ center: true }));
         ["admin-setting-lat", "admin-setting-lng", "admin-setting-radius"].forEach(id => {
@@ -881,7 +994,129 @@ function syncAdminSettingsMap({ center = false } = {}) {
     const lngLabel = $("admin-map-lng-label");
     if (latLabel) latLabel.textContent = lat.toFixed(7);
     if (lngLabel) lngLabel.textContent = lng.toFixed(7);
+    updateAdminMapDistanceSummary();
     window.setTimeout(() => state.adminSettingsMap?.invalidateSize(), 80);
+}
+
+function formatMapDistance(meters) {
+    if (!Number.isFinite(meters) || meters < 0) return "—";
+    if (meters < 1000) return `${Math.round(meters)} m`;
+    const locale = state.lang === "id" ? "id-ID" : state.lang === "ar" ? "ar" : "en-US";
+    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(meters / 1000)} km`;
+}
+
+function updateAdminMapDistanceSummary() {
+    const fix = state.adminSettingsDeviceFix;
+    const distanceEl = $("admin-map-device-distance");
+    const accuracyEl = $("admin-map-device-accuracy");
+    const radiusEl = $("admin-map-device-radius");
+    const updatedEl = $("admin-map-device-updated");
+    const statusEl = $("admin-map-device-status");
+    const panel = document.querySelector(".admin-map-device-panel");
+    if (!fix) {
+        if (radiusEl) radiusEl.textContent = formatMapDistance(Number($("admin-setting-radius")?.value));
+        return;
+    }
+
+    const schoolLat = Number($("admin-setting-lat")?.value);
+    const schoolLng = Number($("admin-setting-lng")?.value);
+    const radius = Number($("admin-setting-radius")?.value);
+    const distance = calculateDistance(fix.lat, fix.lng, schoolLat, schoolLng);
+    if (![distance, fix.accuracy, radius].every(Number.isFinite) || fix.accuracy <= 0 || radius <= 0) {
+        if (statusEl) statusEl.textContent = tr("adminMapBadFix");
+        return;
+    }
+
+    if (distanceEl) distanceEl.textContent = formatMapDistance(distance);
+    if (accuracyEl) accuracyEl.textContent = `±${formatMapDistance(fix.accuracy)}`;
+    if (radiusEl) radiusEl.textContent = formatMapDistance(radius);
+    const locale = state.lang === "id" ? "id-ID" : state.lang === "ar" ? "ar" : "en-US";
+    const checkedAt = new Intl.DateTimeFormat(locale, {
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+    }).format(new Date(fix.timestamp));
+    if (updatedEl) updatedEl.textContent = checkedAt;
+
+    const clearlyInside = distance + fix.accuracy <= radius;
+    const clearlyOutside = Math.max(0, distance - fix.accuracy) > radius;
+    const statusKey = clearlyInside ? "adminMapInside" : clearlyOutside ? "adminMapOutside" : "adminMapBoundary";
+    const margin = clearlyInside
+        ? formatMapDistance(Math.max(0, radius - distance - fix.accuracy))
+        : formatMapDistance(Math.max(0, distance - fix.accuracy - radius));
+    if (statusEl) statusEl.textContent = `${tr(statusKey, { margin })} ${tr("adminMapLastFix", { time: checkedAt })}`;
+
+    if (state.adminSettingsMap && window.L) {
+        const point = [fix.lat, fix.lng];
+        if (!state.adminSettingsDeviceMarker) {
+            state.adminSettingsDeviceMarker = L.circleMarker(point, {
+                radius: 7, color: "#087a50", weight: 2, fillColor: "#16a36a", fillOpacity: .95
+            }).addTo(state.adminSettingsMap);
+        } else state.adminSettingsDeviceMarker.setLatLng(point);
+        if (!state.adminSettingsAccuracyCircle) {
+            state.adminSettingsAccuracyCircle = L.circle(point, {
+                radius: fix.accuracy, color: "#16a36a", weight: 1, fillColor: "#16a36a", fillOpacity: .07
+            }).addTo(state.adminSettingsMap);
+        } else {
+            state.adminSettingsAccuracyCircle.setLatLng(point);
+            state.adminSettingsAccuracyCircle.setRadius(fix.accuracy);
+        }
+    }
+    if (panel) {
+        panel.classList.remove("is-updated");
+        requestAnimationFrame(() => panel.classList.add("is-updated"));
+    }
+}
+
+async function checkAdminMapDeviceLocation() {
+    const button = $("admin-map-check-location");
+    const status = $("admin-map-device-status");
+    if (!status) return;
+    if (!navigator.geolocation?.getCurrentPosition) {
+        status.textContent = tr("gpsUnsupported");
+        return;
+    }
+    const schoolLat = Number($("admin-setting-lat")?.value);
+    const schoolLng = Number($("admin-setting-lng")?.value);
+    const radius = Number($("admin-setting-radius")?.value);
+    if (![schoolLat, schoolLng, radius].every(Number.isFinite) ||
+        Math.abs(schoolLat) > 90 || Math.abs(schoolLng) > 180 || radius <= 0) {
+        status.textContent = tr("adminMapBadFix");
+        return;
+    }
+
+    const originalLabel = button?.textContent;
+    if (button) { button.disabled = true; button.textContent = tr("adminMapCheckingDeviceLocation"); }
+    status.textContent = tr("adminMapCheckingDeviceLocation");
+    try {
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true, timeout: 15000, maximumAge: 0
+            });
+        });
+        const { latitude, longitude, accuracy } = position.coords || {};
+        if (![latitude, longitude, accuracy].every(Number.isFinite) ||
+            Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
+            throw new Error("invalid-gps-fix");
+        }
+        state.adminSettingsDeviceFix = {
+            lat: latitude, lng: longitude, accuracy,
+            timestamp: Number.isFinite(position.timestamp) ? position.timestamp : Date.now()
+        };
+        updateAdminMapDistanceSummary();
+        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+            status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
+        } else if (status) {
+            status.textContent += ` ${tr("adminMapLocationSuccess")}`;
+        }
+    } catch (error) {
+        const key = error?.message === "invalid-gps-fix" ? "adminMapBadFix"
+            : error?.code === 1 ? "adminMapLocationPermission"
+            : error?.code === 2 ? "adminMapLocationUnavailable"
+            : error?.code === 3 ? "adminMapLocationTimeout"
+            : "adminMapLocationFailure";
+        status.textContent = tr(key);
+    } finally {
+        if (button) { button.disabled = false; button.textContent = originalLabel || tr("adminMapCheckDeviceLocation"); }
+    }
 }
 
 
@@ -1006,6 +1241,13 @@ function setLanguage(lang) {
     updateStats();
     updateCameraTexts();
     renderStudentHistory();
+    if ($("admin-test-whatsapp-template") && !$("admin-test-whatsapp-template").dataset.userEdited) {
+        $("admin-test-whatsapp-template").value = tr("testWhatsappDefaultTemplate");
+        updateAdminWhatsAppPreview();
+    }
+    updateAdminWhatsAppTestControls();
+    if (state.adminFeatures) renderAdminFeatures();
+    updateAdminMapDistanceSummary();
     updateStudentProfile();
     if (state.map) updateMapText();
     updateSchoolLocationEditor();
@@ -1360,7 +1602,8 @@ async function loadAdminDashboard() {
 }
 
 const LOCKED_ADMIN_FEATURES = new Set([
-    "admin_audit_log", "duplicate_attendance_block", "face_sample_limit", "gps_accuracy_guard",
+    "admin_audit_log", "duplicate_attendance_block", "face_ambiguity_guard", "face_sample_limit",
+    "gps_accuracy_guard", "gps_boundary_guard",
     "rate_limiting", "session_expiry", "origin_validation", "strict_server_validation",
     "reduced_motion_support", "responsive_layout", "privacy_notice"
 ]);
@@ -1465,40 +1708,92 @@ function applyRuntimeFeatureFlags(features = {}) {
     }
 }
 
+const ADMIN_FEATURE_COPY = {
+    id: {
+        groups: { attendance: "1. Presensi & biometrik", accounts: "2. Akun & peran", data: "3. Data & presensi", security: "4. Keamanan & audit", experience: "5. Pengalaman website", location: "6. Lokasi, jadwal & tata kelola" },
+        lockedSuffix: " (wajib aktif; tidak dapat dinonaktifkan).",
+        features: {
+            camera_attendance: ["Kamera presensi", "Mengizinkan akses kamera pada alur presensi."], gps_geofencing: ["GPS geofencing", "Mengaktifkan pembatasan radius sekolah."], face_recognition: ["Pencocokan wajah", "Mengizinkan pencocokan descriptor wajah terdaftar."], liveness_check: ["Pemeriksaan gerakan kepala", "Mengaktifkan pemeriksaan keaktifan dasar."], face_ambiguity_guard: ["Penolakan wajah ambigu", "Menolak hasil jika dua identitas terlalu mirip untuk dibedakan dengan aman."], face_enrollment: ["Pendaftaran sampel wajah", "Mengizinkan pendaftaran sampel wajah siswa."], face_sample_limit: ["Batas sampel wajah", "Menegakkan batas sampel wajah per siswa."],
+            student_login: ["Login siswa", "Mengizinkan autentikasi akun siswa."], teacher_login: ["Login guru", "Mengizinkan autentikasi akun guru."], admin_login: ["Login administrator", "Mengizinkan autentikasi administrator."], student_account_creation: ["Pembuatan akun siswa", "Mengizinkan administrator membuat akun siswa."], teacher_account_creation: ["Pembuatan akun guru", "Mengizinkan administrator membuat akun guru."], account_deactivation: ["Penonaktifan akun", "Mengizinkan penonaktifan akun sekolah."],
+            attendance_recording: ["Pencatatan presensi", "Mengizinkan pencatatan kehadiran baru."], duplicate_attendance_block: ["Blokir presensi ganda", "Mencegah pencatatan lebih dari satu kali pada hari yang sama."], attendance_history: ["Riwayat presensi", "Mengizinkan akses ke riwayat kehadiran."], attendance_export: ["Ekspor data presensi", "Mengizinkan ekspor riwayat presensi."], parent_notifications: ["Notifikasi orang tua", "Mengizinkan pemicu notifikasi WhatsApp kepada orang tua."], late_detection: ["Deteksi keterlambatan", "Mengaktifkan aturan jam masuk dan toleransi keterlambatan."],
+            admin_audit_log: ["Audit aktivitas admin", "Mencatat perubahan penting yang dilakukan administrator."], admin_account_export: ["Ekspor akun", "Mengizinkan ekspor daftar akun sekolah."], admin_password_change: ["Perubahan sandi admin", "Mengizinkan pengelolaan kata sandi administrator."], rate_limiting: ["Pembatasan percobaan", "Membatasi frekuensi permintaan dan percobaan berulang."], session_expiry: ["Kedaluwarsa sesi", "Mewajibkan sesi autentikasi yang masih valid."], origin_validation: ["Validasi origin", "Menolak permintaan dari origin yang tidak diizinkan."],
+            maintenance_banner: ["Banner pemeliharaan", "Menampilkan pengumuman pemeliharaan saat diaktifkan."], public_status_panel: ["Panel status layanan", "Menampilkan status kesiapan layanan yang aman untuk publik."], reduced_motion_support: ["Dukungan reduced motion", "Menghormati preferensi pengurangan animasi perangkat."], language_switcher: ["Pemilih bahasa", "Mengizinkan pergantian bahasa antarmuka."], responsive_layout: ["Tata letak responsif", "Mengaktifkan penyesuaian tampilan desktop dan perangkat seluler."], splash_animation: ["Animasi pembuka", "Mengaktifkan animasi pembuka Amanah ID."],
+            gps_accuracy_guard: ["Pemeriksaan akurasi GPS", "Memeriksa batas akurasi lokasi sebelum presensi."], gps_boundary_guard: ["Pengaman batas geofence", "Menolak presensi ketika rentang ketidakpastian GPS memotong batas radius."], geofence_radius_edit: ["Pengubahan radius geofence", "Mengizinkan perubahan radius area sekolah."], school_schedule_rules: ["Aturan jadwal sekolah", "Mengaktifkan zona waktu, jam masuk, dan toleransi terlambat."], privacy_notice: ["Pemberitahuan privasi", "Menampilkan informasi pemrosesan data pribadi dan biometrik."], service_health_panel: ["Panel kesehatan layanan", "Menampilkan status backend dan integrasi."], strict_server_validation: ["Validasi server ketat", "Mewajibkan validasi payload di sisi server."]
+        },
+        saving: "Menyimpan perubahan…", saved: "Tersimpan ke server.", loading: "Memuat kebijakan sistem…", loadFailed: "Pengaturan gagal dimuat. Periksa koneksi dan izin Admin.", savingStatus: "Menyimpan perubahan kebijakan ke server…", savedStatus: "Perubahan tersimpan dan dicatat dalam audit.", saveFailed: "Server menolak perubahan. Periksa sesi Admin dan koneksi.", sessionError: "Sesi Admin tidak valid atau akses ditolak.", networkError: "Koneksi terputus atau server tidak merespons.", databaseError: "Database/backend gagal menyimpan pengaturan.", countLoaded: "{enabled} dari {total} kontrol aktif · Tersimpan di Supabase", countSaved: "{enabled} dari {total} kontrol aktif · Perubahan tersimpan dan diaudit", errorStatus: "Gagal menyimpan “{key}”: {reason}", savedToast: "Pengaturan sistem berhasil disimpan."
+    },
+    en: {
+        groups: { attendance: "1. Attendance & biometrics", accounts: "2. Accounts & roles", data: "3. Data & attendance", security: "4. Security & audit", experience: "5. Website experience", location: "6. Location, schedule & governance" },
+        lockedSuffix: " (required; cannot be disabled).",
+        features: {
+            camera_attendance: ["Attendance camera", "Allow camera access in the attendance workflow."], gps_geofencing: ["GPS geofencing", "Enforce the school's location radius."], face_recognition: ["Face matching", "Allow matching against registered face descriptors."], liveness_check: ["Head-movement check", "Enable the basic liveness interaction."], face_ambiguity_guard: ["Reject ambiguous face matches", "Reject results when two identities are too similar to distinguish safely."], face_enrollment: ["Face enrollment", "Allow student face-sample enrollment."], face_sample_limit: ["Face-sample limit", "Enforce the per-student face-sample limit."],
+            student_login: ["Student login", "Allow student account authentication."], teacher_login: ["Teacher login", "Allow teacher account authentication."], admin_login: ["Administrator login", "Allow administrator authentication."], student_account_creation: ["Student account creation", "Allow administrators to create student accounts."], teacher_account_creation: ["Teacher account creation", "Allow administrators to create teacher accounts."], account_deactivation: ["Account deactivation", "Allow school accounts to be deactivated."],
+            attendance_recording: ["Attendance recording", "Allow new attendance records."], duplicate_attendance_block: ["Duplicate attendance block", "Prevent more than one attendance record per day."], attendance_history: ["Attendance history", "Allow access to attendance history."], attendance_export: ["Attendance export", "Allow attendance-history exports."], parent_notifications: ["Parent notifications", "Allow WhatsApp notifications to parents."], late_detection: ["Late-arrival detection", "Enable entry-time and late-tolerance rules."],
+            admin_audit_log: ["Admin activity audit", "Record important administrator changes."], admin_account_export: ["Account export", "Allow school-account list exports."], admin_password_change: ["Admin password changes", "Allow administrator password management."], rate_limiting: ["Rate limiting", "Limit request frequency and repeated attempts."], session_expiry: ["Session expiry", "Require a valid, unexpired authentication session."], origin_validation: ["Origin validation", "Reject requests from unapproved origins."],
+            maintenance_banner: ["Maintenance banner", "Show a maintenance notice when enabled."], public_status_panel: ["Public service-status panel", "Show service readiness information safe for public display."], reduced_motion_support: ["Reduced-motion support", "Respect the device's reduced-motion preference."], language_switcher: ["Language selector", "Allow interface-language changes."], responsive_layout: ["Responsive layout", "Enable desktop and mobile layout adaptation."], splash_animation: ["Splash animation", "Enable the Amanah ID opening animation."],
+            gps_accuracy_guard: ["GPS accuracy check", "Enforce a location-accuracy limit before attendance."], gps_boundary_guard: ["Geofence boundary guard", "Reject attendance when GPS uncertainty overlaps the geofence boundary."], geofence_radius_edit: ["Edit geofence radius", "Allow changes to the school's geofence radius."], school_schedule_rules: ["School schedule rules", "Enable time zone, entry-time, and late-tolerance settings."], privacy_notice: ["Privacy notice", "Show information about personal and biometric data processing."], service_health_panel: ["Service-health panel", "Show backend and integration status."], strict_server_validation: ["Strict server validation", "Require payload validation on the server."]
+        },
+        saving: "Saving changes…", saved: "Saved to the server.", loading: "Loading system policies…", loadFailed: "Could not load settings. Check the connection and Admin access.", savingStatus: "Saving policy changes to the server…", savedStatus: "Changes saved and recorded in the audit log.", saveFailed: "The server rejected the change. Check the Admin session and connection.", sessionError: "The Admin session is invalid or access was denied.", networkError: "The connection was lost or the server did not respond.", databaseError: "The database/backend could not save the settings.", countLoaded: "{enabled} of {total} controls active · Stored in Supabase", countSaved: "{enabled} of {total} controls active · Changes saved and audited", errorStatus: "Could not save “{key}”: {reason}", savedToast: "System settings saved successfully."
+    },
+    ar: {
+        groups: { attendance: "1. الحضور والقياسات الحيوية", accounts: "2. الحسابات والأدوار", data: "3. البيانات والحضور", security: "4. الأمان والتدقيق", experience: "5. تجربة الموقع", location: "6. الموقع والجدول والحوكمة" },
+        lockedSuffix: " (إلزامي؛ لا يمكن تعطيله).",
+        features: {
+            camera_attendance: ["كاميرا الحضور", "السماح باستخدام الكاميرا ضمن عملية تسجيل الحضور."], gps_geofencing: ["تحديد الموقع الجغرافي GPS", "فرض نطاق الموقع الجغرافي للمدرسة."], face_recognition: ["مطابقة الوجه", "السماح بمطابقة واصفات الوجه المسجلة."], liveness_check: ["فحص حركة الرأس", "تفعيل فحص الحيوية الأساسي."], face_ambiguity_guard: ["رفض مطابقة الوجه الملتبسة", "رفض النتيجة عندما يتشابه ملفا هوية بدرجة تمنع التمييز الآمن."], face_enrollment: ["تسجيل الوجه", "السماح بتسجيل عينات وجوه الطلاب."], face_sample_limit: ["حد عينات الوجه", "فرض الحد الأقصى لعينات الوجه لكل طالب."],
+            student_login: ["دخول الطالب", "السماح بمصادقة حساب الطالب."], teacher_login: ["دخول المعلم", "السماح بمصادقة حساب المعلم."], admin_login: ["دخول المسؤول", "السماح بمصادقة حساب المسؤول."], student_account_creation: ["إنشاء حساب الطالب", "السماح للمسؤولين بإنشاء حسابات الطلاب."], teacher_account_creation: ["إنشاء حساب المعلم", "السماح للمسؤولين بإنشاء حسابات المعلمين."], account_deactivation: ["تعطيل الحساب", "السماح بتعطيل حسابات المدرسة."],
+            attendance_recording: ["تسجيل الحضور", "السماح بإنشاء سجلات حضور جديدة."], duplicate_attendance_block: ["منع تكرار الحضور", "منع تسجيل الحضور أكثر من مرة في اليوم."], attendance_history: ["سجل الحضور", "السماح بالوصول إلى سجل الحضور."], attendance_export: ["تصدير الحضور", "السماح بتصدير سجل الحضور."], parent_notifications: ["إشعارات أولياء الأمور", "السماح بإرسال إشعارات WhatsApp إلى أولياء الأمور."], late_detection: ["اكتشاف التأخر", "تفعيل قواعد وقت الدخول وسماح التأخر."],
+            admin_audit_log: ["تدقيق نشاط المسؤول", "تسجيل التغييرات المهمة التي يجريها المسؤول."], admin_account_export: ["تصدير الحسابات", "السماح بتصدير قائمة حسابات المدرسة."], admin_password_change: ["تغيير كلمة مرور المسؤول", "السماح بإدارة كلمة مرور المسؤول."], rate_limiting: ["تحديد معدل الطلبات", "تقييد تكرار الطلبات والمحاولات المتتالية."], session_expiry: ["انتهاء الجلسة", "اشتراط جلسة مصادقة صالحة وغير منتهية."], origin_validation: ["التحقق من مصدر الطلب", "رفض الطلبات من مصادر غير معتمدة."],
+            maintenance_banner: ["إشعار الصيانة", "عرض إشعار الصيانة عند التفعيل."], public_status_panel: ["لوحة حالة الخدمات العامة", "عرض معلومات جاهزية الخدمات المسموح بنشرها."], reduced_motion_support: ["دعم تقليل الحركة", "احترام إعداد تقليل الحركة في الجهاز."], language_switcher: ["اختيار اللغة", "السماح بتغيير لغة الواجهة."], responsive_layout: ["تصميم متجاوب", "تفعيل التكيف مع أجهزة الكمبيوتر والهواتف."], splash_animation: ["رسوم شاشة البداية", "تفعيل حركة افتتاح Amanah ID."],
+            gps_accuracy_guard: ["فحص دقة GPS", "فرض حد لدقة الموقع قبل تسجيل الحضور."], gps_boundary_guard: ["حماية حدود النطاق الجغرافي", "رفض الحضور عندما يتداخل عدم يقين GPS مع حد النطاق."], geofence_radius_edit: ["تعديل نطاق الموقع", "السماح بتعديل نطاق المدرسة الجغرافي."], school_schedule_rules: ["قواعد جدول المدرسة", "تفعيل المنطقة الزمنية ووقت الدخول وسماح التأخر."], privacy_notice: ["إشعار الخصوصية", "عرض معلومات معالجة البيانات الشخصية والبيومترية."], service_health_panel: ["لوحة صحة الخدمات", "عرض حالة الخادم والتكاملات."], strict_server_validation: ["التحقق الصارم من الخادم", "اشتراط التحقق من البيانات على الخادم."]
+        },
+        saving: "جارٍ حفظ التغييرات…", saved: "تم الحفظ على الخادم.", loading: "جارٍ تحميل سياسات النظام…", loadFailed: "تعذر تحميل الإعدادات. تحقق من الاتصال وصلاحيات المسؤول.", savingStatus: "جارٍ حفظ تغييرات السياسات على الخادم…", savedStatus: "تم حفظ التغييرات وتسجيلها في سجل التدقيق.", saveFailed: "رفض الخادم التغيير. تحقق من جلسة المسؤول والاتصال.", sessionError: "جلسة المسؤول غير صالحة أو تم رفض الوصول.", networkError: "انقطع الاتصال أو لم يستجب الخادم.", databaseError: "تعذر على قاعدة البيانات أو الخادم حفظ الإعدادات.", countLoaded: "تم تفعيل {enabled} من {total} عنصر تحكم · محفوظ في Supabase", countSaved: "تم تفعيل {enabled} من {total} عنصر تحكم · تم الحفظ والتدقيق", errorStatus: "تعذر حفظ “{key}”: {reason}", savedToast: "تم حفظ إعدادات النظام بنجاح."
+    }
+};
+
 const ADMIN_FEATURE_GROUPS = [
- { title:"1. Presensi & biometrik", items:[["camera_attendance","Kamera presensi","Mengizinkan akses kamera pada alur presensi."],["gps_geofencing","GPS geofencing","Mengaktifkan pembatasan radius sekolah."],["face_recognition","Pencocokan wajah","Mengizinkan proses pencocokan descriptor wajah."],["liveness_check","Pemeriksaan gerakan kepala","Mengaktifkan pemeriksaan keaktifan dasar."],["face_enrollment","Pendaftaran sampel wajah","Mengizinkan pendaftaran sampel siswa."],["face_sample_limit","Batas sampel wajah","Menegakkan batas sampel per siswa."]]},
- { title:"2. Akun & peran", items:[["student_login","Login siswa","Mengizinkan autentikasi role siswa."],["teacher_login","Login guru","Mengizinkan autentikasi role guru."],["admin_login","Login administrator","Mengizinkan autentikasi role admin."],["student_account_creation","Pembuatan akun siswa","Mengizinkan admin membuat akun siswa."],["teacher_account_creation","Pembuatan akun guru","Mengizinkan admin membuat akun guru."],["account_deactivation","Penonaktifan akun","Mengizinkan status akun nonaktif diberlakukan."]]},
- { title:"3. Data & presensi", items:[["attendance_recording","Pencatatan presensi","Mengizinkan pencatatan kehadiran baru."],["duplicate_attendance_block","Blokir presensi ganda","Mencegah catatan ganda pada hari yang sama."],["attendance_history","Riwayat presensi","Mengizinkan akses ke riwayat presensi."],["attendance_export","Ekspor data presensi","Mengizinkan ekspor CSV yang tersedia."],["parent_notifications","Notifikasi orang tua","Mengizinkan pemicu notifikasi WhatsApp."],["late_detection","Deteksi keterlambatan","Mengaktifkan aturan waktu masuk dan toleransi terlambat."]]},
- { title:"4. Keamanan & audit", items:[["admin_audit_log","Audit aktivitas admin","Mencatat perubahan penting oleh administrator."],["admin_account_export","Ekspor akun","Mengizinkan ekspor daftar akun admin."],["admin_password_change","Perubahan sandi admin","Mengizinkan pengelolaan sandi admin."],["rate_limiting","Pembatasan percobaan","Mengaktifkan rate limit pada endpoint terkait."],["session_expiry","Kedaluwarsa sesi","Mewajibkan sesi valid dan belum kedaluwarsa."],["origin_validation","Validasi origin","Menolak request dari origin yang tidak diizinkan."]]},
- { title:"5. Pengalaman website", items:[["maintenance_banner","Banner pemeliharaan","Menampilkan peringatan pemeliharaan saat diimplementasikan."],["public_status_panel","Panel status layanan","Menampilkan status layanan yang aman untuk publik."],["reduced_motion_support","Dukungan reduced motion","Menghormati preferensi aksesibilitas perangkat."],["language_switcher","Pemilih bahasa","Mengizinkan pergantian bahasa antarmuka."],["responsive_layout","Tata letak responsif","Mengizinkan layout responsif desktop dan mobile."],["splash_animation","Animasi pembuka","Mengaktifkan animasi splash Amanah ID."]]},
- { title:"6. Lokasi, jadwal & tata kelola", items:[["gps_accuracy_guard","Pemeriksaan akurasi GPS","Memeriksa akurasi lokasi sebelum presensi."],["geofence_radius_edit","Pengubahan radius geofence","Mengizinkan admin mengubah radius sekolah."],["school_schedule_rules","Aturan jadwal sekolah","Mengaktifkan jam masuk dan toleransi terlambat."],["privacy_notice","Pemberitahuan privasi","Menampilkan informasi pemrosesan data biometrik."],["service_health_panel","Panel kesehatan layanan","Menampilkan status backend dan integrasi."],["strict_server_validation","Validasi server ketat","Mewajibkan validasi payload pada endpoint terkait."]]}
+ { key:"attendance", title:"1. Presensi & biometrik", items:[["camera_attendance","Kamera presensi","Mengizinkan akses kamera pada alur presensi."],["gps_geofencing","GPS geofencing","Mengaktifkan pembatasan radius sekolah."],["face_recognition","Pencocokan wajah","Mengizinkan proses pencocokan descriptor wajah."],["liveness_check","Pemeriksaan gerakan kepala","Mengaktifkan pemeriksaan keaktifan dasar."],["face_ambiguity_guard","Penolakan wajah ambigu","Menolak pencocokan jika dua identitas memiliki skor yang terlalu berdekatan."],["face_enrollment","Pendaftaran sampel wajah","Mengizinkan pendaftaran sampel siswa."],["face_sample_limit","Batas sampel wajah","Menegakkan batas sampel per siswa."]]},
+ { key:"accounts", title:"2. Akun & peran", items:[["student_login","Login siswa","Mengizinkan autentikasi role siswa."],["teacher_login","Login guru","Mengizinkan autentikasi role guru."],["admin_login","Login administrator","Mengizinkan autentikasi role admin."],["student_account_creation","Pembuatan akun siswa","Mengizinkan admin membuat akun siswa."],["teacher_account_creation","Pembuatan akun guru","Mengizinkan admin membuat akun guru."],["account_deactivation","Penonaktifan akun","Mengizinkan status akun nonaktif diberlakukan."]]},
+ { key:"data", title:"3. Data & presensi", items:[["attendance_recording","Pencatatan presensi","Mengizinkan pencatatan kehadiran baru."],["duplicate_attendance_block","Blokir presensi ganda","Mencegah catatan ganda pada hari yang sama."],["attendance_history","Riwayat presensi","Mengizinkan akses ke riwayat presensi."],["attendance_export","Ekspor data presensi","Mengizinkan ekspor CSV yang tersedia."],["parent_notifications","Notifikasi orang tua","Mengizinkan pemicu notifikasi WhatsApp."],["late_detection","Deteksi keterlambatan","Mengaktifkan aturan waktu masuk dan toleransi terlambat."]]},
+ { key:"security", title:"4. Keamanan & audit", items:[["admin_audit_log","Audit aktivitas admin","Mencatat perubahan penting oleh administrator."],["admin_account_export","Ekspor akun","Mengizinkan ekspor daftar akun admin."],["admin_password_change","Perubahan sandi admin","Mengizinkan pengelolaan sandi admin."],["rate_limiting","Pembatasan percobaan","Mengaktifkan rate limit pada endpoint terkait."],["session_expiry","Kedaluwarsa sesi","Mewajibkan sesi valid dan belum kedaluwarsa."],["origin_validation","Validasi origin","Menolak request dari origin yang tidak diizinkan."]]},
+ { key:"experience", title:"5. Pengalaman website", items:[["maintenance_banner","Banner pemeliharaan","Menampilkan peringatan pemeliharaan saat diimplementasikan."],["public_status_panel","Panel status layanan","Menampilkan status layanan yang aman untuk publik."],["reduced_motion_support","Dukungan reduced motion","Menghormati preferensi aksesibilitas perangkat."],["language_switcher","Pemilih bahasa","Mengizinkan pergantian bahasa antarmuka."],["responsive_layout","Tata letak responsif","Mengizinkan layout responsif desktop dan mobile."],["splash_animation","Animasi pembuka","Mengaktifkan animasi splash Amanah ID."]]},
+ { key:"location", title:"6. Lokasi, jadwal & tata kelola", items:[["gps_accuracy_guard","Pemeriksaan akurasi GPS","Memeriksa akurasi lokasi sebelum presensi."],["gps_boundary_guard","Pengaman batas geofence","Menolak presensi jika rentang ketidakpastian GPS memotong batas radius sekolah."],["geofence_radius_edit","Pengubahan radius geofence","Mengizinkan admin mengubah radius sekolah."],["school_schedule_rules","Aturan jadwal sekolah","Mengaktifkan jam masuk dan toleransi terlambat."],["privacy_notice","Pemberitahuan privasi","Menampilkan informasi pemrosesan data biometrik."],["service_health_panel","Panel kesehatan layanan","Menampilkan status backend dan integrasi."],["strict_server_validation","Validasi server ketat","Mewajibkan validasi payload pada endpoint terkait."]]}
 ];
 function renderAdminFeatures() {
  const root = $("admin-governance-controls");
  if (!root) return;
  const features = state.adminFeatures || {};
  const feedback = state.adminFeatureStatus || {};
- root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(group.title)}</h4>${group.items.map(([key,label,description]) => {
+ const localized = ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id;
+ root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(localized.groups[group.key] || group.title)}</h4>${group.items.map(([key,label,description]) => {
+   const [featureLabel, featureDescription] = localized.features[key] || [label, description];
    const locked = LOCKED_ADMIN_FEATURES.has(key);
    const checked = locked || features[key] !== false;
-   const detail = feedback[key]?.message || (locked ? description + " (wajib aktif; tidak dapat dinonaktifkan)." : description);
+   const detail = feedback[key]?.message || (locked ? featureDescription + localized.lockedSuffix : featureDescription);
    const phase = feedback[key]?.type || "";
    const icon = phase === "pending" ? '<span class="feature-spinner" aria-hidden="true"></span>' : phase === "success" ? '<span class="feature-result feature-result-ok" aria-hidden="true">✓</span>' : phase === "error" ? '<span class="feature-result feature-result-error" aria-hidden="true">!</span>' : "";
-   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
+   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(featureLabel)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(featureLabel)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
  }).join("")}</section>`).join("");
+}
+function adminFeatureCountStatus(saved = false) {
+ const copy = ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id;
+ const enabled = Object.values(state.adminFeatures || {}).filter(Boolean).length;
+ const total = Object.keys(state.adminFeatures || {}).length;
+ return (saved ? copy.countSaved : copy.countLoaded)
+  .replaceAll("{enabled}", String(enabled))
+  .replaceAll("{total}", String(total));
 }
 async function loadAdminFeatures() {
  const status = $("admin-governance-status");
  if (!status) return;
- status.textContent = "Memuat kebijakan sistem…";
+ status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).loading;
  try {
    const result = await cloudRequest("/api/admin/settings?action=features");
    state.adminFeatures = result.features || {};
    renderAdminFeatures();
    applyAdminFeatureFlags(state.adminFeatures);
-   status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Tersimpan di Supabase`;
+   status.textContent = adminFeatureCountStatus(false);
  } catch (error) {
-   status.textContent = "Pengaturan gagal dimuat. Periksa konfigurasi backend dan izin Admin.";
+   status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).loadFailed;
    console.error("Admin feature controls failed to load:", error);
  }
 }
@@ -1509,10 +1804,10 @@ async function saveAdminFeatureToggle(input) {
  const requested = input.checked;
  const status = $("admin-governance-status");
  state.adminFeatureStatus = state.adminFeatureStatus || {};
- state.adminFeatureStatus[key] = { type: "pending", message: "Menyimpan perubahan…" };
+ state.adminFeatureStatus[key] = { type: "pending", message: (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).saving };
  state.adminFeatures[key] = requested;
  renderAdminFeatures();
- if (status) status.textContent = "Menyimpan perubahan kebijakan ke server…";
+ if (status) status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).savingStatus;
  state.adminFeatureSaveQueue = state.adminFeatureSaveQueue || Promise.resolve();
  const operation = state.adminFeatureSaveQueue.then(async () => {
    const payload = { features: { ...state.adminFeatures } };
@@ -1525,11 +1820,11 @@ async function saveAdminFeatureToggle(input) {
    state.adminFeatures = saved;
    state.runtimeFeatures = { ...(state.runtimeFeatures || {}), ...saved };
    applyRuntimeFeatureFlags(state.runtimeFeatures);
-   state.adminFeatureStatus[key] = { type: "success", message: "Tersimpan ke server." };
+   state.adminFeatureStatus[key] = { type: "success", message: (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).saved };
    renderAdminFeatures();
    applyAdminFeatureFlags(state.adminFeatures);
-   if (status) status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Perubahan tersimpan dan diaudit`;
-   toast("Pengaturan sistem berhasil disimpan.", "success");
+   if (status) status.textContent = adminFeatureCountStatus(true);
+   toast((ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).savedToast, "success");
    window.setTimeout(() => {
      if (state.adminFeatureStatus?.[key]?.type === "success") {
        delete state.adminFeatureStatus[key];
@@ -1541,15 +1836,16 @@ async function saveAdminFeatureToggle(input) {
    applyAdminFeatureFlags(state.adminFeatures);
    const raw = String(error?.message || "");
    const reason = /401|403|unauthori|forbidden|session|sesi/i.test(raw)
-     ? "Sesi Admin tidak valid atau akses ditolak."
+     ? (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).sessionError
      : /timeout|network|fetch|offline|failed to fetch/i.test(raw)
        ? "Koneksi terputus atau server tidak merespons."
        : /supabase|database|500|503/i.test(raw)
-         ? "Database/backend gagal menyimpan pengaturan."
-         : "Server menolak perubahan. Periksa sesi Admin dan konfigurasi backend.";
+         ? (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).databaseError
+         : (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).saveFailed;
    state.adminFeatureStatus[key] = { type: "error", message: reason };
    renderAdminFeatures();
-   if (status) status.textContent = `Gagal menyimpan “${key}”: ${reason}`;
+   if (status) status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).errorStatus
+     .replaceAll("{key}", key).replaceAll("{reason}", reason);
    toast(reason, "error");
    window.setTimeout(() => {
      if (state.adminFeatureStatus?.[key]?.type === "error") {
@@ -1610,8 +1906,9 @@ async function startAdminTestCamera() {
             if (adminTestBusy || !adminTestStream || video.readyState < 2) return;
             adminTestBusy = true;
             try {
-                const detections = await detectFaces(video);
+                const rawDetections = await detectFaces(video);
                 if (!adminTestStream) return;
+                const detections = rawDetections.filter(detection => isFaceDetectionUsable(detection, video));
                 drawDetections(video, $("admin-test-overlay"), detections);
                 $("admin-test-face-count").textContent = String(detections.length);
                 status.textContent = detections.length === 0 ? tr("testCameraNoFace")
@@ -1636,24 +1933,42 @@ async function startAdminTestCamera() {
     }
 }
 
+function updateAdminWhatsAppTestControls() {
+    const allowed = Array.isArray(state.adminAllowedWhatsappRecipients)
+        ? state.adminAllowedWhatsappRecipients : [];
+    const target = $("admin-test-whatsapp-number")?.value.replace(/\D/g, "") || "";
+    const message = $("admin-test-whatsapp-template")?.value.trim() || "";
+    const consent = Boolean($("admin-test-whatsapp-consent")?.checked);
+    const printable = message.length >= 10 && message.length <= 300 &&
+        !/[\u0000-\u001F\u007F]/.test(message);
+    const permitted = state.adminFonnteConfigured && allowed.includes(target);
+    const button = $("admin-test-whatsapp-send");
+    if (button) button.disabled = !(permitted && printable && consent);
+}
+
 async function loadAdminTestTools() {
     try {
         const result = await cloudRequest("/api/admin/test-tools");
-        $("admin-test-fonnte-state").textContent = result.fonnte_configured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
-        $("admin-test-whatsapp-allowlist").textContent = result.allowed_recipients?.length
-            ? result.allowed_recipients.join(", ") : "Belum ada nomor uji yang diizinkan";
+        state.adminFonnteConfigured = result.fonnte_configured === true;
+        state.adminAllowedWhatsappRecipients = Array.isArray(result.allowed_recipients)
+            ? result.allowed_recipients.filter(value => /^628\d{8,13}$/.test(String(value))) : [];
+        $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
+        $("admin-test-whatsapp-allowlist").textContent = state.adminAllowedWhatsappRecipients.length
+            ? state.adminAllowedWhatsappRecipients.join(", ") : tr("testAllowlistEmpty");
         const templateInput = $("admin-test-whatsapp-template");
         if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
         updateAdminWhatsAppPreview();
-        $("admin-test-whatsapp-send").disabled = !result.fonnte_configured || !result.allowed_recipients?.length;
-        if (!result.fonnte_configured || !result.allowed_recipients?.length) {
-            $("admin-test-whatsapp-status").textContent = "Atur FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS di environment Production untuk mengaktifkan tes.";
+        updateAdminWhatsAppTestControls();
+        if (!state.adminFonnteConfigured || !state.adminAllowedWhatsappRecipients.length) {
+            $("admin-test-whatsapp-status").textContent = tr("testFonnteConfigHint");
         }
     } catch (error) {
-        $("admin-test-fonnte-state").textContent = "Tidak dapat diperiksa";
+        state.adminFonnteConfigured = false;
+        state.adminAllowedWhatsappRecipients = [];
+        $("admin-test-fonnte-state").textContent = tr("testFonnteStatusUnavailable");
         $("admin-test-whatsapp-allowlist").textContent = tr("testAllowlistLoadFailed");
         $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
-        $("admin-test-whatsapp-send").disabled = true;
+        updateAdminWhatsAppTestControls();
     }
 }
 
@@ -1691,6 +2006,7 @@ async function sendAdminWhatsAppTest() {
     } finally {
         button.disabled = false;
         $("admin-test-whatsapp-consent").checked = false;
+        updateAdminWhatsAppTestControls();
     }
 }
 
@@ -1704,21 +2020,33 @@ async function testAdminGps() {
         const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true, timeout: 12000, maximumAge: 0
         }));
-        const { latitude, longitude, accuracy } = position.coords;
-        const rad = value => value * Math.PI / 180;
-        const dLat = rad(latitude - SCHOOL_LOCATION.lat);
-        const dLng = rad(longitude - SCHOOL_LOCATION.lng);
-        const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(SCHOOL_LOCATION.lat)) * Math.cos(rad(latitude)) * Math.sin(dLng / 2) ** 2;
-        const distance = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const { latitude, longitude, accuracy } = position.coords || {};
+        if (![latitude, longitude, accuracy].every(Number.isFinite) ||
+            Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
+            throw new Error("invalid-gps-fix");
+        }
+        const distance = calculateDistance(latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng);
+        if (!Number.isFinite(distance)) throw new Error("invalid-gps-fix");
         $("admin-test-gps-lat").textContent = latitude.toFixed(6);
         $("admin-test-gps-lng").textContent = longitude.toFixed(6);
         $("admin-test-gps-accuracy").textContent = Math.round(accuracy) + " m";
         $("admin-test-gps-distance").textContent = Math.round(distance) + " m";
-        status.textContent = accuracy <= MAX_GPS_ACCURACY_METERS && distance <= SCHOOL_LOCATION.radius
-            ? tr("testGpsInside")
-            : tr("testGpsOutside");
+        const clearlyInside = distance + accuracy <= SCHOOL_LOCATION.radius;
+        const clearlyOutside = Math.max(0, distance - accuracy) > SCHOOL_LOCATION.radius;
+        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+            status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
+        } else if (clearlyInside) {
+            status.textContent = tr("testGpsInside");
+        } else if (clearlyOutside) {
+            status.textContent = tr("testGpsOutside");
+        } else {
+            status.textContent = tr("gpsBoundaryUncertain");
+        }
     } catch (error) {
-        status.textContent = error?.code === 1 ? tr("testGpsPermission") : error?.code === 3 ? tr("testGpsTimeout") : error.message || tr("testGpsFailed");
+        status.textContent = error?.message === "invalid-gps-fix" ? tr("adminMapBadFix")
+            : error?.code === 1 ? tr("testGpsPermission")
+            : error?.code === 3 ? tr("testGpsTimeout")
+            : error.message || tr("testGpsFailed");
     }
 }
 
@@ -2347,11 +2675,14 @@ async function checkGeofence() {
                 }
                 const roundedDistance = Math.round(distanceExact);
                 const roundedAccuracy = Math.round(accuracy);
-                const inside = distanceExact <= SCHOOL_LOCATION.radius;
+                const clearlyInside = distanceExact + accuracy <= SCHOOL_LOCATION.radius;
+                const clearlyOutside = Math.max(0, distanceExact - accuracy) > SCHOOL_LOCATION.radius;
+                const boundaryUncertain = !clearlyInside && !clearlyOutside;
+                const inside = clearlyInside;
 
                 state.lastLocation = {
                     lat: latitude, lng: longitude, accuracy,
-                    distance: roundedDistance, inside, checkedAt: Date.now(),
+                    distance: roundedDistance, inside, boundaryUncertain, checkedAt: Date.now(),
                     positionTimestamp: timestamp, speed: reportedSpeed
                 };
 
@@ -2361,6 +2692,7 @@ async function checkGeofence() {
                 updateMapText();
                 finish({
                     inside,
+                    boundaryUncertain,
                     distance: roundedDistance,
                     accuracy,
                     error: null,
@@ -2419,6 +2751,10 @@ function renderLocationBadge() {
 
     if (state.lastLocation.checking) {
         setStatus("pending", tr("locationChecking"), tr("checkingBeforeCamera"));
+        return;
+    }
+    if (state.lastLocation.boundaryUncertain) {
+        setStatus("outside", tr("locationOutside"), tr("gpsBoundaryUncertain"));
         return;
     }
 
@@ -2580,6 +2916,7 @@ function stopAttendanceCamera() {
     state.attendanceRecorded = false;
     state.lastNose = null;
     state.movementFrames = 0;
+    state.livenessChallenge = null;
     state.lastFaceMatchAt = 0;
     state.attendanceIdempotencyKey = null;
     setSwitch(false);
@@ -2838,8 +3175,52 @@ function drawDetections(video, canvas, detections) {
 
 async function detectFaces(video) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.45 });
+    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 });
     return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks().withFaceDescriptors();
+}
+
+function isFaceDetectionUsable(detection, video) {
+    const box = detection?.box || detection?.detection?.box;
+    const score = Number(detection?.score ?? detection?.detection?.score);
+    const width = Number(box?.width);
+    const height = Number(box?.height);
+    const sourceWidth = Number(video?.videoWidth) || 0;
+    const sourceHeight = Number(video?.videoHeight) || 0;
+    const minimumWidth = Math.max(76, sourceWidth * 0.12);
+    const minimumHeight = Math.max(76, sourceHeight * 0.16);
+    return Number.isFinite(score) && score >= 0.58 &&
+        Number.isFinite(width) && width >= minimumWidth &&
+        Number.isFinite(height) && height >= minimumHeight;
+}
+
+function updateAttendanceLiveness(detection) {
+    if (!state.livenessChallenge) {
+        state.livenessChallenge = {
+            direction: Math.random() < 0.5 ? "left" : "right",
+            stage: "front",
+            frames: 0,
+            total: 0,
+            completed: false
+        };
+    }
+    const challenge = state.livenessChallenge;
+    if (challenge.completed) return { completed: true, progress: 9 };
+    const angle = faceAngleBucket(detection);
+    const expected = challenge.stage === "turn" ? challenge.direction : "front";
+    challenge.total += 1;
+    if (angle === expected) challenge.frames += 1;
+    else challenge.frames = 0;
+
+    if (challenge.frames >= 3) {
+        challenge.frames = 0;
+        if (challenge.stage === "front") challenge.stage = "turn";
+        else if (challenge.stage === "turn") challenge.stage = "return";
+        else challenge.completed = true;
+    }
+    const messageKey = challenge.stage === "front" ? "livenessFaceForward"
+        : challenge.stage === "turn" ? (challenge.direction === "left" ? "livenessTurnLeft" : "livenessTurnRight")
+        : "livenessReturnFront";
+    return { completed: challenge.completed, progress: challenge.total, messageKey };
 }
 
 function getStudentDescriptors(student) {
@@ -2967,6 +3348,7 @@ async function processAttendanceFrame() {
         drawDetections(video, attendanceCanvas(), detections);
 
         if (!detections.length) {
+            if (state.livenessChallenge) state.livenessChallenge.frames = 0;
             setAttendanceMessage(tr("faceNotFound"));
             if (requestUser.role === "guru") {
                 updateProgress(0, tr("faceNotFound"));
@@ -2977,6 +3359,7 @@ async function processAttendanceFrame() {
         }
 
         if (detections.length > 1) {
+            if (state.livenessChallenge) state.livenessChallenge.frames = 0;
             setAttendanceMessage(tr("faceTooMany"));
             state.lastNose = null;
             state.movementFrames = 0;
@@ -2987,25 +3370,19 @@ async function processAttendanceFrame() {
         }
 
         const detection = detections[0];
-        const nose = detection.landmarks.getNose()?.[3];
-        if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y)) {
-            state.lastNose = null;
-            state.movementFrames = 0;
-            setAttendanceMessage(tr("faceNotFound"));
+        if (!isFaceDetectionUsable(detection, video)) {
+            if (state.livenessChallenge) state.livenessChallenge.frames = 0;
+            setAttendanceMessage(tr("faceQualityLow"));
+            if (requestUser.role === "guru") updateProgress(0, tr("faceQualityLow"));
             return;
         }
-        if (state.lastNose) {
-            const delta = Math.hypot(nose.x - state.lastNose.x, nose.y - state.lastNose.y);
-            if (delta > 1.2) state.movementFrames++;
-        }
-        state.lastNose = { x: nose.x, y: nose.y };
-
+        const liveness = updateAttendanceLiveness(detection);
+        state.movementFrames = liveness.progress;
         if (requestUser.role === "guru") {
-            updateProgress(Math.min(100, 30 + state.movementFrames * 12), tr("attendanceInProgress"));
+            updateProgress(liveness.completed ? 90 : Math.min(85, 25 + liveness.progress * 7), tr("attendanceInProgress"));
         }
-
-        if (state.movementFrames < 3) {
-            setAttendanceMessage(tr("livenessMove"));
+        if (!liveness.completed) {
+            setAttendanceMessage(tr(liveness.messageKey));
             return;
         }
 
@@ -3029,8 +3406,9 @@ async function processAttendanceFrame() {
             return;
         }
         if (!result.match || typeof result.proofToken !== "string" || !result.proofToken) {
-            setAttendanceMessage(tr("faceNoMatch"));
-            updateProgress(0, tr("faceNoMatch"));
+            const message = result.ambiguous ? tr("faceMatchAmbiguous") : tr("faceNoMatch");
+            setAttendanceMessage(message);
+            updateProgress(0, message);
             return;
         }
         student = candidates.find(item => item.nisn === result.nisn);
@@ -3046,9 +3424,11 @@ async function processAttendanceFrame() {
         if (state.user !== requestUser || state.attendanceStream !== requestStream ||
             !attendanceViewActive() || document.hidden) return;
         if (location.error || !location.inside || location.accuracy > MAX_GPS_ACCURACY_METERS) {
-            const message = location.error || (location.accuracy > MAX_GPS_ACCURACY_METERS
-                ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
-                : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
+            const message = location.error || (location.boundaryUncertain
+                ? tr("gpsBoundaryUncertain")
+                : location.accuracy > MAX_GPS_ACCURACY_METERS
+                    ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
+                    : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
             stopAttendanceCamera();
             setAttendanceMessage(message);
             if (requestUser.role === "guru") {
@@ -3265,7 +3645,7 @@ async function readUploadedFace(file) {
     try {
         const image = await faceapi.bufferToImage(file);
         const detections = await faceapi.detectAllFaces(
-            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
+            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 })
         ).withFaceLandmarks().withFaceDescriptors();
 
         if (detections.length !== 1) {
@@ -4138,16 +4518,16 @@ function setupEvents() {
         const submitButton = $("admin-settings-form").querySelector('button[type="submit"]');
         const status = $("admin-settings-status");
         const originalLabel = submitButton?.textContent || tr("saveSettings");
-        if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Menyimpan…"; }
-        if (status) status.textContent = "Menyimpan titik GPS dan aturan sekolah…";
+        if (submitButton) { submitButton.disabled = true; submitButton.textContent = tr("adminSettingsSaving"); }
+        if (status) status.textContent = tr("adminSettingsSaving");
         try {
             const saved = await cloudRequest("/api/admin/settings", { method: "PUT", body });
             SCHOOL_LOCATION = { ...SCHOOL_LOCATION, ...saved };
             syncAdminSettingsMap({ center: true });
             const mapStatus = $("admin-school-map-status");
-            if (mapStatus) mapStatus.textContent = "Pengaturan lokasi sekolah telah disimpan.";
-            if (status) status.textContent = "Titik GPS, radius, dan aturan sekolah berhasil disimpan.";
-            toast("Pengaturan sekolah berhasil disimpan.", "success");
+            if (mapStatus) mapStatus.textContent = tr("adminMapSaved");
+            if (status) status.textContent = tr("adminSettingsSaved");
+            toast(tr("settingsSaved"), "success");
         } catch (error) {
             if (status) status.textContent = error.message || "Pengaturan sekolah gagal disimpan.";
             toastAdminError(error);
@@ -4168,12 +4548,16 @@ function setupEvents() {
     $("admin-test-camera-start")?.addEventListener("click", () => void startAdminTestCamera());
     $("admin-test-camera-stop")?.addEventListener("click", stopAdminTestCamera);
     $("admin-test-gps-run")?.addEventListener("click", () => void testAdminGps());
+    $("admin-map-check-location")?.addEventListener("click", () => void checkAdminMapDeviceLocation());
     $("admin-test-open-settings")?.addEventListener("click", () => showAdminView("admin-view-settings"));
     $("admin-test-services-run")?.addEventListener("click", () => void runAdminServiceChecks());
     $("admin-test-whatsapp-template")?.addEventListener("input", () => {
         $("admin-test-whatsapp-template").dataset.userEdited = "true";
         updateAdminWhatsAppPreview();
+        updateAdminWhatsAppTestControls();
     });
+    $("admin-test-whatsapp-number")?.addEventListener("input", updateAdminWhatsAppTestControls);
+    $("admin-test-whatsapp-consent")?.addEventListener("change", updateAdminWhatsAppTestControls);
     $("admin-test-whatsapp-send")?.addEventListener("click", () => void sendAdminWhatsAppTest());
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
