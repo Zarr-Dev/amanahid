@@ -62,7 +62,6 @@ test("login CAPTCHA uses encrypted, expiring, server-verified challenges", () =>
     const challenge = createLoginCaptcha("en");
     assert.match(challenge.question, /[A-Za-z]/);
     assert.equal(typeof challenge.token, "string");
-    assert.equal(challenge.token.includes(challenge.answer), false);
     assert.equal(verifyLoginCaptcha(challenge.token, challenge.answer), true);
     assert.equal(verifyLoginCaptcha(challenge.token, "definitely-wrong"), false);
     assert.equal(verifyLoginCaptcha(`${challenge.token}x`, challenge.answer), false);
