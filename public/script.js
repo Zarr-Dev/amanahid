@@ -1671,6 +1671,48 @@ function applyRuntimeFeatureFlags(features = {}) {
     }
 }
 
+const ADMIN_FEATURE_COPY = {
+    id: {
+        groups: { attendance: "1. Presensi & biometrik", accounts: "2. Akun & peran", data: "3. Data & presensi", security: "4. Keamanan & audit", experience: "5. Pengalaman website", location: "6. Lokasi, jadwal & tata kelola" },
+        lockedSuffix: " (wajib aktif; tidak dapat dinonaktifkan).",
+        features: {
+            camera_attendance: ["Kamera presensi", "Mengizinkan akses kamera pada alur presensi."], gps_geofencing: ["GPS geofencing", "Mengaktifkan pembatasan radius sekolah."], face_recognition: ["Pencocokan wajah", "Mengizinkan pencocokan descriptor wajah terdaftar."], liveness_check: ["Pemeriksaan gerakan kepala", "Mengaktifkan pemeriksaan keaktifan dasar."], face_ambiguity_guard: ["Penolakan wajah ambigu", "Menolak hasil jika dua identitas terlalu mirip untuk dibedakan dengan aman."], face_enrollment: ["Pendaftaran sampel wajah", "Mengizinkan pendaftaran sampel wajah siswa."], face_sample_limit: ["Batas sampel wajah", "Menegakkan batas sampel wajah per siswa."],
+            student_login: ["Login siswa", "Mengizinkan autentikasi akun siswa."], teacher_login: ["Login guru", "Mengizinkan autentikasi akun guru."], admin_login: ["Login administrator", "Mengizinkan autentikasi administrator."], student_account_creation: ["Pembuatan akun siswa", "Mengizinkan administrator membuat akun siswa."], teacher_account_creation: ["Pembuatan akun guru", "Mengizinkan administrator membuat akun guru."], account_deactivation: ["Penonaktifan akun", "Mengizinkan penonaktifan akun sekolah."],
+            attendance_recording: ["Pencatatan presensi", "Mengizinkan pencatatan kehadiran baru."], duplicate_attendance_block: ["Blokir presensi ganda", "Mencegah pencatatan lebih dari satu kali pada hari yang sama."], attendance_history: ["Riwayat presensi", "Mengizinkan akses ke riwayat kehadiran."], attendance_export: ["Ekspor data presensi", "Mengizinkan ekspor riwayat presensi."], parent_notifications: ["Notifikasi orang tua", "Mengizinkan pemicu notifikasi WhatsApp kepada orang tua."], late_detection: ["Deteksi keterlambatan", "Mengaktifkan aturan jam masuk dan toleransi keterlambatan."],
+            admin_audit_log: ["Audit aktivitas admin", "Mencatat perubahan penting yang dilakukan administrator."], admin_account_export: ["Ekspor akun", "Mengizinkan ekspor daftar akun sekolah."], admin_password_change: ["Perubahan sandi admin", "Mengizinkan pengelolaan kata sandi administrator."], rate_limiting: ["Pembatasan percobaan", "Membatasi frekuensi permintaan dan percobaan berulang."], session_expiry: ["Kedaluwarsa sesi", "Mewajibkan sesi autentikasi yang masih valid."], origin_validation: ["Validasi origin", "Menolak permintaan dari origin yang tidak diizinkan."],
+            maintenance_banner: ["Banner pemeliharaan", "Menampilkan pengumuman pemeliharaan saat diaktifkan."], public_status_panel: ["Panel status layanan", "Menampilkan status kesiapan layanan yang aman untuk publik."], reduced_motion_support: ["Dukungan reduced motion", "Menghormati preferensi pengurangan animasi perangkat."], language_switcher: ["Pemilih bahasa", "Mengizinkan pergantian bahasa antarmuka."], responsive_layout: ["Tata letak responsif", "Mengaktifkan penyesuaian tampilan desktop dan perangkat seluler."], splash_animation: ["Animasi pembuka", "Mengaktifkan animasi pembuka Amanah ID."],
+            gps_accuracy_guard: ["Pemeriksaan akurasi GPS", "Memeriksa batas akurasi lokasi sebelum presensi."], gps_boundary_guard: ["Pengaman batas geofence", "Menolak presensi ketika rentang ketidakpastian GPS memotong batas radius."], geofence_radius_edit: ["Pengubahan radius geofence", "Mengizinkan perubahan radius area sekolah."], school_schedule_rules: ["Aturan jadwal sekolah", "Mengaktifkan zona waktu, jam masuk, dan toleransi terlambat."], privacy_notice: ["Pemberitahuan privasi", "Menampilkan informasi pemrosesan data pribadi dan biometrik."], service_health_panel: ["Panel kesehatan layanan", "Menampilkan status backend dan integrasi."], strict_server_validation: ["Validasi server ketat", "Mewajibkan validasi payload di sisi server."]
+        },
+        saving: "Menyimpan perubahan…", saved: "Tersimpan ke server.", loading: "Memuat kebijakan sistem…", loadFailed: "Pengaturan gagal dimuat. Periksa koneksi dan izin Admin.", savingStatus: "Menyimpan perubahan kebijakan ke server…", savedStatus: "Perubahan tersimpan dan dicatat dalam audit.", saveFailed: "Server menolak perubahan. Periksa sesi Admin dan koneksi.", sessionError: "Sesi Admin tidak valid atau akses ditolak.", networkError: (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).networkError, databaseError: "Database/backend gagal menyimpan pengaturan."
+    },
+    en: {
+        groups: { attendance: "1. Attendance & biometrics", accounts: "2. Accounts & roles", data: "3. Data & attendance", security: "4. Security & audit", experience: "5. Website experience", location: "6. Location, schedule & governance" },
+        lockedSuffix: " (required; cannot be disabled).",
+        features: {
+            camera_attendance: ["Attendance camera", "Allow camera access in the attendance workflow."], gps_geofencing: ["GPS geofencing", "Enforce the school's location radius."], face_recognition: ["Face matching", "Allow matching against registered face descriptors."], liveness_check: ["Head-movement check", "Enable the basic liveness interaction."], face_ambiguity_guard: ["Reject ambiguous face matches", "Reject results when two identities are too similar to distinguish safely."], face_enrollment: ["Face enrollment", "Allow student face-sample enrollment."], face_sample_limit: ["Face-sample limit", "Enforce the per-student face-sample limit."],
+            student_login: ["Student login", "Allow student account authentication."], teacher_login: ["Teacher login", "Allow teacher account authentication."], admin_login: ["Administrator login", "Allow administrator authentication."], student_account_creation: ["Student account creation", "Allow administrators to create student accounts."], teacher_account_creation: ["Teacher account creation", "Allow administrators to create teacher accounts."], account_deactivation: ["Account deactivation", "Allow school accounts to be deactivated."],
+            attendance_recording: ["Attendance recording", "Allow new attendance records."], duplicate_attendance_block: ["Duplicate attendance block", "Prevent more than one attendance record per day."], attendance_history: ["Attendance history", "Allow access to attendance history."], attendance_export: ["Attendance export", "Allow attendance-history exports."], parent_notifications: ["Parent notifications", "Allow WhatsApp notifications to parents."], late_detection: ["Late-arrival detection", "Enable entry-time and late-tolerance rules."],
+            admin_audit_log: ["Admin activity audit", "Record important administrator changes."], admin_account_export: ["Account export", "Allow school-account list exports."], admin_password_change: ["Admin password changes", "Allow administrator password management."], rate_limiting: ["Rate limiting", "Limit request frequency and repeated attempts."], session_expiry: ["Session expiry", "Require a valid, unexpired authentication session."], origin_validation: ["Origin validation", "Reject requests from unapproved origins."],
+            maintenance_banner: ["Maintenance banner", "Show a maintenance notice when enabled."], public_status_panel: ["Public service-status panel", "Show service readiness information safe for public display."], reduced_motion_support: ["Reduced-motion support", "Respect the device's reduced-motion preference."], language_switcher: ["Language selector", "Allow interface-language changes."], responsive_layout: ["Responsive layout", "Enable desktop and mobile layout adaptation."], splash_animation: ["Splash animation", "Enable the Amanah ID opening animation."],
+            gps_accuracy_guard: ["GPS accuracy check", "Enforce a location-accuracy limit before attendance."], gps_boundary_guard: ["Geofence boundary guard", "Reject attendance when GPS uncertainty overlaps the geofence boundary."], geofence_radius_edit: ["Edit geofence radius", "Allow changes to the school's geofence radius."], school_schedule_rules: ["School schedule rules", "Enable time zone, entry-time, and late-tolerance settings."], privacy_notice: ["Privacy notice", "Show information about personal and biometric data processing."], service_health_panel: ["Service-health panel", "Show backend and integration status."], strict_server_validation: ["Strict server validation", "Require payload validation on the server."]
+        },
+        saving: "Saving changes…", saved: "Saved to the server.", loading: "Loading system policies…", loadFailed: "Could not load settings. Check the connection and Admin access.", savingStatus: "Saving policy changes to the server…", savedStatus: "Changes saved and recorded in the audit log.", saveFailed: "The server rejected the change. Check the Admin session and connection.", sessionError: "The Admin session is invalid or access was denied.", networkError: "The connection was lost or the server did not respond.", databaseError: "The database/backend could not save the settings."
+    },
+    ar: {
+        groups: { attendance: "1. الحضور والقياسات الحيوية", accounts: "2. الحسابات والأدوار", data: "3. البيانات والحضور", security: "4. الأمان والتدقيق", experience: "5. تجربة الموقع", location: "6. الموقع والجدول والحوكمة" },
+        lockedSuffix: " (إلزامي؛ لا يمكن تعطيله).",
+        features: {
+            camera_attendance: ["كاميرا الحضور", "السماح باستخدام الكاميرا ضمن عملية تسجيل الحضور."], gps_geofencing: ["تحديد الموقع الجغرافي GPS", "فرض نطاق الموقع الجغرافي للمدرسة."], face_recognition: ["مطابقة الوجه", "السماح بمطابقة واصفات الوجه المسجلة."], liveness_check: ["فحص حركة الرأس", "تفعيل فحص الحيوية الأساسي."], face_ambiguity_guard: ["رفض مطابقة الوجه الملتبسة", "رفض النتيجة عندما يتشابه ملفا هوية بدرجة تمنع التمييز الآمن."], face_enrollment: ["تسجيل الوجه", "السماح بتسجيل عينات وجوه الطلاب."], face_sample_limit: ["حد عينات الوجه", "فرض الحد الأقصى لعينات الوجه لكل طالب."],
+            student_login: ["دخول الطالب", "السماح بمصادقة حساب الطالب."], teacher_login: ["دخول المعلم", "السماح بمصادقة حساب المعلم."], admin_login: ["دخول المسؤول", "السماح بمصادقة حساب المسؤول."], student_account_creation: ["إنشاء حساب الطالب", "السماح للمسؤولين بإنشاء حسابات الطلاب."], teacher_account_creation: ["إنشاء حساب المعلم", "السماح للمسؤولين بإنشاء حسابات المعلمين."], account_deactivation: ["تعطيل الحساب", "السماح بتعطيل حسابات المدرسة."],
+            attendance_recording: ["تسجيل الحضور", "السماح بإنشاء سجلات حضور جديدة."], duplicate_attendance_block: ["منع تكرار الحضور", "منع تسجيل الحضور أكثر من مرة في اليوم."], attendance_history: ["سجل الحضور", "السماح بالوصول إلى سجل الحضور."], attendance_export: ["تصدير الحضور", "السماح بتصدير سجل الحضور."], parent_notifications: ["إشعارات أولياء الأمور", "السماح بإرسال إشعارات WhatsApp إلى أولياء الأمور."], late_detection: ["اكتشاف التأخر", "تفعيل قواعد وقت الدخول وسماح التأخر."],
+            admin_audit_log: ["تدقيق نشاط المسؤول", "تسجيل التغييرات المهمة التي يجريها المسؤول."], admin_account_export: ["تصدير الحسابات", "السماح بتصدير قائمة حسابات المدرسة."], admin_password_change: ["تغيير كلمة مرور المسؤول", "السماح بإدارة كلمة مرور المسؤول."], rate_limiting: ["تحديد معدل الطلبات", "تقييد تكرار الطلبات والمحاولات المتتالية."], session_expiry: ["انتهاء الجلسة", "اشتراط جلسة مصادقة صالحة وغير منتهية."], origin_validation: ["التحقق من مصدر الطلب", "رفض الطلبات من مصادر غير معتمدة."],
+            maintenance_banner: ["إشعار الصيانة", "عرض إشعار الصيانة عند التفعيل."], public_status_panel: ["لوحة حالة الخدمات العامة", "عرض معلومات جاهزية الخدمات المسموح بنشرها."], reduced_motion_support: ["دعم تقليل الحركة", "احترام إعداد تقليل الحركة في الجهاز."], language_switcher: ["اختيار اللغة", "السماح بتغيير لغة الواجهة."], responsive_layout: ["تصميم متجاوب", "تفعيل التكيف مع أجهزة الكمبيوتر والهواتف."], splash_animation: ["رسوم شاشة البداية", "تفعيل حركة افتتاح Amanah ID."],
+            gps_accuracy_guard: ["فحص دقة GPS", "فرض حد لدقة الموقع قبل تسجيل الحضور."], gps_boundary_guard: ["حماية حدود النطاق الجغرافي", "رفض الحضور عندما يتداخل عدم يقين GPS مع حد النطاق."], geofence_radius_edit: ["تعديل نطاق الموقع", "السماح بتعديل نطاق المدرسة الجغرافي."], school_schedule_rules: ["قواعد جدول المدرسة", "تفعيل المنطقة الزمنية ووقت الدخول وسماح التأخر."], privacy_notice: ["إشعار الخصوصية", "عرض معلومات معالجة البيانات الشخصية والبيومترية."], service_health_panel: ["لوحة صحة الخدمات", "عرض حالة الخادم والتكاملات."], strict_server_validation: ["التحقق الصارم من الخادم", "اشتراط التحقق من البيانات على الخادم."]
+        },
+        saving: "جارٍ حفظ التغييرات…", saved: "تم الحفظ على الخادم.", loading: "جارٍ تحميل سياسات النظام…", loadFailed: "تعذر تحميل الإعدادات. تحقق من الاتصال وصلاحيات المسؤول.", savingStatus: "جارٍ حفظ تغييرات السياسات على الخادم…", savedStatus: "تم حفظ التغييرات وتسجيلها في سجل التدقيق.", saveFailed: "رفض الخادم التغيير. تحقق من جلسة المسؤول والاتصال.", sessionError: "جلسة المسؤول غير صالحة أو تم رفض الوصول.", networkError: "انقطع الاتصال أو لم يستجب الخادم.", databaseError: "تعذر على قاعدة البيانات أو الخادم حفظ الإعدادات."
+    }
+};
+
 const ADMIN_FEATURE_GROUPS = [
  { key:"attendance", title:"1. Presensi & biometrik", items:[["camera_attendance","Kamera presensi","Mengizinkan akses kamera pada alur presensi."],["gps_geofencing","GPS geofencing","Mengaktifkan pembatasan radius sekolah."],["face_recognition","Pencocokan wajah","Mengizinkan proses pencocokan descriptor wajah."],["liveness_check","Pemeriksaan gerakan kepala","Mengaktifkan pemeriksaan keaktifan dasar."],["face_ambiguity_guard","Penolakan wajah ambigu","Menolak pencocokan jika dua identitas memiliki skor yang terlalu berdekatan."],["face_enrollment","Pendaftaran sampel wajah","Mengizinkan pendaftaran sampel siswa."],["face_sample_limit","Batas sampel wajah","Menegakkan batas sampel per siswa."]]},
  { key:"accounts", title:"2. Akun & peran", items:[["student_login","Login siswa","Mengizinkan autentikasi role siswa."],["teacher_login","Login guru","Mengizinkan autentikasi role guru."],["admin_login","Login administrator","Mengizinkan autentikasi role admin."],["student_account_creation","Pembuatan akun siswa","Mengizinkan admin membuat akun siswa."],["teacher_account_creation","Pembuatan akun guru","Mengizinkan admin membuat akun guru."],["account_deactivation","Penonaktifan akun","Mengizinkan status akun nonaktif diberlakukan."]]},
@@ -1692,13 +1734,13 @@ function renderAdminFeatures() {
    const detail = feedback[key]?.message || (locked ? featureDescription + localized.lockedSuffix : featureDescription);
    const phase = feedback[key]?.type || "";
    const icon = phase === "pending" ? '<span class="feature-spinner" aria-hidden="true"></span>' : phase === "success" ? '<span class="feature-result feature-result-ok" aria-hidden="true">✓</span>' : phase === "error" ? '<span class="feature-result feature-result-error" aria-hidden="true">!</span>' : "";
-   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(featureLabel)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
+   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(featureLabel)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(featureLabel)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
  }).join("")}</section>`).join("");
 }
 async function loadAdminFeatures() {
  const status = $("admin-governance-status");
  if (!status) return;
- status.textContent = "Memuat kebijakan sistem…";
+ status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).loading;
  try {
    const result = await cloudRequest("/api/admin/settings?action=features");
    state.adminFeatures = result.features || {};
@@ -1706,7 +1748,7 @@ async function loadAdminFeatures() {
    applyAdminFeatureFlags(state.adminFeatures);
    status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari ${Object.keys(state.adminFeatures).length} kontrol aktif · Tersimpan di Supabase`;
  } catch (error) {
-   status.textContent = "Pengaturan gagal dimuat. Periksa konfigurasi backend dan izin Admin.";
+   status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).loadFailed;
    console.error("Admin feature controls failed to load:", error);
  }
 }
@@ -1717,10 +1759,10 @@ async function saveAdminFeatureToggle(input) {
  const requested = input.checked;
  const status = $("admin-governance-status");
  state.adminFeatureStatus = state.adminFeatureStatus || {};
- state.adminFeatureStatus[key] = { type: "pending", message: "Menyimpan perubahan…" };
+ state.adminFeatureStatus[key] = { type: "pending", message: (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).saving };
  state.adminFeatures[key] = requested;
  renderAdminFeatures();
- if (status) status.textContent = "Menyimpan perubahan kebijakan ke server…";
+ if (status) status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).savingStatus;
  state.adminFeatureSaveQueue = state.adminFeatureSaveQueue || Promise.resolve();
  const operation = state.adminFeatureSaveQueue.then(async () => {
    const payload = { features: { ...state.adminFeatures } };
@@ -1733,7 +1775,7 @@ async function saveAdminFeatureToggle(input) {
    state.adminFeatures = saved;
    state.runtimeFeatures = { ...(state.runtimeFeatures || {}), ...saved };
    applyRuntimeFeatureFlags(state.runtimeFeatures);
-   state.adminFeatureStatus[key] = { type: "success", message: "Tersimpan ke server." };
+   state.adminFeatureStatus[key] = { type: "success", message: (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).saved };
    renderAdminFeatures();
    applyAdminFeatureFlags(state.adminFeatures);
    if (status) status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari ${Object.keys(state.adminFeatures).length} kontrol aktif · Perubahan tersimpan dan diaudit`;
@@ -1749,12 +1791,12 @@ async function saveAdminFeatureToggle(input) {
    applyAdminFeatureFlags(state.adminFeatures);
    const raw = String(error?.message || "");
    const reason = /401|403|unauthori|forbidden|session|sesi/i.test(raw)
-     ? "Sesi Admin tidak valid atau akses ditolak."
+     ? (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).sessionError
      : /timeout|network|fetch|offline|failed to fetch/i.test(raw)
        ? "Koneksi terputus atau server tidak merespons."
        : /supabase|database|500|503/i.test(raw)
-         ? "Database/backend gagal menyimpan pengaturan."
-         : "Server menolak perubahan. Periksa sesi Admin dan konfigurasi backend.";
+         ? (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).databaseError
+         : (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).saveFailed;
    state.adminFeatureStatus[key] = { type: "error", message: reason };
    renderAdminFeatures();
    if (status) status.textContent = `Gagal menyimpan “${key}”: ${reason}`;
