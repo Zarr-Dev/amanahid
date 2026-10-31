@@ -1335,9 +1335,16 @@ async function loadAdminDashboard() {
         $("admin-attendance-today").textContent = stats?.attendance_today ?? 0;
         $("admin-attendance-week").textContent = stats?.attendance_week ?? 0;
         $("admin-active-week").textContent = stats?.active_users_week ?? 0;
-        $("health-supabase").textContent = stats?.health?.supabase ?? "unknown";
-        $("health-vercel").textContent = stats?.health?.vercel ?? "unknown";
-        $("health-fonnte").textContent = stats?.health?.fonnte ?? "unknown";
+        try {
+            const health = await cloudRequest("/api/health");
+            $("health-supabase").textContent = health?.checks?.database ?? "unknown";
+            $("health-vercel").textContent = health?.ok ? "ok" : "error";
+            $("health-fonnte").textContent = health?.checks?.whatsapp ?? "not_configured";
+        } catch {
+            $("health-supabase").textContent = "error";
+            $("health-vercel").textContent = "error";
+            $("health-fonnte").textContent = "unknown";
+        }
     } catch (error) {
         console.error("Admin dashboard could not load:", error);
         toastAdminError(error);
@@ -1400,23 +1407,37 @@ function hideSplashScreen() {
 }
 
 function applyRuntimeFeatureFlags(features = {}) {
-    const hide = (id, hidden) => $(id)?.classList.toggle("hidden", Boolean(hidden));
-    hide("maintenance-banner", features.maintenance_banner !== true);
-    hide("public-status-panel", features.public_status_panel === false);
-    hide("btn-export", features.attendance_export === false);
-    hide("view-database", features.attendance_history === false);
-    hide("view-s-history", features.attendance_history === false);
-    hide("view-formulir", features.face_enrollment === false);
+    const setHidden = (id, hidden) => $(id)?.classList.toggle("hidden", Boolean(hidden));
+    setHidden("maintenance-banner", features.maintenance_banner !== true);
+    setHidden("public-status-panel", features.public_status_panel === false);
+    setHidden("btn-export", features.attendance_export === false);
 
+    // Navigation owns normal view visibility; only force-hide a disabled view.
+    if (features.attendance_history === false) {
+        $("view-database")?.classList.add("hidden");
+        $("view-s-history")?.classList.add("hidden");
+    }
+    if (features.face_enrollment === false || features.student_account_creation === false) {
+        $("view-formulir")?.classList.add("hidden");
+    }
     document.querySelectorAll('[data-view="view-database"], [data-view="view-s-history"]').forEach(element => {
         element.classList.toggle("hidden", features.attendance_history === false);
     });
     document.querySelectorAll('[data-view="view-formulir"]').forEach(element => {
-        element.classList.toggle("hidden", features.face_enrollment === false);
+        element.classList.toggle("hidden", features.face_enrollment === false || features.student_account_creation === false);
     });
     document.querySelectorAll(".language-row").forEach(element => {
         element.classList.toggle("hidden", features.language_switcher === false);
     });
+    document.querySelectorAll("#open-admin-login, #open-admin-login-hero").forEach(element => {
+        element.classList.toggle("hidden", features.admin_login === false);
+    });
+    const coreAttendanceOff = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"]
+        .some(key => features[key] === false);
+    if (coreAttendanceOff) {
+        if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
+        if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
+    }
     if (features.splash_animation === false) hideSplashScreen();
 
     const publicStatus = $("public-status-text");
@@ -1425,8 +1446,7 @@ function applyRuntimeFeatureFlags(features = {}) {
         publicStatus.textContent = "Memeriksa API dan database…";
         void cloudRequest("/api/health").then(health => {
             const ready = health?.ok === true && health?.checks?.database === "ok";
-            const statusPanel = $("public-status-panel");
-            statusPanel?.classList.toggle("is-error", !ready);
+            $("public-status-panel")?.classList.toggle("is-error", !ready);
             publicStatus.textContent = ready
                 ? "Layanan Amanah ID dan database beroperasi."
                 : "Sebagian layanan Amanah ID sedang tidak siap.";
@@ -1495,6 +1515,8 @@ async function saveAdminFeatureToggle(input) {
      if (item?.type === "pending") saved[pendingKey] = state.adminFeatures[pendingKey];
    }
    state.adminFeatures = saved;
+   state.runtimeFeatures = { ...(state.runtimeFeatures || {}), ...saved };
+   applyRuntimeFeatureFlags(state.runtimeFeatures);
    state.adminFeatureStatus[key] = { type: "success", message: "Tersimpan ke server." };
    renderAdminFeatures();
    applyAdminFeatureFlags(state.adminFeatures);
@@ -2136,6 +2158,12 @@ function updateStudentProfile() {
     $("student-profile-class").textContent = student?.className || "—";
 }
 
+function attendanceStatusLabel(record) {
+    if (record?.status !== "late") return tr("attendance");
+    const lang = String(document.documentElement.lang || "id").toLowerCase();
+    return lang.startsWith("en") ? "Late" : lang.startsWith("ar") ? "متأخر" : "Terlambat";
+}
+
 function renderStudentHistory() {
     const user = state.user;
     const from = $("student-date-start").value;
@@ -2148,7 +2176,7 @@ function renderStudentHistory() {
             <td>${index + 1}</td>
             <td>${safeText(formatDate(item.date))}</td>
             <td>${safeText(item.time)}</td>
-            <td><span class="status-pill">${safeText(a.status === "late" ? "Terlambat" : tr("attendance"))}</span></td>
+            <td><span class="status-pill">${safeText(attendanceStatusLabel(item))}</span></td>
             <td>${safeText(tr("methodFaceGps"))}</td>
             <td>${Math.round(item.confidence * 100)}%</td>
         </tr>`).join("");
@@ -2171,7 +2199,7 @@ function renderDatabase() {
       <td>${safeText(a.nisn)}</td>
       <td>${safeText(a.name)}</td>
       <td>${safeText(a.className)}</td>
-      <td><span class="status-pill">${safeText(tr("attendance"))}</span></td>
+      <td><span class="status-pill">${safeText(attendanceStatusLabel(a))}</span></td>
       <td>${safeText(formatDate(a.date))}</td>
       <td>${safeText(a.time)}</td>
       <td>${safeText(tr("methodFaceGps"))}</td>
@@ -2210,7 +2238,7 @@ function exportCsv() {
     }
     const headers = ["NISN", "Nama", "Kelas", "Status", "Tanggal", "Waktu", "Metode", "Keyakinan"];
     const lines = [headers, ...state.attendance.map(a => [
-        a.nisn, a.name, a.className, tr("attendance"), a.date, a.time, tr("methodFaceGps"), `${Math.round(a.confidence * 100)}%`
+        a.nisn, a.name, a.className, attendanceStatusLabel(a), a.date, a.time, tr("methodFaceGps"), `${Math.round(a.confidence * 100)}%`
     ])];
     const csv = "\uFEFF" + lines.map(row => row.map(v => `"${String(v ?? "").replaceAll('"', '""')}"`).join(",")).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
