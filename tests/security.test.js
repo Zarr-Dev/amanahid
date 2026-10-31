@@ -301,6 +301,40 @@ test("server face matching issues a short-lived attendance proof for the matched
     assert.equal(proof?.nisn, "12345678");
     assert.equal(auditWritten, true);
 });
+test("server rejects ambiguous face matches between two distinct students", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherToken = signToken({ email: "guru@example.com", name: "Guru", role: "guru" });
+    const descriptor = Array.from({ length: 128 }, () => 0);
+    const nearPositive = Array.from({ length: 128 }, () => 0.01);
+    const nearNegative = Array.from({ length: 128 }, () => -0.01);
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([{ email: "guru@example.com", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=nisn,name,face_descriptors,is_active")) {
+            return new Response(JSON.stringify([
+                { nisn: "12345678", name: "Student A", is_active: true, face_descriptors: [nearPositive] },
+                { nisn: "87654321", name: "Student B", is_active: true, face_descriptors: [nearNegative] }
+            ]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const res = responseMock();
+    await faceMatchHandler({
+        method: "POST",
+        headers: { origin: "https://school.example", "x-session-token": teacherToken },
+        socket: { remoteAddress: "test-face-ambiguous" },
+        body: { descriptor }
+    }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.registered, true);
+    assert.equal(res.body.match, false);
+    assert.equal(res.body.ambiguous, true);
+    assert.equal(res.body.proofToken, undefined);
+});
+
 test("student attendance rejects requests without a recent server-verified face proof", async t => {
     const originalFetch = globalThis.fetch;
     let fetchCalls = 0;
@@ -376,6 +410,44 @@ test("attendance returns machine-readable GPS errors and limits repeated failure
     assert.equal(firstResponse.statusCode, 400);
 });
 
+
+test("attendance rejects GPS fixes whose uncertainty overlaps the geofence boundary", async t => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("students?select=email,nisn,is_active")) {
+            return new Response(JSON.stringify([{ email: "student@example.com", nisn: "12345678", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("school_settings?select=lat,lng,radius")) {
+            return new Response(JSON.stringify([{ lat: -6.25, lng: 106.6, radius: 50 }]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const token = signToken({ email: "student@example.com", name: "Student", role: "siswa", nisn: "12345678" });
+    const res = responseMock();
+    await attendanceHandler({
+        method: "POST",
+        headers: {
+            origin: "https://school.example",
+            "x-session-token": token,
+            "x-face-proof": signToken({
+                email: "student@example.com", role: "siswa", nisn: "12345678",
+                purpose: "attendance_face", faceVerified: true, confidence: 0.9
+            }, 120_000),
+            "x-idempotency-key": "00000000-0000-4000-8000-000000000188"
+        },
+        socket: { remoteAddress: "test-gps-boundary-uncertain" },
+        body: {
+            nisn: "12345678", lat: -6.25, lng: 106.6004,
+            accuracy: 10, gpsTimestamp: Date.now(), speed: 0, confidence: 0.9
+        }
+    }, res);
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.error, "GPS_BOUNDARY_UNCERTAIN");
+    assert.equal(res.body.radius, 50);
+    assert.ok(res.body.distance >= 40 && res.body.distance <= 50);
+});
 
 test("authentication endpoints clearly report missing production configuration before origin checks", async t => {
     const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SESSION_SECRET"];
