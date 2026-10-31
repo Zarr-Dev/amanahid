@@ -57,13 +57,13 @@ function evaluateFrontendConstant(source, name, nextDeclaration) {
     const start = source.indexOf(`const ${name} =`);
     const end = source.indexOf(nextDeclaration, start);
     assert.ok(start >= 0 && end > start, `Could not locate ${name} in frontend source`);
-    return runInNewContext(`${source.slice(start, end)}\\n${name}`);
+    return runInNewContext(`${source.slice(start, end)}\n${name}`);
 }
 
 test("all 38 Admin controls have complete Indonesian, English, and Arabic copy", () => {
     const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
-    const copy = evaluateFrontendConstant(source, "ADMIN_FEATURE_COPY", "\\nconst ADMIN_FEATURE_GROUPS");
-    const groups = evaluateFrontendConstant(source, "ADMIN_FEATURE_GROUPS", "\\nfunction renderAdminFeatures");
+    const copy = evaluateFrontendConstant(source, "ADMIN_FEATURE_COPY", "\nconst ADMIN_FEATURE_GROUPS");
+    const groups = evaluateFrontendConstant(source, "ADMIN_FEATURE_GROUPS", "\nfunction renderAdminFeatures");
     const keys = Object.keys(FEATURE_DEFAULTS);
     const renderedKeys = groups.flatMap(group => group.items.map(item => item[0]));
 
@@ -86,7 +86,7 @@ test("all 38 Admin controls have complete Indonesian, English, and Arabic copy",
 
 test("face, GPS map, and WhatsApp testing strings exist in all three app languages", () => {
     const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
-    const extra = evaluateFrontendConstant(source, "EXTRA_T", "\\nconst state =");
+    const extra = evaluateFrontendConstant(source, "EXTRA_T", "\nconst state =");
     const required = [
         "faceQualityLow", "livenessFaceForward", "livenessTurnLeft",
         "livenessTurnRight", "livenessReturnFront", "adminMapDeviceTitle",
