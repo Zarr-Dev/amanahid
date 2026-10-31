@@ -190,6 +190,17 @@ export default async function handler(req, res) {
                     actual: accuracy
                 });
             }
+            if (features.gps_boundary_guard &&
+                distance - accuracy <= school.radius &&
+                distance + accuracy > school.radius) {
+                return failedAttendance(req, res, role, 400, {
+                    error: "GPS_BOUNDARY_UNCERTAIN",
+                    radius: school.radius,
+                    distance: Math.round(distance),
+                    accuracy: Math.round(accuracy),
+                    message: "The GPS uncertainty range overlaps the school geofence boundary. Refresh location from a clearer position."
+                });
+            }
             if (distance > school.radius) {
                 return failedAttendance(req, res, role, 403, {
                     error: `Attendance is outside the ${school.radius}-meter school geofence`
