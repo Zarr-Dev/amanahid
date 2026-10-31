@@ -244,11 +244,11 @@ const adminFeatureCopyEnd = js.indexOf("\nconst ADMIN_FEATURE_GROUPS", adminFeat
 const adminFeatureCopy = adminFeatureCopyStart >= 0 && adminFeatureCopyEnd > adminFeatureCopyStart
     ? js.slice(adminFeatureCopyStart, adminFeatureCopyEnd) : "";
 const renderedFeatureKeys = [...adminGroups.matchAll(/\["([a-z_]+)","/g)].map(match => match[1]);
-if (featureKeys.length !== 38 || new Set(featureKeys).size !== 38 ||
-    renderedFeatureKeys.length !== 38 || new Set(renderedFeatureKeys).size !== 38 ||
+if (featureKeys.length !== 37 || new Set(featureKeys).size !== 37 ||
+    renderedFeatureKeys.length !== 37 || new Set(renderedFeatureKeys).size !== 37 ||
     !["id:", "en:", "ar:"].every(language => adminFeatureCopy.includes(language)) ||
     featureKeys.some(key => !adminFeatureCopy.includes(key + ": ["))) {
-    console.error("Build check failed: all 38 Admin controls must be present once and translated in Indonesian, English, and Arabic.");
+    console.error("Build check failed: all 37 functional Admin controls must be present once and translated in Indonesian, English, and Arabic.");
     process.exit(1);
 }
 if (!js.includes("phase === \"pending\" ? \"disabled\"") || !js.includes("feature-spinner")) {
