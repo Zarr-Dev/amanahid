@@ -4,18 +4,12 @@ import { writeAuditLog } from "../_lib/audit.js";
 import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
 import { handleAdminTestTools } from "../_lib/test-tools.js";
+import { FEATURE_DEFAULTS, LOCKED_FEATURE_FLAGS, getFeatureFlags, featureDisabled } from "../_lib/features.js";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 const FEATURES_ID = "00000000-0000-0000-0000-000000000002";
 const DEFAULTS = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 50 };
-const FEATURE_DEFAULTS = {
-  camera_attendance: true, gps_geofencing: true, face_recognition: true, liveness_check: true, face_enrollment: true, face_sample_limit: true,
-  student_login: true, teacher_login: true, admin_login: true, student_account_creation: true, teacher_account_creation: true, account_deactivation: true,
-  attendance_recording: true, duplicate_attendance_block: true, attendance_history: true, attendance_export: true, parent_notifications: true, late_detection: true,
-  admin_audit_log: true, admin_account_export: true, admin_password_change: true, rate_limiting: true, session_expiry: true, origin_validation: true,
-  maintenance_banner: false, public_status_panel: true, reduced_motion_support: true, language_switcher: true, responsive_layout: true, splash_animation: true,
-  gps_accuracy_guard: true, geofence_radius_edit: true, school_schedule_rules: true, privacy_notice: true, service_health_panel: true, strict_server_validation: true
-};
+
 
 async function updateAdminPassword(req, res, admin) {
     const body = req.body || {};
@@ -58,14 +52,19 @@ export default async function handler(req, res) {
             res.setHeader("Allow", "PUT");
             return jsonError(res, 405, "Method not allowed");
         }
+        const features = await getFeatureFlags();
+        if (!features.admin_password_change) return featureDisabled(res, "admin_password_change", "Perubahan kata sandi Admin sedang dinonaktifkan");
         return updateAdminPassword(req, res, admin);
     }
     if (req.query?.action === "features") {
         try {
             if (req.method === "GET") {
-                const rows = await supabaseRequest(`system_settings?id=eq.${FEATURES_ID}&select=feature_flags,updated_at,updated_by&limit=1`);
+                const [rows, features] = await Promise.all([
+                    supabaseRequest(`system_settings?id=eq.${FEATURES_ID}&select=updated_at,updated_by&limit=1`),
+                    getFeatureFlags()
+                ]);
                 const row = Array.isArray(rows) ? rows[0] : null;
-                return res.status(200).json({ features: { ...FEATURE_DEFAULTS, ...(row?.feature_flags || {}) }, updated_at: row?.updated_at || null });
+                return res.status(200).json({ features, updated_at: row?.updated_at || null });
             }
             if (req.method === "PUT") {
                 const body = req.body || {};
@@ -75,7 +74,7 @@ export default async function handler(req, res) {
                     return jsonError(res, 400, "Feature settings must contain only the known boolean flags");
                 }
                 const features = Object.fromEntries(keys.map(key => [key, body.features[key]]));
-                for (const key of ["admin_audit_log", "rate_limiting", "session_expiry", "origin_validation", "strict_server_validation"]) features[key] = true;
+                for (const key of LOCKED_FEATURE_FLAGS) features[key] = true;
                 const rows = await supabaseRequest("system_settings?on_conflict=id&select=feature_flags,updated_at,updated_by", {
                     method: "POST",
                     headers: { Prefer: "resolution=merge-duplicates,return=representation" },
@@ -123,6 +122,20 @@ export default async function handler(req, res) {
                 new Intl.DateTimeFormat("en", { timeZone: body.timezone });
             } catch {
                 return jsonError(res, 400, "Invalid timezone");
+            }
+            const currentRows = await supabaseRequest(`school_settings?id=eq.${SETTINGS_ID}&select=radius,timezone,entry_time,late_tolerance_min&limit=1`);
+            const current = Array.isArray(currentRows) ? currentRows[0] : null;
+            if (!current) return jsonError(res, 404, "School settings are not initialized");
+            const features = await getFeatureFlags();
+            if (!features.geofence_radius_edit && Number(body.radius) !== Number(current.radius)) {
+                return featureDisabled(res, "geofence_radius_edit", "Perubahan radius geofence sedang dinonaktifkan");
+            }
+            if (!features.school_schedule_rules && (
+                body.timezone !== current.timezone ||
+                String(body.entry_time).slice(0, 5) !== String(current.entry_time).slice(0, 5) ||
+                Number(body.late_tolerance_min) !== Number(current.late_tolerance_min)
+            )) {
+                return featureDisabled(res, "school_schedule_rules", "Perubahan aturan jadwal sekolah sedang dinonaktifkan");
             }
             const resultRows = await supabaseRequest(
                 `school_settings?id=eq.${SETTINGS_ID}&select=lat,lng,radius,timezone,entry_time,late_tolerance_min`,
