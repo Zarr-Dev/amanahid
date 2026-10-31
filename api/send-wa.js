@@ -9,6 +9,7 @@ import {
 import { sendWhatsApp } from "./_lib/whatsapp.js";
 import { validateSchema } from "./_lib/validate.js";
 import { writeAuditLog } from "./_lib/audit.js";
+import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -25,6 +26,8 @@ export default async function handler(req, res) {
         return jsonSupabaseError(res, error, "Unable to validate session");
     }
     if (role !== "guru") return jsonError(res, 401, "Teacher session is required");
+    const features = await getFeatureFlags();
+    if (!features.parent_notifications) return featureDisabled(res, "parent_notifications", "Notifikasi WhatsApp sedang dinonaktifkan");
     if (!rateLimit(req, "send-wa:POST", 10, 60_000, res)) {
         return jsonError(res, 429, "Too many WhatsApp requests");
     }
