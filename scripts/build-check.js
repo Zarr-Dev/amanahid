@@ -101,7 +101,8 @@ if (!extraTranslations || extraTranslations.includes(": tr(")) {
     process.exit(1);
 }
 const htmlChecks = [
-    ["admin login modal", /id="admin-login-modal"/],
+    ["single shared login modal", /id="auth-modal"/],
+    ["one shared sign-in form", /id="login-form"/],
     ["splash accessible name and live region", /<div\b(?=[^>]*\bid="splash-screen")(?=[^>]*\baria-label="Amanah ID")(?=[^>]*\baria-live="polite")[^>]*>/],
     ["static splash logo", /<img class="splash-mark" src="assets\/amanah-logo\.svg"/],
     ["official SVG favicon", /rel="icon" type="image\/svg\+xml" href="assets\/amanah-favicon\.svg"/],
@@ -117,7 +118,8 @@ const htmlChecks = [
     ["admin camera diagnostics", /id="admin-test-camera-start"/],
     ["admin WhatsApp test preview", /id="admin-test-whatsapp-preview"/],
     ["admin GPS diagnostics", /id="admin-test-gps-run"/],
-    ["rotating Admin CAPTCHA", /id="admin-captcha-answer"/],
+    ["compact shared login CAPTCHA", /id="login-captcha-answer"/],
+    ["server CAPTCHA refresh control", /id="login-captcha-refresh"/],
     ["editable school GPS map", /id="admin-school-map"/],
     ["Admin school-to-device distance", /id="admin-map-device-distance"/],
     ["Admin school GPS accuracy diagnostics", /id="admin-map-device-accuracy"/],
@@ -266,12 +268,32 @@ if (!js.includes("async function submitStudentAbsence") || !js.includes("loadAbs
     process.exit(1);
 }
 
-if (!js.includes("refreshAdminCaptcha()") || !js.includes("syncAdminSettingsMap")) {
-    console.error("Build check failed: rotating Admin CAPTCHA or editable school GPS map is missing.");
+if (!js.includes("refreshLoginCaptcha()") || !js.includes("syncAdminSettingsMap") ||
+    !js.includes("/api/auth/login?action=captcha") || !js.includes("captchaToken: state.loginCaptchaToken")) {
+    console.error("Build check failed: server-issued shared CAPTCHA or editable school GPS map is missing.");
     process.exit(1);
 }
 if (!css.includes("left: 50%;") || !css.includes("transform: translate(-50%, 0);")) {
     console.error("Build check failed: toast notifications must be centered at the bottom of the viewport.");
+    process.exit(1);
+}
+
+
+const captchaApi = readFileSync(join(root, "api/_lib/login-captcha.js"), "utf8");
+const sharedLoginApi = readFileSync(join(root, "api/auth/login.js"), "utf8");
+if (!html.includes('id="login-captcha-answer"') ||
+    /id="(?:admin-login-modal|admin-login-form|open-admin-login|open-admin-login-hero)"/.test(html) ||
+    html.includes('id="public-status-panel"') ||
+    !captchaApi.includes("createLoginCaptcha") || !captchaApi.includes("verifyLoginCaptcha") ||
+    !sharedLoginApi.includes('action === "captcha"') || !sharedLoginApi.includes('role: "admin"') ||
+    !sharedLoginApi.includes('role: "guru"') || !sharedLoginApi.includes('role: "siswa"') ||
+    !sharedLoginApi.includes("verifyLoginCaptcha(body.captchaToken, body.captchaAnswer)")) {
+    console.error("Build check failed: one shared role-aware login, compact CAPTCHA, or removed hero status panel is missing.");
+    process.exit(1);
+}
+if (!/\.admin-test-card \.admin-test-consent\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*18px minmax\(0, 1fr\)/s.test(css) ||
+    !css.includes("@keyframes hero-copy-enter") || !css.includes("@keyframes hero-mockup-enter")) {
+    console.error("Build check failed: responsive WhatsApp consent layout or hero entrance animation is missing.");
     process.exit(1);
 }
 
