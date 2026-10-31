@@ -13,6 +13,7 @@ import { verifyToken } from "./_lib/admin-auth.js";
 import { sendWhatsApp } from "./_lib/whatsapp.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
+import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
 
 const MAX_ACCURACY = 35;
 const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -27,7 +28,7 @@ function distanceMeters(lat1, lng1, lat2, lng2) {
     return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function normalizeAttendance(row) {
+function normalizeAttendance(row, schedule = null, features = {}) {
     const student = row.students || {};
     return {
         id: row.id,
@@ -38,9 +39,19 @@ function normalizeAttendance(row) {
         date: row.date,
         time: row.time,
         confidence: Number(row.confidence),
+        status: features.late_detection && features.school_schedule_rules && schedule
+            ? (isLate(row.time, schedule) ? "late" : "present") : null,
         method: row.method,
         created_at: row.created_at
     };
+}
+
+function isLate(time, schedule) {
+    const toMinutes = value => {
+        const [hours, minutes] = String(value || "00:00").slice(0, 5).split(":").map(Number);
+        return Number.isFinite(hours) && Number.isFinite(minutes) ? hours * 60 + minutes : 0;
+    };
+    return toMinutes(time) > toMinutes(schedule.entry_time) + Number(schedule.late_tolerance_min || 0);
 }
 
 function failedAttendance(req, res, role, status, payload) {
@@ -64,6 +75,10 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
         if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
         try {
+            const features = await getFeatureFlags();
+            if (!features.attendance_history) return featureDisabled(res, "attendance_history", "Riwayat presensi sedang dinonaktifkan");
+            const settingsRows = await supabaseRequest("school_settings?select=entry_time,late_tolerance_min&limit=1");
+            const schedule = Array.isArray(settingsRows) ? settingsRows[0] : null;
             let query = "attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name)&order=date.desc,time.desc";
             if (role === "siswa") {
                 const nisn = getSession(req)?.nisn;
@@ -77,7 +92,7 @@ export default async function handler(req, res) {
                 query += `&student_id=eq.${encodeURIComponent(students[0].id)}`;
             }
             const rows = await supabaseRequest(query);
-            return res.status(200).json({ attendance: rows.map(normalizeAttendance) });
+            return res.status(200).json({ attendance: rows.map(row => normalizeAttendance(row, schedule, features)) });
         } catch (error) {
             console.error("Attendance query failed:", error);
             return jsonSupabaseError(res, error, "Unable to load attendance");
@@ -138,8 +153,7 @@ export default async function handler(req, res) {
         }
 
         try {
-            const featureRows = await supabaseRequest("system_settings?id=eq.00000000-0000-0000-0000-000000000002&select=feature_flags&limit=1");
-            const features = Array.isArray(featureRows) ? (featureRows[0]?.feature_flags || {}) : {};
+            const features = await getFeatureFlags();
             const requiredFeatures = ["attendance_recording", "camera_attendance", "gps_geofencing", "face_recognition", "liveness_check"];
             const disabledFeature = requiredFeatures.find(key => features[key] === false);
             if (disabledFeature) return res.status(403).json({ error: "Attendance is disabled by the administrator", feature: disabledFeature });
@@ -151,7 +165,7 @@ export default async function handler(req, res) {
                     return jsonError(res, 409, "Idempotency key has already been used");
                 }
                 return res.status(200).json({
-                    attendance: normalizeAttendance(repeated[0]),
+                    attendance: normalizeAttendance(repeated[0], settings[0], features),
                     whatsapp: { sent: false, skipped: true }
                 });
             }
@@ -169,7 +183,7 @@ export default async function handler(req, res) {
                 return jsonError(res, 503, "School location settings are invalid");
             }
             const distance = distanceMeters(school.lat, school.lng, lat, lng);
-            if (accuracy > MAX_ACCURACY) {
+            if (features.gps_accuracy_guard && accuracy > MAX_ACCURACY) {
                 return failedAttendance(req, res, role, 400, {
                     error: "GPS_ACCURACY_TOO_LOW",
                     required: MAX_ACCURACY,
@@ -226,7 +240,7 @@ export default async function handler(req, res) {
             });
 
             let whatsapp = { sent: false, skipped: !student.parent_whatsapp };
-            if (student.parent_whatsapp) {
+            if (student.parent_whatsapp && features.parent_notifications) {
                 const target = student.parent_whatsapp.replace(/\D/g, "").replace(/^08/, "628");
                 const message = `Presensi ${student.name} (${student.nisn}) berhasil tercatat pada ${date} pukul ${time} di Al-Fityan School.`;
                 try {
@@ -239,7 +253,7 @@ export default async function handler(req, res) {
             }
 
             return res.status(201).json({
-                attendance: normalizeAttendance({ ...inserted[0], students: student }),
+                attendance: normalizeAttendance({ ...inserted[0], students: student }, settings[0], features),
                 whatsapp
             });
         } catch (error) {
