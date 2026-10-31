@@ -236,7 +236,31 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Akurasi",
         testMetricDistance: "Jarak sekolah",
-        testFonnteList: "Nomor uji yang diizinkan:"
+        testFonnteList: "Nomor uji yang diizinkan:",
+        testAllowlistEmpty: "Belum ada nomor uji yang diizinkan Admin.",
+        testFonnteConfigHint: "Konfigurasikan FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS pada environment Production untuk mengaktifkan pengujian.",
+        testFonnteStatusUnavailable: "Status konfigurasi WhatsApp tidak dapat diperiksa.",
+        faceMatchAmbiguous: "Dua atau lebih profil wajah terlalu mirip untuk diputuskan dengan aman. Minta guru mengulang pemindaian dalam pencahayaan yang lebih baik.",
+        gpsBoundaryUncertain: "Rentang ketidakpastian GPS bersinggungan dengan batas geofence. Ambil lokasi baru di area terbuka sebelum mencoba lagi.",
+        adminMapDeviceTitle: "Diagnostik lokasi perangkat",
+        adminMapDeviceDistance: "Jarak perangkat ke sekolah",
+        adminMapGpsAccuracy: "Akurasi GPS",
+        adminMapSchoolRadius: "Radius sekolah",
+        adminMapUpdated: "Pemeriksaan terakhir",
+        adminMapNeverChecked: "Lokasi perangkat belum diperiksa. Pemeriksaan hanya dilakukan setelah tombol ditekan.",
+        adminMapCheckDeviceLocation: "Periksa lokasi perangkat",
+        adminMapCheckingDeviceLocation: "Memeriksa lokasi perangkat…",
+        adminMapLocationSuccess: "Lokasi perangkat berhasil diperiksa.",
+        adminMapLocationPermission: "Izin lokasi ditolak. Izinkan akses lokasi di browser.",
+        adminMapLocationTimeout: "Pemeriksaan lokasi kehabisan waktu. Coba di area yang lebih terbuka.",
+        adminMapLocationUnavailable: "Posisi perangkat tidak tersedia.",
+        adminMapLocationFailure: "Lokasi perangkat gagal diperiksa.",
+        adminMapBadFix: "Data GPS tidak valid. Periksa layanan lokasi perangkat.",
+        adminMapLowAccuracy: "Akurasi GPS ±{accuracy} m masih rendah; hasil jarak hanya perkiraan.",
+        adminMapInside: "Perangkat berada di dalam radius dengan margin estimasi {margin}.",
+        adminMapOutside: "Perangkat berada di luar radius dengan jarak estimasi minimum {margin}.",
+        adminMapBoundary: "Belum dapat dipastikan: rentang akurasi GPS memotong batas geofence.",
+        adminMapLastFix: "Diperiksa pukul {time}."
     },
     en: {
         welcomeTitle: "School attendance, made simple.",
@@ -375,7 +399,31 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Accuracy",
         testMetricDistance: "Distance to school",
-        testFonnteList: "Approved test numbers:"
+        testFonnteList: "Approved test numbers:",
+        testAllowlistEmpty: "No Admin-approved test numbers are configured.",
+        testFonnteConfigHint: "Set FONNTE_TOKEN and FONNTE_TEST_RECIPIENTS in the Production environment to enable testing.",
+        testFonnteStatusUnavailable: "WhatsApp configuration status could not be checked.",
+        faceMatchAmbiguous: "Two or more face profiles are too similar to distinguish safely. Ask a teacher to repeat the scan in better lighting.",
+        gpsBoundaryUncertain: "The GPS uncertainty range overlaps the geofence boundary. Refresh the location in an open area before trying again.",
+        adminMapDeviceTitle: "Device location diagnostics",
+        adminMapDeviceDistance: "Device-to-school distance",
+        adminMapGpsAccuracy: "GPS accuracy",
+        adminMapSchoolRadius: "School radius",
+        adminMapUpdated: "Last check",
+        adminMapNeverChecked: "Device location has not been checked. Location is requested only after you press the button.",
+        adminMapCheckDeviceLocation: "Check device location",
+        adminMapCheckingDeviceLocation: "Checking device location…",
+        adminMapLocationSuccess: "Device location was checked successfully.",
+        adminMapLocationPermission: "Location permission was denied. Allow location access in your browser.",
+        adminMapLocationTimeout: "The location check timed out. Try again in a more open area.",
+        adminMapLocationUnavailable: "The device position is unavailable.",
+        adminMapLocationFailure: "Could not check the device location.",
+        adminMapBadFix: "The GPS fix is invalid. Check your device location service.",
+        adminMapLowAccuracy: "GPS accuracy ±{accuracy} m is low; the distance result is only an estimate.",
+        adminMapInside: "The device is inside the radius with an estimated margin of {margin}.",
+        adminMapOutside: "The device is outside the radius by at least an estimated {margin}.",
+        adminMapBoundary: "Uncertain: the GPS accuracy range intersects the geofence boundary.",
+        adminMapLastFix: "Checked at {time}."
     },
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
@@ -514,7 +562,31 @@ const EXTRA_T = {
         testMetricLongitude: "خط الطول",
         testMetricAccuracy: "الدقة",
         testMetricDistance: "المسافة إلى المدرسة",
-        testFonnteList: "أرقام الاختبار المعتمدة:"
+        testFonnteList: "أرقام الاختبار المعتمدة:",
+        testAllowlistEmpty: "لم يتم إعداد أرقام اختبار معتمدة من المسؤول.",
+        testFonnteConfigHint: "اضبط FONNTE_TOKEN وFONNTE_TEST_RECIPIENTS في بيئة Production لتفعيل الاختبار.",
+        testFonnteStatusUnavailable: "تعذر التحقق من حالة إعداد WhatsApp.",
+        faceMatchAmbiguous: "ملفان أو أكثر للوجه متشابهان جدًا ولا يمكن الاختيار بأمان. اطلب من المعلم إعادة المسح في إضاءة أفضل.",
+        gpsBoundaryUncertain: "يتداخل نطاق عدم يقين GPS مع حد النطاق الجغرافي. حدّث الموقع في مكان مفتوح قبل المحاولة مرة أخرى.",
+        adminMapDeviceTitle: "تشخيص موقع الجهاز",
+        adminMapDeviceDistance: "المسافة من الجهاز إلى المدرسة",
+        adminMapGpsAccuracy: "دقة GPS",
+        adminMapSchoolRadius: "نطاق المدرسة",
+        adminMapUpdated: "آخر فحص",
+        adminMapNeverChecked: "لم يتم فحص موقع الجهاز. لن يُطلب الموقع إلا بعد الضغط على الزر.",
+        adminMapCheckDeviceLocation: "فحص موقع الجهاز",
+        adminMapCheckingDeviceLocation: "جارٍ فحص موقع الجهاز…",
+        adminMapLocationSuccess: "تم فحص موقع الجهاز بنجاح.",
+        adminMapLocationPermission: "تم رفض إذن الموقع. اسمح للمتصفح بالوصول إلى الموقع.",
+        adminMapLocationTimeout: "انتهت مهلة فحص الموقع. حاول مجددًا في مكان مفتوح.",
+        adminMapLocationUnavailable: "موقع الجهاز غير متاح.",
+        adminMapLocationFailure: "تعذر فحص موقع الجهاز.",
+        adminMapBadFix: "بيانات GPS غير صالحة. تحقق من خدمة الموقع في الجهاز.",
+        adminMapLowAccuracy: "دقة GPS ±{accuracy} م منخفضة؛ المسافة المعروضة تقديرية فقط.",
+        adminMapInside: "الجهاز داخل النطاق بهامش تقديري قدره {margin}.",
+        adminMapOutside: "الجهاز خارج النطاق بمسافة دنيا تقديرية قدرها {margin}.",
+        adminMapBoundary: "غير مؤكد: نطاق دقة GPS يتقاطع مع حد النطاق الجغرافي.",
+        adminMapLastFix: "تم الفحص في {time}."
     }
 };
 
@@ -557,6 +629,11 @@ const state = {
     adminSettingsMap: null,
     adminSettingsMarker: null,
     adminSettingsCircle: null,
+    adminSettingsDeviceFix: null,
+    adminSettingsDeviceMarker: null,
+    adminSettingsAccuracyCircle: null,
+    adminAllowedWhatsappRecipients: [],
+    adminFonnteConfigured: false,
     lastNose: null,
     movementFrames: 0,
     attendanceRecorded: false,
@@ -881,7 +958,129 @@ function syncAdminSettingsMap({ center = false } = {}) {
     const lngLabel = $("admin-map-lng-label");
     if (latLabel) latLabel.textContent = lat.toFixed(7);
     if (lngLabel) lngLabel.textContent = lng.toFixed(7);
+    updateAdminMapDistanceSummary();
     window.setTimeout(() => state.adminSettingsMap?.invalidateSize(), 80);
+}
+
+function formatMapDistance(meters) {
+    if (!Number.isFinite(meters) || meters < 0) return "—";
+    if (meters < 1000) return `${Math.round(meters)} m`;
+    const locale = state.lang === "id" ? "id-ID" : state.lang === "ar" ? "ar" : "en-US";
+    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(meters / 1000)} km`;
+}
+
+function updateAdminMapDistanceSummary() {
+    const fix = state.adminSettingsDeviceFix;
+    const distanceEl = $("admin-map-device-distance");
+    const accuracyEl = $("admin-map-device-accuracy");
+    const radiusEl = $("admin-map-device-radius");
+    const updatedEl = $("admin-map-device-updated");
+    const statusEl = $("admin-map-device-status");
+    const panel = document.querySelector(".admin-map-device-panel");
+    if (!fix) {
+        if (radiusEl) radiusEl.textContent = formatMapDistance(Number($("admin-setting-radius")?.value));
+        return;
+    }
+
+    const schoolLat = Number($("admin-setting-lat")?.value);
+    const schoolLng = Number($("admin-setting-lng")?.value);
+    const radius = Number($("admin-setting-radius")?.value);
+    const distance = calculateDistance(fix.lat, fix.lng, schoolLat, schoolLng);
+    if (![distance, fix.accuracy, radius].every(Number.isFinite) || fix.accuracy <= 0 || radius <= 0) {
+        if (statusEl) statusEl.textContent = tr("adminMapBadFix");
+        return;
+    }
+
+    if (distanceEl) distanceEl.textContent = formatMapDistance(distance);
+    if (accuracyEl) accuracyEl.textContent = `±${formatMapDistance(fix.accuracy)}`;
+    if (radiusEl) radiusEl.textContent = formatMapDistance(radius);
+    const locale = state.lang === "id" ? "id-ID" : state.lang === "ar" ? "ar" : "en-US";
+    const checkedAt = new Intl.DateTimeFormat(locale, {
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+    }).format(new Date(fix.timestamp));
+    if (updatedEl) updatedEl.textContent = checkedAt;
+
+    const clearlyInside = distance + fix.accuracy <= radius;
+    const clearlyOutside = Math.max(0, distance - fix.accuracy) > radius;
+    const statusKey = clearlyInside ? "adminMapInside" : clearlyOutside ? "adminMapOutside" : "adminMapBoundary";
+    const margin = clearlyInside
+        ? formatMapDistance(Math.max(0, radius - distance - fix.accuracy))
+        : formatMapDistance(Math.max(0, distance - fix.accuracy - radius));
+    if (statusEl) statusEl.textContent = `${tr(statusKey, { margin })} ${tr("adminMapLastFix", { time: checkedAt })}`;
+
+    if (state.adminSettingsMap && window.L) {
+        const point = [fix.lat, fix.lng];
+        if (!state.adminSettingsDeviceMarker) {
+            state.adminSettingsDeviceMarker = L.circleMarker(point, {
+                radius: 7, color: "#087a50", weight: 2, fillColor: "#16a36a", fillOpacity: .95
+            }).addTo(state.adminSettingsMap);
+        } else state.adminSettingsDeviceMarker.setLatLng(point);
+        if (!state.adminSettingsAccuracyCircle) {
+            state.adminSettingsAccuracyCircle = L.circle(point, {
+                radius: fix.accuracy, color: "#16a36a", weight: 1, fillColor: "#16a36a", fillOpacity: .07
+            }).addTo(state.adminSettingsMap);
+        } else {
+            state.adminSettingsAccuracyCircle.setLatLng(point);
+            state.adminSettingsAccuracyCircle.setRadius(fix.accuracy);
+        }
+    }
+    if (panel) {
+        panel.classList.remove("is-updated");
+        requestAnimationFrame(() => panel.classList.add("is-updated"));
+    }
+}
+
+async function checkAdminMapDeviceLocation() {
+    const button = $("admin-map-check-location");
+    const status = $("admin-map-device-status");
+    if (!status) return;
+    if (!navigator.geolocation?.getCurrentPosition) {
+        status.textContent = tr("gpsUnsupported");
+        return;
+    }
+    const schoolLat = Number($("admin-setting-lat")?.value);
+    const schoolLng = Number($("admin-setting-lng")?.value);
+    const radius = Number($("admin-setting-radius")?.value);
+    if (![schoolLat, schoolLng, radius].every(Number.isFinite) ||
+        Math.abs(schoolLat) > 90 || Math.abs(schoolLng) > 180 || radius <= 0) {
+        status.textContent = tr("adminMapBadFix");
+        return;
+    }
+
+    const originalLabel = button?.textContent;
+    if (button) { button.disabled = true; button.textContent = tr("adminMapCheckingDeviceLocation"); }
+    status.textContent = tr("adminMapCheckingDeviceLocation");
+    try {
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true, timeout: 15000, maximumAge: 0
+            });
+        });
+        const { latitude, longitude, accuracy } = position.coords || {};
+        if (![latitude, longitude, accuracy].every(Number.isFinite) ||
+            Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
+            throw new Error("invalid-gps-fix");
+        }
+        state.adminSettingsDeviceFix = {
+            lat: latitude, lng: longitude, accuracy,
+            timestamp: Number.isFinite(position.timestamp) ? position.timestamp : Date.now()
+        };
+        updateAdminMapDistanceSummary();
+        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+            status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
+        } else if (status) {
+            status.textContent += ` ${tr("adminMapLocationSuccess")}`;
+        }
+    } catch (error) {
+        const key = error?.message === "invalid-gps-fix" ? "adminMapBadFix"
+            : error?.code === 1 ? "adminMapLocationPermission"
+            : error?.code === 2 ? "adminMapLocationUnavailable"
+            : error?.code === 3 ? "adminMapLocationTimeout"
+            : "adminMapLocationFailure";
+        status.textContent = tr(key);
+    } finally {
+        if (button) { button.disabled = false; button.textContent = originalLabel || tr("adminMapCheckDeviceLocation"); }
+    }
 }
 
 
@@ -1636,24 +1835,42 @@ async function startAdminTestCamera() {
     }
 }
 
+function updateAdminWhatsAppTestControls() {
+    const allowed = Array.isArray(state.adminAllowedWhatsappRecipients)
+        ? state.adminAllowedWhatsappRecipients : [];
+    const target = $("admin-test-whatsapp-number")?.value.replace(/\D/g, "") || "";
+    const message = $("admin-test-whatsapp-template")?.value.trim() || "";
+    const consent = Boolean($("admin-test-whatsapp-consent")?.checked);
+    const printable = message.length >= 10 && message.length <= 300 &&
+        !/[\u0000-\u001F\u007F]/.test(message);
+    const permitted = state.adminFonnteConfigured && allowed.includes(target);
+    const button = $("admin-test-whatsapp-send");
+    if (button) button.disabled = !(permitted && printable && consent);
+}
+
 async function loadAdminTestTools() {
     try {
         const result = await cloudRequest("/api/admin/test-tools");
-        $("admin-test-fonnte-state").textContent = result.fonnte_configured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
-        $("admin-test-whatsapp-allowlist").textContent = result.allowed_recipients?.length
-            ? result.allowed_recipients.join(", ") : "Belum ada nomor uji yang diizinkan";
+        state.adminFonnteConfigured = result.fonnte_configured === true;
+        state.adminAllowedWhatsappRecipients = Array.isArray(result.allowed_recipients)
+            ? result.allowed_recipients.filter(value => /^628\d{8,13}$/.test(String(value))) : [];
+        $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
+        $("admin-test-whatsapp-allowlist").textContent = state.adminAllowedWhatsappRecipients.length
+            ? state.adminAllowedWhatsappRecipients.join(", ") : tr("testAllowlistEmpty");
         const templateInput = $("admin-test-whatsapp-template");
         if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
         updateAdminWhatsAppPreview();
-        $("admin-test-whatsapp-send").disabled = !result.fonnte_configured || !result.allowed_recipients?.length;
-        if (!result.fonnte_configured || !result.allowed_recipients?.length) {
-            $("admin-test-whatsapp-status").textContent = "Atur FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS di environment Production untuk mengaktifkan tes.";
+        updateAdminWhatsAppTestControls();
+        if (!state.adminFonnteConfigured || !state.adminAllowedWhatsappRecipients.length) {
+            $("admin-test-whatsapp-status").textContent = tr("testFonnteConfigHint");
         }
     } catch (error) {
-        $("admin-test-fonnte-state").textContent = "Tidak dapat diperiksa";
+        state.adminFonnteConfigured = false;
+        state.adminAllowedWhatsappRecipients = [];
+        $("admin-test-fonnte-state").textContent = tr("testFonnteStatusUnavailable");
         $("admin-test-whatsapp-allowlist").textContent = tr("testAllowlistLoadFailed");
         $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
-        $("admin-test-whatsapp-send").disabled = true;
+        updateAdminWhatsAppTestControls();
     }
 }
 
@@ -1691,6 +1908,7 @@ async function sendAdminWhatsAppTest() {
     } finally {
         button.disabled = false;
         $("admin-test-whatsapp-consent").checked = false;
+        updateAdminWhatsAppTestControls();
     }
 }
 
@@ -1704,21 +1922,33 @@ async function testAdminGps() {
         const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true, timeout: 12000, maximumAge: 0
         }));
-        const { latitude, longitude, accuracy } = position.coords;
-        const rad = value => value * Math.PI / 180;
-        const dLat = rad(latitude - SCHOOL_LOCATION.lat);
-        const dLng = rad(longitude - SCHOOL_LOCATION.lng);
-        const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(SCHOOL_LOCATION.lat)) * Math.cos(rad(latitude)) * Math.sin(dLng / 2) ** 2;
-        const distance = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const { latitude, longitude, accuracy } = position.coords || {};
+        if (![latitude, longitude, accuracy].every(Number.isFinite) ||
+            Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
+            throw new Error("invalid-gps-fix");
+        }
+        const distance = calculateDistance(latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng);
+        if (!Number.isFinite(distance)) throw new Error("invalid-gps-fix");
         $("admin-test-gps-lat").textContent = latitude.toFixed(6);
         $("admin-test-gps-lng").textContent = longitude.toFixed(6);
         $("admin-test-gps-accuracy").textContent = Math.round(accuracy) + " m";
         $("admin-test-gps-distance").textContent = Math.round(distance) + " m";
-        status.textContent = accuracy <= MAX_GPS_ACCURACY_METERS && distance <= SCHOOL_LOCATION.radius
-            ? tr("testGpsInside")
-            : tr("testGpsOutside");
+        const clearlyInside = distance + accuracy <= SCHOOL_LOCATION.radius;
+        const clearlyOutside = Math.max(0, distance - accuracy) > SCHOOL_LOCATION.radius;
+        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+            status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
+        } else if (clearlyInside) {
+            status.textContent = tr("testGpsInside");
+        } else if (clearlyOutside) {
+            status.textContent = tr("testGpsOutside");
+        } else {
+            status.textContent = tr("gpsBoundaryUncertain");
+        }
     } catch (error) {
-        status.textContent = error?.code === 1 ? tr("testGpsPermission") : error?.code === 3 ? tr("testGpsTimeout") : error.message || tr("testGpsFailed");
+        status.textContent = error?.message === "invalid-gps-fix" ? tr("adminMapBadFix")
+            : error?.code === 1 ? tr("testGpsPermission")
+            : error?.code === 3 ? tr("testGpsTimeout")
+            : error.message || tr("testGpsFailed");
     }
 }
 
@@ -2347,11 +2577,14 @@ async function checkGeofence() {
                 }
                 const roundedDistance = Math.round(distanceExact);
                 const roundedAccuracy = Math.round(accuracy);
-                const inside = distanceExact <= SCHOOL_LOCATION.radius;
+                const clearlyInside = distanceExact + accuracy <= SCHOOL_LOCATION.radius;
+                const clearlyOutside = Math.max(0, distanceExact - accuracy) > SCHOOL_LOCATION.radius;
+                const boundaryUncertain = !clearlyInside && !clearlyOutside;
+                const inside = clearlyInside;
 
                 state.lastLocation = {
                     lat: latitude, lng: longitude, accuracy,
-                    distance: roundedDistance, inside, checkedAt: Date.now(),
+                    distance: roundedDistance, inside, boundaryUncertain, checkedAt: Date.now(),
                     positionTimestamp: timestamp, speed: reportedSpeed
                 };
 
@@ -2361,6 +2594,7 @@ async function checkGeofence() {
                 updateMapText();
                 finish({
                     inside,
+                    boundaryUncertain,
                     distance: roundedDistance,
                     accuracy,
                     error: null,
@@ -2419,6 +2653,10 @@ function renderLocationBadge() {
 
     if (state.lastLocation.checking) {
         setStatus("pending", tr("locationChecking"), tr("checkingBeforeCamera"));
+        return;
+    }
+    if (state.lastLocation.boundaryUncertain) {
+        setStatus("outside", tr("locationOutside"), tr("gpsBoundaryUncertain"));
         return;
     }
 
@@ -3029,8 +3267,9 @@ async function processAttendanceFrame() {
             return;
         }
         if (!result.match || typeof result.proofToken !== "string" || !result.proofToken) {
-            setAttendanceMessage(tr("faceNoMatch"));
-            updateProgress(0, tr("faceNoMatch"));
+            const message = result.ambiguous ? tr("faceMatchAmbiguous") : tr("faceNoMatch");
+            setAttendanceMessage(message);
+            updateProgress(0, message);
             return;
         }
         student = candidates.find(item => item.nisn === result.nisn);
@@ -3046,9 +3285,11 @@ async function processAttendanceFrame() {
         if (state.user !== requestUser || state.attendanceStream !== requestStream ||
             !attendanceViewActive() || document.hidden) return;
         if (location.error || !location.inside || location.accuracy > MAX_GPS_ACCURACY_METERS) {
-            const message = location.error || (location.accuracy > MAX_GPS_ACCURACY_METERS
-                ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
-                : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
+            const message = location.error || (location.boundaryUncertain
+                ? tr("gpsBoundaryUncertain")
+                : location.accuracy > MAX_GPS_ACCURACY_METERS
+                    ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
+                    : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
             stopAttendanceCamera();
             setAttendanceMessage(message);
             if (requestUser.role === "guru") {
@@ -4168,12 +4409,16 @@ function setupEvents() {
     $("admin-test-camera-start")?.addEventListener("click", () => void startAdminTestCamera());
     $("admin-test-camera-stop")?.addEventListener("click", stopAdminTestCamera);
     $("admin-test-gps-run")?.addEventListener("click", () => void testAdminGps());
+    $("admin-map-check-location")?.addEventListener("click", () => void checkAdminMapDeviceLocation());
     $("admin-test-open-settings")?.addEventListener("click", () => showAdminView("admin-view-settings"));
     $("admin-test-services-run")?.addEventListener("click", () => void runAdminServiceChecks());
     $("admin-test-whatsapp-template")?.addEventListener("input", () => {
         $("admin-test-whatsapp-template").dataset.userEdited = "true";
         updateAdminWhatsAppPreview();
+        updateAdminWhatsAppTestControls();
     });
+    $("admin-test-whatsapp-number")?.addEventListener("input", updateAdminWhatsAppTestControls);
+    $("admin-test-whatsapp-consent")?.addEventListener("change", updateAdminWhatsAppTestControls);
     $("admin-test-whatsapp-send")?.addEventListener("click", () => void sendAdminWhatsAppTest());
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
