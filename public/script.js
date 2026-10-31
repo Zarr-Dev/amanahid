@@ -789,7 +789,9 @@ const ADMIN_T = {
         changeAdminPassword: "Ubah kata sandi Admin", adminPasswordDescription: "Gunakan kata sandi unik dan kuat untuk akun dengan hak akses tinggi.",
         currentPassword: "Kata sandi saat ini", newPassword: "Kata sandi baru", savePassword: "Simpan kata sandi",
         activeStatus: "Aktif", inactiveStatus: "Nonaktif", editAccount: "Ubah", deactivateAccount: "Nonaktifkan",
-        teacherAccountCreated: "Akun Guru berhasil dibuat.", studentAccountCreated: "Akun Siswa berhasil dibuat. Guru perlu mendaftarkan sampel wajah sebelum siswa dapat melakukan presensi."
+        teacherAccountCreated: "Akun Guru berhasil dibuat.", studentAccountCreated: "Akun Siswa berhasil dibuat. Guru perlu mendaftarkan sampel wajah sebelum siswa dapat melakukan presensi.",
+        systemGovernance: "PENGELOLAAN SISTEM", governanceTitle: "Kontrol operasional Amanah ID", governanceDescription: "38 kontrol dalam 6 kategori. Pengaturan disimpan di Supabase dan setiap perubahan dicatat dalam audit.", governanceReload: "Muat ulang",
+        adminMapSchoolTitle: "Titik GPS sekolah", adminMapSchoolDescription: "Pilih titik sekolah pada peta atau masukkan koordinat secara manual.", adminMapCenter: "Pusatkan", adminMapPointStatus: "Klik peta untuk memilih titik lokasi sekolah."
     },
     en: {
         adminWorkspace: "ADMINISTRATOR", adminNavigation: "Admin navigation", faceSampleProgress: "Face sample progress", administratorRole: "Administrator", confirmDeactivateAccount: "Deactivate this account?", promptNewEmail: "New email (leave blank to keep it unchanged):", promptNewName: "New name (leave blank to keep it unchanged):", promptNewPassword: "New password (leave blank to keep it unchanged):", adminOverview: "Overview", adminAccounts: "Manage accounts",
@@ -815,7 +817,9 @@ const ADMIN_T = {
         changeAdminPassword: "Change Admin password", adminPasswordDescription: "Use a unique, strong password for this privileged account.",
         currentPassword: "Current password", newPassword: "New password", savePassword: "Save password",
         activeStatus: "Active", inactiveStatus: "Inactive", editAccount: "Edit", deactivateAccount: "Deactivate",
-        teacherAccountCreated: "Teacher account created successfully.", studentAccountCreated: "Student account created. A Teacher must register face samples before attendance can be recorded."
+        teacherAccountCreated: "Teacher account created successfully.", studentAccountCreated: "Student account created. A Teacher must register face samples before attendance can be recorded.",
+        systemGovernance: "SYSTEM GOVERNANCE", governanceTitle: "Amanah ID operational controls", governanceDescription: "38 controls across 6 categories. Settings are stored in Supabase and every change is recorded in the audit log.", governanceReload: "Reload",
+        adminMapSchoolTitle: "School GPS point", adminMapSchoolDescription: "Choose the school point on the map or enter its coordinates manually.", adminMapCenter: "Recenter", adminMapPointStatus: "Click the map to select the school location."
     },
     ar: {
         adminWorkspace: "مساحة المسؤول", adminNavigation: "تنقل المسؤول", faceSampleProgress: "تقدم عينات الوجه", administratorRole: "المسؤول", confirmDeactivateAccount: "هل تريد تعطيل هذا الحساب؟", promptNewEmail: "البريد الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewName: "الاسم الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewPassword: "كلمة المرور الجديدة (اتركها فارغة لإبقائها كما هي):", adminOverview: "نظرة عامة", adminAccounts: "إدارة الحسابات",
@@ -841,7 +845,9 @@ const ADMIN_T = {
         changeAdminPassword: "تغيير كلمة مرور المسؤول", adminPasswordDescription: "استخدم كلمة مرور قوية وفريدة لهذا الحساب ذي الصلاحيات العالية.",
         currentPassword: "كلمة المرور الحالية", newPassword: "كلمة المرور الجديدة", savePassword: "حفظ كلمة المرور",
         activeStatus: "نشط", inactiveStatus: "غير نشط", editAccount: "تعديل", deactivateAccount: "تعطيل",
-        teacherAccountCreated: "تم إنشاء حساب المعلم بنجاح.", studentAccountCreated: "تم إنشاء حساب الطالب. يجب على المعلم تسجيل عينة الوجه قبل تسجيل الحضور."
+        teacherAccountCreated: "تم إنشاء حساب المعلم بنجاح.", studentAccountCreated: "تم إنشاء حساب الطالب. يجب على المعلم تسجيل عينة الوجه قبل تسجيل الحضور.",
+        systemGovernance: "إدارة النظام", governanceTitle: "عناصر التحكم التشغيلية في أمانة ID", governanceDescription: "38 عنصر تحكم ضمن 6 فئات. تُحفظ الإعدادات في Supabase ويُسجل كل تغيير في سجل التدقيق.", governanceReload: "إعادة تحميل",
+        adminMapSchoolTitle: "نقطة GPS للمدرسة", adminMapSchoolDescription: "اختر موقع المدرسة على الخريطة أو أدخل الإحداثيات يدويًا.", adminMapCenter: "إعادة التمركز", adminMapPointStatus: "انقر على الخريطة لاختيار موقع المدرسة."
     }
 };
 Object.keys(ADMIN_T).forEach(lang => Object.assign(T[lang], ADMIN_T[lang]));
@@ -1559,7 +1565,8 @@ async function loadAdminDashboard() {
 }
 
 const LOCKED_ADMIN_FEATURES = new Set([
-    "admin_audit_log", "duplicate_attendance_block", "face_sample_limit", "gps_accuracy_guard",
+    "admin_audit_log", "duplicate_attendance_block", "face_ambiguity_guard", "face_sample_limit",
+    "gps_accuracy_guard", "gps_boundary_guard",
     "rate_limiting", "session_expiry", "origin_validation", "strict_server_validation",
     "reduced_motion_support", "responsive_layout", "privacy_notice"
 ]);
@@ -1665,25 +1672,27 @@ function applyRuntimeFeatureFlags(features = {}) {
 }
 
 const ADMIN_FEATURE_GROUPS = [
- { title:"1. Presensi & biometrik", items:[["camera_attendance","Kamera presensi","Mengizinkan akses kamera pada alur presensi."],["gps_geofencing","GPS geofencing","Mengaktifkan pembatasan radius sekolah."],["face_recognition","Pencocokan wajah","Mengizinkan proses pencocokan descriptor wajah."],["liveness_check","Pemeriksaan gerakan kepala","Mengaktifkan pemeriksaan keaktifan dasar."],["face_enrollment","Pendaftaran sampel wajah","Mengizinkan pendaftaran sampel siswa."],["face_sample_limit","Batas sampel wajah","Menegakkan batas sampel per siswa."]]},
- { title:"2. Akun & peran", items:[["student_login","Login siswa","Mengizinkan autentikasi role siswa."],["teacher_login","Login guru","Mengizinkan autentikasi role guru."],["admin_login","Login administrator","Mengizinkan autentikasi role admin."],["student_account_creation","Pembuatan akun siswa","Mengizinkan admin membuat akun siswa."],["teacher_account_creation","Pembuatan akun guru","Mengizinkan admin membuat akun guru."],["account_deactivation","Penonaktifan akun","Mengizinkan status akun nonaktif diberlakukan."]]},
- { title:"3. Data & presensi", items:[["attendance_recording","Pencatatan presensi","Mengizinkan pencatatan kehadiran baru."],["duplicate_attendance_block","Blokir presensi ganda","Mencegah catatan ganda pada hari yang sama."],["attendance_history","Riwayat presensi","Mengizinkan akses ke riwayat presensi."],["attendance_export","Ekspor data presensi","Mengizinkan ekspor CSV yang tersedia."],["parent_notifications","Notifikasi orang tua","Mengizinkan pemicu notifikasi WhatsApp."],["late_detection","Deteksi keterlambatan","Mengaktifkan aturan waktu masuk dan toleransi terlambat."]]},
- { title:"4. Keamanan & audit", items:[["admin_audit_log","Audit aktivitas admin","Mencatat perubahan penting oleh administrator."],["admin_account_export","Ekspor akun","Mengizinkan ekspor daftar akun admin."],["admin_password_change","Perubahan sandi admin","Mengizinkan pengelolaan sandi admin."],["rate_limiting","Pembatasan percobaan","Mengaktifkan rate limit pada endpoint terkait."],["session_expiry","Kedaluwarsa sesi","Mewajibkan sesi valid dan belum kedaluwarsa."],["origin_validation","Validasi origin","Menolak request dari origin yang tidak diizinkan."]]},
- { title:"5. Pengalaman website", items:[["maintenance_banner","Banner pemeliharaan","Menampilkan peringatan pemeliharaan saat diimplementasikan."],["public_status_panel","Panel status layanan","Menampilkan status layanan yang aman untuk publik."],["reduced_motion_support","Dukungan reduced motion","Menghormati preferensi aksesibilitas perangkat."],["language_switcher","Pemilih bahasa","Mengizinkan pergantian bahasa antarmuka."],["responsive_layout","Tata letak responsif","Mengizinkan layout responsif desktop dan mobile."],["splash_animation","Animasi pembuka","Mengaktifkan animasi splash Amanah ID."]]},
- { title:"6. Lokasi, jadwal & tata kelola", items:[["gps_accuracy_guard","Pemeriksaan akurasi GPS","Memeriksa akurasi lokasi sebelum presensi."],["geofence_radius_edit","Pengubahan radius geofence","Mengizinkan admin mengubah radius sekolah."],["school_schedule_rules","Aturan jadwal sekolah","Mengaktifkan jam masuk dan toleransi terlambat."],["privacy_notice","Pemberitahuan privasi","Menampilkan informasi pemrosesan data biometrik."],["service_health_panel","Panel kesehatan layanan","Menampilkan status backend dan integrasi."],["strict_server_validation","Validasi server ketat","Mewajibkan validasi payload pada endpoint terkait."]]}
+ { key:"attendance", title:"1. Presensi & biometrik", items:[["camera_attendance","Kamera presensi","Mengizinkan akses kamera pada alur presensi."],["gps_geofencing","GPS geofencing","Mengaktifkan pembatasan radius sekolah."],["face_recognition","Pencocokan wajah","Mengizinkan proses pencocokan descriptor wajah."],["liveness_check","Pemeriksaan gerakan kepala","Mengaktifkan pemeriksaan keaktifan dasar."],["face_ambiguity_guard","Penolakan wajah ambigu","Menolak pencocokan jika dua identitas memiliki skor yang terlalu berdekatan."],["face_enrollment","Pendaftaran sampel wajah","Mengizinkan pendaftaran sampel siswa."],["face_sample_limit","Batas sampel wajah","Menegakkan batas sampel per siswa."]]},
+ { key:"accounts", title:"2. Akun & peran", items:[["student_login","Login siswa","Mengizinkan autentikasi role siswa."],["teacher_login","Login guru","Mengizinkan autentikasi role guru."],["admin_login","Login administrator","Mengizinkan autentikasi role admin."],["student_account_creation","Pembuatan akun siswa","Mengizinkan admin membuat akun siswa."],["teacher_account_creation","Pembuatan akun guru","Mengizinkan admin membuat akun guru."],["account_deactivation","Penonaktifan akun","Mengizinkan status akun nonaktif diberlakukan."]]},
+ { key:"data", title:"3. Data & presensi", items:[["attendance_recording","Pencatatan presensi","Mengizinkan pencatatan kehadiran baru."],["duplicate_attendance_block","Blokir presensi ganda","Mencegah catatan ganda pada hari yang sama."],["attendance_history","Riwayat presensi","Mengizinkan akses ke riwayat presensi."],["attendance_export","Ekspor data presensi","Mengizinkan ekspor CSV yang tersedia."],["parent_notifications","Notifikasi orang tua","Mengizinkan pemicu notifikasi WhatsApp."],["late_detection","Deteksi keterlambatan","Mengaktifkan aturan waktu masuk dan toleransi terlambat."]]},
+ { key:"security", title:"4. Keamanan & audit", items:[["admin_audit_log","Audit aktivitas admin","Mencatat perubahan penting oleh administrator."],["admin_account_export","Ekspor akun","Mengizinkan ekspor daftar akun admin."],["admin_password_change","Perubahan sandi admin","Mengizinkan pengelolaan sandi admin."],["rate_limiting","Pembatasan percobaan","Mengaktifkan rate limit pada endpoint terkait."],["session_expiry","Kedaluwarsa sesi","Mewajibkan sesi valid dan belum kedaluwarsa."],["origin_validation","Validasi origin","Menolak request dari origin yang tidak diizinkan."]]},
+ { key:"experience", title:"5. Pengalaman website", items:[["maintenance_banner","Banner pemeliharaan","Menampilkan peringatan pemeliharaan saat diimplementasikan."],["public_status_panel","Panel status layanan","Menampilkan status layanan yang aman untuk publik."],["reduced_motion_support","Dukungan reduced motion","Menghormati preferensi aksesibilitas perangkat."],["language_switcher","Pemilih bahasa","Mengizinkan pergantian bahasa antarmuka."],["responsive_layout","Tata letak responsif","Mengizinkan layout responsif desktop dan mobile."],["splash_animation","Animasi pembuka","Mengaktifkan animasi splash Amanah ID."]]},
+ { key:"location", title:"6. Lokasi, jadwal & tata kelola", items:[["gps_accuracy_guard","Pemeriksaan akurasi GPS","Memeriksa akurasi lokasi sebelum presensi."],["gps_boundary_guard","Pengaman batas geofence","Menolak presensi jika rentang ketidakpastian GPS memotong batas radius sekolah."],["geofence_radius_edit","Pengubahan radius geofence","Mengizinkan admin mengubah radius sekolah."],["school_schedule_rules","Aturan jadwal sekolah","Mengaktifkan jam masuk dan toleransi terlambat."],["privacy_notice","Pemberitahuan privasi","Menampilkan informasi pemrosesan data biometrik."],["service_health_panel","Panel kesehatan layanan","Menampilkan status backend dan integrasi."],["strict_server_validation","Validasi server ketat","Mewajibkan validasi payload pada endpoint terkait."]]}
 ];
 function renderAdminFeatures() {
  const root = $("admin-governance-controls");
  if (!root) return;
  const features = state.adminFeatures || {};
  const feedback = state.adminFeatureStatus || {};
- root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(group.title)}</h4>${group.items.map(([key,label,description]) => {
+ const localized = ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id;
+ root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(localized.groups[group.key] || group.title)}</h4>${group.items.map(([key,label,description]) => {
+   const [featureLabel, featureDescription] = localized.features[key] || [label, description];
    const locked = LOCKED_ADMIN_FEATURES.has(key);
    const checked = locked || features[key] !== false;
-   const detail = feedback[key]?.message || (locked ? description + " (wajib aktif; tidak dapat dinonaktifkan)." : description);
+   const detail = feedback[key]?.message || (locked ? featureDescription + localized.lockedSuffix : featureDescription);
    const phase = feedback[key]?.type || "";
    const icon = phase === "pending" ? '<span class="feature-spinner" aria-hidden="true"></span>' : phase === "success" ? '<span class="feature-result feature-result-ok" aria-hidden="true">✓</span>' : phase === "error" ? '<span class="feature-result feature-result-error" aria-hidden="true">!</span>' : "";
-   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
+   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(featureLabel)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
  }).join("")}</section>`).join("");
 }
 async function loadAdminFeatures() {
@@ -1695,7 +1704,7 @@ async function loadAdminFeatures() {
    state.adminFeatures = result.features || {};
    renderAdminFeatures();
    applyAdminFeatureFlags(state.adminFeatures);
-   status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Tersimpan di Supabase`;
+   status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari ${Object.keys(state.adminFeatures).length} kontrol aktif · Tersimpan di Supabase`;
  } catch (error) {
    status.textContent = "Pengaturan gagal dimuat. Periksa konfigurasi backend dan izin Admin.";
    console.error("Admin feature controls failed to load:", error);
@@ -1727,7 +1736,7 @@ async function saveAdminFeatureToggle(input) {
    state.adminFeatureStatus[key] = { type: "success", message: "Tersimpan ke server." };
    renderAdminFeatures();
    applyAdminFeatureFlags(state.adminFeatures);
-   if (status) status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Perubahan tersimpan dan diaudit`;
+   if (status) status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari ${Object.keys(state.adminFeatures).length} kontrol aktif · Perubahan tersimpan dan diaudit`;
    toast("Pengaturan sistem berhasil disimpan.", "success");
    window.setTimeout(() => {
      if (state.adminFeatureStatus?.[key]?.type === "success") {
