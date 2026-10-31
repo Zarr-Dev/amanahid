@@ -10,7 +10,7 @@ import {
 
 test("Admin feature catalogue is complete, typed, and has no duplicate keys", () => {
     const keys = Object.keys(FEATURE_DEFAULTS);
-    assert.equal(keys.length, 36);
+    assert.equal(keys.length, 38);
     assert.equal(new Set(keys).size, keys.length);
     assert.ok(keys.every(key => typeof FEATURE_DEFAULTS[key] === "boolean"));
     assert.ok(LOCKED_FEATURE_FLAGS.every(key => Object.hasOwn(FEATURE_DEFAULTS, key)));
@@ -42,6 +42,8 @@ test("saved Admin flags are normalized and safety-critical controls remain enabl
     for (const key of LOCKED_FEATURE_FLAGS) assert.equal(flags[key], true, key);
     assert.equal(flags.parent_notifications, false);
     assert.equal(flags.camera_attendance, false);
+    assert.equal(flags.face_ambiguity_guard, true);
+    assert.equal(flags.gps_boundary_guard, true);
 
     const publicFlags = publicFeatureFlags(flags);
     assert.deepEqual(Object.keys(publicFlags), [...PUBLIC_FEATURE_KEYS]);
