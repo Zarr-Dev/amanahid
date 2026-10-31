@@ -15,6 +15,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="landing-refresh.css">
 </head>
 
 <body>
@@ -35,26 +36,51 @@
                 <img class="brand-mark" src="assets/amanah-logo.svg" alt="" aria-hidden="true">
                 <span class="brand-wordmark"><span class="brand-name-amanah">Amanah</span> <span class="brand-name-id">ID</span></span>
             </a>
+            <div class="auth-header-note">
+                <span class="auth-header-indicator" aria-hidden="true"></span>
+                <span data-i18n="heroHeaderNote">AL FITYAN SCHOOL · SISTEM PRESENSI DIGITAL</span>
+            </div>
         </header>
 
         <div class="auth-layout">
             <section class="auth-copy" aria-labelledby="auth-hero-title">
-                <p class="auth-eyebrow" data-i18n="authEyebrow">PRESENSI DIGITAL SEKOLAH</p>
-                <h1 id="auth-hero-title"><span class="hero-title-first" data-i18n="heroTitleFirst">Presensi Sekolah Masa Kini,</span> <span data-i18n="heroTitleSecond">Anti Titip Absen.</span></h1>
+                <p class="auth-eyebrow" data-i18n="authEyebrow">PRESENSI TERINTEGRASI · AL FITYAN SCHOOL</p>
+                <h1 id="auth-hero-title"><span class="hero-title-first" data-i18n="heroTitleFirst">Presensi sekolah,</span> <span data-i18n="heroTitleSecond">lebih rapi dan tepercaya.</span></h1>
                 <p class="auth-description" data-i18n="heroDescription">
-                    Pantau kehadiran siswa secara real-time dengan verifikasi wajah (Face Recognition) dan lokasi (GPS
-                    Geofencing). Tanpa mesin fingerprint, tanpa biaya hardware.
+                    Satukan pencatatan kehadiran, verifikasi wajah, dan pemeriksaan lokasi dalam satu alur digital.
+                    Admin, guru, dan siswa dapat mengaksesnya dari perangkat masing-masing.
                 </p>
 
                 <ul class="auth-benefits" aria-label="Fitur Amanah ID" data-i18n-aria="heroBenefitsLabel">
-                    <li><span class="benefit-check" aria-hidden="true">✓</span><span
-                            data-i18n="heroBenefitAccuracy">Akurasi wajah tingkat tinggi (ArcFace)</span>
-                    </li>
-                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitGps">Mencegah
-                            fake GPS &amp; absen titip</span></li>
-                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitPhone">Cukup
-                            gunakan HP siswa masing-masing</span></li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitAccuracy">Pencocokan wajah diproses di sisi server</span></li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitGps">Lokasi diperiksa terhadap radius sekolah</span></li>
+                    <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitPhone">Akses untuk ponsel, tablet, dan laptop</span></li>
                 </ul>
+
+                <div class="hero-facts" aria-label="Ringkasan Amanah ID">
+                    <div class="hero-fact">
+                        <span class="hero-fact-index" aria-hidden="true">01</span>
+                        <span class="hero-fact-copy">
+                            <strong data-i18n="heroFactRolesTitle">3 peran, satu sistem</strong>
+                            <small data-i18n="heroFactRolesDesc">Admin · Guru · Siswa</small>
+                        </span>
+                    </div>
+                    <div class="hero-fact">
+                        <span class="hero-fact-index" aria-hidden="true">02</span>
+                        <span class="hero-fact-copy">
+                            <strong data-i18n="heroFactChecksTitle">Verifikasi berlapis</strong>
+                            <small data-i18n="heroFactChecksDesc">Wajah + lokasi</small>
+                        </span>
+                    </div>
+                    <div class="hero-fact">
+                        <span class="hero-fact-index" aria-hidden="true">03</span>
+                        <span class="hero-fact-copy">
+                            <strong data-i18n="heroFactDevicesTitle">Akses lintas perangkat</strong>
+                            <small data-i18n="heroFactDevicesDesc">Ponsel · Tablet · Laptop</small>
+                        </span>
+                    </div>
+                </div>
+
                 <div class="auth-actions auth-actions-single" aria-label="Akses akun">
                     <button id="tab-login" class="auth-action auth-action-primary active" type="button"
                         data-i18n="login">Masuk ke akun</button>
@@ -63,6 +89,10 @@
 
             <section class="auth-visual" aria-label="Contoh dashboard presensi Amanah ID"
                 data-i18n-aria="heroDashboardLabel">
+                <div class="visual-label">
+                    <span class="visual-label-indicator" aria-hidden="true"></span>
+                    <span data-i18n="heroVisualLabel">PRATINJAU TAMPILAN PRESENSI</span>
+                </div>
                 <div class="visual-glow"></div>
                 <div class="dashboard-mockup">
                     <div class="mockup-topbar">
