@@ -241,6 +241,11 @@ const EXTRA_T = {
         testFonnteConfigHint: "Konfigurasikan FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS pada environment Production untuk mengaktifkan pengujian.",
         testFonnteStatusUnavailable: "Status konfigurasi WhatsApp tidak dapat diperiksa.",
         faceMatchAmbiguous: "Dua atau lebih profil wajah terlalu mirip untuk diputuskan dengan aman. Minta guru mengulang pemindaian dalam pencahayaan yang lebih baik.",
+        faceQualityLow: "Wajah belum cukup jelas. Hadapkan wajah ke kamera, dekatkan secukupnya, dan perbaiki pencahayaan.",
+        livenessFaceForward: "Hadapkan wajah lurus ke kamera dan tahan sebentar.",
+        livenessTurnLeft: "Gerakkan kepala perlahan ke kiri, lalu tahan sebentar.",
+        livenessTurnRight: "Gerakkan kepala perlahan ke kanan, lalu tahan sebentar.",
+        livenessReturnFront: "Kembalikan wajah menghadap lurus ke kamera.",
         gpsBoundaryUncertain: "Rentang ketidakpastian GPS bersinggungan dengan batas geofence. Ambil lokasi baru di area terbuka sebelum mencoba lagi.",
         adminMapDeviceTitle: "Diagnostik lokasi perangkat",
         adminMapDeviceDistance: "Jarak perangkat ke sekolah",
@@ -404,6 +409,11 @@ const EXTRA_T = {
         testFonnteConfigHint: "Set FONNTE_TOKEN and FONNTE_TEST_RECIPIENTS in the Production environment to enable testing.",
         testFonnteStatusUnavailable: "WhatsApp configuration status could not be checked.",
         faceMatchAmbiguous: "Two or more face profiles are too similar to distinguish safely. Ask a teacher to repeat the scan in better lighting.",
+        faceQualityLow: "The face is not clear enough. Face the camera, move a little closer, and improve the lighting.",
+        livenessFaceForward: "Face the camera directly and hold still briefly.",
+        livenessTurnLeft: "Slowly turn your head to the left and hold briefly.",
+        livenessTurnRight: "Slowly turn your head to the right and hold briefly.",
+        livenessReturnFront: "Turn your face back toward the camera.",
         gpsBoundaryUncertain: "The GPS uncertainty range overlaps the geofence boundary. Refresh the location in an open area before trying again.",
         adminMapDeviceTitle: "Device location diagnostics",
         adminMapDeviceDistance: "Device-to-school distance",
@@ -567,6 +577,11 @@ const EXTRA_T = {
         testFonnteConfigHint: "اضبط FONNTE_TOKEN وFONNTE_TEST_RECIPIENTS في بيئة Production لتفعيل الاختبار.",
         testFonnteStatusUnavailable: "تعذر التحقق من حالة إعداد WhatsApp.",
         faceMatchAmbiguous: "ملفان أو أكثر للوجه متشابهان جدًا ولا يمكن الاختيار بأمان. اطلب من المعلم إعادة المسح في إضاءة أفضل.",
+        faceQualityLow: "الوجه غير واضح بما يكفي. واجه الكاميرا واقترب قليلًا وحسّن الإضاءة.",
+        livenessFaceForward: "وجّه وجهك مباشرة إلى الكاميرا واثبت قليلًا.",
+        livenessTurnLeft: "أدر رأسك ببطء إلى اليسار واثبت قليلًا.",
+        livenessTurnRight: "أدر رأسك ببطء إلى اليمين واثبت قليلًا.",
+        livenessReturnFront: "أعد توجيه وجهك مباشرة إلى الكاميرا.",
         gpsBoundaryUncertain: "يتداخل نطاق عدم يقين GPS مع حد النطاق الجغرافي. حدّث الموقع في مكان مفتوح قبل المحاولة مرة أخرى.",
         adminMapDeviceTitle: "تشخيص موقع الجهاز",
         adminMapDeviceDistance: "المسافة من الجهاز إلى المدرسة",
@@ -632,6 +647,7 @@ const state = {
     adminSettingsDeviceFix: null,
     adminSettingsDeviceMarker: null,
     adminSettingsAccuracyCircle: null,
+    livenessChallenge: null,
     adminAllowedWhatsappRecipients: [],
     adminFonnteConfigured: false,
     lastNose: null,
@@ -919,7 +935,9 @@ function exportTableCsv(tbodyId, filename) {
 
 function syncAdminSettingsMap({ center = false } = {}) {
     const mapElement = $("admin-school-map");
-    if (!mapElement || !window.L) return;
+    if (!mapElement) return;
+    updateAdminMapDistanceSummary();
+    if (!window.L) return;
     if (!$("admin-setting-lat")?.value.trim() || !$("admin-setting-lng")?.value.trim()) return;
     const lat = Number($("admin-setting-lat").value);
     const lng = Number($("admin-setting-lng").value);
@@ -1211,6 +1229,13 @@ function setLanguage(lang) {
     updateStats();
     updateCameraTexts();
     renderStudentHistory();
+    if ($("admin-test-whatsapp-template") && !$("admin-test-whatsapp-template").dataset.userEdited) {
+        $("admin-test-whatsapp-template").value = tr("testWhatsappDefaultTemplate");
+        updateAdminWhatsAppPreview();
+    }
+    updateAdminWhatsAppTestControls();
+    if (state.adminFeatures) renderAdminFeatures();
+    updateAdminMapDistanceSummary();
     updateStudentProfile();
     if (state.map) updateMapText();
     updateSchoolLocationEditor();
@@ -1860,8 +1885,9 @@ async function startAdminTestCamera() {
             if (adminTestBusy || !adminTestStream || video.readyState < 2) return;
             adminTestBusy = true;
             try {
-                const detections = await detectFaces(video);
+                const rawDetections = await detectFaces(video);
                 if (!adminTestStream) return;
+                const detections = rawDetections.filter(detection => isFaceDetectionUsable(detection, video));
                 drawDetections(video, $("admin-test-overlay"), detections);
                 $("admin-test-face-count").textContent = String(detections.length);
                 status.textContent = detections.length === 0 ? tr("testCameraNoFace")
@@ -2869,6 +2895,7 @@ function stopAttendanceCamera() {
     state.attendanceRecorded = false;
     state.lastNose = null;
     state.movementFrames = 0;
+    state.livenessChallenge = null;
     state.lastFaceMatchAt = 0;
     state.attendanceIdempotencyKey = null;
     setSwitch(false);
@@ -3127,8 +3154,52 @@ function drawDetections(video, canvas, detections) {
 
 async function detectFaces(video) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.45 });
+    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 });
     return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks().withFaceDescriptors();
+}
+
+function isFaceDetectionUsable(detection, video) {
+    const box = detection?.box || detection?.detection?.box;
+    const score = Number(detection?.score ?? detection?.detection?.score);
+    const width = Number(box?.width);
+    const height = Number(box?.height);
+    const sourceWidth = Number(video?.videoWidth) || 0;
+    const sourceHeight = Number(video?.videoHeight) || 0;
+    const minimumWidth = Math.max(76, sourceWidth * 0.12);
+    const minimumHeight = Math.max(76, sourceHeight * 0.16);
+    return Number.isFinite(score) && score >= 0.58 &&
+        Number.isFinite(width) && width >= minimumWidth &&
+        Number.isFinite(height) && height >= minimumHeight;
+}
+
+function updateAttendanceLiveness(detection) {
+    if (!state.livenessChallenge) {
+        state.livenessChallenge = {
+            direction: Math.random() < 0.5 ? "left" : "right",
+            stage: "front",
+            frames: 0,
+            total: 0,
+            completed: false
+        };
+    }
+    const challenge = state.livenessChallenge;
+    if (challenge.completed) return { completed: true, progress: 9 };
+    const angle = faceAngleBucket(detection);
+    const expected = challenge.stage === "turn" ? challenge.direction : "front";
+    challenge.total += 1;
+    if (angle === expected) challenge.frames += 1;
+    else challenge.frames = 0;
+
+    if (challenge.frames >= 3) {
+        challenge.frames = 0;
+        if (challenge.stage === "front") challenge.stage = "turn";
+        else if (challenge.stage === "turn") challenge.stage = "return";
+        else challenge.completed = true;
+    }
+    const messageKey = challenge.stage === "front" ? "livenessFaceForward"
+        : challenge.stage === "turn" ? (challenge.direction === "left" ? "livenessTurnLeft" : "livenessTurnRight")
+        : "livenessReturnFront";
+    return { completed: challenge.completed, progress: challenge.total, messageKey };
 }
 
 function getStudentDescriptors(student) {
@@ -3276,25 +3347,18 @@ async function processAttendanceFrame() {
         }
 
         const detection = detections[0];
-        const nose = detection.landmarks.getNose()?.[3];
-        if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y)) {
-            state.lastNose = null;
-            state.movementFrames = 0;
-            setAttendanceMessage(tr("faceNotFound"));
+        if (!isFaceDetectionUsable(detection, video)) {
+            setAttendanceMessage(tr("faceQualityLow"));
+            if (requestUser.role === "guru") updateProgress(0, tr("faceQualityLow"));
             return;
         }
-        if (state.lastNose) {
-            const delta = Math.hypot(nose.x - state.lastNose.x, nose.y - state.lastNose.y);
-            if (delta > 1.2) state.movementFrames++;
-        }
-        state.lastNose = { x: nose.x, y: nose.y };
-
+        const liveness = updateAttendanceLiveness(detection);
+        state.movementFrames = liveness.progress;
         if (requestUser.role === "guru") {
-            updateProgress(Math.min(100, 30 + state.movementFrames * 12), tr("attendanceInProgress"));
+            updateProgress(liveness.completed ? 90 : Math.min(85, 25 + liveness.progress * 7), tr("attendanceInProgress"));
         }
-
-        if (state.movementFrames < 3) {
-            setAttendanceMessage(tr("livenessMove"));
+        if (!liveness.completed) {
+            setAttendanceMessage(tr(liveness.messageKey));
             return;
         }
 
@@ -3557,7 +3621,7 @@ async function readUploadedFace(file) {
     try {
         const image = await faceapi.bufferToImage(file);
         const detections = await faceapi.detectAllFaces(
-            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
+            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 })
         ).withFaceLandmarks().withFaceDescriptors();
 
         if (detections.length !== 1) {
