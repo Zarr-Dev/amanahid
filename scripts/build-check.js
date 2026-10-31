@@ -119,6 +119,9 @@ const htmlChecks = [
     ["admin GPS diagnostics", /id="admin-test-gps-run"/],
     ["rotating Admin CAPTCHA", /id="admin-captcha-answer"/],
     ["editable school GPS map", /id="admin-school-map"/],
+    ["Admin school-to-device distance", /id="admin-map-device-distance"/],
+    ["Admin school GPS accuracy diagnostics", /id="admin-map-device-accuracy"/],
+    ["Admin WhatsApp consent checkbox", /class="admin-test-consent"[\s\S]*?type="checkbox"/],
     ["Admin account export", /id="admin-export-users"/],
     ["Admin audit export", /id="admin-export-audit"/]
 ];
@@ -160,6 +163,8 @@ if (!adminUserApi.includes('pattern: /^(guru|siswa)$/') ||
 }
 
 const cssChecks = [
+    ["WhatsApp test checkbox fixed dimensions", /\.admin-test-consent input\[type="checkbox"\][\s\S]*?width:\s*18px[\s\S]*?flex:\s*0\s+0\s+18px/],
+    ["Admin map distance diagnostics styling", /\.admin-map-device-panel\s*\{/],
     ["responsive splash dimensions", /\.splash-mark\s*\{[^}]*width:\s*clamp\(160px,\s*25vw,\s*280px\)/s],
     ["square splash logo", /\.splash-mark\s*\{[^}]*aspect-ratio:\s*1\s*\/\s*1/s],
     ["theme-aware wordmark", /\.brand-name-amanah\s*\{[^}]*var\(--brand-word-color/s],
@@ -207,8 +212,34 @@ if (!js.includes('phase === "pending" ? "disabled"') ||
     process.exit(1);
 }
 
-if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 416, scoreThreshold: 0.45")) {
-    console.error("Build check failed: pinned face model or detection settings are missing.");
+if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 512, scoreThreshold: 0.55") ||
+    !js.includes("function updateAttendanceLiveness") || !js.includes("function isFaceDetectionUsable") ||
+    !allApiSource.includes("FACE_MATCH_THRESHOLD = 0.42") ||
+    !allApiSource.includes("GPS_BOUNDARY_UNCERTAIN")) {
+    console.error("Build check failed: pinned face model, face quality/liveness checks, or conservative server matching/geofence guards are missing.");
+    process.exit(1);
+}
+
+const featureDefaultsSource = readFileSync(join(root, "api/_lib/features.js"), "utf8");
+const defaultsBlock = featureDefaultsSource.slice(
+    featureDefaultsSource.indexOf("export const FEATURE_DEFAULTS"),
+    featureDefaultsSource.indexOf("// These controls protect")
+);
+const featureKeys = [...defaultsBlock.matchAll(/^\s{4}([a-z_]+):/gm)].map(match => match[1]);
+const adminGroupStart = js.indexOf("const ADMIN_FEATURE_GROUPS = [");
+const adminGroupEnd = js.indexOf("\n];", adminGroupStart);
+const adminGroups = adminGroupStart >= 0 && adminGroupEnd > adminGroupStart
+    ? js.slice(adminGroupStart, adminGroupEnd) : "";
+const adminFeatureCopyStart = js.indexOf("const ADMIN_FEATURE_COPY = {");
+const adminFeatureCopyEnd = js.indexOf("\nconst ADMIN_FEATURE_GROUPS", adminFeatureCopyStart);
+const adminFeatureCopy = adminFeatureCopyStart >= 0 && adminFeatureCopyEnd > adminFeatureCopyStart
+    ? js.slice(adminFeatureCopyStart, adminFeatureCopyEnd) : "";
+const renderedFeatureKeys = [...adminGroups.matchAll(/\["([a-z_]+)","/g)].map(match => match[1]);
+if (featureKeys.length !== 38 || new Set(featureKeys).size !== 38 ||
+    renderedFeatureKeys.length !== 38 || new Set(renderedFeatureKeys).size !== 38 ||
+    !["id:", "en:", "ar:"].every(language => adminFeatureCopy.includes(language)) ||
+    featureKeys.some(key => !adminFeatureCopy.includes(key + ": ["))) {
+    console.error("Build check failed: all 38 Admin controls must be present once and translated in Indonesian, English, and Arabic.");
     process.exit(1);
 }
 if (!js.includes("phase === \"pending\" ? \"disabled\"") || !js.includes("feature-spinner")) {
