@@ -91,7 +91,8 @@ test("face, GPS map, and WhatsApp testing strings exist in all three app languag
         "faceQualityLow", "livenessFaceForward", "livenessTurnLeft",
         "livenessTurnRight", "livenessReturnFront", "adminMapDeviceTitle",
         "adminMapDeviceDistance", "adminMapGpsAccuracy", "adminMapSchoolRadius",
-        "adminMapCheckDeviceLocation", "adminMapBoundary", "testWhatsappConfirm",
+        "adminMapCheckDeviceLocation", "adminMapBoundary", "adminMapPointChanged", "adminMapSaved",
+        "adminSettingsSaving", "adminSettingsSaved", "testWhatsappConfirm",
         "testWhatsappNoConsent"
     ];
     for (const language of ["id", "en", "ar"]) {
