@@ -125,6 +125,9 @@ export default async function handler(req, res) {
         if (!rateLimit(req, "students:POST", 10, 60_000, res)) {
             return jsonError(res, 429, "Too many student registrations. Try again in a minute.");
         }
+        const features = await getFeatureFlags();
+        if (!features.student_account_creation) return featureDisabled(res, "student_account_creation", "Pembuatan akun Siswa sedang dinonaktifkan");
+        if (!features.face_enrollment) return featureDisabled(res, "face_enrollment", "Pendaftaran wajah sedang dinonaktifkan");
         const body = req.body || {};
         const validation = validateSchema({
             nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
