@@ -165,12 +165,12 @@ export default async function handler(req, res) {
                     return jsonError(res, 409, "Idempotency key has already been used");
                 }
                 return res.status(200).json({
-                    attendance: normalizeAttendance(repeated[0], settings[0], features),
+                    attendance: normalizeAttendance(repeated[0]),
                     whatsapp: { sent: false, skipped: true }
                 });
             }
             const settings = await supabaseRequest(
-                "school_settings?select=lat,lng,radius&id=eq.00000000-0000-0000-0000-000000000001&limit=1"
+                "school_settings?select=lat,lng,radius,entry_time,late_tolerance_min,timezone&id=eq.00000000-0000-0000-0000-000000000001&limit=1"
             );
             if (!settings.length) return jsonError(res, 503, "School location settings are not configured");
             const school = {
@@ -211,7 +211,7 @@ export default async function handler(req, res) {
             if (existing.length) {
                 if (existing[0].idempotency_key === idempotencyKey) {
                     return res.status(200).json({
-                        attendance: normalizeAttendance(existing[0]),
+                        attendance: normalizeAttendance(existing[0], settings[0], features),
                         whatsapp: { sent: false, skipped: true }
                     });
                 }
