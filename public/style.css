@@ -3728,3 +3728,53 @@ body.app-dialog-open { overflow: hidden; }
         pointer-events: none;
     }
 }
+
+/* Operational status surfaces controlled by the system feature flags. */
+.maintenance-banner {
+    position: relative;
+    z-index: 1200;
+    padding: 11px 18px;
+    text-align: center;
+    color: #784b09;
+    background: #fff4d8;
+    border-bottom: 1px solid #f0d99e;
+    font-size: 13px;
+    font-weight: 700;
+}
+.public-status-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: min(100% - 32px, 520px);
+    margin: 16px auto 0;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--muted);
+    background: var(--surface);
+    box-shadow: 0 8px 24px rgba(43, 76, 133, .05);
+    font-size: 12px;
+    font-weight: 650;
+}
+.public-status-dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    border-radius: 50%;
+    background: #219a73;
+    box-shadow: 0 0 0 4px rgba(33, 154, 115, .12);
+}
+.public-status-panel.is-error .public-status-dot {
+    background: var(--red);
+    box-shadow: 0 0 0 4px rgba(223, 75, 90, .12);
+}
+body.theme-dark .maintenance-banner {
+    color: #f7d995;
+    background: #392d18;
+    border-color: #5e4929;
+}
+body.theme-dark .public-status-panel {
+    background: var(--surface-solid);
+}
+
