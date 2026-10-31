@@ -626,11 +626,11 @@
                 </div>
                 <section class="panel admin-governance-panel" aria-labelledby="admin-governance-title">
                     <div class="panel-heading admin-governance-heading">
-                        <div><span class="section-kicker">SYSTEM GOVERNANCE</span>
-                            <h3 id="admin-governance-title">Kontrol operasional Amanah ID</h3>
-                            <p class="muted">36 kontrol dalam 6 kategori. Perubahan disimpan di Supabase dan dicatat dalam audit.</p>
+                        <div><span class="section-kicker" data-i18n="systemGovernance">SYSTEM GOVERNANCE</span>
+                            <h3 id="admin-governance-title" data-i18n="governanceTitle">Kontrol operasional Amanah ID</h3>
+                            <p class="muted" data-i18n="governanceDescription">38 kontrol dalam 6 kategori. Perubahan disimpan di Supabase dan dicatat dalam audit.</p>
                         </div>
-                        <button id="admin-governance-reset" class="button subtle" type="button">Muat ulang</button>
+                        <button id="admin-governance-reset" class="button subtle" type="button" data-i18n="governanceReload">Muat ulang</button>
                     </div>
                     <p id="admin-governance-status" class="admin-governance-status" role="status" aria-live="polite">Memuat kebijakan sistem…</p>
                     <div id="admin-governance-controls" class="admin-governance-grid"></div>
@@ -749,8 +749,21 @@
                             aria-label="Peta untuk mengatur titik GPS sekolah"></div>
                         <p id="admin-school-map-status" class="helper-text" role="status" aria-live="polite">Klik peta untuk memilih titik lokasi sekolah.</p>
                         <div class="admin-map-coordinate-summary">
-                            <span>Latitude <strong id="admin-map-lat-label">Belum ditentukan</strong></span>
-                            <span>Longitude <strong id="admin-map-lng-label">Belum ditentukan</strong></span>
+                            <span><span data-i18n="schoolLatitude">Latitude sekolah</span> <strong id="admin-map-lat-label">Belum ditentukan</strong></span>
+                            <span><span data-i18n="schoolLongitude">Longitude sekolah</span> <strong id="admin-map-lng-label">Belum ditentukan</strong></span>
+                        </div>
+                        <div class="admin-map-device-panel">
+                            <div class="admin-map-device-heading">
+                                <strong data-i18n="adminMapDeviceTitle">Diagnostik lokasi perangkat</strong>
+                                <button id="admin-map-check-location" class="button subtle small" type="button" data-i18n="adminMapCheckDeviceLocation">Periksa lokasi perangkat</button>
+                            </div>
+                            <div class="admin-map-device-grid">
+                                <div><span data-i18n="adminMapDeviceDistance">Jarak perangkat ke sekolah</span><strong id="admin-map-device-distance">—</strong></div>
+                                <div><span data-i18n="adminMapGpsAccuracy">Akurasi GPS</span><strong id="admin-map-device-accuracy">—</strong></div>
+                                <div><span data-i18n="adminMapSchoolRadius">Radius sekolah</span><strong id="admin-map-device-radius">—</strong></div>
+                                <div><span data-i18n="adminMapUpdated">Pemeriksaan terakhir</span><strong id="admin-map-device-updated">Belum diperiksa</strong></div>
+                            </div>
+                            <p id="admin-map-device-status" class="helper-text" role="status" aria-live="polite" data-i18n="adminMapNeverChecked">Lokasi perangkat belum diperiksa. Pemeriksaan hanya dilakukan setelah tombol ditekan.</p>
                         </div>
                     </aside>
                 </div>
