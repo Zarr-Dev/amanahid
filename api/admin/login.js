@@ -3,6 +3,7 @@ import { writeAuditLog } from "../_lib/audit.js";
 import { getMissingAuthConfiguration, isAllowedOrigin, jsonError, rateLimit, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
 import { getFeatureFlags, featureDisabled } from "../_lib/features.js";
+import { verifyLoginCaptcha } from "../_lib/login-captcha.js";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -21,8 +22,13 @@ export default async function handler(req, res) {
     const validation = validateSchema({
         email: { type: "string", required: true, max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
         password: { type: "string", required: true, max: 64, pattern: /^[a-f0-9]{64}$/ },
+        captchaToken: { type: "string", required: true, max: 2048, min: 20 },
+        captchaAnswer: { type: "string", required: true, max: 12, pattern: /^[A-Za-z0-9]{1,12}$/ }
     }, body);
     if (!validation.valid) return jsonError(res, 400, validation.error);
+    if (!verifyLoginCaptcha(body.captchaToken, body.captchaAnswer)) {
+        return jsonError(res, 400, "CAPTCHA_INVALID: Tantangan keamanan salah atau kedaluwarsa. Perbarui tantangan lalu coba lagi.");
+    }
 
     try {
         const features = await getFeatureFlags();

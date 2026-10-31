@@ -36,10 +36,6 @@
                 <span class="brand-wordmark"><span class="brand-name-amanah">Amanah</span> <span class="brand-name-id">ID</span></span>
             </a>
         </header>
-        <section id="public-status-panel" class="public-status-panel hidden" role="status" aria-live="polite">
-            <span class="public-status-dot" aria-hidden="true"></span>
-            <span id="public-status-text">Memeriksa layanan Amanah ID…</span>
-        </section>
 
         <div class="auth-layout">
             <section class="auth-copy" aria-labelledby="auth-hero-title">
@@ -59,12 +55,9 @@
                     <li><span class="benefit-check" aria-hidden="true">✓</span><span data-i18n="heroBenefitPhone">Cukup
                             gunakan HP siswa masing-masing</span></li>
                 </ul>
-                <div class="auth-actions" aria-label="Pilih akses">
+                <div class="auth-actions auth-actions-single" aria-label="Akses akun">
                     <button id="tab-login" class="auth-action auth-action-primary active" type="button"
                         data-i18n="login">Masuk ke akun</button>
-                    <button id="open-admin-login-hero" class="auth-action auth-action-outline" type="button">
-                        Login Admin
-                    </button>
                 </div>
             </section>
 
@@ -89,23 +82,21 @@
                             <span class="mockup-live-dot"></span>
                         </div>
                         <div class="mockup-metrics">
-                            <div><span data-i18n="mockTotalStudents">Total siswa</span><strong>284</strong><small
-                                    data-i18n="mockRegistered">Terdaftar</small></div>
-                            <div><span data-i18n="mockCheckedIn">Sudah hadir</span><strong>261</strong><small
-                                    class="metric-positive">+92%</small>
-                            </div>
+                            <div><span data-i18n="mockTotalStudents">Peran akun</span><strong>03</strong><small
+                                    data-i18n="mockRegistered">Admin · Guru · Siswa</small></div>
+                            <div><span data-i18n="mockCheckedIn">Faktor presensi</span><strong>02</strong><small
+                                    data-i18n="mockRegistered">Wajah + GPS</small></div>
                         </div>
-                        <div class="mockup-list-heading"><strong data-i18n="mockLatestAttendance">Presensi
-                                terbaru</strong><span data-i18n="mockViewAll">Lihat semua</span></div>
+                        <div class="mockup-list-heading"><strong data-i18n="mockLatestAttendance">Akses terintegrasi</strong><span data-i18n="mockViewAll">Satu pintu</span></div>
                         <div class="mockup-student-row">
-                            <span class="mockup-avatar">NA</span>
-                            <span><strong>Nadia Azzahra</strong><small>XI IPA 2 · 07:12</small></span>
-                            <b data-i18n="attendance">Hadir</b>
+                            <span class="mockup-avatar">AD</span>
+                            <span><strong data-i18n="mockRoleAdmin">Administrator</strong><small data-i18n="mockRoleAdminDesc">Akun resmi sekolah</small></span>
+                            <b data-i18n="mockRoleActive">Aktif</b>
                         </div>
                         <div class="mockup-student-row">
-                            <span class="mockup-avatar avatar-lilac">RF</span>
-                            <span><strong>Rafi Firmansyah</strong><small>XI IPA 1 · 07:14</small></span>
-                            <b data-i18n="attendance">Hadir</b>
+                            <span class="mockup-avatar avatar-lilac">GS</span>
+                            <span><strong data-i18n="mockRolesUsers">Guru dan Siswa</strong><small data-i18n="mockRolesUsersDesc">Satu formulir masuk</small></span>
+                            <b data-i18n="mockRoleActive">Aktif</b>
                         </div>
                         <div class="mockup-chart" aria-hidden="true">
                             <span style="--bar: 42%"></span><span style="--bar: 63%"></span>
@@ -119,13 +110,13 @@
                 <div class="floating-card floating-face">
                     <span class="floating-icon face-icon" aria-hidden="true">◎</span>
                     <span><strong data-i18n="heroFaceMatch">Wajah Cocok</strong><small
-                            data-i18n="heroFaceVerified">99.8% terverifikasi</small></span>
+                            data-i18n="heroFaceVerified">Pencocokan melalui server</small></span>
                     <span class="floating-check" aria-hidden="true">✓</span>
                 </div>
                 <div class="floating-card floating-location">
                     <span class="floating-icon location-icon" aria-hidden="true">⌖</span>
                     <span><strong data-i18n="heroLocationValid">Lokasi Valid</strong><small
-                            data-i18n="heroSchoolDistance">15 m dari sekolah</small></span>
+                            data-i18n="heroSchoolDistance">GPS geofencing sekolah</small></span>
                 </div>
                 <div class="floating-card floating-success">
                     <span class="floating-icon success-icon" aria-hidden="true">✓</span>
@@ -152,13 +143,12 @@
         <section class="modal-card auth-modal-card">
             <div class="auth-modal-heading">
                 <div>
-                    <span class="auth-modal-kicker">Amanah ID</span>
+                    <span class="auth-modal-kicker">AMANAH ID · SCHOOL ACCESS</span>
                     <h2 id="auth-modal-title">Masuk ke Amanah ID</h2>
                 </div>
                 <button id="close-auth-modal" class="icon-button" type="button" aria-label="Tutup"
                     data-i18n-aria="close">×</button>
             </div>
-
             <form id="login-form" class="form-stack">
                 <label for="login-email" data-i18n="email">Email</label>
                 <input id="login-email" type="email" autocomplete="username" data-i18n-placeholder="emailPlaceholder"
@@ -166,50 +156,22 @@
                 <label for="login-password" data-i18n="password">Kata sandi</label>
                 <input id="login-password" type="password" autocomplete="current-password"
                     data-i18n-placeholder="passwordPlaceholder" placeholder="••••••••" required maxlength="128">
+                <div class="login-captcha" role="group" aria-labelledby="login-captcha-heading">
+                    <div class="login-captcha-heading">
+                        <span class="login-captcha-kicker" id="login-captcha-heading" data-i18n="captchaLabel">VERIFIKASI SINGKAT</span>
+                        <button id="login-captcha-refresh" class="button subtle captcha-refresh" type="button"
+                            data-i18n="captchaRefresh" aria-label="Ganti tantangan keamanan">Ganti</button>
+                    </div>
+                    <label id="login-captcha-question" for="login-captcha-answer" aria-live="polite">Memuat tantangan keamanan…</label>
+                    <input id="login-captcha-answer" type="text" inputmode="text" autocapitalize="characters"
+                        autocomplete="off" spellcheck="false" maxlength="12" required
+                        data-i18n-placeholder="captchaAnswerPlaceholder" placeholder="Ketik jawaban">
+                    <p id="login-captcha-help" class="helper-text" data-i18n="captchaHelp">Selesaikan tantangan singkat ini untuk melanjutkan.</p>
+                </div>
                 <button class="button primary full" type="submit" data-i18n="login">Masuk</button>
             </form>
-
-            <p class="auth-login-note">
-                Akun Guru dibuat oleh Admin. Akun Siswa didaftarkan oleh Guru melalui menu Formulir.
-            </p>
-            <p class="admin-login-link"><a id="open-admin-login" href="#admin-login-modal">Login sebagai Admin</a></p>
-        </section>
-    </div>
-
-    <div id="admin-login-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
-        aria-labelledby="admin-login-title">
-        <section class="modal-card auth-modal-card admin-login-modal-card">
-            <div class="auth-modal-heading">
-                <div>
-                    <span class="auth-modal-kicker">Amanah ID · ADMIN</span>
-                    <h2 id="admin-login-title">Login sebagai Admin</h2>
-                </div>
-                <button id="admin-login-close" class="icon-button" type="button" aria-label="Tutup"
-                    data-i18n-aria="close">×</button>
-            </div>
-            <form id="admin-login-form" class="form-stack">
-                <label for="admin-login-email">Email resmi administrator</label>
-                <input id="admin-login-email" type="email" autocomplete="off" placeholder="Masukkan email resmi administrator"
-                    required maxlength="254">
-                <label for="admin-login-password">Kata sandi administrator</label>
-                <input id="admin-login-password" type="password" autocomplete="off" required maxlength="128">
-                <div class="admin-captcha">
-                    <div class="admin-captcha-heading">
-                        <label id="admin-captcha-question" for="admin-captcha-answer">Verifikasi keamanan: 4 + 3 = ?</label>
-                        <button id="admin-captcha-refresh" class="button subtle captcha-refresh" type="button"
-                            aria-label="Ganti soal verifikasi">Ganti soal</button>
-                    </div>
-                    <input id="admin-captcha-answer" type="number" inputmode="numeric" autocomplete="off"
-                        placeholder="Jawaban verifikasi" required aria-describedby="admin-captcha-help">
-                    <p id="admin-captcha-help" class="helper-text">Soal diperbarui setiap kali login dicoba.</p>
-                </div>
-                <button class="button primary full" type="submit">Masuk sebagai Admin</button>
-                <button id="admin-login-back" class="button subtle full" type="button">Kembali ke login
-                    pengguna</button>
-            </form>
-            <p class="auth-login-note admin-security-note">
-                Akun Admin adalah akun resmi sekolah dan dibuat secara manual di Supabase. Akun demo Guru/Siswa hanya
-                tersedia pada lingkungan demo terpisah, bukan pada database produksi sekolah.
+            <p class="auth-login-note" data-i18n="loginAccessNote">
+                Admin, Guru, dan Siswa masuk dari formulir yang sama. Sistem menentukan peran secara otomatis dari akun resmi yang terdaftar.
             </p>
         </section>
     </div>
