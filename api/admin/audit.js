@@ -44,7 +44,7 @@ export default async function handler(req, res) {
                 attendance_week: trendCounts.reduce((sum, value) => sum + (value ?? 0), 0),
                 active_users_week: (activeStudents ?? 0) + (activeTeachers ?? 0) + (activeAdmins ?? 0),
                 trend: dates.map((day, index) => ({ date: day, count: trendCounts[index] ?? 0 })),
-                health: { supabase: "ok", vercel: "ok", fonnte: process.env.FONNTE_TOKEN && String(process.env.FONNTE_TEST_RECIPIENTS || "").split(",").some(value => /^628\\d{8,13}$/.test(value.replace(/\\D/g, ""))) ? "ready" : "not_configured" }
+                health: { supabase: "ok", vercel: "ok", fonnte: process.env.FONNTE_TOKEN && String(process.env.FONNTE_TEST_RECIPIENTS || "").split(",").some(value => /^628\d{8,13}$/.test(value.replace(/\D/g, ""))) ? "ready" : "not_configured" }
             });
         } catch (error) {
             console.error("Admin dashboard stats failed:", error);
