@@ -3327,6 +3327,7 @@ async function processAttendanceFrame() {
         drawDetections(video, attendanceCanvas(), detections);
 
         if (!detections.length) {
+            if (state.livenessChallenge) state.livenessChallenge.frames = 0;
             setAttendanceMessage(tr("faceNotFound"));
             if (requestUser.role === "guru") {
                 updateProgress(0, tr("faceNotFound"));
@@ -3337,6 +3338,7 @@ async function processAttendanceFrame() {
         }
 
         if (detections.length > 1) {
+            if (state.livenessChallenge) state.livenessChallenge.frames = 0;
             setAttendanceMessage(tr("faceTooMany"));
             state.lastNose = null;
             state.movementFrames = 0;
@@ -3348,6 +3350,7 @@ async function processAttendanceFrame() {
 
         const detection = detections[0];
         if (!isFaceDetectionUsable(detection, video)) {
+            if (state.livenessChallenge) state.livenessChallenge.frames = 0;
             setAttendanceMessage(tr("faceQualityLow"));
             if (requestUser.role === "guru") updateProgress(0, tr("faceQualityLow"));
             return;
