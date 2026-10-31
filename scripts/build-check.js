@@ -125,6 +125,13 @@ const htmlChecks = [
     ["Admin account export", /id="admin-export-users"/],
     ["Admin audit export", /id="admin-export-audit"/]
 ];
+const navIconCount = (html.match(/class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24">/g) || []).length;
+if (navIconCount !== 13 || !css.includes(".nav-symbol svg") ||
+    !css.includes(".nav-link:hover .nav-symbol svg")) {
+    console.error("Build check failed: all 13 role-navigation icons must use consistent SVG line symbols with hover styling.");
+    process.exit(1);
+}
+
 if (html.includes('id="admin-demo-password"') || html.includes("SuperSecurePass123!")) {
     console.error("Build check failed: public Admin demo credentials must never be shipped.");
     process.exit(1);
