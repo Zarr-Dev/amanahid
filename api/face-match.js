@@ -5,6 +5,7 @@ import {
 import { validateSchema } from "./_lib/validate.js";
 import { signToken } from "./_lib/admin-auth.js";
 import { writeAuditLog } from "./_lib/audit.js";
+import { getFeatureFlags } from "./_lib/features.js";
 
 const FACE_MATCH_THRESHOLD = 0.45;
 const DESCRIPTOR_LENGTH = 128;
@@ -75,16 +76,35 @@ export default async function handler(req, res) {
             return res.status(200).json({ match: false, registered: false });
         }
 
-        let best = null;
+        // Compare the best sample per person, not every sample as a separate identity.
+        const nearestByStudent = new Map();
         for (const candidate of candidates) {
             const distance = descriptorDistance(candidate.sample, descriptor);
-            if (!best || distance < best.distance) best = { ...candidate, distance };
+            const key = String(candidate.student.nisn);
+            const current = nearestByStudent.get(key);
+            if (!current || distance < current.distance) {
+                nearestByStudent.set(key, { ...candidate, distance });
+            }
         }
-        const match = Boolean(best && best.distance <= FACE_MATCH_THRESHOLD);
+        const ranked = [...nearestByStudent.values()].sort((a, b) => a.distance - b.distance);
+        const best = ranked[0] || null;
+        const second = ranked[1] || null;
+        const features = await getFeatureFlags();
+        const ambiguous = Boolean(
+            role === "guru" &&
+            features.face_ambiguity_guard !== false &&
+            best && second &&
+            best.distance <= FACE_MATCH_THRESHOLD &&
+            second.distance <= FACE_MATCH_THRESHOLD &&
+            second.distance - best.distance <= 0.04
+        );
+        const match = Boolean(best && best.distance <= FACE_MATCH_THRESHOLD && !ambiguous);
         const matchedNisn = match ? best.student.nisn : null;
         const confidence = best ? Math.max(0, Math.min(1, 1 - best.distance)) : 0;
         await writeAuditLog(session, "face.verify", "students", matchedNisn || (role === "siswa" ? session.nisn : "unknown"), {
-            match, registered: true, role
+            match, registered: true, role, ambiguous,
+            nearest_distance: Number.isFinite(best?.distance) ? Number(best.distance.toFixed(5)) : null,
+            runner_up_distance: Number.isFinite(second?.distance) ? Number(second.distance.toFixed(5)) : null
         });
         const proofToken = match
             ? signToken({
@@ -94,6 +114,7 @@ export default async function handler(req, res) {
             : null;
         return res.status(200).json({
             match, registered: true, confidence,
+            ...(ambiguous ? { ambiguous: true } : {}),
             ...(match ? { nisn: matchedNisn, name: best.student.name, proofToken } : {})
         });
     } catch (error) {
