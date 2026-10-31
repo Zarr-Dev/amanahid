@@ -12,7 +12,7 @@ import {
 
 test("Admin feature catalogue is complete, typed, and has no duplicate keys", () => {
     const keys = Object.keys(FEATURE_DEFAULTS);
-    assert.equal(keys.length, 38);
+    assert.equal(keys.length, 37);
     assert.equal(new Set(keys).size, keys.length);
     assert.ok(keys.every(key => typeof FEATURE_DEFAULTS[key] === "boolean"));
     assert.ok(LOCKED_FEATURE_FLAGS.every(key => Object.hasOwn(FEATURE_DEFAULTS, key)));
@@ -40,7 +40,7 @@ test("saved Admin flags are normalized and safety-critical controls remain enabl
     ]), { status: 200 });
 
     const flags = await getFeatureFlags();
-    assert.equal(Object.keys(flags).length, 38);
+    assert.equal(Object.keys(flags).length, 37);
     for (const key of LOCKED_FEATURE_FLAGS) assert.equal(flags[key], true, key);
     assert.equal(flags.parent_notifications, false);
     assert.equal(flags.camera_attendance, false);
@@ -60,7 +60,7 @@ function evaluateFrontendConstant(source, name, nextDeclaration) {
     return runInNewContext(`${source.slice(start, end)}\n${name}`);
 }
 
-test("all 38 Admin controls have complete Indonesian, English, and Arabic copy", () => {
+test("all 37 Admin controls have complete Indonesian, English, and Arabic copy", () => {
     const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
     const copy = evaluateFrontendConstant(source, "ADMIN_FEATURE_COPY", "\nconst ADMIN_FEATURE_GROUPS");
     const groups = evaluateFrontendConstant(source, "ADMIN_FEATURE_GROUPS", "\nfunction renderAdminFeatures");
@@ -68,7 +68,7 @@ test("all 38 Admin controls have complete Indonesian, English, and Arabic copy",
     const renderedKeys = groups.flatMap(group => group.items.map(item => item[0]));
 
     assert.equal(groups.length, 6);
-    assert.equal(renderedKeys.length, 38);
+    assert.equal(renderedKeys.length, 37);
     assert.deepEqual([...renderedKeys].sort(), [...keys].sort());
     for (const language of ["id", "en", "ar"]) {
         assert.ok(copy[language], `Missing ${language} Admin translations`);
