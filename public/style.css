@@ -3694,7 +3694,28 @@ body.app-dialog-open { overflow: hidden; }
 .admin-test-card textarea { width: 100%; min-height: 110px; resize: vertical; font: inherit; }
 .admin-test-message-preview { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; padding: 12px; border: 1px solid var(--border, #e2e8f0); border-radius: 12px; background: var(--surface-muted, #f8fafc); font: inherit; font-size: 13px; }
 .admin-test-consent { display: flex; align-items: flex-start; gap: 10px; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: 13px; line-height: 1.5; }
-.admin-test-consent input { margin-top: 3px; flex: 0 0 auto; }
+.admin-test-consent input[type="checkbox"] {
+    appearance: auto;
+    display: block;
+    width: 18px;
+    min-width: 18px;
+    max-width: 18px;
+    height: 18px;
+    min-height: 18px;
+    margin: 2px 0 0;
+    padding: 0;
+    flex: 0 0 18px;
+    accent-color: var(--blue);
+    border: 0;
+    border-radius: 4px;
+    box-shadow: none;
+}
+.admin-test-consent input[type="checkbox"]:focus-visible {
+    outline: 3px solid rgba(57, 120, 246, .35);
+    outline-offset: 3px;
+}
+.admin-test-consent { align-items: flex-start; cursor: pointer; }
+.admin-test-consent span { line-height: 1.55; overflow-wrap: anywhere; }
 .admin-test-consent span { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
 .admin-test-service-results { display: grid; gap: 8px; }
 .admin-test-service-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; }
@@ -3717,6 +3738,78 @@ body.app-dialog-open { overflow: hidden; }
 }
 
 
+
+
+/* Admin map device diagnostics */
+.admin-map-device-panel {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-muted, #f8fafc);
+}
+.admin-map-device-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: var(--text);
+    font-size: 12px;
+}
+.admin-map-device-heading .button {
+    min-height: 36px;
+    padding: 7px 11px;
+    font-size: 11px;
+}
+.admin-map-device-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+.admin-map-device-grid > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-solid);
+}
+.admin-map-device-grid span {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.4;
+}
+.admin-map-device-grid strong {
+    color: var(--text);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+}
+#admin-map-device-status {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+#admin-map-check-location:disabled { opacity: .65; cursor: wait; }
+.admin-map-device-panel.is-updated { animation: admin-map-status-in .28s ease-out; }
+@keyframes admin-map-status-in {
+    from { opacity: .55; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 520px) {
+    .admin-map-device-heading { align-items: stretch; }
+    .admin-map-device-heading .button { width: 100%; }
+    .admin-map-device-grid { gap: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .admin-map-device-panel.is-updated { animation: none; }
+}
 
 /* Emergency splash timeout: keep the landing page reachable if startup scripts fail. */
 .splash-screen {
