@@ -23,18 +23,50 @@ function isValidSettings({ lat, lng, radius }) {
 
 export default async function handler(req, res) {
     const action = req.query?.action;
+    // Liveness endpoint: confirms the function is running without requiring
+    // database credentials or a live downstream dependency.
     if (action === "health") {
         if (req.method !== "GET" && req.method !== "HEAD") {
             res.setHeader("Allow", "GET, HEAD");
             return res.status(405).json({ error: "Method not allowed", method: req.method });
         }
         const missing = getMissingAuthConfiguration();
+        const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "")
+            .split(",").map(value => value.replace(/\D/g, ""))
+            .filter(value => /^628\d{8,13}$/.test(value));
+        const payload = {
+            ok: true,
+            service: "Amanah.id API",
+            runtime: process.version,
+            checks: {
+                api: "ok",
+                configuration: missing.length ? "missing" : "ok",
+                database: "not_checked",
+                whatsapp: process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured"
+            },
+            authentication: { configured: missing.length === 0, missing }
+        };
+        return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
+    }
+
+    // Readiness endpoint: checks required server configuration and an actual
+    // Supabase round-trip. WhatsApp is optional and never blocks attendance readiness.
+    if (action === "ready") {
+        if (req.method !== "GET" && req.method !== "HEAD") {
+            res.setHeader("Allow", "GET, HEAD");
+            return res.status(405).json({ error: "Method not allowed", method: req.method });
+        }
+        const missing = getMissingAuthConfiguration();
+        const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "")
+            .split(",").map(value => value.replace(/\D/g, ""))
+            .filter(value => /^628\d{8,13}$/.test(value));
+        const whatsapp = process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured";
         if (missing.length) {
             const payload = {
                 ok: false,
                 service: "Amanah.id API",
                 runtime: process.version,
-                checks: { configuration: "failed", database: "not_checked", whatsapp: process.env.FONNTE_TOKEN ? "configured" : "not_configured" },
+                checks: { api: "ok", configuration: "failed", database: "not_checked", whatsapp },
                 missing
             };
             return req.method === "HEAD" ? res.status(503).end() : res.status(503).json(payload);
@@ -42,16 +74,11 @@ export default async function handler(req, res) {
         try {
             const rows = await supabaseRequest("school_settings?select=id&limit=1");
             if (!Array.isArray(rows) || !rows.length) throw new Error("School settings are not initialized");
-            const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "").split(",").map(value => value.replace(/\D/g, "")).filter(value => /^628\d{8,13}$/.test(value));
             const payload = {
                 ok: true,
                 service: "Amanah.id API",
                 runtime: process.version,
-                checks: {
-                    configuration: "ok",
-                    database: "ok",
-                    whatsapp: process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured"
-                }
+                checks: { api: "ok", configuration: "ok", database: "ok", whatsapp }
             };
             return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
         } catch (error) {
@@ -60,7 +87,7 @@ export default async function handler(req, res) {
                 ok: false,
                 service: "Amanah.id API",
                 runtime: process.version,
-                checks: { configuration: "ok", database: "failed", whatsapp: process.env.FONNTE_TOKEN ? "configured" : "not_configured" }
+                checks: { api: "ok", configuration: "ok", database: "error", whatsapp }
             };
             return req.method === "HEAD" ? res.status(503).end() : res.status(503).json(payload);
         }

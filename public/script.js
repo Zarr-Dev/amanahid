@@ -1,6 +1,11 @@
 
 "use strict";
 
+// Shared DOM lookup helper used by all UI initialization and event handlers.
+function $(id) {
+    return document.getElementById(id);
+}
+
 // School configuration and in-memory state
 let SCHOOL_LOCATION = {
     lat: -6.253590517740096,
@@ -207,6 +212,7 @@ const EXTRA_T = {
         testOtherRun: "Periksa layanan",
         testOtherStatus: "Pemeriksaan belum dijalankan.",
         testOtherPass: "Layanan merespons.",
+        testOtherNotConfigured: "Belum dikonfigurasi.",
         testOtherFail: "Layanan tidak merespons.",
         testPhoneInvalid: "Masukkan nomor uji yang valid dalam format 628xxxxxxxxxx.",
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
@@ -345,6 +351,7 @@ const EXTRA_T = {
         testOtherRun: "Check services",
         testOtherStatus: "Checks have not been run.",
         testOtherPass: "Service responded.",
+        testOtherNotConfigured: "Not configured.",
         testOtherFail: "Service did not respond.",
         testPhoneInvalid: "Enter a valid test number in 628xxxxxxxxxx format.",
         testWhatsappNoConsent: "Confirm consent before sending the test message.",
@@ -483,6 +490,7 @@ const EXTRA_T = {
         testOtherRun: "فحص الخدمات",
         testOtherStatus: "لم يتم إجراء الفحوصات بعد.",
         testOtherPass: "استجابت الخدمة.",
+        testOtherNotConfigured: "غير مُعدّ.",
         testOtherFail: "لم تستجب الخدمة.",
         testPhoneInvalid: "أدخل رقم اختبار صالحًا بالتنسيق 628xxxxxxxxxx.",
         testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار.",
@@ -1336,7 +1344,7 @@ async function loadAdminDashboard() {
         $("admin-attendance-week").textContent = stats?.attendance_week ?? 0;
         $("admin-active-week").textContent = stats?.active_users_week ?? 0;
         try {
-            const health = await cloudRequest("/api/health");
+            const health = await cloudRequest("/api/ready");
             $("health-supabase").textContent = health?.checks?.database ?? "unknown";
             $("health-vercel").textContent = health?.ok ? "ok" : "error";
             $("health-fonnte").textContent = health?.checks?.whatsapp ?? "not_configured";
@@ -1444,7 +1452,7 @@ function applyRuntimeFeatureFlags(features = {}) {
     if (features.public_status_panel !== false && publicStatus && !state.publicStatusCheckStarted) {
         state.publicStatusCheckStarted = true;
         publicStatus.textContent = "Memeriksa API dan database…";
-        void cloudRequest("/api/health").then(health => {
+        void cloudRequest("/api/ready").then(health => {
             const ready = health?.ok === true && health?.checks?.database === "ok";
             $("public-status-panel")?.classList.toggle("is-error", !ready);
             publicStatus.textContent = ready
@@ -1476,7 +1484,7 @@ function renderAdminFeatures() {
    const detail = feedback[key]?.message || (locked ? description + " (wajib aktif; tidak dapat dinonaktifkan)." : description);
    const phase = feedback[key]?.type || "";
    const icon = phase === "pending" ? '<span class="feature-spinner" aria-hidden="true"></span>' : phase === "success" ? '<span class="feature-result feature-result-ok" aria-hidden="true">✓</span>' : phase === "error" ? '<span class="feature-result feature-result-error" aria-hidden="true">!</span>' : "";
-   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></span></span></div>`;
+   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
  }).join("")}</section>`).join("");
 }
 async function loadAdminFeatures() {
@@ -1719,29 +1727,41 @@ async function runAdminServiceChecks() {
     root.textContent = tr("testServiceChecking");
     const results = [];
     try {
-        const health = await cloudRequest("/api/health");
-        results.push({ name: "Vercel API + Supabase", ok: health?.ok === true && health?.checks?.database === "ok" });
+        const health = await cloudRequest("/api/ready");
+        results.push({
+            name: "Vercel API + Supabase",
+            state: health?.ok === true && health?.checks?.database === "ok" ? "ready" : "error"
+        });
     } catch {
-        results.push({ name: "Vercel API + Supabase", ok: false });
+        results.push({ name: "Vercel API + Supabase", state: "error" });
     }
     try {
         const tools = await cloudRequest("/api/admin/test-tools");
+        const configured = tools?.fonnte_configured === true && tools?.allowlist_configured === true;
         results.push({
             name: "Fonnte WhatsApp + allowlist",
-            ok: tools?.fonnte_configured === true && tools?.allowlist_configured === true
+            state: configured ? "ready" : "not_configured"
         });
     } catch {
-        results.push({ name: "Fonnte WhatsApp + allowlist", ok: false });
+        results.push({ name: "Fonnte WhatsApp + allowlist", state: "error" });
     }
     try {
         const flags = await cloudRequest("/api?action=features");
-        results.push({ name: "Konfigurasi feature flags", ok: Boolean(flags?.features && typeof flags.features === "object") });
+        results.push({
+            name: "Konfigurasi feature flags",
+            state: flags?.features && typeof flags.features === "object" ? "ready" : "error"
+        });
     } catch {
-        results.push({ name: "Konfigurasi feature flags", ok: false });
+        results.push({ name: "Konfigurasi feature flags", state: "error" });
     }
-    root.innerHTML = results.map(item => '<div class="admin-test-service-row"><span>' + safeText(item.name) +
-        '</span><strong class="' + (item.ok ? "is-ok" : "is-error") + '">' +
-        safeText(item.ok ? tr("testOtherPass") : tr("testOtherFail")) + '</strong></div>').join("");
+    root.innerHTML = results.map(item => {
+        const css = item.state === "ready" ? "is-ok"
+            : item.state === "not_configured" ? "is-not-configured" : "is-error";
+        const message = item.state === "ready" ? tr("testOtherPass")
+            : item.state === "not_configured" ? tr("testOtherNotConfigured") : tr("testOtherFail");
+        return '<div class="admin-test-service-row"><span>' + safeText(item.name) +
+            '</span><strong class="' + css + '">' + safeText(message) + '</strong></div>';
+    }).join("");
 }
 
 async function loadAdminUsers() {

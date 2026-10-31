@@ -3693,11 +3693,13 @@ body.app-dialog-open { overflow: hidden; }
 .admin-test-metrics strong, .admin-test-gps-values strong { color: var(--text, #14213d); font-size: 14px; overflow-wrap: anywhere; }
 .admin-test-card textarea { width: 100%; min-height: 110px; resize: vertical; font: inherit; }
 .admin-test-message-preview { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; padding: 12px; border: 1px solid var(--border, #e2e8f0); border-radius: 12px; background: var(--surface-muted, #f8fafc); font: inherit; font-size: 13px; }
-.admin-test-consent { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.5; }
+.admin-test-consent { display: flex; align-items: flex-start; gap: 10px; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; font-size: 13px; line-height: 1.5; }
 .admin-test-consent input { margin-top: 3px; flex: 0 0 auto; }
+.admin-test-consent span { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
 .admin-test-service-results { display: grid; gap: 8px; }
 .admin-test-service-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; }
 .admin-test-service-row .is-ok { color: #087a50; }
+.admin-test-service-row .is-not-configured { color: #8a681e; }
 .admin-test-service-row .is-error { color: #bd2634; }
 .admin-test-card button:disabled { opacity: .55; cursor: not-allowed; }
 .admin-switch-wrap { min-width: 78px; gap: 8px; }
@@ -3777,4 +3779,3 @@ body.theme-dark .maintenance-banner {
 body.theme-dark .public-status-panel {
     background: var(--surface-solid);
 }
-

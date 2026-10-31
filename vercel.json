@@ -32,6 +32,10 @@
       "dest": "/api/settings"
     },
     {
+      "src": "^/api/ready$",
+      "dest": "/api/settings?action=ready"
+    },
+    {
       "src": "^/api/health$",
       "dest": "/api/settings?action=health"
     },

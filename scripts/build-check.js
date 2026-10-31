@@ -52,6 +52,16 @@ function collectJs(directory) {
     }
     return files;
 }
+const frontendSource = readFileSync(join(root, "public/script.js"), "utf8");
+if (!/function\s+\$\s*\(\s*id\s*\)/.test(frontendSource)) {
+    console.error("Frontend DOM helper function $(id) is required by startup and event handlers.");
+    process.exit(1);
+}
+if (!/function\s+initialize\s*\(/.test(frontendSource) || !/initialize\s*\(\s*\)\s*;/.test(frontendSource)) {
+    console.error("Frontend initialization entrypoint is missing.");
+    process.exit(1);
+}
+
 const apiFiles = collectJs(join(root, "api"));
 const jsFiles = [...apiFiles, ...collectJs(join(root, "scripts")), join(root, "public/script.js")];
 for (const file of jsFiles) {

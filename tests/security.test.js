@@ -438,6 +438,40 @@ test("API health endpoint answers GET/HEAD and rejects other methods clearly", a
     assert.deepEqual(postResponse.body, { error: "Method not allowed", method: "POST" });
 });
 
+test("API readiness separates downstream readiness from API liveness", async t => {
+    const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SESSION_SECRET"];
+    const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        for (const key of keys) {
+            if (previous[key] === undefined) delete process.env[key];
+            else process.env[key] = previous[key];
+        }
+        globalThis.fetch = originalFetch;
+    });
+
+    process.env.APP_ORIGIN = "https://school.example";
+    process.env.SUPABASE_URL = "https://supabase.example";
+    process.env.SUPABASE_SECRET_KEY = "test-service-secret";
+    process.env.SESSION_SECRET = "test-session-secret-with-more-than-32-characters";
+
+    globalThis.fetch = async () => new Response(JSON.stringify([{ id: "school-settings" }]), { status: 200 });
+    const readyResponse = responseMock();
+    await healthHandler({ method: "GET", query: { action: "ready" } }, readyResponse);
+    assert.equal(readyResponse.statusCode, 200);
+    assert.equal(readyResponse.body.ok, true);
+    assert.equal(readyResponse.body.checks.database, "ok");
+    assert.equal(readyResponse.body.checks.whatsapp, "not_configured");
+
+    globalThis.fetch = async () => { throw new TypeError("network unavailable"); };
+    const failedReadyResponse = responseMock();
+    await healthHandler({ method: "GET", query: { action: "ready" } }, failedReadyResponse);
+    assert.equal(failedReadyResponse.statusCode, 503);
+    assert.equal(failedReadyResponse.body.ok, false);
+    assert.equal(failedReadyResponse.body.checks.api, "ok");
+    assert.equal(failedReadyResponse.body.checks.database, "error");
+});
+
 test("Admin can create a Siswa login with NISN and class, but face enrollment remains required", async t => {
     const originalFetch = globalThis.fetch;
     const adminToken = signToken({ email: "admin@example.com", name: "Admin", role: "admin" });
