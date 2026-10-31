@@ -38,7 +38,7 @@ test("saved Admin flags are normalized and safety-critical controls remain enabl
     ]), { status: 200 });
 
     const flags = await getFeatureFlags();
-    assert.equal(Object.keys(flags).length, 36);
+    assert.equal(Object.keys(flags).length, 38);
     for (const key of LOCKED_FEATURE_FLAGS) assert.equal(flags[key], true, key);
     assert.equal(flags.parent_notifications, false);
     assert.equal(flags.camera_attendance, false);
