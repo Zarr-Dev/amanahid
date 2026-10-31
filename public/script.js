@@ -1708,7 +1708,7 @@ const ADMIN_FEATURE_COPY = {
             maintenance_banner: ["Banner pemeliharaan", "Menampilkan pengumuman pemeliharaan saat diaktifkan."], public_status_panel: ["Panel status layanan", "Menampilkan status kesiapan layanan yang aman untuk publik."], reduced_motion_support: ["Dukungan reduced motion", "Menghormati preferensi pengurangan animasi perangkat."], language_switcher: ["Pemilih bahasa", "Mengizinkan pergantian bahasa antarmuka."], responsive_layout: ["Tata letak responsif", "Mengaktifkan penyesuaian tampilan desktop dan perangkat seluler."], splash_animation: ["Animasi pembuka", "Mengaktifkan animasi pembuka Amanah ID."],
             gps_accuracy_guard: ["Pemeriksaan akurasi GPS", "Memeriksa batas akurasi lokasi sebelum presensi."], gps_boundary_guard: ["Pengaman batas geofence", "Menolak presensi ketika rentang ketidakpastian GPS memotong batas radius."], geofence_radius_edit: ["Pengubahan radius geofence", "Mengizinkan perubahan radius area sekolah."], school_schedule_rules: ["Aturan jadwal sekolah", "Mengaktifkan zona waktu, jam masuk, dan toleransi terlambat."], privacy_notice: ["Pemberitahuan privasi", "Menampilkan informasi pemrosesan data pribadi dan biometrik."], service_health_panel: ["Panel kesehatan layanan", "Menampilkan status backend dan integrasi."], strict_server_validation: ["Validasi server ketat", "Mewajibkan validasi payload di sisi server."]
         },
-        saving: "Menyimpan perubahan…", saved: "Tersimpan ke server.", loading: "Memuat kebijakan sistem…", loadFailed: "Pengaturan gagal dimuat. Periksa koneksi dan izin Admin.", savingStatus: "Menyimpan perubahan kebijakan ke server…", savedStatus: "Perubahan tersimpan dan dicatat dalam audit.", saveFailed: "Server menolak perubahan. Periksa sesi Admin dan koneksi.", sessionError: "Sesi Admin tidak valid atau akses ditolak.", networkError: (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).networkError, databaseError: "Database/backend gagal menyimpan pengaturan."
+        saving: "Menyimpan perubahan…", saved: "Tersimpan ke server.", loading: "Memuat kebijakan sistem…", loadFailed: "Pengaturan gagal dimuat. Periksa koneksi dan izin Admin.", savingStatus: "Menyimpan perubahan kebijakan ke server…", savedStatus: "Perubahan tersimpan dan dicatat dalam audit.", saveFailed: "Server menolak perubahan. Periksa sesi Admin dan koneksi.", sessionError: "Sesi Admin tidak valid atau akses ditolak.", networkError: "Koneksi terputus atau server tidak merespons.", databaseError: "Database/backend gagal menyimpan pengaturan.", countLoaded: "{enabled} dari {total} kontrol aktif · Tersimpan di Supabase", countSaved: "{enabled} dari {total} kontrol aktif · Perubahan tersimpan dan diaudit", errorStatus: "Gagal menyimpan “{key}”: {reason}", savedToast: "Pengaturan sistem berhasil disimpan."
     },
     en: {
         groups: { attendance: "1. Attendance & biometrics", accounts: "2. Accounts & roles", data: "3. Data & attendance", security: "4. Security & audit", experience: "5. Website experience", location: "6. Location, schedule & governance" },
@@ -1721,7 +1721,7 @@ const ADMIN_FEATURE_COPY = {
             maintenance_banner: ["Maintenance banner", "Show a maintenance notice when enabled."], public_status_panel: ["Public service-status panel", "Show service readiness information safe for public display."], reduced_motion_support: ["Reduced-motion support", "Respect the device's reduced-motion preference."], language_switcher: ["Language selector", "Allow interface-language changes."], responsive_layout: ["Responsive layout", "Enable desktop and mobile layout adaptation."], splash_animation: ["Splash animation", "Enable the Amanah ID opening animation."],
             gps_accuracy_guard: ["GPS accuracy check", "Enforce a location-accuracy limit before attendance."], gps_boundary_guard: ["Geofence boundary guard", "Reject attendance when GPS uncertainty overlaps the geofence boundary."], geofence_radius_edit: ["Edit geofence radius", "Allow changes to the school's geofence radius."], school_schedule_rules: ["School schedule rules", "Enable time zone, entry-time, and late-tolerance settings."], privacy_notice: ["Privacy notice", "Show information about personal and biometric data processing."], service_health_panel: ["Service-health panel", "Show backend and integration status."], strict_server_validation: ["Strict server validation", "Require payload validation on the server."]
         },
-        saving: "Saving changes…", saved: "Saved to the server.", loading: "Loading system policies…", loadFailed: "Could not load settings. Check the connection and Admin access.", savingStatus: "Saving policy changes to the server…", savedStatus: "Changes saved and recorded in the audit log.", saveFailed: "The server rejected the change. Check the Admin session and connection.", sessionError: "The Admin session is invalid or access was denied.", networkError: "The connection was lost or the server did not respond.", databaseError: "The database/backend could not save the settings."
+        saving: "Saving changes…", saved: "Saved to the server.", loading: "Loading system policies…", loadFailed: "Could not load settings. Check the connection and Admin access.", savingStatus: "Saving policy changes to the server…", savedStatus: "Changes saved and recorded in the audit log.", saveFailed: "The server rejected the change. Check the Admin session and connection.", sessionError: "The Admin session is invalid or access was denied.", networkError: "The connection was lost or the server did not respond.", databaseError: "The database/backend could not save the settings.", countLoaded: "{enabled} of {total} controls active · Stored in Supabase", countSaved: "{enabled} of {total} controls active · Changes saved and audited", errorStatus: "Could not save “{key}”: {reason}", savedToast: "System settings saved successfully."
     },
     ar: {
         groups: { attendance: "1. الحضور والقياسات الحيوية", accounts: "2. الحسابات والأدوار", data: "3. البيانات والحضور", security: "4. الأمان والتدقيق", experience: "5. تجربة الموقع", location: "6. الموقع والجدول والحوكمة" },
@@ -1734,7 +1734,7 @@ const ADMIN_FEATURE_COPY = {
             maintenance_banner: ["إشعار الصيانة", "عرض إشعار الصيانة عند التفعيل."], public_status_panel: ["لوحة حالة الخدمات العامة", "عرض معلومات جاهزية الخدمات المسموح بنشرها."], reduced_motion_support: ["دعم تقليل الحركة", "احترام إعداد تقليل الحركة في الجهاز."], language_switcher: ["اختيار اللغة", "السماح بتغيير لغة الواجهة."], responsive_layout: ["تصميم متجاوب", "تفعيل التكيف مع أجهزة الكمبيوتر والهواتف."], splash_animation: ["رسوم شاشة البداية", "تفعيل حركة افتتاح Amanah ID."],
             gps_accuracy_guard: ["فحص دقة GPS", "فرض حد لدقة الموقع قبل تسجيل الحضور."], gps_boundary_guard: ["حماية حدود النطاق الجغرافي", "رفض الحضور عندما يتداخل عدم يقين GPS مع حد النطاق."], geofence_radius_edit: ["تعديل نطاق الموقع", "السماح بتعديل نطاق المدرسة الجغرافي."], school_schedule_rules: ["قواعد جدول المدرسة", "تفعيل المنطقة الزمنية ووقت الدخول وسماح التأخر."], privacy_notice: ["إشعار الخصوصية", "عرض معلومات معالجة البيانات الشخصية والبيومترية."], service_health_panel: ["لوحة صحة الخدمات", "عرض حالة الخادم والتكاملات."], strict_server_validation: ["التحقق الصارم من الخادم", "اشتراط التحقق من البيانات على الخادم."]
         },
-        saving: "جارٍ حفظ التغييرات…", saved: "تم الحفظ على الخادم.", loading: "جارٍ تحميل سياسات النظام…", loadFailed: "تعذر تحميل الإعدادات. تحقق من الاتصال وصلاحيات المسؤول.", savingStatus: "جارٍ حفظ تغييرات السياسات على الخادم…", savedStatus: "تم حفظ التغييرات وتسجيلها في سجل التدقيق.", saveFailed: "رفض الخادم التغيير. تحقق من جلسة المسؤول والاتصال.", sessionError: "جلسة المسؤول غير صالحة أو تم رفض الوصول.", networkError: "انقطع الاتصال أو لم يستجب الخادم.", databaseError: "تعذر على قاعدة البيانات أو الخادم حفظ الإعدادات."
+        saving: "جارٍ حفظ التغييرات…", saved: "تم الحفظ على الخادم.", loading: "جارٍ تحميل سياسات النظام…", loadFailed: "تعذر تحميل الإعدادات. تحقق من الاتصال وصلاحيات المسؤول.", savingStatus: "جارٍ حفظ تغييرات السياسات على الخادم…", savedStatus: "تم حفظ التغييرات وتسجيلها في سجل التدقيق.", saveFailed: "رفض الخادم التغيير. تحقق من جلسة المسؤول والاتصال.", sessionError: "جلسة المسؤول غير صالحة أو تم رفض الوصول.", networkError: "انقطع الاتصال أو لم يستجب الخادم.", databaseError: "تعذر على قاعدة البيانات أو الخادم حفظ الإعدادات.", countLoaded: "تم تفعيل {enabled} من {total} عنصر تحكم · محفوظ في Supabase", countSaved: "تم تفعيل {enabled} من {total} عنصر تحكم · تم الحفظ والتدقيق", errorStatus: "تعذر حفظ “{key}”: {reason}", savedToast: "تم حفظ إعدادات النظام بنجاح."
     }
 };
 
@@ -1762,6 +1762,14 @@ function renderAdminFeatures() {
    return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(featureLabel)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(featureLabel)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
  }).join("")}</section>`).join("");
 }
+function adminFeatureCountStatus(saved = false) {
+ const copy = ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id;
+ const enabled = Object.values(state.adminFeatures || {}).filter(Boolean).length;
+ const total = Object.keys(state.adminFeatures || {}).length;
+ return (saved ? copy.countSaved : copy.countLoaded)
+  .replaceAll("{enabled}", String(enabled))
+  .replaceAll("{total}", String(total));
+}
 async function loadAdminFeatures() {
  const status = $("admin-governance-status");
  if (!status) return;
@@ -1771,7 +1779,7 @@ async function loadAdminFeatures() {
    state.adminFeatures = result.features || {};
    renderAdminFeatures();
    applyAdminFeatureFlags(state.adminFeatures);
-   status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari ${Object.keys(state.adminFeatures).length} kontrol aktif · Tersimpan di Supabase`;
+   status.textContent = adminFeatureCountStatus(false);
  } catch (error) {
    status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).loadFailed;
    console.error("Admin feature controls failed to load:", error);
@@ -1803,8 +1811,8 @@ async function saveAdminFeatureToggle(input) {
    state.adminFeatureStatus[key] = { type: "success", message: (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).saved };
    renderAdminFeatures();
    applyAdminFeatureFlags(state.adminFeatures);
-   if (status) status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari ${Object.keys(state.adminFeatures).length} kontrol aktif · Perubahan tersimpan dan diaudit`;
-   toast("Pengaturan sistem berhasil disimpan.", "success");
+   if (status) status.textContent = adminFeatureCountStatus(true);
+   toast((ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).savedToast, "success");
    window.setTimeout(() => {
      if (state.adminFeatureStatus?.[key]?.type === "success") {
        delete state.adminFeatureStatus[key];
@@ -1824,7 +1832,8 @@ async function saveAdminFeatureToggle(input) {
          : (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).saveFailed;
    state.adminFeatureStatus[key] = { type: "error", message: reason };
    renderAdminFeatures();
-   if (status) status.textContent = `Gagal menyimpan “${key}”: ${reason}`;
+   if (status) status.textContent = (ADMIN_FEATURE_COPY[state.lang] || ADMIN_FEATURE_COPY.id).errorStatus
+     .replaceAll("{key}", key).replaceAll("{reason}", reason);
    toast(reason, "error");
    window.setTimeout(() => {
      if (state.adminFeatureStatus?.[key]?.type === "error") {
