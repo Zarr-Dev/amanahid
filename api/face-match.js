@@ -7,7 +7,8 @@ import { signToken } from "./_lib/admin-auth.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { getFeatureFlags } from "./_lib/features.js";
 
-const FACE_MATCH_THRESHOLD = 0.45;
+const FACE_MATCH_THRESHOLD = 0.42;
+const FACE_AMBIGUITY_MARGIN = 0.05;
 const DESCRIPTOR_LENGTH = 128;
 
 function validSamples(value) {
@@ -96,7 +97,7 @@ export default async function handler(req, res) {
             best && second &&
             best.distance <= FACE_MATCH_THRESHOLD &&
             second.distance <= FACE_MATCH_THRESHOLD &&
-            second.distance - best.distance <= 0.04
+            second.distance - best.distance <= FACE_AMBIGUITY_MARGIN
         );
         const match = Boolean(best && best.distance <= FACE_MATCH_THRESHOLD && !ambiguous);
         const matchedNisn = match ? best.student.nisn : null;
