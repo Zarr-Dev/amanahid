@@ -102,6 +102,17 @@ const EXTRA_T = {
     id: {
         welcomeTitle: "Presensi sekolah, lebih mudah.",
         welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
+        welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
+        loginAccessNote: "Admin, Guru, dan Siswa masuk dari formulir yang sama. Peran ditentukan otomatis berdasarkan akun resmi yang terdaftar.",
+        captchaLabel: "VERIFIKASI SINGKAT", captchaAnswerPlaceholder: "Ketik jawaban",
+        captchaHelp: "Selesaikan tantangan singkat ini. Soal dapat diganti dan selalu diperbarui setelah percobaan login.",
+        captchaRefresh: "Ganti", captchaLoading: "Memuat tantangan keamanan…",
+        captchaUnavailable: "Tantangan keamanan belum tersedia. Periksa koneksi lalu coba lagi.",
+        mockTotalStudents: "Peran akun", mockRegistered: "Admin · Guru · Siswa", mockCheckedIn: "Faktor presensi",
+        mockLatestAttendance: "Alur akses", mockViewAll: "Terintegrasi", mockRoleAdmin: "Administrator",
+        mockRoleAdminDesc: "Akun resmi sekolah", mockRolesUsers: "Guru dan Siswa",
+        mockRolesUsersDesc: "Satu formulir masuk", mockRoleActive: "Aktif",
+        heroFaceVerified: "Pencocokan melalui server", heroSchoolDistance: "GPS geofencing sekolah",
         registeredStudentsHint: "Data wajah terdaftar di Supabase",
         historyDesc: "Riwayat tersimpan di cloud dan dapat diakses lintas perangkat.",
         privacyFirst: "Descriptor wajah, bukan foto",
@@ -109,7 +120,7 @@ const EXTRA_T = {
         heroFeatureFaceGps: "Wajah + GPS",
         heroFeatureNoHardware: "Tanpa mesin tambahan",
         heroFeatureLocation: "Lokasi terverifikasi",
-        heroCta: "Masuk / Coba demo",
+        heroCta: "Masuk ke akun",
         studentCameraStop: "Matikan kamera",
         studentCameraStarting: "Memeriksa lokasi dan menyalakan kamera...",
         allowedRadius: "Radius diizinkan: {radius} m",
@@ -274,6 +285,17 @@ const EXTRA_T = {
     en: {
         welcomeTitle: "School attendance, made simple.",
         welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
+        welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
+        loginAccessNote: "Admins, Teachers, and Students all use the same sign-in form. The system resolves each role from the registered school account.",
+        captchaLabel: "QUICK SECURITY CHECK", captchaAnswerPlaceholder: "Type your answer",
+        captchaHelp: "Solve this short challenge. Refresh it any time; a new one is issued after each login attempt.",
+        captchaRefresh: "Refresh", captchaLoading: "Loading security challenge…",
+        captchaUnavailable: "The security challenge is unavailable. Check your connection and try again.",
+        mockTotalStudents: "Account roles", mockRegistered: "Admin · Teacher · Student", mockCheckedIn: "Attendance factors",
+        mockLatestAttendance: "Access flow", mockViewAll: "Integrated", mockRoleAdmin: "Administrator",
+        mockRoleAdminDesc: "Official school account", mockRolesUsers: "Teachers and Students",
+        mockRolesUsersDesc: "One sign-in form", mockRoleActive: "Active",
+        heroFaceVerified: "Server-verified face matching", heroSchoolDistance: "School GPS geofencing",
         registeredStudentsHint: "Face data stored in Supabase",
         historyDesc: "Attendance history is stored in the cloud and available across devices.",
         privacyFirst: "Face descriptors, not photos",
@@ -281,7 +303,7 @@ const EXTRA_T = {
         heroFeatureFaceGps: "Face + GPS",
         heroFeatureNoHardware: "No extra hardware",
         heroFeatureLocation: "Verified location",
-        heroCta: "Log in / Try demo",
+        heroCta: "Log in",
         studentCameraStop: "Turn camera off",
         studentCameraStarting: "Checking location and starting camera...",
         allowedRadius: "Allowed radius: {radius} m",
@@ -446,6 +468,17 @@ const EXTRA_T = {
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
         welcomeDesc: "تسجل أمانة.id الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
+        welcomeDesc: "تسجل أمانة الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
+        loginAccessNote: "يستخدم المديرون والمعلمون والطلاب نموذج تسجيل الدخول نفسه. يحدد النظام الدور تلقائيًا من حساب المدرسة المسجل.",
+        captchaLabel: "تحقق أمني سريع", captchaAnswerPlaceholder: "اكتب الإجابة",
+        captchaHelp: "أكمل التحدي القصير. يمكنك تغييره، ويتم إصدار تحدٍّ جديد بعد كل محاولة دخول.",
+        captchaRefresh: "تغيير", captchaLoading: "جارٍ تحميل التحدي الأمني…",
+        captchaUnavailable: "التحدي الأمني غير متاح. تحقق من الاتصال وحاول مرة أخرى.",
+        mockTotalStudents: "أدوار الحساب", mockRegistered: "مدير · معلّم · طالب", mockCheckedIn: "عوامل الحضور",
+        mockLatestAttendance: "مسار الدخول", mockViewAll: "متكامل", mockRoleAdmin: "المدير",
+        mockRoleAdminDesc: "حساب المدرسة الرسمي", mockRolesUsers: "المعلمون والطلاب",
+        mockRolesUsersDesc: "نموذج دخول واحد", mockRoleActive: "نشط",
+        heroFaceVerified: "مطابقة الوجه عبر الخادم", heroSchoolDistance: "تحديد نطاق المدرسة عبر GPS",
         registeredStudentsHint: "بيانات الوجه محفوظة في Supabase",
         historyDesc: "يُحفظ سجل الحضور في السحابة ويمكن الوصول إليه من أجهزة متعددة.",
         privacyFirst: "واصفات الوجه، وليس الصور",
@@ -453,7 +486,7 @@ const EXTRA_T = {
         heroFeatureFaceGps: "الوجه + GPS",
         heroFeatureNoHardware: "دون أجهزة إضافية",
         heroFeatureLocation: "موقع موثّق",
-        heroCta: "دخول / تجربة العرض",
+        heroCta: "تسجيل الدخول",
         studentCameraStop: "إيقاف الكاميرا",
         studentCameraStarting: "جارٍ التحقق من الموقع وتشغيل الكاميرا...",
         allowedRadius: "النطاق المسموح: {radius} م",
@@ -652,7 +685,8 @@ const state = {
     userMarker: null,
     schoolCircle: null,
     toastTimer: null,
-    adminCaptchaAnswer: null,
+    loginCaptchaToken: null,
+    loginCaptchaRequestId: 0,
     adminSettingsMap: null,
     adminSettingsMarker: null,
     adminSettingsCircle: null,
@@ -900,17 +934,43 @@ function toast(message, type = "info") {
     state.toastTimer = setTimeout(() => el.classList.remove("show"), type === "error" ? 5600 : 4200);
 }
 
-function refreshAdminCaptcha() {
-    const question = $("admin-captcha-question");
-    const answer = $("admin-captcha-answer");
+async function refreshLoginCaptcha() {
+    const question = $("login-captcha-question");
+    const answer = $("login-captcha-answer");
+    const refresh = $("login-captcha-refresh");
     if (!question || !answer) return;
-    const left = Math.floor(Math.random() * 8) + 2;
-    const right = Math.floor(Math.random() * 8) + 1;
-    state.adminCaptchaAnswer = left + right;
-    question.textContent = "Verifikasi keamanan: " + left + " + " + right + " = ?";
+
+    const requestId = ++state.loginCaptchaRequestId;
+    state.loginCaptchaToken = null;
+    if (refresh) refresh.disabled = true;
+    question.textContent = tr("captchaLoading");
     answer.value = "";
     answer.setCustomValidity("");
+    const help = $("login-captcha-help");
+    if (help) help.textContent = tr("captchaHelp");
+
+    try {
+        const challenge = await cloudRequest(
+            `/api/auth/login?action=captcha&lang=${encodeURIComponent(state.lang)}`,
+            { timeoutMs: 10_000 }
+        );
+        if (requestId !== state.loginCaptchaRequestId) return;
+        if (typeof challenge?.token !== "string" || typeof challenge?.question !== "string" ||
+            challenge.token.length < 20 || challenge.question.length > 180) {
+            throw new Error(tr("captchaUnavailable"));
+        }
+        state.loginCaptchaToken = challenge.token;
+        question.textContent = challenge.question;
+    } catch (error) {
+        if (requestId !== state.loginCaptchaRequestId) return;
+        console.warn("Could not load login CAPTCHA:", error);
+        question.textContent = tr("captchaUnavailable");
+        if (help) help.textContent = tr("captchaUnavailable");
+    } finally {
+        if (requestId === state.loginCaptchaRequestId && refresh) refresh.disabled = false;
+    }
 }
+
 
 function exportTableCsv(tbodyId, filename) {
     const tbody = $(tbodyId);
@@ -1229,6 +1289,7 @@ function setLanguage(lang) {
         if (text) el.setAttribute("aria-label", text);
     });
     document.title = `${tr("brandName")} | ${tr("welcomeTitle")}`;
+    if (!$("auth-modal")?.classList.contains("hidden")) void refreshLoginCaptcha();
     document.querySelectorAll(".lang-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.lang === lang);
     });
@@ -1398,8 +1459,6 @@ function showAuth({ clearSession = true } = {}) {
     if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
     if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
     closeAuthModal();
-    $("admin-login-modal")?.classList.add("hidden");
-    if ($("admin-login-form")) $("admin-login-form").reset();
     if ($("login-password")) $("login-password").value = "";
     $("dashboard-guru")?.classList.add("hidden");
     $("dashboard-siswa")?.classList.add("hidden");
@@ -1660,7 +1719,6 @@ function hideSplashScreen() {
 function applyRuntimeFeatureFlags(features = {}) {
     const setHidden = (id, hidden) => $(id)?.classList.toggle("hidden", Boolean(hidden));
     setHidden("maintenance-banner", features.maintenance_banner !== true);
-    setHidden("public-status-panel", features.public_status_panel === false);
     setHidden("btn-export", features.attendance_export === false);
 
     // Navigation owns normal view visibility; only force-hide a disabled view.
@@ -1680,9 +1738,6 @@ function applyRuntimeFeatureFlags(features = {}) {
     document.querySelectorAll(".language-row").forEach(element => {
         element.classList.toggle("hidden", features.language_switcher === false);
     });
-    document.querySelectorAll("#open-admin-login, #open-admin-login-hero").forEach(element => {
-        element.classList.toggle("hidden", features.admin_login === false);
-    });
     const coreAttendanceOff = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"]
         .some(key => features[key] === false);
     if (coreAttendanceOff) {
@@ -1691,21 +1746,6 @@ function applyRuntimeFeatureFlags(features = {}) {
     }
     if (features.splash_animation === false) hideSplashScreen();
 
-    const publicStatus = $("public-status-text");
-    if (features.public_status_panel !== false && publicStatus && !state.publicStatusCheckStarted) {
-        state.publicStatusCheckStarted = true;
-        publicStatus.textContent = "Memeriksa API dan database…";
-        void cloudRequest("/api/ready").then(health => {
-            const ready = health?.ok === true && health?.checks?.database === "ok";
-            $("public-status-panel")?.classList.toggle("is-error", !ready);
-            publicStatus.textContent = ready
-                ? "Layanan Amanah ID dan database beroperasi."
-                : "Sebagian layanan Amanah ID sedang tidak siap.";
-        }).catch(() => {
-            $("public-status-panel")?.classList.add("is-error");
-            publicStatus.textContent = "Status layanan belum dapat diverifikasi.";
-        });
-    }
 }
 
 const ADMIN_FEATURE_COPY = {
@@ -4163,6 +4203,7 @@ function openAuthModal(trigger = document.activeElement) {
     $("auth-modal-title").textContent = `${tr("login")} Amanah ID`;
     $("auth-modal").classList.remove("hidden");
     document.body.classList.add("auth-modal-open");
+    void refreshLoginCaptcha();
     requestAnimationFrame(() => $("login-email").focus());
 }
 
@@ -4170,14 +4211,10 @@ function closeAuthModal() {
     const modal = $("auth-modal");
     modal?.classList.add("hidden");
     document.body.classList.remove("auth-modal-open");
+    state.loginCaptchaToken = null;
+    state.loginCaptchaRequestId++;
     if (authModalTrigger?.isConnected && !authModalTrigger.hidden) authModalTrigger.focus();
     authModalTrigger = null;
-}
-
-function returnToUserLogin() {
-    $("admin-login-modal").classList.add("hidden");
-    $("admin-login-form").reset();
-    openAuthModal($("tab-login"));
 }
 
 function cssTimeInMs(value) {
@@ -4291,93 +4328,56 @@ function setupEvents() {
         });
     });
     $("tab-login").addEventListener("click", () => openAuthModal($("tab-login")));
-    $("open-admin-login-hero").addEventListener("click", () => {
-        $("admin-login-form").reset();
-        refreshAdminCaptcha();
-        $("admin-login-modal").classList.remove("hidden");
-        document.body.classList.add("auth-modal-open");
-        requestAnimationFrame(() => $("admin-login-email").focus());
-    });
     $("close-auth-modal").addEventListener("click", closeAuthModal);
     $("auth-modal").addEventListener("click", event => {
         if (event.target === $("auth-modal")) closeAuthModal();
     });
     document.addEventListener("keydown", event => {
-        if (event.key !== "Escape") return;
-        if (!$("admin-login-modal").classList.contains("hidden")) returnToUserLogin();
-        else if (!$("auth-modal").classList.contains("hidden")) closeAuthModal();
+        if (event.key === "Escape" && !$("auth-modal").classList.contains("hidden")) closeAuthModal();
     });
     $("model-retry").addEventListener("click", () => location.reload());
-    $("open-admin-login").addEventListener("click", event => {
-        event.preventDefault();
-        $("auth-modal").classList.add("hidden");
-        $("admin-login-form").reset();
-        refreshAdminCaptcha();
-        $("admin-login-modal").classList.remove("hidden");
-        document.body.classList.add("auth-modal-open");
-        requestAnimationFrame(() => $("admin-login-email").focus());
-    });
-    $("admin-login-close").addEventListener("click", returnToUserLogin);
-    $("admin-login-back").addEventListener("click", returnToUserLogin);
-    $("admin-login-modal").addEventListener("click", event => {
-        if (event.target === $("admin-login-modal")) returnToUserLogin();
-    });
+    $("login-captcha-refresh").addEventListener("click", () => void refreshLoginCaptcha());
 
     $("login-form").addEventListener("submit", async event => {
         event.preventDefault();
         const form = event.currentTarget;
         if (form.querySelector('button[type="submit"]')?.disabled) return;
+        if (!state.loginCaptchaToken) {
+            toast(tr("captchaUnavailable"), "error");
+            void refreshLoginCaptcha();
+            return;
+        }
+
         const email = $("login-email").value.trim().toLowerCase();
         const password = $("login-password").value;
+        const captchaAnswer = $("login-captcha-answer").value.trim();
         setAuthFormBusy(form, true);
         try {
             const result = await cloudRequest("/api/auth/login", {
                 method: "POST",
-                body: { email, password: await passwordDigest(password) }
-            });
-            await showApp({ ...result.user, token: result.token });
-        } catch (error) {
-            console.error("Login failed:", error);
-            toast(error.message || tr("loginFailed"), "error");
-        } finally {
-            setAuthFormBusy(form, false);
-        }
-    });
-
-    $("admin-login-form").addEventListener("submit", async event => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        if (form.querySelector('button[type="submit"]')?.disabled) return;
-        if (Number($("admin-captcha-answer").value) !== state.adminCaptchaAnswer) {
-            $("admin-login-password").value = "";
-            toast("Jawaban verifikasi tidak sesuai. Soal telah diperbarui.", "error");
-            refreshAdminCaptcha();
-            $("admin-captcha-answer").focus();
-            return;
-        }
-        setAuthFormBusy(form, true);
-        try {
-            const result = await cloudRequest("/api/admin/login", {
-                method: "POST",
                 body: {
-                    email: $("admin-login-email").value.trim().toLowerCase(),
-                    password: await passwordDigest($("admin-login-password").value),
+                    email,
+                    password: await passwordDigest(password),
+                    captchaToken: state.loginCaptchaToken,
+                    captchaAnswer
                 }
             });
-            $("admin-login-modal").classList.add("hidden");
+            state.loginCaptchaToken = null;
             await showApp({ ...result.user, token: result.token });
+            closeAuthModal();
             form.reset();
         } catch (error) {
-            console.error("Admin login failed:", error);
-            $("admin-login-modal")?.classList.remove("hidden");
-            $("admin-login-password").value = "";
-            toastAdminError(error);
+            console.error("Login failed:", error);
+            $("login-password").value = "";
+            const message = String(error?.message || "");
+            toast(message.startsWith("CAPTCHA_INVALID:")
+                ? message.replace(/^CAPTCHA_INVALID:\s*/, "")
+                : (message || tr("loginFailed")), "error");
         } finally {
-            refreshAdminCaptcha();
+            if (!$("auth-modal").classList.contains("hidden")) await refreshLoginCaptcha();
             setAuthFormBusy(form, false);
         }
     });
-    $("admin-captcha-refresh").addEventListener("click", refreshAdminCaptcha);
 
     document.querySelectorAll(".lang-btn").forEach(btn => {
         btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
