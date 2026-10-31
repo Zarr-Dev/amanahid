@@ -2,6 +2,7 @@ import { signToken, verifyPassword } from "../_lib/admin-auth.js";
 import { writeAuditLog } from "../_lib/audit.js";
 import { getMissingAuthConfiguration, isAllowedOrigin, jsonError, rateLimit, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
+import { getFeatureFlags, featureDisabled } from "../_lib/features.js";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -24,6 +25,8 @@ export default async function handler(req, res) {
     if (!validation.valid) return jsonError(res, 400, validation.error);
 
     try {
+        const features = await getFeatureFlags();
+        if (!features.admin_login) return featureDisabled(res, "admin_login", "Login Admin sedang dinonaktifkan oleh administrator");
         const email = body.email.trim().toLowerCase();
         const resultRows = await supabaseRequest(
             `admin_users?select=email,name,password_hash,is_active&email=eq.${encodeURIComponent(email)}&limit=1`

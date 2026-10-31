@@ -3,6 +3,7 @@ import { authorizeAdmin } from "../_lib/admin-api.js";
 import { writeAuditLog } from "../_lib/audit.js";
 import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
+import { getFeatureFlags, featureDisabled } from "../_lib/features.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -50,6 +51,9 @@ export default async function handler(req, res) {
                 class_name: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ }
             };
             if (!validBody(res, schema, body)) return;
+            const features = await getFeatureFlags();
+            if (body.role === "guru" && !features.teacher_account_creation) return featureDisabled(res, "teacher_account_creation", "Pembuatan akun Guru sedang dinonaktifkan");
+            if (body.role === "siswa" && !features.student_account_creation) return featureDisabled(res, "student_account_creation", "Pembuatan akun Siswa sedang dinonaktifkan");
             if (!validatePassword(body.password)) return jsonError(res, 400, "Password must contain 8 to 128 safe characters");
 
             const email = body.email.trim().toLowerCase();
@@ -156,6 +160,8 @@ export default async function handler(req, res) {
             return res.status(200).json({ user: updated });
         }
         if (req.method === "DELETE") {
+            const features = await getFeatureFlags();
+            if (!features.account_deactivation) return featureDisabled(res, "account_deactivation", "Penonaktifan akun sedang dinonaktifkan");
             const body = req.body || {};
             if (!validBody(res, {
                 id: { type: "string", required: true, max: 36, pattern: UUID },

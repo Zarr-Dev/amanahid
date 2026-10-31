@@ -2,6 +2,7 @@ import { signToken, verifyPassword } from "../_lib/admin-auth.js";
 import { writeAuditLog } from "../_lib/audit.js";
 import { getMissingAuthConfiguration, isAllowedOrigin, jsonError, rateLimit, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
+import { getFeatureFlags, featureDisabled } from "../_lib/features.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -35,6 +36,7 @@ export default async function handler(req, res) {
 
     const email = body.email.trim().toLowerCase();
     try {
+        const features = await getFeatureFlags();
         const teacherResult = await supabaseRequest(
             `teachers?select=email,name,password_hash,is_active&email=eq.${encodeURIComponent(email)}&limit=1`
         );
@@ -43,6 +45,8 @@ export default async function handler(req, res) {
             `students?select=email,name,nisn,password_hash,is_active&email=eq.${encodeURIComponent(email)}&limit=1`
         );
         const students = Array.isArray(studentResult) ? studentResult.filter(Boolean) : [];
+        if (teachers.length && !features.teacher_login) return featureDisabled(res, "teacher_login", "Login Guru sedang dinonaktifkan oleh administrator");
+        if (!teachers.length && !features.student_login) return featureDisabled(res, "student_login", "Login Siswa sedang dinonaktifkan oleh administrator");
         const user = teachers[0] ?? students[0] ?? null;
         const role = teachers.length ? "guru" : "siswa";
         if (!user || !user.is_active || !user.password_hash ||

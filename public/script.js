@@ -1,6 +1,11 @@
 
 "use strict";
 
+// Shared DOM lookup helper used by all UI initialization and event handlers.
+function $(id) {
+    return document.getElementById(id);
+}
+
 // School configuration and in-memory state
 let SCHOOL_LOCATION = {
     lat: -6.253590517740096,
@@ -207,6 +212,7 @@ const EXTRA_T = {
         testOtherRun: "Periksa layanan",
         testOtherStatus: "Pemeriksaan belum dijalankan.",
         testOtherPass: "Layanan merespons.",
+        testOtherNotConfigured: "Belum dikonfigurasi.",
         testOtherFail: "Layanan tidak merespons.",
         testPhoneInvalid: "Masukkan nomor uji yang valid dalam format 628xxxxxxxxxx.",
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
@@ -345,6 +351,7 @@ const EXTRA_T = {
         testOtherRun: "Check services",
         testOtherStatus: "Checks have not been run.",
         testOtherPass: "Service responded.",
+        testOtherNotConfigured: "Not configured.",
         testOtherFail: "Service did not respond.",
         testPhoneInvalid: "Enter a valid test number in 628xxxxxxxxxx format.",
         testWhatsappNoConsent: "Confirm consent before sending the test message.",
@@ -483,6 +490,7 @@ const EXTRA_T = {
         testOtherRun: "فحص الخدمات",
         testOtherStatus: "لم يتم إجراء الفحوصات بعد.",
         testOtherPass: "استجابت الخدمة.",
+        testOtherNotConfigured: "غير مُعدّ.",
         testOtherFail: "لم تستجب الخدمة.",
         testPhoneInvalid: "أدخل رقم اختبار صالحًا بالتنسيق 628xxxxxxxxxx.",
         testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار.",
@@ -1335,12 +1343,125 @@ async function loadAdminDashboard() {
         $("admin-attendance-today").textContent = stats?.attendance_today ?? 0;
         $("admin-attendance-week").textContent = stats?.attendance_week ?? 0;
         $("admin-active-week").textContent = stats?.active_users_week ?? 0;
-        $("health-supabase").textContent = stats?.health?.supabase ?? "unknown";
-        $("health-vercel").textContent = stats?.health?.vercel ?? "unknown";
-        $("health-fonnte").textContent = stats?.health?.fonnte ?? "unknown";
+        try {
+            const health = await cloudRequest("/api/ready");
+            $("health-supabase").textContent = health?.checks?.database ?? "unknown";
+            $("health-vercel").textContent = health?.ok ? "ok" : "error";
+            $("health-fonnte").textContent = health?.checks?.whatsapp ?? "not_configured";
+        } catch {
+            $("health-supabase").textContent = "error";
+            $("health-vercel").textContent = "error";
+            $("health-fonnte").textContent = "unknown";
+        }
     } catch (error) {
         console.error("Admin dashboard could not load:", error);
         toastAdminError(error);
+    }
+}
+
+const LOCKED_ADMIN_FEATURES = new Set([
+    "admin_audit_log", "duplicate_attendance_block", "face_sample_limit", "gps_accuracy_guard",
+    "rate_limiting", "session_expiry", "origin_validation", "strict_server_validation",
+    "reduced_motion_support", "responsive_layout", "privacy_notice"
+]);
+
+function updateAdminCreationControls() {
+    const roleSelect = $("admin-user-role");
+    const form = $("admin-user-form");
+    if (!roleSelect || !form) return;
+    const features = state.adminFeatures || {};
+    const guru = roleSelect.querySelector('option[value="guru"]');
+    const siswa = roleSelect.querySelector('option[value="siswa"]');
+    if (guru) guru.disabled = features.teacher_account_creation === false;
+    if (siswa) siswa.disabled = features.student_account_creation === false;
+    const available = [guru, siswa].filter(option => option && !option.disabled);
+    if (roleSelect.selectedOptions[0]?.disabled && available[0]) roleSelect.value = available[0].value;
+    roleSelect.disabled = available.length === 0;
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit) submit.disabled = available.length === 0 || roleSelect.selectedOptions[0]?.disabled === true;
+}
+
+function applyAdminFeatureFlags(features = {}) {
+    const hide = (id, hidden) => $(id)?.classList.toggle("hidden", Boolean(hidden));
+    hide("admin-export-users", features.admin_account_export === false);
+    hide("admin-service-health-panel", features.service_health_panel === false);
+    hide("admin-test-whatsapp-card", features.parent_notifications === false);
+
+    const profileForm = $("admin-profile-form");
+    if (profileForm) {
+        const disabled = features.admin_password_change === false;
+        profileForm.querySelectorAll("input, button").forEach(element => { element.disabled = disabled; });
+        profileForm.setAttribute("aria-disabled", String(disabled));
+    }
+    const deactivateDisabled = features.account_deactivation === false;
+    $("admin-users-tbody")?.querySelectorAll("[data-admin-disable]").forEach(button => {
+        button.disabled = deactivateDisabled || button.dataset.active === "false";
+    });
+    const radius = $("admin-setting-radius");
+    if (radius) radius.disabled = features.geofence_radius_edit === false;
+    for (const id of ["admin-setting-timezone", "admin-setting-entry-time", "admin-setting-tolerance"]) {
+        const element = $(id);
+        if (element) element.disabled = features.school_schedule_rules === false;
+    }
+    updateAdminCreationControls();
+}
+
+function hideSplashScreen() {
+    const splash = $("splash-screen");
+    if (!splash) return;
+    clearSplashTimers();
+    splash.classList.add("is-leaving", "hidden");
+    splash.setAttribute("aria-hidden", "true");
+}
+
+function applyRuntimeFeatureFlags(features = {}) {
+    const setHidden = (id, hidden) => $(id)?.classList.toggle("hidden", Boolean(hidden));
+    setHidden("maintenance-banner", features.maintenance_banner !== true);
+    setHidden("public-status-panel", features.public_status_panel === false);
+    setHidden("btn-export", features.attendance_export === false);
+
+    // Navigation owns normal view visibility; only force-hide a disabled view.
+    if (features.attendance_history === false) {
+        $("view-database")?.classList.add("hidden");
+        $("view-s-history")?.classList.add("hidden");
+    }
+    if (features.face_enrollment === false || features.student_account_creation === false) {
+        $("view-formulir")?.classList.add("hidden");
+    }
+    document.querySelectorAll('[data-view="view-database"], [data-view="view-s-history"]').forEach(element => {
+        element.classList.toggle("hidden", features.attendance_history === false);
+    });
+    document.querySelectorAll('[data-view="view-formulir"]').forEach(element => {
+        element.classList.toggle("hidden", features.face_enrollment === false || features.student_account_creation === false);
+    });
+    document.querySelectorAll(".language-row").forEach(element => {
+        element.classList.toggle("hidden", features.language_switcher === false);
+    });
+    document.querySelectorAll("#open-admin-login, #open-admin-login-hero").forEach(element => {
+        element.classList.toggle("hidden", features.admin_login === false);
+    });
+    const coreAttendanceOff = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"]
+        .some(key => features[key] === false);
+    if (coreAttendanceOff) {
+        if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
+        if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
+    }
+    if (features.splash_animation === false) hideSplashScreen();
+
+    const publicStatus = $("public-status-text");
+    if (features.public_status_panel !== false && publicStatus && !state.publicStatusCheckStarted) {
+        state.publicStatusCheckStarted = true;
+        publicStatus.textContent = "Memeriksa API dan database…";
+        void cloudRequest("/api/ready").then(health => {
+            const ready = health?.ok === true && health?.checks?.database === "ok";
+            $("public-status-panel")?.classList.toggle("is-error", !ready);
+            publicStatus.textContent = ready
+                ? "Layanan Amanah ID dan database beroperasi."
+                : "Sebagian layanan Amanah ID sedang tidak siap.";
+        }).catch(() => {
+            $("public-status-panel")?.classList.add("is-error");
+            publicStatus.textContent = "Status layanan belum dapat diverifikasi.";
+        });
     }
 }
 
@@ -1358,12 +1479,12 @@ function renderAdminFeatures() {
  const features = state.adminFeatures || {};
  const feedback = state.adminFeatureStatus || {};
  root.innerHTML = ADMIN_FEATURE_GROUPS.map(group => `<section class="admin-governance-category"><h4>${safeText(group.title)}</h4>${group.items.map(([key,label,description]) => {
-   const locked = ["admin_audit_log","rate_limiting","session_expiry","origin_validation","strict_server_validation"].includes(key);
+   const locked = LOCKED_ADMIN_FEATURES.has(key);
    const checked = locked || features[key] !== false;
    const detail = feedback[key]?.message || (locked ? description + " (wajib aktif; tidak dapat dinonaktifkan)." : description);
    const phase = feedback[key]?.type || "";
    const icon = phase === "pending" ? '<span class="feature-spinner" aria-hidden="true"></span>' : phase === "success" ? '<span class="feature-result feature-result-ok" aria-hidden="true">✓</span>' : phase === "error" ? '<span class="feature-result feature-result-error" aria-hidden="true">!</span>' : "";
-   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<span class="admin-switch"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></span></span></div>`;
+   return `<div class="admin-governance-control ${phase === "error" ? "has-error" : ""}"><label for="feature-${key}">${safeText(label)}<small class="feature-description ${phase === "error" ? "feature-error-text" : ""}" id="feature-help-${key}" aria-live="polite">${safeText(detail)}</small></label><span class="admin-switch-wrap">${icon}<label class="admin-switch" for="feature-${key}"><input id="feature-${key}" type="checkbox" data-feature-key="${key}" ${checked ? "checked" : ""} ${locked || phase === "pending" ? "disabled" : ""} aria-label="${safeText(label)}" aria-describedby="feature-help-${key}"><span class="admin-switch-track"></span></label></span></div>`;
  }).join("")}</section>`).join("");
 }
 async function loadAdminFeatures() {
@@ -1374,6 +1495,7 @@ async function loadAdminFeatures() {
    const result = await cloudRequest("/api/admin/settings?action=features");
    state.adminFeatures = result.features || {};
    renderAdminFeatures();
+   applyAdminFeatureFlags(state.adminFeatures);
    status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Tersimpan di Supabase`;
  } catch (error) {
    status.textContent = "Pengaturan gagal dimuat. Periksa konfigurasi backend dan izin Admin.";
@@ -1401,8 +1523,11 @@ async function saveAdminFeatureToggle(input) {
      if (item?.type === "pending") saved[pendingKey] = state.adminFeatures[pendingKey];
    }
    state.adminFeatures = saved;
+   state.runtimeFeatures = { ...(state.runtimeFeatures || {}), ...saved };
+   applyRuntimeFeatureFlags(state.runtimeFeatures);
    state.adminFeatureStatus[key] = { type: "success", message: "Tersimpan ke server." };
    renderAdminFeatures();
+   applyAdminFeatureFlags(state.adminFeatures);
    if (status) status.textContent = `${Object.values(state.adminFeatures).filter(Boolean).length} dari 36 kontrol aktif · Perubahan tersimpan dan diaudit`;
    toast("Pengaturan sistem berhasil disimpan.", "success");
    window.setTimeout(() => {
@@ -1413,6 +1538,7 @@ async function saveAdminFeatureToggle(input) {
    }, 3000);
  }).catch(error => {
    state.adminFeatures[key] = previous;
+   applyAdminFeatureFlags(state.adminFeatures);
    const raw = String(error?.message || "");
    const reason = /401|403|unauthori|forbidden|session|sesi/i.test(raw)
      ? "Sesi Admin tidak valid atau akses ditolak."
@@ -1599,17 +1725,43 @@ async function testAdminGps() {
 async function runAdminServiceChecks() {
     const root = $("admin-test-services-results");
     root.textContent = tr("testServiceChecking");
-    const checks = [
-        [tr("testServiceApi"), async () => await cloudRequest("/api")],
-        [tr("testServiceFonnte"), async () => await cloudRequest("/api/admin/test-tools")]
-    ];
-    const results = await Promise.all(checks.map(async ([name, run]) => {
-        try { await run(); return { name, ok: true }; }
-        catch { return { name, ok: false }; }
-    }));
-    root.innerHTML = results.map(item => '<div class="admin-test-service-row"><span>' + safeText(item.name) +
-        '</span><strong class="' + (item.ok ? "is-ok" : "is-error") + '">' +
-        safeText(item.ok ? tr("testOtherPass") : tr("testOtherFail")) + '</strong></div>').join("");
+    const results = [];
+    try {
+        const health = await cloudRequest("/api/ready");
+        results.push({
+            name: "Vercel API + Supabase",
+            state: health?.ok === true && health?.checks?.database === "ok" ? "ready" : "error"
+        });
+    } catch {
+        results.push({ name: "Vercel API + Supabase", state: "error" });
+    }
+    try {
+        const tools = await cloudRequest("/api/admin/test-tools");
+        const configured = tools?.fonnte_configured === true && tools?.allowlist_configured === true;
+        results.push({
+            name: "Fonnte WhatsApp + allowlist",
+            state: configured ? "ready" : "not_configured"
+        });
+    } catch {
+        results.push({ name: "Fonnte WhatsApp + allowlist", state: "error" });
+    }
+    try {
+        const flags = await cloudRequest("/api?action=features");
+        results.push({
+            name: "Konfigurasi feature flags",
+            state: flags?.features && typeof flags.features === "object" ? "ready" : "error"
+        });
+    } catch {
+        results.push({ name: "Konfigurasi feature flags", state: "error" });
+    }
+    root.innerHTML = results.map(item => {
+        const css = item.state === "ready" ? "is-ok"
+            : item.state === "not_configured" ? "is-not-configured" : "is-error";
+        const message = item.state === "ready" ? tr("testOtherPass")
+            : item.state === "not_configured" ? tr("testOtherNotConfigured") : tr("testOtherFail");
+        return '<div class="admin-test-service-row"><span>' + safeText(item.name) +
+            '</span><strong class="' + css + '">' + safeText(message) + '</strong></div>';
+    }).join("");
 }
 
 async function loadAdminUsers() {
@@ -2026,6 +2178,12 @@ function updateStudentProfile() {
     $("student-profile-class").textContent = student?.className || "—";
 }
 
+function attendanceStatusLabel(record) {
+    if (record?.status !== "late") return tr("attendance");
+    const lang = String(document.documentElement.lang || "id").toLowerCase();
+    return lang.startsWith("en") ? "Late" : lang.startsWith("ar") ? "متأخر" : "Terlambat";
+}
+
 function renderStudentHistory() {
     const user = state.user;
     const from = $("student-date-start").value;
@@ -2038,7 +2196,7 @@ function renderStudentHistory() {
             <td>${index + 1}</td>
             <td>${safeText(formatDate(item.date))}</td>
             <td>${safeText(item.time)}</td>
-            <td><span class="status-pill">${safeText(tr("attendance"))}</span></td>
+            <td><span class="status-pill">${safeText(attendanceStatusLabel(item))}</span></td>
             <td>${safeText(tr("methodFaceGps"))}</td>
             <td>${Math.round(item.confidence * 100)}%</td>
         </tr>`).join("");
@@ -2061,7 +2219,7 @@ function renderDatabase() {
       <td>${safeText(a.nisn)}</td>
       <td>${safeText(a.name)}</td>
       <td>${safeText(a.className)}</td>
-      <td><span class="status-pill">${safeText(tr("attendance"))}</span></td>
+      <td><span class="status-pill">${safeText(attendanceStatusLabel(a))}</span></td>
       <td>${safeText(formatDate(a.date))}</td>
       <td>${safeText(a.time)}</td>
       <td>${safeText(tr("methodFaceGps"))}</td>
@@ -2090,13 +2248,17 @@ function renderStudentList() {
 }
 
 function exportCsv() {
+    if (state.runtimeFeatures?.attendance_export === false) {
+        toast("Ekspor presensi sedang dinonaktifkan oleh administrator.", "error");
+        return;
+    }
     if (!state.attendance.length && !state.students.length) {
         toast(tr("emptyCsv"), "error");
         return;
     }
     const headers = ["NISN", "Nama", "Kelas", "Status", "Tanggal", "Waktu", "Metode", "Keyakinan"];
     const lines = [headers, ...state.attendance.map(a => [
-        a.nisn, a.name, a.className, tr("attendance"), a.date, a.time, tr("methodFaceGps"), `${Math.round(a.confidence * 100)}%`
+        a.nisn, a.name, a.className, attendanceStatusLabel(a), a.date, a.time, tr("methodFaceGps"), `${Math.round(a.confidence * 100)}%`
     ])];
     const csv = "\uFEFF" + lines.map(row => row.map(v => `"${String(v ?? "").replaceAll('"', '""')}"`).join(",")).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -2482,6 +2644,7 @@ async function loadRuntimeFeatures() {
  const response = await cloudRequest("/api?action=features");
  if (!response?.features || typeof response.features !== "object") throw new Error("Runtime feature configuration is unavailable");
  state.runtimeFeatures = response.features;
+ applyRuntimeFeatureFlags(state.runtimeFeatures);
  return state.runtimeFeatures;
 }
 async function startAttendanceCamera() {
@@ -3646,6 +3809,7 @@ function cssTimeInMs(value) {
 function initSplashScreen() {
     const splash = $("splash-screen");
     if (!splash || splash.classList.contains("hidden")) return;
+    if (state.runtimeFeatures?.splash_animation === false) return hideSplashScreen();
     clearSplashTimers();
     const mark = splash.querySelector(".splash-mark");
     const brand = splash.querySelector(".splash-text");
@@ -3995,6 +4159,7 @@ function setupEvents() {
     $("admin-export-users").addEventListener("click", () => exportTableCsv("admin-users-tbody", "amanah-id-daftar-akun.csv"));
     $("admin-export-audit").addEventListener("click", () => exportTableCsv("admin-audit-tbody", "amanah-id-audit-aktivitas.csv"));
     $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
+    $("admin-user-role")?.addEventListener("change", updateAdminCreationControls);
     $("admin-governance-controls")?.addEventListener("change", event => {
         const input = event.target.closest("input[data-feature-key]");
         if (input) void saveAdminFeatureToggle(input);
@@ -4279,6 +4444,8 @@ function initialize() {
     } catch (error) {
         console.error("Language initialization failed:", error);
     }
+
+    void loadRuntimeFeatures().catch(error => console.warn("Runtime feature flags could not be loaded during startup:", error));
 
     try {
         if ($("absence-date")) $("absence-date").value = localDateKey();

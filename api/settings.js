@@ -10,6 +10,7 @@ import {
 } from "./_lib/supabase.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
+import { getFeatureFlags, publicFeatureFlags, featureDisabled } from "./_lib/features.js";
 
 const SCHOOL_SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -22,19 +23,74 @@ function isValidSettings({ lat, lng, radius }) {
 
 export default async function handler(req, res) {
     const action = req.query?.action;
+    // Liveness endpoint: confirms the function is running without requiring
+    // database credentials or a live downstream dependency.
     if (action === "health") {
         if (req.method !== "GET" && req.method !== "HEAD") {
             res.setHeader("Allow", "GET, HEAD");
             return res.status(405).json({ error: "Method not allowed", method: req.method });
         }
         const missing = getMissingAuthConfiguration();
+        const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "")
+            .split(",").map(value => value.replace(/\D/g, ""))
+            .filter(value => /^628\d{8,13}$/.test(value));
         const payload = {
             ok: true,
             service: "Amanah.id API",
             runtime: process.version,
+            checks: {
+                api: "ok",
+                configuration: missing.length ? "missing" : "ok",
+                database: "not_checked",
+                whatsapp: process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured"
+            },
             authentication: { configured: missing.length === 0, missing }
         };
         return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
+    }
+
+    // Readiness endpoint: checks required server configuration and an actual
+    // Supabase round-trip. WhatsApp is optional and never blocks attendance readiness.
+    if (action === "ready") {
+        if (req.method !== "GET" && req.method !== "HEAD") {
+            res.setHeader("Allow", "GET, HEAD");
+            return res.status(405).json({ error: "Method not allowed", method: req.method });
+        }
+        const missing = getMissingAuthConfiguration();
+        const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "")
+            .split(",").map(value => value.replace(/\D/g, ""))
+            .filter(value => /^628\d{8,13}$/.test(value));
+        const whatsapp = process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured";
+        if (missing.length) {
+            const payload = {
+                ok: false,
+                service: "Amanah.id API",
+                runtime: process.version,
+                checks: { api: "ok", configuration: "failed", database: "not_checked", whatsapp },
+                missing
+            };
+            return req.method === "HEAD" ? res.status(503).end() : res.status(503).json(payload);
+        }
+        try {
+            const rows = await supabaseRequest("school_settings?select=id&limit=1");
+            if (!Array.isArray(rows) || !rows.length) throw new Error("School settings are not initialized");
+            const payload = {
+                ok: true,
+                service: "Amanah.id API",
+                runtime: process.version,
+                checks: { api: "ok", configuration: "ok", database: "ok", whatsapp }
+            };
+            return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
+        } catch (error) {
+            console.error("API readiness check failed:", error);
+            const payload = {
+                ok: false,
+                service: "Amanah.id API",
+                runtime: process.version,
+                checks: { api: "ok", configuration: "ok", database: "error", whatsapp }
+            };
+            return req.method === "HEAD" ? res.status(503).end() : res.status(503).json(payload);
+        }
     }
     if (action === "features") {
         if (req.method !== "GET") {
@@ -42,20 +98,8 @@ export default async function handler(req, res) {
             return jsonError(res, 405, "Method not allowed");
         }
         try {
-            const rows = await supabaseRequest("system_settings?id=eq.00000000-0000-0000-0000-000000000002&select=feature_flags&limit=1");
-            const stored = Array.isArray(rows) ? (rows[0]?.feature_flags || {}) : {};
-            const defaults = {
-                camera_attendance: true, gps_geofencing: true, face_recognition: true,
-                liveness_check: true, face_enrollment: true, face_sample_limit: true,
-                attendance_recording: true, duplicate_attendance_block: true, attendance_history: true,
-                attendance_export: true, parent_notifications: true, late_detection: true,
-                gps_accuracy_guard: true, geofence_radius_edit: true, school_schedule_rules: true,
-                privacy_notice: true, service_health_panel: true, maintenance_banner: false,
-                public_status_panel: true, language_switcher: true, responsive_layout: true, splash_animation: true
-            };
-            const features = Object.fromEntries(Object.keys(defaults).map(key => [
-                key, typeof stored[key] === "boolean" ? stored[key] : defaults[key]
-            ]));
+            const allFeatures = await getFeatureFlags();
+            const features = publicFeatureFlags(allFeatures);
             return res.status(200).json({ features });
         } catch (error) {
             console.error("Runtime feature configuration failed:", error);
@@ -123,6 +167,13 @@ export default async function handler(req, res) {
         }
         const updatedBy = getSession(req)?.email;
         try {
+            const currentRows = await supabaseRequest(`school_settings?id=eq.${SCHOOL_SETTINGS_ID}&select=radius&limit=1`);
+            const current = Array.isArray(currentRows) ? currentRows[0] : null;
+            if (!current) return jsonError(res, 503, "School location settings are not configured");
+            const features = await getFeatureFlags();
+            if (!features.geofence_radius_edit && Number(radius) !== Number(current.radius)) {
+                return featureDisabled(res, "geofence_radius_edit", "Perubahan radius geofence sedang dinonaktifkan");
+            }
             const rows = await supabaseRequest(
                 `school_settings?id=eq.${SCHOOL_SETTINGS_ID}&select=lat,lng,radius`,
                 {

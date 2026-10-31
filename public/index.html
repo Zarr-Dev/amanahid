@@ -18,6 +18,7 @@
 </head>
 
 <body>
+    <div id="maintenance-banner" class="maintenance-banner hidden" role="status" aria-live="polite">Amanah ID sedang dalam pemeliharaan terjadwal. Beberapa layanan mungkin dibatasi.</div>
     <div id="network-banner" class="network-banner hidden" role="status" aria-live="polite">Koneksi ke layanan terputus.
         Periksa jaringan dan konfigurasi API.</div>
     <div id="splash-screen" class="splash-screen" aria-label="Amanah ID" data-i18n-aria="brandName" aria-live="polite">
@@ -35,6 +36,10 @@
                 <span class="brand-wordmark"><span class="brand-name-amanah">Amanah</span> <span class="brand-name-id">ID</span></span>
             </a>
         </header>
+        <section id="public-status-panel" class="public-status-panel hidden" role="status" aria-live="polite">
+            <span class="public-status-dot" aria-hidden="true"></span>
+            <span id="public-status-text">Memeriksa layanan Amanah ID…</span>
+        </section>
 
         <div class="auth-layout">
             <section class="auth-copy" aria-labelledby="auth-hero-title">
@@ -604,7 +609,7 @@
                             id="admin-active-week">0</strong><small data-i18n="loginsLast7Days">Login 7 hari
                             terakhir</small></article>
                 </div>
-                <div class="panel">
+                <div id="admin-service-health-panel" class="panel">
                     <div class="panel-heading">
                         <div>
                             <h3 data-i18n="serviceHealth">Kesehatan layanan</h3>
@@ -774,7 +779,7 @@
                         <p id="admin-test-camera-status" class="helper-text" role="status" aria-live="polite" data-i18n="testCameraStatus">Kamera belum diuji.</p>
                         <div class="admin-test-metrics"><span><span data-i18n="testMetricModel">Model AI</span> <strong id="admin-test-model-state">Belum diuji</strong></span><span><span data-i18n="testMetricFaces">Wajah</span> <strong id="admin-test-face-count">0</strong></span><span><span data-i18n="testMetricFps">FPS</span> <strong id="admin-test-camera-fps">0</strong></span></div>
                     </section>
-                    <section class="panel admin-test-card">
+                    <section id="admin-test-whatsapp-card" class="panel admin-test-card">
                         <div class="panel-heading"><div><h3 data-i18n="testWhatsappTitle">Uji notifikasi WhatsApp</h3>
                             <p class="muted" data-i18n="testWhatsappDesc">Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.</p></div></div>
                         <p class="helper-text">Fonnte <strong id="admin-test-fonnte-state">Memeriksa konfigurasi…</strong></p>
