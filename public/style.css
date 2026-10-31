@@ -1164,18 +1164,42 @@ body.theme-dark .auth-footer .lang-btn.active {
 }
 
 .nav-symbol {
-    width: 19px;
-    font-size: 18px;
-    text-align: center;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    color: currentColor;
 }
 
-.nav-symbol i {
-    display: inline-block;
-    transition: transform 0.2s;
+.nav-symbol svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform .22s cubic-bezier(.2,.8,.2,1), stroke-width .22s ease;
 }
 
-.nav-link:hover .nav-symbol i {
-    transform: scale(1.1);
+.nav-link:hover .nav-symbol svg {
+    transform: scale(1.09);
+    stroke-width: 1.95;
+}
+
+.nav-link:focus-visible .nav-symbol svg {
+    stroke-width: 2;
+}
+
+.nav-link.active .nav-symbol svg {
+    stroke-width: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-symbol svg { transition: none; }
+    .nav-link:hover .nav-symbol svg { transform: none; }
 }
 
 .nav-link.active .nav-symbol {
