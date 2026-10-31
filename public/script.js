@@ -265,7 +265,11 @@ const EXTRA_T = {
         adminMapInside: "Perangkat berada di dalam radius dengan margin estimasi {margin}.",
         adminMapOutside: "Perangkat berada di luar radius dengan jarak estimasi minimum {margin}.",
         adminMapBoundary: "Belum dapat dipastikan: rentang akurasi GPS memotong batas geofence.",
-        adminMapLastFix: "Diperiksa pukul {time}."
+        adminMapLastFix: "Diperiksa pukul {time}.",
+        adminMapPointChanged: "Titik GPS diperbarui. Simpan pengaturan untuk menerapkannya.",
+        adminMapSaved: "Pengaturan lokasi sekolah telah disimpan.",
+        adminSettingsSaving: "Menyimpan titik GPS dan aturan sekolah…",
+        adminSettingsSaved: "Titik GPS, radius, dan aturan sekolah berhasil disimpan."
     },
     en: {
         welcomeTitle: "School attendance, made simple.",
@@ -433,7 +437,11 @@ const EXTRA_T = {
         adminMapInside: "The device is inside the radius with an estimated margin of {margin}.",
         adminMapOutside: "The device is outside the radius by at least an estimated {margin}.",
         adminMapBoundary: "Uncertain: the GPS accuracy range intersects the geofence boundary.",
-        adminMapLastFix: "Checked at {time}."
+        adminMapLastFix: "Checked at {time}.",
+        adminMapPointChanged: "The GPS point was updated. Save the settings to apply it.",
+        adminMapSaved: "School location settings have been saved.",
+        adminSettingsSaving: "Saving the GPS point and school rules…",
+        adminSettingsSaved: "The GPS point, radius, and school rules were saved successfully."
     },
     ar: {
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
@@ -601,7 +609,11 @@ const EXTRA_T = {
         adminMapInside: "الجهاز داخل النطاق بهامش تقديري قدره {margin}.",
         adminMapOutside: "الجهاز خارج النطاق بمسافة دنيا تقديرية قدرها {margin}.",
         adminMapBoundary: "غير مؤكد: نطاق دقة GPS يتقاطع مع حد النطاق الجغرافي.",
-        adminMapLastFix: "تم الفحص في {time}."
+        adminMapLastFix: "تم الفحص في {time}.",
+        adminMapPointChanged: "تم تحديث نقطة GPS. احفظ الإعدادات لتطبيقها.",
+        adminMapSaved: "تم حفظ إعدادات موقع المدرسة.",
+        adminSettingsSaving: "جارٍ حفظ نقطة GPS وقواعد المدرسة…",
+        adminSettingsSaved: "تم حفظ نقطة GPS والنطاق وقواعد المدرسة بنجاح."
     }
 };
 
@@ -964,7 +976,7 @@ function syncAdminSettingsMap({ center = false } = {}) {
             $("admin-setting-lng").value = event.latlng.lng.toFixed(7);
             syncAdminSettingsMap({ center: false });
             const status = $("admin-school-map-status");
-            if (status) status.textContent = "Titik GPS diperbarui. Simpan pengaturan untuk menerapkannya.";
+            if (status) status.textContent = tr("adminMapPointChanged");
         });
         $("admin-map-center")?.addEventListener("click", () => syncAdminSettingsMap({ center: true }));
         ["admin-setting-lat", "admin-setting-lng", "admin-setting-radius"].forEach(id => {
@@ -4506,16 +4518,16 @@ function setupEvents() {
         const submitButton = $("admin-settings-form").querySelector('button[type="submit"]');
         const status = $("admin-settings-status");
         const originalLabel = submitButton?.textContent || tr("saveSettings");
-        if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Menyimpan…"; }
-        if (status) status.textContent = "Menyimpan titik GPS dan aturan sekolah…";
+        if (submitButton) { submitButton.disabled = true; submitButton.textContent = tr("adminSettingsSaving"); }
+        if (status) status.textContent = tr("adminSettingsSaving");
         try {
             const saved = await cloudRequest("/api/admin/settings", { method: "PUT", body });
             SCHOOL_LOCATION = { ...SCHOOL_LOCATION, ...saved };
             syncAdminSettingsMap({ center: true });
             const mapStatus = $("admin-school-map-status");
-            if (mapStatus) mapStatus.textContent = "Pengaturan lokasi sekolah telah disimpan.";
-            if (status) status.textContent = "Titik GPS, radius, dan aturan sekolah berhasil disimpan.";
-            toast("Pengaturan sekolah berhasil disimpan.", "success");
+            if (mapStatus) mapStatus.textContent = tr("adminMapSaved");
+            if (status) status.textContent = tr("adminSettingsSaved");
+            toast(tr("settingsSaved"), "success");
         } catch (error) {
             if (status) status.textContent = error.message || "Pengaturan sekolah gagal disimpan.";
             toastAdminError(error);
