@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import { hashPassword, signToken, verifyPassword, verifyToken } from "../api/_lib/admin-auth.js";
+import { createLoginCaptcha, verifyLoginCaptcha } from "../api/_lib/login-captcha.js";
 import { getMissingAuthConfiguration, getRequestRole, rateLimit } from "../api/_lib/supabase.js";
 import { validateSchema } from "../api/_lib/validate.js";
 import adminUsersHandler from "../api/admin/users.js";
@@ -56,6 +57,32 @@ function requestMock(method, token, ip) {
         socket: { remoteAddress: ip }
     };
 }
+
+test("login CAPTCHA uses encrypted, expiring, server-verified challenges", () => {
+    const challenge = createLoginCaptcha("en");
+    assert.match(challenge.question, /[A-Za-z]/);
+    assert.equal(typeof challenge.token, "string");
+    assert.equal(challenge.token.includes(challenge.answer), false);
+    assert.equal(verifyLoginCaptcha(challenge.token, challenge.answer), true);
+    assert.equal(verifyLoginCaptcha(challenge.token, "definitely-wrong"), false);
+    assert.equal(verifyLoginCaptcha(`${challenge.token}x`, challenge.answer), false);
+    assert.equal(verifyLoginCaptcha(challenge.token, ""), false);
+});
+
+test("login CAPTCHA endpoint returns only a challenge prompt and encrypted token", async () => {
+    const res = responseMock();
+    await authLoginHandler({
+        method: "GET",
+        query: { action: "captcha", lang: "en" },
+        headers: { origin: "https://school.example" },
+        socket: { remoteAddress: "test-captcha-endpoint" }
+    }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(typeof res.body.question, "string");
+    assert.equal(typeof res.body.token, "string");
+    assert.equal("answer" in res.body, false);
+    assert.equal(res.headers["Cache-Control"], "no-store, max-age=0");
+});
 
 test("passwords are SHA-256 prehashed and then bcrypt hashed", async () => {
     const password = "SecureExample!234";
@@ -151,6 +178,7 @@ test("admin login issues a signed token and records a login", async t => {
     const password = "SecureExample!234";
     const passwordHash = await hashPassword(password);
     const digest = createHash("sha256").update(password).digest("hex");
+    const captcha = createLoginCaptcha("id");
     const originalFetch = globalThis.fetch;
     const requests = [];
     globalThis.fetch = async (url, init = {}) => {
@@ -166,7 +194,7 @@ test("admin login issues a signed token and records a login", async t => {
         method: "POST",
         headers: { origin: "https://school.example" },
         socket: { remoteAddress: "test-admin-login" },
-        body: { email: "admin@example.com", password: digest }
+        body: { email: "admin@example.com", password: digest, captchaToken: captcha.token, captchaAnswer: captcha.answer }
     };
     const res = responseMock();
     await adminLoginHandler(req, res);
@@ -245,7 +273,8 @@ test("admin APIs handle empty and null Supabase results", async t => {
     loginRequest.headers = { origin: "https://school.example" };
     loginRequest.body = {
         email: "admin@example.com",
-        password: "a".repeat(64)
+        password: "a".repeat(64),
+        ...(() => { const captcha = createLoginCaptcha("id"); return { captchaToken: captcha.token, captchaAnswer: captcha.answer }; })()
     };
     const loginResponse = responseMock();
     await adminLoginHandler(loginRequest, loginResponse);
@@ -256,7 +285,8 @@ test("admin APIs handle empty and null Supabase results", async t => {
     invalidCaptchaRequest.body = {
         email: "admin@example.com",
         password: "a".repeat(64),
-        captcha: " 8"
+        captchaToken: createLoginCaptcha("id").token,
+        captchaAnswer: "wrong"
     };
     const invalidCaptchaResponse = responseMock();
     await adminLoginHandler(invalidCaptchaRequest, invalidCaptchaResponse);
@@ -600,7 +630,7 @@ test("Admin can create a Siswa login with NISN and class, but face enrollment re
     assert.ok(requests.some(request => request.url.includes("audit_log")));
 });
 
-test("user login resolves Guru and Siswa against the matching Supabase tables", async t => {
+test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role tables", async t => {
     const originalFetch = globalThis.fetch;
     const password = "SecureExample!234";
     const passwordHash = await hashPassword(password);
@@ -609,34 +639,56 @@ test("user login resolves Guru and Siswa against the matching Supabase tables", 
     globalThis.fetch = async (url, init = {}) => {
         const requestUrl = String(url);
         requests.push({ url: requestUrl, method: init.method || "GET" });
-        if (requestUrl.includes("teachers?select=email,name,password_hash,is_active")) {
-            return new Response(JSON.stringify(requestUrl.includes("guru%40example.com")
+        if (init.method === "PATCH") return new Response("[]", { status: 200 });
+
+        if (requestUrl.includes("admin_users?select=")) {
+            const rows = requestUrl.includes("admin%40example.com")
+                ? [{ email: "admin@example.com", name: "Admin Test", password_hash: passwordHash, is_active: true }]
+                : [];
+            return new Response(JSON.stringify(rows), { status: 200 });
+        }
+        if (requestUrl.includes("teachers?select=")) {
+            const rows = requestUrl.includes("guru%40example.com")
                 ? [{ email: "guru@example.com", name: "Guru Test", password_hash: passwordHash, is_active: true }]
-                : []), { status: 200 });
+                : [];
+            return new Response(JSON.stringify(rows), { status: 200 });
         }
         if (requestUrl.includes("students?select=email,name,nisn,password_hash,is_active")) {
-            return new Response(JSON.stringify([{ email: "siswa@example.com", name: "Siswa Test", nisn: "12345678", password_hash: passwordHash, is_active: true }]), { status: 200 });
+            const rows = requestUrl.includes("siswa%40example.com")
+                ? [{ email: "siswa@example.com", name: "Siswa Test", nisn: "12345678", password_hash: passwordHash, is_active: true }]
+                : [];
+            return new Response(JSON.stringify(rows), { status: 200 });
         }
         return new Response("[]", { status: 200 });
     };
     t.after(() => { globalThis.fetch = originalFetch; });
 
     for (const account of [
+        { email: "admin@example.com", role: "admin" },
         { email: "guru@example.com", role: "guru" },
         { email: "siswa@example.com", role: "siswa" }
     ]) {
+        const captcha = createLoginCaptcha("id");
         const req = {
             method: "POST",
             headers: { origin: "https://school.example" },
-            socket: { remoteAddress: `test-login-${account.role}` },
-            body: { email: account.email, password: passwordDigest }
+            socket: { remoteAddress: `test-unified-login-${account.role}` },
+            body: {
+                email: account.email,
+                password: passwordDigest,
+                captchaToken: captcha.token,
+                captchaAnswer: captcha.answer
+            }
         };
         const res = responseMock();
         await authLoginHandler(req, res);
-        assert.equal(res.statusCode, 200, `${account.role} login should succeed against its database table`);
+        assert.equal(res.statusCode, 200, `${account.role} login should succeed through the shared endpoint`);
         assert.equal(res.body.user.role, account.role);
         assert.equal(verifyToken(res.body.token)?.role, account.role);
     }
+
+    assert.ok(requests.some(request => request.url.includes("admin_users?select=")));
     assert.ok(requests.some(request => request.url.includes("teachers?select=")));
-    assert.ok(requests.some(request => request.url.includes("students?select=")));
+    assert.ok(requests.some(request => request.url.includes("students?select=email,name,nisn,password_hash,is_active")));
+    assert.ok(requests.filter(request => request.method === "PATCH").length >= 3);
 });
