@@ -63,6 +63,7 @@ export const PUBLIC_FEATURE_KEYS = Object.freeze([
     "liveness_check",
     "face_enrollment",
     "face_sample_limit",
+    "student_account_creation",
     "attendance_recording",
     "duplicate_attendance_block",
     "attendance_history",
