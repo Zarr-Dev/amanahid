@@ -14,6 +14,7 @@ import adminDashboardStatsHandler from "../api/admin/audit.js";
 import adminProfileHandler from "../api/admin/settings.js";
 import adminSettingsHandler from "../api/admin/settings.js";
 import attendanceHandler from "../api/attendance.js";
+import { validMedicalMagicBytes, validDispensationWindow } from "../api/absence.js";
 import faceMatchHandler from "../api/face-match.js";
 import sendWhatsAppHandler from "../api/send-wa.js";
 import settingsHandler from "../api/settings.js";
@@ -789,4 +790,23 @@ test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role table
     assert.ok(requests.some(request => request.url.includes("teachers?select=")));
     assert.ok(requests.some(request => request.url.includes("students?select=email,name,nisn,password_hash,is_active")));
     assert.ok(requests.filter(request => request.method === "PATCH").length >= 3);
+});
+
+
+test("medical evidence verifies PDF, JPEG and PNG signatures", () => {
+    assert.equal(validMedicalMagicBytes(Buffer.from("%PDF-1.7\\n"), "application/pdf"), true);
+    assert.equal(validMedicalMagicBytes(Buffer.from([0xff, 0xd8, 0xff, 0xdb]), "image/jpeg"), true);
+    assert.equal(validMedicalMagicBytes(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), "image/png"), true);
+    assert.equal(validMedicalMagicBytes(Buffer.from("not really a PDF"), "application/pdf"), false);
+    assert.equal(validMedicalMagicBytes(Buffer.from("%PDF-1.7"), "image/png"), false);
+});
+
+test("dispensation is limited to today, service hours, and a four-hour maximum", () => {
+    const settings = { timezone: "Asia/Jakarta", dispensation_open_time: "07:00", dispensation_close_time: "16:00" };
+    const now = new Date("2026-11-01T03:00:00.000Z"); // 10:00 WIB
+    assert.equal(validDispensationWindow("2026-11-01", "10:15", "11:15", settings, now), true);
+    assert.equal(validDispensationWindow("2026-11-02", "10:15", "11:15", settings, now), false);
+    assert.equal(validDispensationWindow("2026-11-01", "06:00", "06:30", settings, now), false);
+    assert.equal(validDispensationWindow("2026-11-01", "10:15", "14:15", settings, now), true);
+    assert.equal(validDispensationWindow("2026-11-01", "10:15", "14:30", settings, now), false);
 });

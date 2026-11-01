@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/_lib/test-tools.js", "api/auth/login.js",
-    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase-demo-accounts.sql"
+    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261101120000_student_absence_evidence_dispensation_and_homeroom.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -203,6 +203,11 @@ const cssChecks = [
     ["user-configurable reduced motion", /body\.reduce-motion \*[\s\S]*?animation-duration:\s*\.01ms/]
 
 ];
+cssChecks.push(
+    ["student absence responsive layout", /\.absence-form-layout\s*\{/],
+    ["student homeroom profile emphasis", /\.homeroom-card\s*\{/],
+    ["student medical evidence form styling", /\.medical-followup\s*\{/]
+);
 for (const [label, pattern] of cssChecks) {
     if (!pattern.test(css)) {
         console.error(`Build check failed: missing ${label} in public/style.css.`);
@@ -292,8 +297,29 @@ if (!js.includes("function faceAngleBucket") || !allApiSource.includes("GPS_FIX_
     console.error("Build check failed: face-angle capture or fresh GPS checks are missing.");
     process.exit(1);
 }
-if (!js.includes("async function submitStudentAbsence") || !js.includes("loadAbsenceRequests")) {
-    console.error("Build check failed: student absence request workflow is missing.");
+if (!js.includes("async function submitStudentAbsence") || !js.includes("loadAbsenceRequests") ||
+    !js.includes("loadStudentAbsenceRequests") || !js.includes("submitMedicalEvidence") ||
+    !js.includes("collectStableFaceDescriptor") || !js.includes("let firstFix = null") ||
+    !allApiSource.includes("evidence-upload") || !allApiSource.includes("evidence-download") ||
+    !allApiSource.includes("evidence_submitted") || !allApiSource.includes("validMedicalMagicBytes")) {
+    console.error("Build check failed: student medical evidence workflow, teacher review, face consensus, or GPS consistency is missing.");
+    process.exit(1);
+}
+for (const id of ["student-absence-requests", "dispensation-fields", "student-homeroom-teacher-name",
+    "student-profile-address", "admin-user-homeroom-class", "admin-setting-dispensation-open",
+    "admin-setting-dispensation-close"]) {
+    if (!html.includes('id="' + id + '"')) {
+        console.error("Build check failed: missing student/admin workflow control " + id);
+        process.exit(1);
+    }
+}
+if (!/data-target="view-s-presensi"[\s\S]*?data-target="view-s-absence"[\s\S]*?data-target="view-s-history"/.test(html)) {
+    console.error("Build check failed: Siswa Formulir tab must sit directly below Presensi Saya.");
+    process.exit(1);
+}
+if (!allApiSource.includes("homeroom_class") || !allApiSource.includes("dispensation_open_time") ||
+    !allApiSource.includes("students:PATCH:address")) {
+    console.error("Build check failed: homeroom assignment, server-side dispensations, or student address ownership update is missing.");
     process.exit(1);
 }
 

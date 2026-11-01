@@ -4283,3 +4283,53 @@ body.reduce-motion *::after {
     .preference-switch input[type="checkbox"]::before,
     .preference-chart-track span { transition: none !important; }
 }
+
+
+/* Student-first absence forms, request status cards and class-teacher profile */
+.absence-form-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(240px,.8fr);gap:18px;align-items:start}
+.absence-form-panel,.absence-guide-panel{min-width:0;border-radius:18px}
+.absence-panel-heading,.student-absence-history-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.absence-panel-heading h3,.student-absence-history-heading h3,.absence-guide-panel h3{margin:5px 0 0;font-size:1.15rem}
+.absence-panel-heading p{margin:5px 0 0;font-size:.83rem}
+.absence-form-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:var(--soft,#eef3ff);color:var(--primary,#315fce);font-size:19px}
+.absence-form-panel .registration-form{width:100%;max-width:none;margin:0;gap:13px}
+.absence-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.absence-field{display:flex;min-width:0;flex-direction:column;gap:7px}
+.absence-field label{margin:0;font-weight:650}
+.absence-field input,.absence-field select,.absence-field textarea,.student-address-field textarea{width:100%;min-width:0}
+.absence-field textarea{min-height:112px;resize:vertical;font:inherit}
+.absence-privacy-note,.dispensation-notice{border:1px solid var(--border,#e2e8f0);border-radius:13px;padding:12px 14px;background:var(--panel-soft,#f8faff)}
+.absence-privacy-note strong,.dispensation-notice strong{display:block;font-size:.88rem}
+.absence-privacy-note p,.dispensation-notice span{display:block;margin:4px 0 0;color:var(--muted,#64748b);font-size:.82rem;line-height:1.55}
+.dispensation-fields{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid var(--border,#dbe3f0);border-radius:14px;background:var(--panel-soft,#f8faff)}
+.absence-guide-panel{padding:20px}
+.absence-guide-panel ol{display:grid;gap:16px;margin:20px 0;padding:0;list-style:none;counter-reset:absence-step}
+.absence-guide-panel li{display:grid;gap:4px;padding-left:38px;position:relative;counter-increment:absence-step}
+.absence-guide-panel li:before{content:counter(absence-step,decimal-leading-zero);position:absolute;left:0;top:1px;width:27px;height:27px;display:grid;place-items:center;border-radius:9px;color:var(--primary,#315fce);background:var(--soft,#eef3ff);font-size:.72rem;font-weight:800}
+.absence-guide-panel li strong{font-size:.88rem}.absence-guide-panel li span{color:var(--muted,#64748b);font-size:.8rem;line-height:1.5}
+.student-absence-history{margin-top:22px}.student-absence-history-heading{margin-bottom:12px}.student-absence-list{display:grid;gap:12px}
+.student-absence-card{border:1px solid var(--border,#e2e8f0);border-radius:15px;padding:15px;background:var(--surface,#fff);display:grid;gap:10px}
+.student-absence-card-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center}
+.student-absence-card-head>div{display:grid;gap:3px}.student-absence-card-head small{color:var(--muted,#64748b);font-size:.76rem}
+.absence-status-chip{display:inline-flex;align-items:center;border-radius:999px;padding:5px 10px;font-size:.72rem;font-weight:750;background:var(--soft,#eef3ff);color:var(--primary,#315fce)}
+.absence-status-chip.status-approved{background:#e8f7ee;color:#176b3a}.absence-status-chip.status-rejected{background:#fff0f0;color:#a12632}
+.student-absence-card p{margin:0;color:var(--muted,#64748b);font-size:.83rem;line-height:1.55}
+.medical-followup{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,.45fr);gap:12px;padding:14px;border-radius:12px;background:var(--panel-soft,#f8faff);border:1px solid var(--border,#e2e8f0)}
+.medical-followup-intro{grid-column:1/-1}.medical-followup-intro strong{font-size:.88rem}.medical-followup-intro p{margin:4px 0 0}
+.medical-followup label{display:flex;flex-direction:column;gap:6px;font-size:.82rem;font-weight:650}
+.medical-followup input{width:100%;min-width:0}.medical-followup .button{grid-column:1/-1}
+.medical-honesty-check{grid-column:1/-1;display:grid!important;grid-template-columns:18px minmax(0,1fr);align-items:start;gap:8px!important;font-weight:500!important}
+.medical-honesty-check input{width:16px;margin-top:2px}
+.homeroom-card{display:grid;gap:5px;margin:18px 0;padding:16px 17px;border:1px solid rgba(49,95,206,.22);border-radius:15px;background:linear-gradient(135deg,var(--soft,#eef3ff),var(--surface,#fff))}
+.homeroom-eyebrow{color:var(--muted,#64748b);font-size:.68rem;letter-spacing:.11em;font-weight:800}
+.homeroom-card strong{color:var(--text,#14213a);font-size:1.22rem;font-weight:900;line-height:1.25}
+.homeroom-card strong.is-unassigned{color:var(--muted,#64748b);font-size:.95rem;font-weight:650}
+.homeroom-card small,.student-address-field small{color:var(--muted,#64748b);font-size:.76rem;line-height:1.5}
+.student-address-field{display:grid;gap:7px;margin-top:14px}.student-address-field label{margin:0!important;font-weight:700}
+.student-address-field textarea{resize:vertical;min-height:76px;font:inherit}
+body.theme-dark .absence-privacy-note,body.theme-dark .dispensation-fields,body.theme-dark .medical-followup{background:rgba(255,255,255,.035)}
+body.theme-dark .homeroom-card{background:linear-gradient(135deg,rgba(58,103,214,.18),rgba(255,255,255,.025))}
+body.theme-dark .homeroom-card strong{color:var(--text,#f8fafc)}
+@media(max-width:900px){.absence-form-layout{grid-template-columns:minmax(0,1fr)}.absence-guide-panel{order:2}}
+@media(max-width:580px){.absence-field-grid,.medical-followup{grid-template-columns:minmax(0,1fr)}.medical-followup .button,.medical-followup-intro,.medical-honesty-check{grid-column:1}.absence-guide-panel{padding:16px}.student-absence-history-heading{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){.absence-form-layout *,.student-absence-card *{animation:none!important;transition:none!important}}

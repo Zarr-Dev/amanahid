@@ -145,16 +145,18 @@ export default async function handler(req, res) {
     try {
         if (req.method === "GET") {
             const resultRows = await supabaseRequest(
-                `school_settings?select=lat,lng,radius,timezone,entry_time,late_tolerance_min&id=eq.${SETTINGS_ID}&limit=1`
+                `school_settings?select=lat,lng,radius,timezone,entry_time,late_tolerance_min,dispensation_open_time,dispensation_close_time&id=eq.${SETTINGS_ID}&limit=1`
             );
             const row = Array.isArray(resultRows) ? (resultRows[0] ?? null) : null;
-            if (!row) return res.status(200).json({ ...DEFAULTS, timezone: "Asia/Jakarta", entry_time: "07:00", late_tolerance_min: 15 });
+            if (!row) return res.status(200).json({ ...DEFAULTS, timezone: "Asia/Jakarta", entry_time: "07:00", late_tolerance_min: 15, dispensation_open_time: "07:00", dispensation_close_time: "16:00" });
             return res.status(200).json({
                 lat: Number(row.lat ?? DEFAULTS.lat), lng: Number(row.lng ?? DEFAULTS.lng),
                 radius: Number(row.radius ?? DEFAULTS.radius),
                 timezone: row.timezone ?? "Asia/Jakarta",
                 entry_time: String(row.entry_time ?? "07:00").slice(0, 5),
-                late_tolerance_min: Number(row.late_tolerance_min ?? 15)
+                late_tolerance_min: Number(row.late_tolerance_min ?? 15),
+                dispensation_open_time: String(row.dispensation_open_time ?? "07:00").slice(0, 5),
+                dispensation_close_time: String(row.dispensation_close_time ?? "16:00").slice(0, 5)
             });
         }
         if (req.method === "PUT") {
@@ -165,15 +167,20 @@ export default async function handler(req, res) {
                 radius: { type: "number", required: true, min: 10, max: 500 },
                 timezone: { type: "string", required: true, max: 64, min: 1 },
                 entry_time: { type: "string", required: true, max: 5, pattern: /^(?:[01]\d|2[0-3]):[0-5]\d$/ },
-                late_tolerance_min: { type: "number", required: true, min: 0, max: 180 }
+                late_tolerance_min: { type: "number", required: true, min: 0, max: 180 },
+                dispensation_open_time: { type: "string", required: true, max: 5, pattern: /^(?:[01]\d|2[0-3]):[0-5]\d$/ },
+                dispensation_close_time: { type: "string", required: true, max: 5, pattern: /^(?:[01]\d|2[0-3]):[0-5]\d$/ }
             }, body);
             if (!validation.valid) return jsonError(res, 400, validation.error);
+            if (body.dispensation_open_time >= body.dispensation_close_time) {
+                return jsonError(res, 400, "Jam layanan dispensasi harus diatur dengan benar");
+            }
             try {
                 new Intl.DateTimeFormat("en", { timeZone: body.timezone });
             } catch {
                 return jsonError(res, 400, "Invalid timezone");
             }
-            const currentRows = await supabaseRequest(`school_settings?id=eq.${SETTINGS_ID}&select=radius,timezone,entry_time,late_tolerance_min&limit=1`);
+            const currentRows = await supabaseRequest(`school_settings?id=eq.${SETTINGS_ID}&select=radius,timezone,entry_time,late_tolerance_min,dispensation_open_time,dispensation_close_time&limit=1`);
             const current = Array.isArray(currentRows) ? currentRows[0] : null;
             if (!current) return jsonError(res, 404, "School settings are not initialized");
             const features = await getFeatureFlags();
@@ -183,12 +190,14 @@ export default async function handler(req, res) {
             if (!features.school_schedule_rules && (
                 body.timezone !== current.timezone ||
                 String(body.entry_time).slice(0, 5) !== String(current.entry_time).slice(0, 5) ||
-                Number(body.late_tolerance_min) !== Number(current.late_tolerance_min)
+                Number(body.late_tolerance_min) !== Number(current.late_tolerance_min) ||
+                String(body.dispensation_open_time).slice(0, 5) !== String(current.dispensation_open_time).slice(0, 5) ||
+                String(body.dispensation_close_time).slice(0, 5) !== String(current.dispensation_close_time).slice(0, 5)
             )) {
                 return featureDisabled(res, "school_schedule_rules", "Perubahan aturan jadwal sekolah sedang dinonaktifkan");
             }
             const resultRows = await supabaseRequest(
-                `school_settings?id=eq.${SETTINGS_ID}&select=lat,lng,radius,timezone,entry_time,late_tolerance_min`,
+                `school_settings?id=eq.${SETTINGS_ID}&select=lat,lng,radius,timezone,entry_time,late_tolerance_min,dispensation_open_time,dispensation_close_time`,
                 {
                     method: "PATCH",
                     headers: { Prefer: "return=representation" },

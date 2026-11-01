@@ -50,11 +50,23 @@ export default async function handler(req, res) {
             return jsonError(res, 403, "Face descriptors are not available for this request");
         }
         try {
-            const columns = withFaces ? STUDENT_COLUMNS_WITH_FACES : STUDENT_COLUMNS;
+            const columns = withFaces ? STUDENT_COLUMNS_WITH_FACES
+                : role === "siswa" ? "id,nisn,name,class_name,parent_whatsapp,address,created_at" : STUDENT_COLUMNS;
             const filter = parseNisn(nisn) ? `&nisn=eq.${encodeURIComponent(nisn)}` : "";
             const students = await supabaseRequest(
                 `students?select=${columns}${filter}&is_active=eq.true&order=name.asc`
             );
+            if (role === "siswa") {
+                const student = students[0];
+                if (!student) return res.status(200).json({ students: [] });
+                const homeroomRows = student.class_name ? await supabaseRequest(
+                    "teachers?select=name,homeroom_class&is_active=eq.true&homeroom_class=eq." +
+                    encodeURIComponent(student.class_name) + "&limit=1"
+                ) : [];
+                return res.status(200).json({
+                    students: [{ ...student, homeroom_teacher: homeroomRows[0]?.name || null }]
+                });
+            }
             return res.status(200).json({ students });
         } catch (error) {
             console.error("Student query failed:", error);
@@ -63,6 +75,35 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "PATCH") {
+        let role;
+        try { role = await getRequestRole(req); }
+        catch (error) { return jsonSupabaseError(res, error, "Unable to validate session"); }
+        if (role === "siswa") {
+            if (!rateLimit(req, "students:PATCH:address", 5, 60_000, res)) return jsonError(res, 429, "Terlalu banyak perubahan profil.");
+            const body = req.body || {};
+            const validation = validateSchema({ address: { type: "string", required: true, max: 500 } }, body);
+            if (!validation.valid) return jsonError(res, 400, validation.error);
+            const session = getSession(req);
+            if (!session?.nisn) return jsonError(res, 403, "Sesi siswa tidak valid");
+            try {
+                const own = await supabaseRequest("students?select=id&nisn=eq." + encodeURIComponent(session.nisn) + "&is_active=eq.true&limit=1");
+                if (!own.length) return jsonError(res, 404, "Data siswa tidak ditemukan");
+                const address = body.address.trim() || null;
+                const updated = await supabaseRequest("students?id=eq." + encodeURIComponent(own[0].id) + "&select=id,address", {
+                    method: "PATCH", headers: { Prefer: "return=representation" },
+                    body: JSON.stringify({ address })
+                });
+                if (!updated.length) return jsonError(res, 404, "Profil siswa tidak ditemukan");
+                await writeAuditLog(session, "student.profile.update", "students", own[0].id, {
+                    changed_fields: ["address"], address_present: Boolean(address)
+                });
+                return res.status(200).json({ student: updated[0] });
+            } catch (error) {
+                console.error("Student address update failed:", error);
+                return jsonSupabaseError(res, error, "Alamat siswa gagal diperbarui");
+            }
+        }
+        if (role !== "guru") return jsonError(res, 403, "Teacher role is required");
         try {
             if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
         } catch (error) {

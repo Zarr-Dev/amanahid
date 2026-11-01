@@ -20,7 +20,7 @@ function validBody(res, schema, body) {
 async function allUsers() {
     const [studentRows, teacherRows] = await Promise.all([
         supabaseRequest("students?select=id,nisn,email,name,class_name,parent_whatsapp,is_active,created_at&order=name.asc"),
-        supabaseRequest("teachers?select=id,email,name,is_active,created_at&order=name.asc")
+        supabaseRequest("teachers?select=id,email,name,homeroom_class,is_active,created_at&order=name.asc")
     ]);
     const students = Array.isArray(studentRows)
         ? studentRows.filter(user => user && typeof user === "object") : [];
@@ -49,7 +49,8 @@ export default async function handler(req, res) {
                 password: { type: "string", required: true, max: 128 },
                 nisn: { type: "string", max: 20, pattern: /^\d{8,20}$/ },
                 parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
-                class_name: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ }
+                class_name: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
+                homeroom_class: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ }
             };
             if (!validBody(res, schema, body)) return;
             const features = await getFeatureFlags();
@@ -71,10 +72,10 @@ export default async function handler(req, res) {
 
             const password_hash = await hashPassword(body.password);
             if (body.role === "guru") {
-                const rows = await supabaseRequest("teachers?select=id,email,name,created_at", {
+                const rows = await supabaseRequest("teachers?select=id,email,name,homeroom_class,created_at", {
                     method: "POST",
                     headers: { Prefer: "return=representation" },
-                    body: JSON.stringify({ email, name, password_hash, role: "guru", is_active: true })
+                    body: JSON.stringify({ email, name, password_hash, role: "guru", homeroom_class: body.homeroom_class?.trim() || null, is_active: true })
                 }) ?? [];
                 const created = Array.isArray(rows) ? (rows[0] ?? null) : null;
                 if (!created) return jsonError(res, 502, "Supabase did not return the created user");
@@ -127,10 +128,11 @@ export default async function handler(req, res) {
                 parent_whatsapp: { type: "string", max: 15, pattern: /^(?:|08\d{8,13}|628\d{8,13})$/ },
                 email: { type: "string", max: 254, pattern: EMAIL },
                 name: { type: "string", max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
-                password: { type: "string", max: 128 }
+                password: { type: "string", max: 128 },
+                homeroom_class: { type: "string", max: 40 }
             };
             if (!validBody(res, schema, body)) return;
-            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) {
+            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined && body.homeroom_class === undefined) {
                 return jsonError(res, 400, "At least one field must be changed");
             }
             if (body.email) {
@@ -156,8 +158,12 @@ export default async function handler(req, res) {
                 if (body.table !== "students") return jsonError(res, 400, "WhatsApp wali hanya berlaku untuk akun siswa");
                 values.parent_whatsapp = body.parent_whatsapp ? body.parent_whatsapp.replace(/^08/, "628") : null;
             }
+            if (body.homeroom_class !== undefined) {
+                if (body.table !== "teachers") return jsonError(res, 400, "Kelas wali hanya berlaku untuk akun Guru");
+                values.homeroom_class = body.homeroom_class.trim() || null;
+            }
             const rows = await supabaseRequest(
-                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email,name,parent_whatsapp`,
+                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email,name,parent_whatsapp,homeroom_class`,
                 { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(values) }
             ) ?? [];
             const updated = Array.isArray(rows) ? (rows[0] ?? null) : null;

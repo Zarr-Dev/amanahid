@@ -668,6 +668,11 @@
                             <p class="helper-text" data-i18n="studentAccountNote">Siswa dapat login setelah dibuat;
                                 presensi wajah aktif setelah Guru mendaftarkan sampel.</p>
                         </div>
+                        <div id="admin-teacher-fields" class="form-stack hidden" aria-hidden="true">
+                            <label for="admin-user-homeroom-class">Kelas wali (opsional)</label>
+                            <input id="admin-user-homeroom-class" type="text" maxlength="40" placeholder="Contoh: XI IPA 1">
+                            <small class="helper-text">Satu kelas hanya dapat memiliki satu Guru wali. Penugasan juga dapat diubah dari daftar akun.</small>
+                        </div>
                         <button class="button primary" type="submit" data-i18n="createTeacherAccount">Buat akun</button>
                     </form>
                 </div>
@@ -722,6 +727,11 @@
                             <input id="admin-setting-timezone" type="text" maxlength="64" required>
                             <label for="admin-setting-entry-time" data-i18n="schoolEntryTime">Jam masuk sekolah</label>
                             <input id="admin-setting-entry-time" type="time" required>
+                            <label for="admin-setting-dispensation-open">Jam mulai layanan dispensasi</label>
+                            <input id="admin-setting-dispensation-open" type="time" value="07:00" required>
+                            <label for="admin-setting-dispensation-close">Jam akhir layanan dispensasi</label>
+                            <input id="admin-setting-dispensation-close" type="time" value="16:00" required>
+                            <small class="muted">Siswa hanya dapat mengajukan dispensasi hari ini dan selama rentang layanan ini.</small>
                             <label for="admin-setting-tolerance" data-i18n="lateTolerance">Toleransi keterlambatan (menit)</label>
                             <input id="admin-setting-tolerance" type="number" min="0" max="180" step="1" required>
                             <button class="button primary" type="submit" data-i18n="saveSettings">Simpan pengaturan</button>
@@ -890,11 +900,11 @@
                 <button class="nav-link active" type="button" data-target="view-s-presensi">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 14l2.5 2.5L16 11"/></svg></span><span data-i18n="studentAttendance">Presensi Saya</span>
                 </button>
-                <button class="nav-link" type="button" data-target="view-s-history">
-                    <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span data-i18n="studentHistory">Riwayat Saya</span>
-                </button>
                 <button class="nav-link" type="button" data-target="view-s-absence">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3h8l4 4v14H4V3h4Z"/><path d="M8 3v5h8V3M12 12v6M9 15h6"/></svg></span><span data-i18n="absenceFormNav">Formulir izin</span>
+                </button>
+                <button class="nav-link" type="button" data-target="view-s-history">
+                    <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span data-i18n="studentHistory">Riwayat Saya</span>
                 </button>
                 <button class="nav-link" type="button" data-target="view-s-profile">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 21v-1.7a7.5 7.5 0 0 1 15 0V21"/></svg></span><span data-i18n="myProfile">Profil</span>
@@ -1008,26 +1018,73 @@
                 <div class="page-intro">
                     <div><span class="section-kicker" data-i18n="absenceFormKicker">KETIDAKHADIRAN</span>
                         <h2 data-i18n="absenceFormTitle">Formulir ketidakhadiran</h2>
-                        <p class="muted" data-i18n="absenceFormDesc">Ajukan izin, sakit, atau catatan ketidakhadiran untuk ditinjau guru.</p>
+                        <p class="muted">Ajukan izin secara jelas dan jujur. Pantau keputusan Guru dan tindak lanjut yang perlu Anda lakukan pada bagian bawah.</p>
                     </div>
                 </div>
-                <div class="panel absence-form-panel">
-                    <form id="student-absence-form" class="registration-form">
-                        <label for="absence-date" data-i18n="absenceDate">Tanggal ketidakhadiran</label>
-                        <input id="absence-date" name="date" type="date" required>
-                        <label for="absence-type" data-i18n="absenceType">Jenis</label>
-                        <select id="absence-type" name="type" required>
-                            <option value="sick" data-i18n="absenceSick">Sakit</option>
-                            <option value="permission" data-i18n="absencePermission">Izin</option>
-                            <option value="other" data-i18n="absenceOther">Lainnya</option>
-                        </select>
-                        <label for="absence-note" data-i18n="absenceNote">Catatan</label>
-                        <textarea id="absence-note" name="note" rows="5" maxlength="1000" required data-i18n-placeholder="absenceNotePlaceholder" placeholder="Jelaskan alasan ketidakhadiran secara singkat."></textarea>
-                        <p class="muted" data-i18n="absencePrivacyNote">Jangan masukkan informasi medis yang tidak diperlukan. Pengajuan akan disimpan dan menunggu peninjauan guru.</p>
-                        <button id="btn-submit-absence" class="button primary full" type="submit" data-i18n="absenceSubmit">Kirim formulir</button>
-                        <p id="absence-form-status" class="helper-text" role="status" aria-live="polite"></p>
-                    </form>
+                <div class="absence-form-layout">
+                    <div class="panel absence-form-panel">
+                        <div class="absence-panel-heading">
+                            <div><span class="section-kicker">PENGAJUAN SISWA</span><h3>Formulir pengajuan</h3>
+                                <p class="muted">Pastikan tanggal dan keterangan sesuai kondisi sebenarnya.</p></div>
+                            <span class="absence-form-icon" aria-hidden="true">✎</span>
+                        </div>
+                        <form id="student-absence-form" class="registration-form">
+                            <div class="absence-field-grid">
+                                <div class="absence-field"><label for="absence-date">Tanggal</label><input id="absence-date" name="date" type="date" required></div>
+                                <div class="absence-field"><label for="absence-type">Jenis pengajuan</label>
+                                    <select id="absence-type" name="type" required>
+                                        <option value="sick" data-i18n="absenceSick">Sakit</option>
+                                        <option value="permission" data-i18n="absencePermission">Izin</option>
+                                        <option value="other" data-i18n="absenceOther">Lainnya</option>
+                                        <option value="dispensation">Dispensasi sementara</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="dispensation-fields" class="dispensation-fields hidden" aria-hidden="true">
+                                <div class="dispensation-notice"><strong>Dispensasi selama jam sekolah</strong>
+                                    <span>Pengajuan hanya aktif pada hari ini dan selama jam layanan yang ditentukan Admin.</span></div>
+                                <div class="absence-field"><label for="dispensation-kind">Keperluan dispensasi</label>
+                                    <select id="dispensation-kind">
+                                        <option value="temporary_exit">Izin keluar sementara</option>
+                                        <option value="late_arrival">Izin datang terlambat</option>
+                                        <option value="early_departure">Izin pulang lebih awal</option>
+                                        <option value="class_permission">Izin meninggalkan kelas</option>
+                                        <option value="other">Keperluan lainnya</option>
+                                    </select>
+                                </div>
+                                <div class="absence-field-grid">
+                                    <div class="absence-field"><label for="dispensation-start">Jam mulai</label><input id="dispensation-start" type="time"></div>
+                                    <div class="absence-field"><label for="dispensation-end">Jam selesai</label><input id="dispensation-end" type="time"></div>
+                                </div>
+                            </div>
+                            <div class="absence-field"><label for="absence-note">Keterangan / alasan</label>
+                                <textarea id="absence-note" name="note" rows="4" maxlength="1000" required data-i18n-placeholder="absenceNotePlaceholder" placeholder="Tuliskan alasan singkat, jelas, dan sesuai keadaan sebenarnya."></textarea>
+                            </div>
+                            <div class="absence-privacy-note"><strong>Privasi dan kejujuran</strong>
+                                <p>Jangan tulis diagnosis atau informasi medis yang tidak diperlukan. Untuk pengajuan sakit, bukti medis baru diminta setelah Guru memberikan persetujuan bersyarat.</p>
+                            </div>
+                            <button id="btn-submit-absence" class="button primary full" type="submit" data-i18n="absenceSubmit">Kirim formulir</button>
+                            <p id="absence-form-status" class="helper-text" role="status" aria-live="polite"></p>
+                        </form>
+                    </div>
+                    <aside class="panel absence-guide-panel">
+                        <span class="section-kicker">ALUR PENGAJUAN</span><h3>Langkah yang perlu diikuti</h3>
+                        <ol>
+                            <li><strong>Kirim permohonan</strong><span>Isi tanggal, jenis, dan alasan dengan benar.</span></li>
+                            <li><strong>Tunggu peninjauan Guru</strong><span>Permohonan akan memiliki status yang bisa dipantau.</span></li>
+                            <li><strong>Lakukan tindak lanjut</strong><span>Untuk sakit yang disetujui bersyarat, unggah bukti medis dan masukkan perkiraan hari istirahat.</span></li>
+                        </ol>
+                        <p class="muted">Dispensasi digunakan untuk izin singkat di sekolah, bukan pengganti izin tidak masuk satu hari.</p>
+                    </aside>
                 </div>
+                <section class="student-absence-history">
+                    <div class="student-absence-history-heading"><div><span class="section-kicker">PEMANTAUAN</span><h3>Pengajuan saya</h3></div>
+                        <button id="btn-refresh-student-absence" class="button subtle" type="button">Perbarui status</button>
+                    </div>
+                    <div id="student-absence-requests" class="student-absence-list" aria-live="polite">
+                        <p class="empty-state">Memuat pengajuan Anda…</p>
+                    </div>
+                </section>
             </section>
             <section id="view-s-profile" class="view hidden">
                 <div class="page-intro">
@@ -1042,6 +1099,16 @@
                     </div>
                     <p><strong data-i18n="nisn">NISN</strong>: <span id="student-profile-nisn">—</span></p>
                     <p><strong data-i18n="class">Kelas</strong>: <span id="student-profile-class">—</span></p>
+                    <section class="homeroom-card" aria-label="Informasi wali kelas">
+                        <span class="homeroom-eyebrow">WALI KELAS ANDA</span>
+                        <strong id="student-homeroom-teacher-name">Belum ditetapkan</strong>
+                        <small>Hubungi Admin sekolah jika penugasan wali kelas belum tersedia.</small>
+                    </section>
+                    <div class="student-address-field">
+                        <label for="student-profile-address">Alamat (opsional)</label>
+                        <textarea id="student-profile-address" rows="3" maxlength="500" placeholder="Tambahkan alamat sebagai informasi pendukung."></textarea>
+                        <small>Alamat hanya data tambahan dan tidak menentukan titik presensi. Lokasi presensi tetap memakai GPS perangkat saat digunakan.</small>
+                    </div>
                     <label for="student-theme-select" data-i18n="appearance">Tampilan</label>
                     <select id="student-theme-select">
                         <option value="light" data-i18n="lightTheme">Terang</option>
