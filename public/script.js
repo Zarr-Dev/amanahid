@@ -110,6 +110,7 @@ const EXTRA_T = {
         welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
         welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
         loginAccessNote: "Admin, Guru, dan Siswa masuk dari formulir yang sama. Peran ditentukan otomatis berdasarkan akun resmi yang terdaftar.",
+        faceLowLight: "Pencahayaan terlalu redup. Arahkan cahaya ke wajah, bukan dari belakang.",
         captchaLabel: "VERIFIKASI SINGKAT", captchaAnswerPlaceholder: "Ketik jawaban",
         captchaHelp: "Selesaikan tantangan singkat ini. Soal dapat diganti dan selalu diperbarui setelah percobaan login.",
         captchaRefresh: "Ganti", captchaLoading: "Memuat tantangan keamanan…",
@@ -299,6 +300,7 @@ const EXTRA_T = {
         welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
         welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
         loginAccessNote: "Admins, Teachers, and Students all use the same sign-in form. The system resolves each role from the registered school account.",
+        faceLowLight: "The image is too dark. Add light to your face and avoid strong backlighting.",
         captchaLabel: "QUICK SECURITY CHECK", captchaAnswerPlaceholder: "Type your answer",
         captchaHelp: "Solve this short challenge. Refresh it any time; a new one is issued after each login attempt.",
         captchaRefresh: "Refresh", captchaLoading: "Loading security challenge…",
@@ -488,6 +490,7 @@ const EXTRA_T = {
         welcomeDesc: "تسجل أمانة.id الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
         welcomeDesc: "تسجل أمانة الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
         loginAccessNote: "يستخدم المديرون والمعلمون والطلاب نموذج تسجيل الدخول نفسه. يحدد النظام الدور تلقائيًا من حساب المدرسة المسجل.",
+        faceLowLight: "الإضاءة ضعيفة جدًا. وجّه الضوء نحو الوجه وتجنب الإضاءة الخلفية القوية.",
         captchaLabel: "تحقق أمني سريع", captchaAnswerPlaceholder: "اكتب الإجابة",
         captchaHelp: "أكمل التحدي القصير. يمكنك تغييره، ويتم إصدار تحدٍّ جديد بعد كل محاولة دخول.",
         captchaRefresh: "تغيير", captchaLoading: "جارٍ تحميل التحدي الأمني…",
@@ -3263,6 +3266,26 @@ function isFaceDetectionUsable(detection, video) {
         Number.isFinite(height) && height >= minimumHeight;
 }
 
+function isFrameTooDark(source) {
+    try {
+        const canvas = state.brightnessCanvas || (state.brightnessCanvas = document.createElement("canvas"));
+        canvas.width = 24;
+        canvas.height = 24;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) return false;
+        context.drawImage(source, 0, 0, 24, 24);
+        const pixels = context.getImageData(0, 0, 24, 24).data;
+        let luminance = 0;
+        const pixelCount = pixels.length / 4;
+        for (let index = 0; index < pixels.length; index += 4) {
+            luminance += 0.2126 * pixels[index] + 0.7152 * pixels[index + 1] + 0.0722 * pixels[index + 2];
+        }
+        return luminance / pixelCount < 42;
+    } catch {
+        return false;
+    }
+}
+
 function updateAttendanceLiveness(detection) {
     if (!state.livenessChallenge) {
         state.livenessChallenge = {
@@ -3419,9 +3442,10 @@ async function processAttendanceFrame() {
 
         if (!detections.length) {
             if (state.livenessChallenge) state.livenessChallenge.frames = 0;
-            setAttendanceMessage(tr("faceNotFound"));
+            const message = isFrameTooDark(video) ? tr("faceLowLight") : tr("faceNotFound");
+            setAttendanceMessage(message);
             if (requestUser.role === "guru") {
-                updateProgress(0, tr("faceNotFound"));
+                updateProgress(0, message);
             }
             state.lastNose = null;
             state.movementFrames = 0;
@@ -3689,7 +3713,9 @@ async function processFormFrame() {
             state.faceCandidateQuality = null;
             state.formStableFrames = 0;
             state.lastFormNose = null;
-            $("form-face-status").textContent = tr("faceNotFound");
+            $("form-face-status").textContent = isFrameTooDark(video)
+                ? tr("faceLowLight")
+                : tr("faceNotFound");
         }
         updateFaceSampleCount();
     } catch (error) {
@@ -3765,7 +3791,9 @@ async function readUploadedFace(file) {
             .withFaceLandmarks()
             .withFaceDescriptors();
         if (detections.length !== 1) {
-            const message = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
+            const message = detections.length > 1
+                ? tr("faceTooMany")
+                : isFrameTooDark(image) ? tr("faceLowLight") : tr("faceNotFound");
             $("form-face-status").textContent = message;
             toast(message, "error");
             return;
