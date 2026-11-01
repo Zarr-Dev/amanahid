@@ -208,6 +208,100 @@ test("admin login issues a signed token and records a login", async t => {
     assert.ok(requests.some(request => request.url.includes("audit_log")));
 });
 
+test("Admin can update name, email, and password only after current-password verification", async t => {
+    const currentPassword = "SecureCurrent!234";
+    const nextPassword = "SecureNewPassword!567";
+    const currentHash = await hashPassword(currentPassword);
+    const currentDigest = createHash("sha256").update(currentPassword).digest("hex");
+    const adminId = "11111111-1111-4111-8111-111111111111";
+    const token = signToken({ email: "admin@example.com", name: "Old Admin", role: "admin" });
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    let patchPayload = null;
+
+    globalThis.fetch = async (url, init = {}) => {
+        const urlText = String(url);
+        const method = init.method || "GET";
+        const endpoint = urlText.split("/rest/v1/")[1] || "";
+        calls.push({ endpoint, method, body: init.body || null });
+        let data = [];
+        if (endpoint.startsWith("admin_users?select=email,name,is_active")) {
+            data = [{ email: "admin@example.com", name: "Old Admin", is_active: true }];
+        } else if (endpoint.startsWith("admin_users?select=id,email,name,password_hash,is_active")) {
+            data = [{
+                id: adminId, email: "admin@example.com", name: "Old Admin",
+                password_hash: currentHash, is_active: true
+            }];
+        } else if (endpoint.startsWith("admin_users?id=eq.") && method === "PATCH") {
+            patchPayload = JSON.parse(init.body || "{}");
+            data = [{
+                id: adminId, email: patchPayload.email, name: patchPayload.name, is_active: true
+            }];
+        }
+        return new Response(JSON.stringify(data), { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = {
+        method: "PUT",
+        headers: { origin: "https://school.example", "x-admin-token": token },
+        query: { action: "profile" },
+        socket: { remoteAddress: "test-admin-profile-update" },
+        body: {
+            current_password: currentDigest,
+            name: "New Administrator",
+            email: "new-admin@example.com",
+            password: nextPassword
+        }
+    };
+    const res = responseMock();
+    await adminProfileHandler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.user.name, "New Administrator");
+    assert.equal(res.body.user.email, "new-admin@example.com");
+    assert.equal(verifyToken(res.body.token)?.email, "new-admin@example.com");
+    assert.equal(verifyToken(res.body.token)?.role, "admin");
+    assert.equal(typeof patchPayload.password_hash, "string");
+    assert.match(patchPayload.password_hash, /^\$2[aby]\$12\$/);
+    assert.notEqual(patchPayload.password_hash, nextPassword);
+    const auditCall = calls.find(call => call.endpoint.startsWith("audit_log"));
+    assert.ok(auditCall, "profile changes must be audited");
+    assert.equal(String(auditCall.body).includes(nextPassword), false);
+});
+
+test("Admin profile changes reject an incorrect current password", async t => {
+    const currentPassword = "SecureCurrent!234";
+    const currentHash = await hashPassword(currentPassword);
+    const token = signToken({ email: "admin@example.com", name: "Admin", role: "admin" });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async url => {
+        const endpoint = String(url).split("/rest/v1/")[1] || "";
+        const data = endpoint.startsWith("admin_users?select=email,name,is_active")
+            ? [{ email: "admin@example.com", name: "Admin", is_active: true }]
+            : endpoint.startsWith("admin_users?select=id,email,name,password_hash,is_active")
+                ? [{ id: "11111111-1111-4111-8111-111111111111", email: "admin@example.com",
+                    name: "Admin", password_hash: currentHash, is_active: true }]
+                : [];
+        return new Response(JSON.stringify(data), { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const res = responseMock();
+    await adminProfileHandler({
+        method: "PUT",
+        headers: { origin: "https://school.example", "x-admin-token": token },
+        query: { action: "profile" },
+        socket: { remoteAddress: "test-admin-profile-wrong-password" },
+        body: {
+            current_password: createHash("sha256").update("WrongCurrent!234").digest("hex"),
+            name: "Changed Name"
+        }
+    }, res);
+    assert.equal(res.statusCode, 401);
+    assert.match(res.body.error, /Current password/i);
+});
+
 test("admin APIs handle empty and null Supabase results", async t => {
     const originalFetch = globalThis.fetch;
     const token = signToken({ email: "admin@example.com", name: "Admin", role: "admin" });
