@@ -30,7 +30,7 @@ async function updateAdminProfile(req, res, admin) {
     }
     try {
         const rows = await supabaseRequest(
-            \`admin_users?select=id,email,name,password_hash,is_active&email=eq.\${encodeURIComponent(admin.email)}&limit=1\`
+            `admin_users?select=id,email,name,password_hash,is_active&email=eq.${encodeURIComponent(admin.email)}&limit=1`
         );
         const profile = Array.isArray(rows) ? (rows[0] ?? null) : null;
         if (!profile || !profile.is_active ||
@@ -42,9 +42,9 @@ async function updateAdminProfile(req, res, admin) {
         if (nextName) values.name = nextName;
         if (nextEmail && nextEmail !== String(profile.email || "").toLowerCase()) {
             const [students, teachers, otherAdmins] = await Promise.all([
-                supabaseRequest(\`students?select=id&email=eq.\${encodeURIComponent(nextEmail)}&limit=1\`),
-                supabaseRequest(\`teachers?select=id&email=eq.\${encodeURIComponent(nextEmail)}&limit=1\`),
-                supabaseRequest(\`admin_users?select=id&email=eq.\${encodeURIComponent(nextEmail)}&id=neq.\${encodeURIComponent(profile.id)}&limit=1\`)
+                supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(nextEmail)}&limit=1`),
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(nextEmail)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(nextEmail)}&id=neq.${encodeURIComponent(profile.id)}&limit=1`)
             ]);
             if ([students, teachers, otherAdmins].some(list => Array.isArray(list) && list.length > 0)) {
                 return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
@@ -57,7 +57,7 @@ async function updateAdminProfile(req, res, admin) {
         }
 
         const updatedRows = await supabaseRequest(
-            \`admin_users?id=eq.\${encodeURIComponent(profile.id)}&select=id,email,name,is_active\`,
+            `admin_users?id=eq.${encodeURIComponent(profile.id)}&select=id,email,name,is_active`,
             {
                 method: "PATCH",
                 headers: { Prefer: "return=representation" },
