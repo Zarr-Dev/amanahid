@@ -1,5 +1,5 @@
 import { authorizeAdmin } from "../_lib/admin-api.js";
-import { hashPassword, isValidAdminPassword, verifyPassword } from "../_lib/admin-auth.js";
+import { hashPassword, isValidAdminPassword, signToken, verifyPassword } from "../_lib/admin-auth.js";
 import { writeAuditLog } from "../_lib/audit.js";
 import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
@@ -11,37 +11,86 @@ const FEATURES_ID = "00000000-0000-0000-0000-000000000002";
 const DEFAULTS = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 50 };
 
 
-async function updateAdminPassword(req, res, admin) {
+async function updateAdminProfile(req, res, admin) {
     const body = req.body || {};
     const validation = validateSchema({
         current_password: { type: "string", required: true, max: 64, pattern: /^[a-f0-9]{64}$/ },
-        password: { type: "string", required: true, max: 128 }
+        name: { type: "string", max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
+        email: { type: "string", max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+        password: { type: "string", max: 128 }
     }, body);
     if (!validation.valid) return jsonError(res, 400, validation.error);
-    if (!isValidAdminPassword(body.password)) {
+    const nextName = typeof body.name === "string" ? body.name.trim() : "";
+    const nextEmail = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    if (!nextName && !nextEmail && !body.password) {
+        return jsonError(res, 400, "Masukkan nama, email, atau kata sandi baru yang ingin diubah");
+    }
+    if (body.password && !isValidAdminPassword(body.password)) {
         return jsonError(res, 400, "Password must be at least 12 characters and include uppercase, lowercase, number, and symbol");
     }
     try {
         const rows = await supabaseRequest(
-            `admin_users?select=id,password_hash&email=eq.${encodeURIComponent(admin.email)}&limit=1`
+            \`admin_users?select=id,email,name,password_hash,is_active&email=eq.\${encodeURIComponent(admin.email)}&limit=1\`
         );
         const profile = Array.isArray(rows) ? (rows[0] ?? null) : null;
-        if (!profile || !(await verifyPassword(body.current_password, profile.password_hash))) {
+        if (!profile || !profile.is_active ||
+            !(await verifyPassword(body.current_password, profile.password_hash))) {
             return jsonError(res, 401, "Current password is incorrect");
         }
-        const password_hash = await hashPassword(body.password);
-        await supabaseRequest(`admin_users?id=eq.${encodeURIComponent(profile.id)}`, {
-            method: "PATCH",
-            body: JSON.stringify({ password_hash })
+
+        const values = {};
+        if (nextName) values.name = nextName;
+        if (nextEmail && nextEmail !== String(profile.email || "").toLowerCase()) {
+            const [students, teachers, otherAdmins] = await Promise.all([
+                supabaseRequest(\`students?select=id&email=eq.\${encodeURIComponent(nextEmail)}&limit=1\`),
+                supabaseRequest(\`teachers?select=id&email=eq.\${encodeURIComponent(nextEmail)}&limit=1\`),
+                supabaseRequest(\`admin_users?select=id&email=eq.\${encodeURIComponent(nextEmail)}&id=neq.\${encodeURIComponent(profile.id)}&limit=1\`)
+            ]);
+            if ([students, teachers, otherAdmins].some(list => Array.isArray(list) && list.length > 0)) {
+                return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+            }
+            values.email = nextEmail;
+        }
+        if (body.password) values.password_hash = await hashPassword(body.password);
+        if (!Object.keys(values).length) {
+            return jsonError(res, 400, "Tidak ada perubahan profil yang perlu disimpan");
+        }
+
+        const updatedRows = await supabaseRequest(
+            \`admin_users?id=eq.\${encodeURIComponent(profile.id)}&select=id,email,name,is_active\`,
+            {
+                method: "PATCH",
+                headers: { Prefer: "return=representation" },
+                body: JSON.stringify(values)
+            }
+        );
+        const updated = Array.isArray(updatedRows) ? (updatedRows[0] ?? null) : null;
+        if (!updated || !updated.is_active) return jsonError(res, 404, "Admin profile could not be updated");
+
+        const changedFields = Object.keys(values).filter(key => key !== "password_hash");
+        await writeAuditLog(
+            { ...admin, email: updated.email, name: updated.name },
+            "admin.profile.update",
+            "admin_users",
+            profile.id,
+            {
+                changed_fields: [...changedFields, ...(body.password ? ["password"] : [])],
+                previous_email_changed: updated.email !== profile.email
+            }
+        );
+
+        const sessionUser = { email: updated.email, name: updated.name, role: "admin" };
+        return res.status(200).json({
+            ok: true,
+            user: sessionUser,
+            token: signToken(sessionUser)
         });
-        await writeAuditLog(admin, "admin.password.update", "admin_users", profile.id, {});
-        return res.status(200).json({ ok: true });
     } catch (error) {
-        console.error("Admin password update failed:", error);
-        return jsonSupabaseError(res, error, "Unable to update admin password");
+        if (error?.code === "23505") return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+        console.error("Admin profile update failed:", error);
+        return jsonSupabaseError(res, error, "Unable to update admin profile");
     }
 }
-
 export default async function handler(req, res) {
     const action = req.query?.action;
     const admin = await authorizeAdmin(req, res, action === "test-tools" ? "test-tools" : "settings");
@@ -54,7 +103,7 @@ export default async function handler(req, res) {
         }
         const features = await getFeatureFlags();
         if (!features.admin_password_change) return featureDisabled(res, "admin_password_change", "Perubahan kata sandi Admin sedang dinonaktifkan");
-        return updateAdminPassword(req, res, admin);
+        return updateAdminProfile(req, res, admin);
     }
     if (req.query?.action === "features") {
         try {
