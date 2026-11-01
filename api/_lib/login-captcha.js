@@ -165,6 +165,12 @@ export function verifyLoginCaptcha(token, submittedAnswer) {
     if (typeof token !== "string" || token.length > 2048 || typeof submittedAnswer !== "string") return false;
     const parts = token.split(".");
     if (parts.length !== 4 || parts[0] !== "v1") return false;
+    // Base64URL decoders may accept non-canonical trailing bits; reject altered encodings.
+    const encodedParts = parts.slice(1);
+    if (!encodedParts.every(part =>
+        /^[A-Za-z0-9_-]+$/.test(part) &&
+        Buffer.from(part, "base64url").toString("base64url") === part
+    )) return false;
 
     const expectedAnswer = normaliseAnswer(submittedAnswer);
     if (!expectedAnswer) return false;
