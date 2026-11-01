@@ -58,12 +58,13 @@ export default async function handler(req, res) {
 
             const email = body.email.trim().toLowerCase();
             const name = body.name.trim();
-            const [studentEmailRows, teacherEmailRows] = await Promise.all([
+            const [studentEmailRows, teacherEmailRows, adminEmailRows] = await Promise.all([
                 supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
-                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
             ]);
-            if ((Array.isArray(studentEmailRows) && studentEmailRows.length) ||
-                (Array.isArray(teacherEmailRows) && teacherEmailRows.length)) {
+            if ([studentEmailRows, teacherEmailRows, adminEmailRows]
+                .some(rows => Array.isArray(rows) && rows.length > 0)) {
                 return jsonError(res, 409, "User email already exists");
             }
 
@@ -132,11 +133,16 @@ export default async function handler(req, res) {
                 return jsonError(res, 400, "At least one field must be changed");
             }
             if (body.email) {
+                const email = body.email.trim().toLowerCase();
                 const otherTable = body.table === "students" ? "teachers" : "students";
-                const duplicate = await supabaseRequest(
-                    `${otherTable}?select=id&email=eq.${encodeURIComponent(body.email.trim().toLowerCase())}&limit=1`
-                );
-                if ((Array.isArray(duplicate) ? duplicate.length : 0) > 0) return jsonError(res, 409, "User email already exists");
+                const [sameRole, otherRole, admins] = await Promise.all([
+                    supabaseRequest(`${body.table}?select=id&email=eq.${encodeURIComponent(email)}&id=neq.${encodeURIComponent(body.id)}&limit=1`),
+                    supabaseRequest(`${otherTable}?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                    supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
+                ]);
+                if ([sameRole, otherRole, admins].some(rows => Array.isArray(rows) && rows.length > 0)) {
+                    return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+                }
             }
             if (body.password && !validatePassword(body.password)) {
                 return jsonError(res, 400, "Password must contain 8 to 128 safe characters");
