@@ -128,8 +128,18 @@ const htmlChecks = [
     ["Admin school GPS accuracy diagnostics", /id="admin-map-device-accuracy"/],
     ["Admin WhatsApp consent checkbox", /class="admin-test-consent"[\s\S]*?type="checkbox"/],
     ["Admin account export", /id="admin-export-users"/],
-    ["Admin audit export", /id="admin-export-audit"/]
+    ["Admin audit export", /id="admin-export-audit"/],
+    ["Teacher personal preference switches", /id="teacher-preference-settings"[\s\S]*?data-user-preference="animations"[\s\S]*?data-user-preference="charts"[\s\S]*?data-user-preference="confirmAttendance"[\s\S]*?data-user-preference="autoLock"/],
+    ["Student personal preference switches", /id="student-preference-settings"[\s\S]*?data-user-preference="animations"[\s\S]*?data-user-preference="charts"[\s\S]*?data-user-preference="confirmAttendance"[\s\S]*?data-user-preference="autoLock"/],
+    ["Teacher attendance chart", /id="teacher-preference-chart"[\s\S]*?data-chart-bars="teacher"/],
+    ["Student attendance chart", /id="student-preference-chart"[\s\S]*?data-chart-bars="student"/],
+    ["Admin self profile name and email fields", /id="admin-profile-name"[\s\S]*?id="admin-profile-email"[\s\S]*?id="admin-current-password"/]
 ];
+const personalPreferenceCount = (html.match(/data-user-preference="/g) || []).length;
+if (personalPreferenceCount !== 8) {
+    console.error(`Build check failed: exactly four personal switches per Guru/Siswa role are required; found ${personalPreferenceCount}.`);
+    process.exit(1);
+}
 const navIconCount = (html.match(/class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24">/g) || []).length;
 if (navIconCount !== 13 || !css.includes(".nav-symbol svg") ||
     !css.includes(".nav-link:hover .nav-symbol svg")) {
@@ -187,7 +197,11 @@ const cssChecks = [
     ["mobile safe-area bottom nav", /height:\s*66px;[\s\S]{0,180}padding-bottom:\s*max\(5px,\s*env\(safe-area-inset-bottom\)\)/],
     ["touch-scrollable tables", /\.table-wrap\s*\{[^}]*overflow-x:\s*auto;[^}]*-webkit-overflow-scrolling:\s*touch;/s],
     ["large screen content width cap", /@media\s*\(min-width:\s*1600px\)[\s\S]*?\.app-shell\s*\{\s*max-width:\s*1600px;/],
-    ["absence form styling", /\.absence-form-panel\s+\.registration-form/]
+    ["absence form styling", /\.absence-form-panel\s+\.registration-form/],
+    ["personal preference switch styling", /\.preference-switch input\[type="checkbox"\]\s*\{/],
+    ["responsive attendance chart styling", /\.preference-chart-bars\s*\{[\s\S]*?grid-template-columns:\s*repeat\(7,/],
+    ["user-configurable reduced motion", /body\.reduce-motion \*[\s\S]*?animation-duration:\s*\.01ms/]
+
 ];
 for (const [label, pattern] of cssChecks) {
     if (!pattern.test(css)) {
@@ -221,6 +235,16 @@ if (!js.includes('phase === "pending" ? "disabled"') ||
     !js.includes("state.adminFeatureSaveQueue") ||
     !js.includes("body: payload });")) {
     console.error("Build check failed: Admin feature toggles must show per-switch loading and serialize JSON updates.");
+    process.exit(1);
+}
+
+if (!js.includes("DEFAULT_USER_PREFERENCES") ||
+    !js.includes("15 * 60 * 1000") ||
+    !js.includes("function renderPreferenceCharts") ||
+    !js.includes("attendanceConfirmPending") ||
+    !allApiSource.includes("async function updateAdminProfile") ||
+    !allApiSource.includes("previous_email_changed")) {
+    console.error("Build check failed: personal security settings, attendance charts, or Admin self-profile API wiring is missing.");
     process.exit(1);
 }
 
