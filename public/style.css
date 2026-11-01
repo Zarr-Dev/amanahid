@@ -4129,3 +4129,157 @@ body.theme-dark .auth-screen {
     .face-upload-button { transition:none; }
     .face-upload-button:hover { transform:none; }
 }
+
+
+/* Personal settings shared by Teacher and Student workspaces. */
+.user-preference-settings {
+    display: grid;
+    gap: 4px;
+    margin: 18px 0 12px;
+    padding: 16px;
+    border: 1px solid var(--line, #e5eaf2);
+    border-radius: 16px;
+    background: var(--surface-soft, rgba(148, 163, 184, .06));
+}
+.preference-section-heading,
+.preference-chart-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.preference-section-heading strong,
+.preference-chart-heading h3 { color: var(--text, #172033); }
+.preference-section-heading > span,
+.preference-chart-heading > .muted { color: var(--muted, #64748b); font-size: 12px; }
+.preference-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--line, #e5eaf2);
+    cursor: pointer;
+}
+.preference-switch > span { display: grid; gap: 3px; min-width: 0; }
+.preference-switch strong { font-size: 13px; font-weight: 700; color: var(--text, #172033); }
+.preference-switch small { font-size: 12px; line-height: 1.45; color: var(--muted, #64748b); }
+.preference-switch input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 26px;
+    margin: 0;
+    border: 1px solid #aab6c8;
+    border-radius: 999px;
+    background: #d9e0ea;
+    cursor: pointer;
+    transition: background-color .18s ease, border-color .18s ease;
+}
+.preference-switch input[type="checkbox"]::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .2);
+    transition: transform .18s ease;
+}
+.preference-switch input[type="checkbox"]:checked {
+    border-color: #3978f6;
+    background: #3978f6;
+}
+.preference-switch input[type="checkbox"]:checked::before { transform: translateX(18px); }
+.preference-switch input[type="checkbox"]:focus-visible {
+    outline: 3px solid rgba(57, 120, 246, .28);
+    outline-offset: 3px;
+}
+.preference-chart {
+    margin-top: 18px;
+    padding: 18px;
+}
+.preference-chart-heading h3 {
+    margin: 4px 0 0;
+    font-size: 17px;
+}
+.preference-chart-bars {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-items: end;
+    gap: clamp(6px, 2vw, 16px);
+    min-height: 158px;
+    padding: 14px 4px 2px;
+}
+.preference-chart-column {
+    display: grid;
+    grid-template-rows: 18px 112px 18px;
+    justify-items: center;
+    align-items: end;
+    min-width: 0;
+    gap: 5px;
+}
+.preference-chart-column strong {
+    color: var(--text, #172033);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+.preference-chart-track {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    width: min(100%, 34px);
+    height: 112px;
+    overflow: hidden;
+    border-radius: 9px;
+    background: rgba(148, 163, 184, .12);
+}
+.preference-chart-track span {
+    display: block;
+    width: 100%;
+    min-height: 3px;
+    border-radius: 8px 8px 3px 3px;
+    background: linear-gradient(180deg, #7ca7ff 0%, #3978f6 100%);
+    transition: height .22s ease;
+}
+.preference-chart-column small {
+    color: var(--muted, #64748b);
+    font-size: 11px;
+    text-align: center;
+    white-space: nowrap;
+}
+body.theme-dark .user-preference-settings {
+    border-color: #334155;
+    background: rgba(30, 41, 59, .55);
+}
+body.theme-dark .preference-section-heading strong,
+body.theme-dark .preference-chart-heading h3,
+body.theme-dark .preference-switch strong,
+body.theme-dark .preference-chart-column strong { color: var(--text, #f8fafc); }
+body.theme-dark .preference-switch { border-color: #334155; }
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+}
+@media (max-width: 480px) {
+    .user-preference-settings { padding: 12px; }
+    .preference-chart { padding: 14px 10px; }
+    .preference-chart-bars { gap: 4px; }
+    .preference-chart-column { grid-template-rows: 16px 94px 18px; }
+    .preference-chart-track { height: 94px; }
+    .preference-chart-column small { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .preference-switch input[type="checkbox"],
+    .preference-switch input[type="checkbox"]::before,
+    .preference-chart-track span { transition: none !important; }
+}
