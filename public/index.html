@@ -311,6 +311,13 @@
                             data-i18n="livenessWaiting">Verifikasi wajah dan gerakan akan dimulai setelah lokasi
                             lolos.</span></div>
                 </div>
+                <section id="teacher-preference-chart" class="panel preference-chart hidden" aria-label="Grafik ringkasan presensi Guru">
+                    <div class="preference-chart-heading">
+                        <div><span class="section-kicker">ANALITIK PRESENSI</span><h3>Ringkasan 7 hari</h3></div>
+                        <span class="muted">Data presensi terbaru</span>
+                    </div>
+                    <div class="preference-chart-bars" data-chart-bars="teacher" aria-label="Jumlah presensi per hari"></div>
+                </section>
             </section>
 
             <section id="view-database" class="view hidden">
@@ -854,13 +861,17 @@
                 </div>
                 <div class="panel">
                     <form id="admin-profile-form" class="form-stack">
-                        <label for="admin-current-password" data-i18n="currentPassword">Kata sandi saat
-                            ini</label><input id="admin-current-password" type="password"
-                            autocomplete="current-password" required maxlength="128">
-                        <label for="admin-new-password" data-i18n="newPassword">Kata sandi baru</label><input
-                            id="admin-new-password" type="password" autocomplete="new-password" required minlength="12"
-                            maxlength="128">
-                        <button class="button primary" type="submit" data-i18n="savePassword">Simpan kata sandi</button>
+                        <label for="admin-profile-name">Nama Admin</label>
+                        <input id="admin-profile-name" type="text" autocomplete="name" maxlength="120" required>
+                        <label for="admin-profile-email">Email Admin</label>
+                        <input id="admin-profile-email" type="email" autocomplete="email" maxlength="254" required>
+                        <label for="admin-current-password" data-i18n="currentPassword">Kata sandi saat ini (wajib untuk verifikasi)</label>
+                        <input id="admin-current-password" type="password" autocomplete="current-password" required maxlength="128">
+                        <label for="admin-new-password">Kata sandi baru (opsional)</label>
+                        <input id="admin-new-password" type="password" autocomplete="new-password" minlength="12" maxlength="128"
+                            placeholder="Kosongkan jika tidak ingin mengubah kata sandi">
+                        <p class="helper-text">Perubahan nama/email dan kata sandi memerlukan kata sandi saat ini. Kata sandi baru harus 12+ karakter dan memuat huruf besar, huruf kecil, angka, serta simbol.</p>
+                        <button class="button primary" type="submit">Simpan profil Admin</button>
                     </form>
                 </div>
             </section>
@@ -951,6 +962,13 @@
                     <button id="btn-student-attendance" class="button primary student-checkin-button" type="button"
                         data-i18n="checkInNow" disabled>Absen Sekarang</button>
                 </div>
+                <section id="student-preference-chart" class="panel preference-chart hidden" aria-label="Grafik ringkasan presensi Siswa">
+                    <div class="preference-chart-heading">
+                        <div><span class="section-kicker">ANALITIK PRESENSI</span><h3>Ringkasan 7 hari</h3></div>
+                        <span class="muted">Riwayat pribadi</span>
+                    </div>
+                    <div class="preference-chart-bars" data-chart-bars="student" aria-label="Jumlah presensi per hari"></div>
+                </section>
             </section>
             <section id="view-s-history" class="view hidden">
                 <div class="page-intro">
@@ -1035,6 +1053,13 @@
                         <option value="en">English</option>
                         <option value="ar">العربية</option>
                     </select>
+                    <div id="student-preference-settings" class="user-preference-settings">
+                        <div class="preference-section-heading"><strong>Pengaturan pengalaman & keamanan</strong><span>Empat kontrol pribadi</span></div>
+                        <label class="preference-switch"><span><strong>Animasi antarmuka</strong><small>Aktifkan transisi dan animasi ringan.</small></span><input type="checkbox" role="switch" data-user-preference="animations"></label>
+                        <label class="preference-switch"><span><strong>Grafik presensi</strong><small>Tampilkan ringkasan kehadiran 7 hari terakhir.</small></span><input type="checkbox" role="switch" data-user-preference="charts"></label>
+                        <label class="preference-switch"><span><strong>Konfirmasi sebelum presensi</strong><small>Minta persetujuan sebelum kamera presensi dinyalakan.</small></span><input type="checkbox" role="switch" data-user-preference="confirmAttendance"></label>
+                        <label class="preference-switch"><span><strong>Keluar otomatis 15 menit</strong><small>Akhiri sesi jika tidak ada aktivitas selama 15 menit.</small></span><input type="checkbox" role="switch" data-user-preference="autoLock"></label>
+                    </div>
                     <button id="btn-student-save-profile" class="button primary full" type="button"
                         data-i18n="saveSettings">Simpan pengaturan</button>
                     <button id="btn-student-logout" class="button danger-outline full" type="button"
@@ -1068,6 +1093,13 @@
                 <option value="en">English</option>
                 <option value="ar">العربية</option>
             </select>
+            <div id="teacher-preference-settings" class="user-preference-settings hidden">
+                <div class="preference-section-heading"><strong>Pengaturan pengalaman & keamanan</strong><span>Empat kontrol pribadi</span></div>
+                <label class="preference-switch"><span><strong>Animasi antarmuka</strong><small>Aktifkan transisi dan animasi ringan.</small></span><input type="checkbox" role="switch" data-user-preference="animations"></label>
+                <label class="preference-switch"><span><strong>Grafik presensi</strong><small>Tampilkan ringkasan kehadiran 7 hari terakhir.</small></span><input type="checkbox" role="switch" data-user-preference="charts"></label>
+                <label class="preference-switch"><span><strong>Konfirmasi sebelum presensi</strong><small>Minta persetujuan sebelum kamera presensi dinyalakan.</small></span><input type="checkbox" role="switch" data-user-preference="confirmAttendance"></label>
+                <label class="preference-switch"><span><strong>Keluar otomatis 15 menit</strong><small>Akhiri sesi jika tidak ada aktivitas selama 15 menit.</small></span><input type="checkbox" role="switch" data-user-preference="autoLock"></label>
+            </div>
             <button id="btn-save-profile" class="button primary full" type="button" data-i18n="saveSettings">Simpan
                 pengaturan</button>
             <button id="btn-logout" class="button danger-outline full" type="button" data-i18n="logout">Keluar</button>
