@@ -120,6 +120,8 @@ const htmlChecks = [
     ["admin GPS diagnostics", /id="admin-test-gps-run"/],
     ["compact shared login CAPTCHA", /id="login-captcha-answer"/],
     ["server CAPTCHA refresh control", /id="login-captcha-refresh"/],
+    ["custom accessible face photo picker", /id="photo-upload" class="face-upload-input"[\\s\\S]*?class="button secondary face-upload-button"/],
+    ["visible uploaded photo filename", /id="photo-upload-name"/],
     ["editable school GPS map", /id="admin-school-map"/],
     ["Admin school-to-device distance", /id="admin-map-device-distance"/],
     ["Admin school GPS accuracy diagnostics", /id="admin-map-device-accuracy"/],
@@ -268,7 +270,9 @@ if (!js.includes("async function submitStudentAbsence") || !js.includes("loadAbs
     process.exit(1);
 }
 
-if (!js.includes("refreshLoginCaptcha()") || !js.includes("syncAdminSettingsMap") ||
+if (!js.includes("refreshLoginCaptcha()") || !js.includes("getVerifiedImageFormat") ||
+    !js.includes("createImageBitmap(file") || !js.includes("getFaceDetectorOptions") ||
+    !js.includes("syncAdminSettingsMap") ||
     !js.includes("/api/auth/login?action=captcha") || !js.includes("captchaToken: state.loginCaptchaToken")) {
     console.error("Build check failed: server-issued shared CAPTCHA or editable school GPS map is missing.");
     process.exit(1);
