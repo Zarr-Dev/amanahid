@@ -14,7 +14,7 @@ let SCHOOL_LOCATION = {
     name: "Al Fityan School"
 };
 const MAX_GPS_ACCURACY_METERS = 35;
-const FACE_MATCH_THRESHOLD = 0.45;
+const FACE_MATCH_THRESHOLD = 0.42;
 const MAX_FACE_SAMPLES = 5;
 
 const ROLE_T = {
@@ -3228,10 +3228,22 @@ function drawDetections(video, canvas, detections) {
     faceapi.draw.drawFaceLandmarks(canvas, resized);
 }
 
+function getFaceDetectorOptions() {
+    if (!state.faceDetectorOptions) {
+        const cores = Number(navigator.hardwareConcurrency) || 4;
+        state.faceDetectorOptions = new faceapi.TinyFaceDetectorOptions({
+            inputSize: cores <= 4 ? 416 : 512,
+            scoreThreshold: 0.45
+        });
+    }
+    return state.faceDetectorOptions;
+}
+
 async function detectFaces(video) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 });
-    return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks().withFaceDescriptors();
+    return faceapi.detectAllFaces(video, getFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptors();
 }
 
 function isFaceDetectionUsable(detection, video) {
@@ -3241,9 +3253,9 @@ function isFaceDetectionUsable(detection, video) {
     const height = Number(box?.height);
     const sourceWidth = Number(video?.videoWidth) || 0;
     const sourceHeight = Number(video?.videoHeight) || 0;
-    const minimumWidth = Math.max(76, sourceWidth * 0.12);
-    const minimumHeight = Math.max(76, sourceHeight * 0.16);
-    return Number.isFinite(score) && score >= 0.58 &&
+    const minimumWidth = Math.max(64, sourceWidth * 0.10);
+    const minimumHeight = Math.max(64, sourceHeight * 0.13);
+    return Number.isFinite(score) && score >= 0.48 &&
         Number.isFinite(width) && width >= minimumWidth &&
         Number.isFinite(height) && height >= minimumHeight;
 }
@@ -3335,7 +3347,7 @@ function saveFaceSample(descriptor, quality = state.faceCandidateQuality, angle 
         toast(tr("faceUploadError"), "error");
         return false;
     }
-    if (typeof quality !== "number" || quality < 0.7) {
+    if (typeof quality !== "number" || quality < 0.55) {
         $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
         toast("Wajah kurang jelas, mendekatlah ke kamera.", "error");
         return false;
@@ -3616,7 +3628,7 @@ async function startFormCamera() {
             return;
         }
         $("form-camera-placeholder").classList.add("hidden");
-        state.formTimer = setInterval(() => processFormFrame(), 350);
+        state.formTimer = setInterval(() => processFormFrame(), 550);
         toast(tr("cameraFormReady"), "success");
     } catch (error) {
         if (startToken === state.formStartToken) {
@@ -3645,7 +3657,7 @@ async function processFormFrame() {
             state.faceCandidateQuality = quality;
             $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
             if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
-                quality < 0.7 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
+                quality < 0.55 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
                 state.formStableFrames = 0;
                 state.lastFormNose = null;
                 if (quality < 0.7) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
@@ -3686,33 +3698,79 @@ async function processFormFrame() {
     }
 }
 
+async function getVerifiedImageFormat(file) {
+    const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+    const jpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    const png = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 &&
+        bytes[2] === 0x4e && bytes[3] === 0x47 && bytes[4] === 0x0d &&
+        bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a;
+    const webp = bytes.length >= 12 &&
+        String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+        String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+    return jpeg ? "image/jpeg" : png ? "image/png" : webp ? "image/webp" : null;
+}
+
+async function decodeFaceUpload(file) {
+    let source;
+    let bitmap;
+    if (typeof createImageBitmap === "function") {
+        try {
+            bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+            source = bitmap;
+        } catch {
+            bitmap = null;
+        }
+    }
+    if (!source) source = await faceapi.bufferToImage(file);
+    const width = Number(source.naturalWidth || source.width);
+    const height = Number(source.naturalHeight || source.height);
+    if (!width || !height) {
+        bitmap?.close?.();
+        throw new Error("Image dimensions are invalid");
+    }
+    const scale = Math.min(1, 1600 / Math.max(width, height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext("2d", { alpha: false });
+    if (!context) {
+        bitmap?.close?.();
+        throw new Error("Image canvas is unavailable");
+    }
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    bitmap?.close?.();
+    return canvas;
+}
+
 async function readUploadedFace(file) {
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast(tr("faceUploadError"), "error");
+    if (file.size <= 0 || file.size > 15 * 1024 * 1024) {
+        toast("Ukuran foto harus lebih dari 0 dan maksimal 15 MB.", "error");
         return;
     }
-    if (!state.modelReady && !(await loadModels())) {
-        toast(tr("modelFailed"), "error");
-        return;
-    }
-
     try {
-        const image = await faceapi.bufferToImage(file);
-        const detections = await faceapi.detectAllFaces(
-            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 })
-        ).withFaceLandmarks().withFaceDescriptors();
-
-        if (detections.length !== 1) {
-            $("form-face-status").textContent = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
-            toast(detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound"), "error");
+        if (!await getVerifiedImageFormat(file)) {
+            toast("File tidak terbaca sebagai JPG, PNG, atau WebP yang valid.", "error");
             return;
         }
-
+        if (!state.modelReady && !(await loadModels())) {
+            toast(tr("modelFailed"), "error");
+            return;
+        }
+        const image = await decodeFaceUpload(file);
+        const detections = await faceapi.detectAllFaces(image, getFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptors();
+        if (detections.length !== 1) {
+            const message = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
+            $("form-face-status").textContent = message;
+            toast(message, "error");
+            return;
+        }
         const detection = detections[0];
         const angle = faceAngleBucket(detection);
-        const sourceWidth = image.naturalWidth || image.width || 640;
-        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
+        const sourceWidth = image.width || 640;
+        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.18));
         if (!angle) {
             $("form-face-status").textContent = tr("faceTurnAngle");
             toast(tr("faceTurnAngle"), "error");
@@ -3730,7 +3788,7 @@ async function readUploadedFace(file) {
         }
     } catch (error) {
         console.error("Image processing error:", error);
-        toast(tr("faceUploadError"), "error");
+        toast("Foto gagal dibaca. Coba JPG/JPEG/PNG/WebP lain dengan wajah terlihat jelas.", "error");
     }
 }
 
@@ -4674,8 +4732,13 @@ function setupEvents() {
         toast(tr("cameraFormOff"), "info");
     });
 
-    $("photo-upload").addEventListener("change", event => {
-        readUploadedFaces(Array.from(event.target.files || []));
+    $("photo-upload").addEventListener("change", async event => {
+        const files = Array.from(event.target.files || []);
+        const name = $("photo-upload-name");
+        if (name) name.textContent = files.length
+            ? files.map(file => file.name).join(", ")
+            : "Belum ada file dipilih";
+        await readUploadedFaces(files);
         event.target.value = "";
     });
 
