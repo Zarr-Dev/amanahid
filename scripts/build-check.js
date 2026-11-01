@@ -224,7 +224,9 @@ if (!js.includes('phase === "pending" ? "disabled"') ||
     process.exit(1);
 }
 
-if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 512, scoreThreshold: 0.55") ||
+if (!js.includes("@v0.22.2/weights") ||
+    !js.includes("inputSize: cores <= 4 ? 416 : 512") || !js.includes("scoreThreshold: 0.45") ||
+    !js.includes("function getFaceDetectorOptions") ||
     !js.includes("function updateAttendanceLiveness") || !js.includes("function isFaceDetectionUsable") ||
     !allApiSource.includes("FACE_MATCH_THRESHOLD = 0.42") ||
     !allApiSource.includes("GPS_BOUNDARY_UNCERTAIN")) {
