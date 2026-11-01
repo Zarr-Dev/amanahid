@@ -7,8 +7,12 @@ import {
     timingSafeEqual
 } from "node:crypto";
 
-const CAPTCHA_TTL_MS = 3 * 60 * 1000;
-const WORDS = ["PAGI", "KELAS", "GURU", "SISWA", "BUKU", "MEJA", "AMANAH", "SEKOLAH", "KAMERA", "JADWAL"];
+const CAPTCHA_TTL_MS = 2 * 60 * 1000;
+const WORDS = [
+    "PAGI", "KELAS", "GURU", "SISWA", "BUKU", "MEJA", "AMANAH", "SEKOLAH",
+    "KAMERA", "JADWAL", "LENTERA", "BELAJAR", "DISIPLIN", "HADIR", "ILMU",
+    "KOMPAS", "MENTARI", "PAPAN", "PENSIL", "RUANGAN", "TERTIB", "WAKTU"
+];
 const VOWELS = ["A", "I", "U", "E", "O"];
 
 const COPY = {
@@ -19,7 +23,8 @@ const COPY = {
         vowel: "Pilih huruf vokal: {value}",
         largest: "Pilih angka terbesar: {value}",
         digit: "Pilih angka di antara huruf: {value}",
-        sequence: "Lengkapi pola: {value}, ?"
+        sequence: "Lengkapi pola: {value}, ?",
+        arithmetic: "Hitung hasilnya: {value} = ?"
     },
     en: {
         reverse: "Reverse the word: {value}",
@@ -28,7 +33,8 @@ const COPY = {
         vowel: "Choose the vowel: {value}",
         largest: "Choose the largest number: {value}",
         digit: "Choose the number between the letters: {value}",
-        sequence: "Complete the pattern: {value}, ?"
+        sequence: "Complete the pattern: {value}, ?",
+        arithmetic: "Calculate the result: {value} = ?"
     },
     ar: {
         reverse: "اعكس ترتيب الكلمة: {value}",
@@ -37,7 +43,8 @@ const COPY = {
         vowel: "اختر حرف العلة: {value}",
         largest: "اختر الرقم الأكبر: {value}",
         digit: "اختر الرقم الواقع بين الحروف: {value}",
-        sequence: "أكمل النمط: {value}, ؟"
+        sequence: "أكمل النمط: {value}, ؟",
+        arithmetic: "احسب الناتج: {value} = ؟"
     }
 };
 
@@ -71,7 +78,7 @@ function getEncryptionKey() {
 function buildChallenge(language) {
     const lang = ["id", "en", "ar"].includes(language) ? language : "id";
     const word = randomItem(WORDS);
-    const kind = randomInt(0, 7);
+    const kind = randomInt(0, 8);
     let key;
     let values = {};
     let answer;
@@ -108,12 +115,21 @@ function buildChallenge(language) {
         const digit = String(randomInt(1, 10));
         values = { value: shuffle([...letters, digit]).join(" · ") };
         answer = digit;
-    } else {
+    } else if (kind === 6) {
         key = "sequence";
         const start = randomInt(1, 5);
         const step = randomInt(2, 4);
         values = { value: [start, start + step, start + step * 2].join(", ") };
         answer = String(start + step * 3);
+    } else {
+        key = "arithmetic";
+        const first = randomInt(2, 9);
+        const second = randomInt(2, 9);
+        const third = randomInt(1, 9);
+        const subtract = randomInt(0, 2) === 1;
+        const result = first * second + (subtract ? -third : third);
+        values = { value: `(${first} × ${second}) ${subtract ? "−" : "+"} ${third}` };
+        answer = String(result);
     }
 
     let question = COPY[lang][key];
