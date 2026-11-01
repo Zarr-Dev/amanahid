@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import test from "node:test";
 import { hashPassword, signToken, verifyPassword, verifyToken } from "../api/_lib/admin-auth.js";
 import { createLoginCaptcha, verifyLoginCaptcha } from "../api/_lib/login-captcha.js";
-import { getMissingAuthConfiguration, getRequestRole, rateLimit } from "../api/_lib/supabase.js";
+import { getClientIp, getMissingAuthConfiguration, getRequestRole, isAllowedOrigin, rateLimit } from "../api/_lib/supabase.js";
 import { validateSchema } from "../api/_lib/validate.js";
 import adminUsersHandler from "../api/admin/users.js";
 import healthHandler from "../api/settings.js";
@@ -105,6 +105,29 @@ test("rate limiter slides its window and returns Retry-After", () => {
     assert.equal(rateLimit(req, "test-sliding-window", 1, 60_000, res), false);
     assert.equal(res.headers["Retry-After"], "60");
 });
+
+test("Vercel client IP headers are validated and preferred over forwarded chains", () => {
+    assert.equal(getClientIp({
+        headers: {
+            "x-vercel-forwarded-for": "203.0.113.10",
+            "x-forwarded-for": "198.51.100.20"
+        },
+        socket: { remoteAddress: "192.0.2.1" }
+    }), "203.0.113.10");
+    assert.equal(getClientIp({
+        headers: { "x-forwarded-for": "198.51.100.20, 10.0.0.1" },
+        socket: { remoteAddress: "192.0.2.1" }
+    }), "192.0.2.1");
+});
+
+test("origin validation rejects lookalike hosts and path-bearing Origin headers", () => {
+    process.env.APP_ORIGIN = "https://school.example/";
+    assert.equal(isAllowedOrigin({ headers: { origin: "https://school.example" } }), true);
+    assert.equal(isAllowedOrigin({ headers: { origin: "https://school.example.attacker.invalid" } }), false);
+    assert.equal(isAllowedOrigin({ headers: { origin: "https://school.example/path" } }), false);
+    assert.equal(isAllowedOrigin({ headers: {} }), false);
+});
+
 
 test("request schema rejects unknown properties", () => {
     const result = validateSchema({
@@ -501,7 +524,7 @@ test("authentication endpoints clearly report missing production configuration b
         body: { email: "admin@example.com", password: "a".repeat(64), captcha: 8 }
     }, adminRes);
     assert.equal(adminRes.statusCode, 503);
-    assert.match(adminRes.body.error, /SUPABASE_URL/);
+    assert.match(adminRes.body.error, /belum dikonfigurasi/);
     assert.match(adminRes.body.error, /SESSION_SECRET/);
 
     const userRes = responseMock();
@@ -512,13 +535,13 @@ test("authentication endpoints clearly report missing production configuration b
         body: { email: "student@example.com", password: "a".repeat(64) }
     }, userRes);
     assert.equal(userRes.statusCode, 503);
-    assert.match(userRes.body.error, /SUPABASE_SECRET_KEY/);
+    assert.match(userRes.body.error, /belum dikonfigurasi/);
 
     const healthRes = responseMock();
     await healthHandler({ method: "GET", headers: { origin: "https://school.example" }, query: { action: "health" } }, healthRes);
     assert.equal(healthRes.statusCode, 200);
     assert.equal(healthRes.body.authentication.configured, false);
-    assert.ok(healthRes.body.authentication.missing.includes("SUPABASE_URL"));
+    assert.equal("missing" in healthRes.body.authentication, false);
 });
 
 test("API health endpoint answers GET/HEAD and rejects other methods clearly", async () => {
@@ -527,7 +550,8 @@ test("API health endpoint answers GET/HEAD and rejects other methods clearly", a
     assert.equal(getResponse.statusCode, 200);
     assert.equal(getResponse.body.ok, true);
     assert.equal(getResponse.body.service, "Amanah.id API");
-    assert.match(getResponse.body.runtime, /^v?\d+\./);
+    assert.equal(getResponse.body.runtime, undefined);
+    assert.equal(getResponse.headers["Cache-Control"], "no-store, max-age=0");
 
     const headResponse = responseMock();
     await healthHandler({ method: "HEAD", headers: { origin: "https://school.example" }, query: { action: "health" } }, headResponse);
