@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     }
     const missingConfiguration = getMissingAuthConfiguration();
     if (missingConfiguration.length) {
-        return jsonError(res, 503, `Autentikasi belum dikonfigurasi di Vercel: ${missingConfiguration.join(", ")}.`);
+        return jsonError(res, 503, "Layanan autentikasi belum dikonfigurasi. Hubungi administrator.");
     }
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Origin aplikasi tidak cocok dengan APP_ORIGIN.");
     if (!rateLimit(req, "admin:login", 5, 60_000, res)) {
