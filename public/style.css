@@ -4090,3 +4090,42 @@ body.theme-dark .auth-screen {
     }
     .admin-test-card .admin-test-consent > input[type="checkbox"] { transition: none !important; }
 }
+
+
+/* Accessible face-photo picker and compact icon-only CAPTCHA refresh. */
+.face-upload-control { display:flex; align-items:center; flex-wrap:wrap; gap:10px; min-width:0; }
+.face-upload-input {
+    position:absolute !important; width:1px !important; height:1px !important;
+    padding:0 !important; margin:-1px !important; overflow:hidden !important;
+    clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important;
+}
+.face-upload-button {
+    display:inline-flex; align-items:center; justify-content:center; gap:9px;
+    min-height:44px; padding:10px 16px; border-radius:12px; cursor:pointer;
+    font:inherit; font-weight:700;
+    transition:background-color .18s ease,border-color .18s ease,transform .18s ease;
+}
+.face-upload-button svg {
+    width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8;
+    stroke-linecap:round; stroke-linejoin:round;
+}
+.face-upload-button:hover { transform:translateY(-1px); }
+.face-upload-input:focus-visible + .face-upload-button { outline:3px solid rgba(57,120,246,.45); outline-offset:3px; }
+.face-upload-name { min-width:0; max-width:100%; color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
+.login-captcha .captcha-refresh {
+    display:inline-grid; place-items:center; width:36px; min-width:36px;
+    height:36px; min-height:36px; padding:0; border-radius:50%;
+}
+.login-captcha .captcha-refresh svg {
+    width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8;
+    stroke-linecap:round; stroke-linejoin:round;
+}
+.login-captcha .captcha-refresh:disabled { opacity:.5; cursor:wait; }
+@media (max-width:480px) {
+    .face-upload-control { align-items:flex-start; flex-direction:column; }
+    .face-upload-button,.face-upload-name { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .face-upload-button { transition:none; }
+    .face-upload-button:hover { transform:none; }
+}
