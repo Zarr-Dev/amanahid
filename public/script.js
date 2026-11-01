@@ -100,6 +100,7 @@ const ROLE_T = {
 
 const EXTRA_T = {
     id: {
+        choosePhoto: "Pilih foto",
         heroHeaderNote: "AL FITYAN SCHOOL · SISTEM PRESENSI DIGITAL",
         heroFactRolesTitle: "3 peran, satu sistem", heroFactRolesDesc: "Admin · Guru · Siswa",
         heroFactChecksTitle: "Verifikasi berlapis", heroFactChecksDesc: "Wajah + lokasi",
@@ -288,6 +289,7 @@ const EXTRA_T = {
         adminSettingsSaved: "Titik GPS, radius, dan aturan sekolah berhasil disimpan."
     },
     en: {
+        choosePhoto: "Choose photo",
         heroHeaderNote: "AL FITYAN SCHOOL · DIGITAL ATTENDANCE",
         heroFactRolesTitle: "3 roles, one system", heroFactRolesDesc: "Admin · Teacher · Student",
         heroFactChecksTitle: "Layered verification", heroFactChecksDesc: "Face + location",
@@ -476,6 +478,7 @@ const EXTRA_T = {
         adminSettingsSaved: "The GPS point, radius, and school rules were saved successfully."
     },
     ar: {
+        choosePhoto: "اختر صورة",
         heroHeaderNote: "مدرسة الفتيان · نظام الحضور الرقمي",
         heroFactRolesTitle: "ثلاثة أدوار، نظام واحد", heroFactRolesDesc: "الإدارة · المعلم · الطالب",
         heroFactChecksTitle: "تحقق متعدد العوامل", heroFactChecksDesc: "الوجه + الموقع",
