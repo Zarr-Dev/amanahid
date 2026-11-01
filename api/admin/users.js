@@ -33,6 +33,7 @@ async function allUsers() {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     const admin = await authorizeAdmin(req, res, "users");
     if (!admin) return;
     try {
