@@ -29,6 +29,7 @@ function parseNisn(value) {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
 
     if (req.method === "GET") {
@@ -188,16 +189,24 @@ export default async function handler(req, res) {
             if (duplicateIdentity) {
                 return jsonError(res, 409, "These face samples closely match a different registered student. Verify the identity with a teacher before continuing.");
             }
-            const teacherEmail = await supabaseRequest(
-                `teachers?select=id&email=eq.${encodeURIComponent(email.trim().toLowerCase())}&limit=1`
-            );
-            if (teacherEmail.length) return jsonError(res, 409, "User email already exists");
+            const normalizedEmail = email.trim().toLowerCase();
+            const currentStudentExclusion = existing[0]?.id
+                ? `&id=neq.${encodeURIComponent(existing[0].id)}`
+                : "";
+            const [studentEmail, teacherEmail, adminEmail] = await Promise.all([
+                supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(normalizedEmail)}${currentStudentExclusion}&limit=1`),
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`)
+            ]);
+            if ([studentEmail, teacherEmail, adminEmail].some(rows => Array.isArray(rows) && rows.length > 0)) {
+                return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+            }
             const values = {
                 nisn,
                 name: name.trim(),
                 class_name: class_name.trim(),
                 parent_whatsapp: parent_whatsapp || null,
-                email: email.trim().toLowerCase(),
+                email: normalizedEmail,
                 password_hash: await hashPassword(password),
                 face_descriptors: Array.isArray(face_descriptors[0])
                     ? face_descriptors
@@ -213,7 +222,7 @@ export default async function handler(req, res) {
             });
             await writeAuditLog(getSession(req), existing.length ? "student.face_register" : "student.create",
                 "students", rows[0]?.id, {
-                nisn, email: email.trim().toLowerCase(), name: name.trim(), class_name: class_name.trim()
+                nisn, email: normalizedEmail, name: name.trim(), class_name: class_name.trim()
             });
             return res.status(201).json({ student: rows[0] });
         } catch (error) {
