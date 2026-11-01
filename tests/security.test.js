@@ -809,4 +809,5 @@ test("dispensation is limited to today, service hours, and a four-hour maximum",
     assert.equal(validDispensationWindow("2026-11-01", "06:00", "06:30", settings, now), false);
     assert.equal(validDispensationWindow("2026-11-01", "10:15", "14:15", settings, now), true);
     assert.equal(validDispensationWindow("2026-11-01", "10:15", "14:30", settings, now), false);
+    assert.equal(validDispensationWindow("2026-11-01", "15:30", "16:30", settings, now), false);
 });

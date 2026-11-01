@@ -70,6 +70,7 @@ export function validDispensationWindow(date, start, end, settings, now = new Da
             Number.isFinite(opening) && Number.isFinite(closing) &&
             current >= opening && current <= closing &&
             Number.isFinite(begin) && Number.isFinite(finish) &&
+            begin >= opening && finish <= closing &&
             begin >= current - 15 && finish > begin && finish - begin <= 240;
     } catch {
         return false;
@@ -314,12 +315,10 @@ export default async function handler(req, res) {
                 const homeroom = await teacherHomeroom(session);
                 if (!homeroom) return res.status(200).json({ requests: [], requires_homeroom_assignment: true });
                 const rows = await supabaseRequest(
-                    "absence_requests?select=*,students!inner(nisn,name,class_name)&order=created_at.desc&limit=500"
+                    "absence_requests?select=*,students!inner(nisn,name,class_name)&students.class_name=eq." +
+                    encodeURIComponent(homeroom) + "&order=created_at.desc&limit=500"
                 );
-                return res.status(200).json({
-                    requests: rows.filter(row => String(row.students?.class_name || "").trim().toLowerCase() === homeroom.toLowerCase()).map(normalize),
-                    homeroom_class: homeroom
-                });
+                return res.status(200).json({ requests: rows.map(normalize), homeroom_class: homeroom });
             }
             if (role !== "siswa" || !session?.nisn) return jsonError(res, 403, "A student or teacher session is required");
             const student = await ownStudent(session);
