@@ -125,8 +125,8 @@ function buildChallenge(language) {
         key = "arithmetic";
         const first = randomInt(2, 9);
         const second = randomInt(2, 9);
-        const third = randomInt(1, 9);
         const subtract = randomInt(0, 2) === 1;
+        const third = randomInt(1, subtract ? Math.min(9, first * second - 1) + 1 : 10);
         const result = first * second + (subtract ? -third : third);
         values = { value: `(${first} × ${second}) ${subtract ? "−" : "+"} ${third}` };
         answer = String(result);
