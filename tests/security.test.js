@@ -66,6 +66,11 @@ test("login CAPTCHA uses encrypted, expiring, server-verified challenges", () =>
     assert.equal(verifyLoginCaptcha(challenge.token, "definitely-wrong"), false);
     assert.equal(verifyLoginCaptcha(`${challenge.token}x`, challenge.answer), false);
     assert.equal(verifyLoginCaptcha(challenge.token, ""), false);
+    for (let index = 0; index < 40; index++) {
+        const next = createLoginCaptcha(index % 3 === 0 ? "id" : index % 3 === 1 ? "en" : "ar");
+        assert.equal(verifyLoginCaptcha(next.token, next.answer), true);
+        assert.equal(verifyLoginCaptcha(next.token, "wrong-answer"), false);
+    }
 });
 
 test("login CAPTCHA endpoint returns only a challenge prompt and encrypted token", async () => {
