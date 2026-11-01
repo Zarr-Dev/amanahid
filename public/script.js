@@ -3611,7 +3611,7 @@ async function processAttendanceFrame() {
     }
 }
 
-function scheduleAttendanceFrame(stream, startToken, delay = 250) {
+function scheduleAttendanceFrame(stream, startToken, delay = 350) {
     if (state.attendanceStream !== stream || state.attendanceRecorded ||
         startToken !== state.attendanceStartToken) return;
     const video = attendanceVideo();
