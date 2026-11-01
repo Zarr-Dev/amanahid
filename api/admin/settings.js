@@ -1,5 +1,5 @@
 import { authorizeAdmin } from "../_lib/admin-api.js";
-import { hashPassword, isValidAdminPassword, verifyPassword } from "../_lib/admin-auth.js";
+import { hashPassword, isValidAdminPassword, signToken, verifyPassword } from "../_lib/admin-auth.js";
 import { writeAuditLog } from "../_lib/audit.js";
 import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
@@ -11,38 +11,88 @@ const FEATURES_ID = "00000000-0000-0000-0000-000000000002";
 const DEFAULTS = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 50 };
 
 
-async function updateAdminPassword(req, res, admin) {
+async function updateAdminProfile(req, res, admin) {
     const body = req.body || {};
     const validation = validateSchema({
         current_password: { type: "string", required: true, max: 64, pattern: /^[a-f0-9]{64}$/ },
-        password: { type: "string", required: true, max: 128 }
+        name: { type: "string", max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
+        email: { type: "string", max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+        password: { type: "string", max: 128 }
     }, body);
     if (!validation.valid) return jsonError(res, 400, validation.error);
-    if (!isValidAdminPassword(body.password)) {
+    const nextName = typeof body.name === "string" ? body.name.trim() : "";
+    const nextEmail = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    if (!nextName && !nextEmail && !body.password) {
+        return jsonError(res, 400, "Masukkan nama, email, atau kata sandi baru yang ingin diubah");
+    }
+    if (body.password && !isValidAdminPassword(body.password)) {
         return jsonError(res, 400, "Password must be at least 12 characters and include uppercase, lowercase, number, and symbol");
     }
     try {
         const rows = await supabaseRequest(
-            `admin_users?select=id,password_hash&email=eq.${encodeURIComponent(admin.email)}&limit=1`
+            `admin_users?select=id,email,name,password_hash,is_active&email=eq.${encodeURIComponent(admin.email)}&limit=1`
         );
         const profile = Array.isArray(rows) ? (rows[0] ?? null) : null;
-        if (!profile || !(await verifyPassword(body.current_password, profile.password_hash))) {
+        if (!profile || !profile.is_active ||
+            !(await verifyPassword(body.current_password, profile.password_hash))) {
             return jsonError(res, 401, "Current password is incorrect");
         }
-        const password_hash = await hashPassword(body.password);
-        await supabaseRequest(`admin_users?id=eq.${encodeURIComponent(profile.id)}`, {
-            method: "PATCH",
-            body: JSON.stringify({ password_hash })
+
+        const values = {};
+        if (nextName) values.name = nextName;
+        if (nextEmail && nextEmail !== String(profile.email || "").toLowerCase()) {
+            const [students, teachers, otherAdmins] = await Promise.all([
+                supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(nextEmail)}&limit=1`),
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(nextEmail)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(nextEmail)}&id=neq.${encodeURIComponent(profile.id)}&limit=1`)
+            ]);
+            if ([students, teachers, otherAdmins].some(list => Array.isArray(list) && list.length > 0)) {
+                return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+            }
+            values.email = nextEmail;
+        }
+        if (body.password) values.password_hash = await hashPassword(body.password);
+        if (!Object.keys(values).length) {
+            return jsonError(res, 400, "Tidak ada perubahan profil yang perlu disimpan");
+        }
+
+        const updatedRows = await supabaseRequest(
+            `admin_users?id=eq.${encodeURIComponent(profile.id)}&select=id,email,name,is_active`,
+            {
+                method: "PATCH",
+                headers: { Prefer: "return=representation" },
+                body: JSON.stringify(values)
+            }
+        );
+        const updated = Array.isArray(updatedRows) ? (updatedRows[0] ?? null) : null;
+        if (!updated || !updated.is_active) return jsonError(res, 404, "Admin profile could not be updated");
+
+        const changedFields = Object.keys(values).filter(key => key !== "password_hash");
+        await writeAuditLog(
+            { ...admin, email: updated.email, name: updated.name },
+            "admin.profile.update",
+            "admin_users",
+            profile.id,
+            {
+                changed_fields: [...changedFields, ...(body.password ? ["password"] : [])],
+                previous_email_changed: updated.email !== profile.email
+            }
+        );
+
+        const sessionUser = { email: updated.email, name: updated.name, role: "admin" };
+        return res.status(200).json({
+            ok: true,
+            user: sessionUser,
+            token: signToken(sessionUser)
         });
-        await writeAuditLog(admin, "admin.password.update", "admin_users", profile.id, {});
-        return res.status(200).json({ ok: true });
     } catch (error) {
-        console.error("Admin password update failed:", error);
-        return jsonSupabaseError(res, error, "Unable to update admin password");
+        if (error?.code === "23505") return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+        console.error("Admin profile update failed:", error);
+        return jsonSupabaseError(res, error, "Unable to update admin profile");
     }
 }
-
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     const action = req.query?.action;
     const admin = await authorizeAdmin(req, res, action === "test-tools" ? "test-tools" : "settings");
     if (!admin) return;
@@ -54,7 +104,7 @@ export default async function handler(req, res) {
         }
         const features = await getFeatureFlags();
         if (!features.admin_password_change) return featureDisabled(res, "admin_password_change", "Perubahan kata sandi Admin sedang dinonaktifkan");
-        return updateAdminPassword(req, res, admin);
+        return updateAdminProfile(req, res, admin);
     }
     if (req.query?.action === "features") {
         try {
@@ -95,16 +145,18 @@ export default async function handler(req, res) {
     try {
         if (req.method === "GET") {
             const resultRows = await supabaseRequest(
-                `school_settings?select=lat,lng,radius,timezone,entry_time,late_tolerance_min&id=eq.${SETTINGS_ID}&limit=1`
+                `school_settings?select=lat,lng,radius,timezone,entry_time,late_tolerance_min,dispensation_open_time,dispensation_close_time&id=eq.${SETTINGS_ID}&limit=1`
             );
             const row = Array.isArray(resultRows) ? (resultRows[0] ?? null) : null;
-            if (!row) return res.status(200).json({ ...DEFAULTS, timezone: "Asia/Jakarta", entry_time: "07:00", late_tolerance_min: 15 });
+            if (!row) return res.status(200).json({ ...DEFAULTS, timezone: "Asia/Jakarta", entry_time: "07:00", late_tolerance_min: 15, dispensation_open_time: "07:00", dispensation_close_time: "16:00" });
             return res.status(200).json({
                 lat: Number(row.lat ?? DEFAULTS.lat), lng: Number(row.lng ?? DEFAULTS.lng),
                 radius: Number(row.radius ?? DEFAULTS.radius),
                 timezone: row.timezone ?? "Asia/Jakarta",
                 entry_time: String(row.entry_time ?? "07:00").slice(0, 5),
-                late_tolerance_min: Number(row.late_tolerance_min ?? 15)
+                late_tolerance_min: Number(row.late_tolerance_min ?? 15),
+                dispensation_open_time: String(row.dispensation_open_time ?? "07:00").slice(0, 5),
+                dispensation_close_time: String(row.dispensation_close_time ?? "16:00").slice(0, 5)
             });
         }
         if (req.method === "PUT") {
@@ -115,15 +167,20 @@ export default async function handler(req, res) {
                 radius: { type: "number", required: true, min: 10, max: 500 },
                 timezone: { type: "string", required: true, max: 64, min: 1 },
                 entry_time: { type: "string", required: true, max: 5, pattern: /^(?:[01]\d|2[0-3]):[0-5]\d$/ },
-                late_tolerance_min: { type: "number", required: true, min: 0, max: 180 }
+                late_tolerance_min: { type: "number", required: true, min: 0, max: 180 },
+                dispensation_open_time: { type: "string", required: true, max: 5, pattern: /^(?:[01]\d|2[0-3]):[0-5]\d$/ },
+                dispensation_close_time: { type: "string", required: true, max: 5, pattern: /^(?:[01]\d|2[0-3]):[0-5]\d$/ }
             }, body);
             if (!validation.valid) return jsonError(res, 400, validation.error);
+            if (body.dispensation_open_time >= body.dispensation_close_time) {
+                return jsonError(res, 400, "Jam layanan dispensasi harus diatur dengan benar");
+            }
             try {
                 new Intl.DateTimeFormat("en", { timeZone: body.timezone });
             } catch {
                 return jsonError(res, 400, "Invalid timezone");
             }
-            const currentRows = await supabaseRequest(`school_settings?id=eq.${SETTINGS_ID}&select=radius,timezone,entry_time,late_tolerance_min&limit=1`);
+            const currentRows = await supabaseRequest(`school_settings?id=eq.${SETTINGS_ID}&select=radius,timezone,entry_time,late_tolerance_min,dispensation_open_time,dispensation_close_time&limit=1`);
             const current = Array.isArray(currentRows) ? currentRows[0] : null;
             if (!current) return jsonError(res, 404, "School settings are not initialized");
             const features = await getFeatureFlags();
@@ -133,12 +190,14 @@ export default async function handler(req, res) {
             if (!features.school_schedule_rules && (
                 body.timezone !== current.timezone ||
                 String(body.entry_time).slice(0, 5) !== String(current.entry_time).slice(0, 5) ||
-                Number(body.late_tolerance_min) !== Number(current.late_tolerance_min)
+                Number(body.late_tolerance_min) !== Number(current.late_tolerance_min) ||
+                String(body.dispensation_open_time).slice(0, 5) !== String(current.dispensation_open_time).slice(0, 5) ||
+                String(body.dispensation_close_time).slice(0, 5) !== String(current.dispensation_close_time).slice(0, 5)
             )) {
                 return featureDisabled(res, "school_schedule_rules", "Perubahan aturan jadwal sekolah sedang dinonaktifkan");
             }
             const resultRows = await supabaseRequest(
-                `school_settings?id=eq.${SETTINGS_ID}&select=lat,lng,radius,timezone,entry_time,late_tolerance_min`,
+                `school_settings?id=eq.${SETTINGS_ID}&select=lat,lng,radius,timezone,entry_time,late_tolerance_min,dispensation_open_time,dispensation_close_time`,
                 {
                     method: "PATCH",
                     headers: { Prefer: "return=representation" },

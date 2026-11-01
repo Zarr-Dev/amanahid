@@ -4,6 +4,7 @@ import { getRequestRole, isAllowedOrigin, jsonError, jsonSupabaseError, rateLimi
 import { validateSchema } from "./_lib/validate.js";
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
 
     if (req.method === "GET") {
@@ -47,11 +48,20 @@ export default async function handler(req, res) {
         if (!validation.valid) return jsonError(res, 400, validation.error);
         if (!validatePassword(body.password)) return jsonError(res, 400, "Invalid password");
         try {
+            const email = body.email.trim().toLowerCase();
+            const [students, teachers, admins] = await Promise.all([
+                supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
+            ]);
+            if ([students, teachers, admins].some(rows => Array.isArray(rows) && rows.length > 0)) {
+                return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+            }
             const rows = await supabaseRequest("teachers?select=id,email,name,created_at", {
                 method: "POST",
                 headers: { Prefer: "return=representation" },
                 body: JSON.stringify({
-                    email: body.email.trim().toLowerCase(),
+                    email,
                     name: body.name.trim(),
                     password_hash: await hashPassword(body.password)
                 })

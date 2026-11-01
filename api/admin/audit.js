@@ -8,6 +8,7 @@ function isDate(value) {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     const admin = await authorizeAdmin(req, res, "audit");
     if (!admin) return;
     if (req.method !== "GET") {

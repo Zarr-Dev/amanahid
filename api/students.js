@@ -29,6 +29,7 @@ function parseNisn(value) {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
 
     if (req.method === "GET") {
@@ -49,11 +50,23 @@ export default async function handler(req, res) {
             return jsonError(res, 403, "Face descriptors are not available for this request");
         }
         try {
-            const columns = withFaces ? STUDENT_COLUMNS_WITH_FACES : STUDENT_COLUMNS;
+            const columns = withFaces ? STUDENT_COLUMNS_WITH_FACES
+                : role === "siswa" ? "id,nisn,name,class_name,parent_whatsapp,address,created_at" : STUDENT_COLUMNS;
             const filter = parseNisn(nisn) ? `&nisn=eq.${encodeURIComponent(nisn)}` : "";
             const students = await supabaseRequest(
                 `students?select=${columns}${filter}&is_active=eq.true&order=name.asc`
             );
+            if (role === "siswa") {
+                const student = students[0];
+                if (!student) return res.status(200).json({ students: [] });
+                const homeroomRows = student.class_name ? await supabaseRequest(
+                    "teachers?select=name,homeroom_class&is_active=eq.true&homeroom_class=eq." +
+                    encodeURIComponent(student.class_name) + "&limit=1"
+                ) : [];
+                return res.status(200).json({
+                    students: [{ ...student, homeroom_teacher: homeroomRows[0]?.name || null }]
+                });
+            }
             return res.status(200).json({ students });
         } catch (error) {
             console.error("Student query failed:", error);
@@ -62,6 +75,35 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "PATCH") {
+        let role;
+        try { role = await getRequestRole(req); }
+        catch (error) { return jsonSupabaseError(res, error, "Unable to validate session"); }
+        if (role === "siswa") {
+            if (!rateLimit(req, "students:PATCH:address", 5, 60_000, res)) return jsonError(res, 429, "Terlalu banyak perubahan profil.");
+            const body = req.body || {};
+            const validation = validateSchema({ address: { type: "string", required: true, max: 500 } }, body);
+            if (!validation.valid) return jsonError(res, 400, validation.error);
+            const session = getSession(req);
+            if (!session?.nisn) return jsonError(res, 403, "Sesi siswa tidak valid");
+            try {
+                const own = await supabaseRequest("students?select=id&nisn=eq." + encodeURIComponent(session.nisn) + "&is_active=eq.true&limit=1");
+                if (!own.length) return jsonError(res, 404, "Data siswa tidak ditemukan");
+                const address = body.address.trim() || null;
+                const updated = await supabaseRequest("students?id=eq." + encodeURIComponent(own[0].id) + "&select=id,address", {
+                    method: "PATCH", headers: { Prefer: "return=representation" },
+                    body: JSON.stringify({ address })
+                });
+                if (!updated.length) return jsonError(res, 404, "Profil siswa tidak ditemukan");
+                await writeAuditLog(session, "student.profile.update", "students", own[0].id, {
+                    changed_fields: ["address"], address_present: Boolean(address)
+                });
+                return res.status(200).json({ student: updated[0] });
+            } catch (error) {
+                console.error("Student address update failed:", error);
+                return jsonSupabaseError(res, error, "Alamat siswa gagal diperbarui");
+            }
+        }
+        if (role !== "guru") return jsonError(res, 403, "Teacher role is required");
         try {
             if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
         } catch (error) {
@@ -188,16 +230,24 @@ export default async function handler(req, res) {
             if (duplicateIdentity) {
                 return jsonError(res, 409, "These face samples closely match a different registered student. Verify the identity with a teacher before continuing.");
             }
-            const teacherEmail = await supabaseRequest(
-                `teachers?select=id&email=eq.${encodeURIComponent(email.trim().toLowerCase())}&limit=1`
-            );
-            if (teacherEmail.length) return jsonError(res, 409, "User email already exists");
+            const normalizedEmail = email.trim().toLowerCase();
+            const currentStudentExclusion = existing[0]?.id
+                ? `&id=neq.${encodeURIComponent(existing[0].id)}`
+                : "";
+            const [studentEmail, teacherEmail, adminEmail] = await Promise.all([
+                supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(normalizedEmail)}${currentStudentExclusion}&limit=1`),
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`)
+            ]);
+            if ([studentEmail, teacherEmail, adminEmail].some(rows => Array.isArray(rows) && rows.length > 0)) {
+                return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+            }
             const values = {
                 nisn,
                 name: name.trim(),
                 class_name: class_name.trim(),
                 parent_whatsapp: parent_whatsapp || null,
-                email: email.trim().toLowerCase(),
+                email: normalizedEmail,
                 password_hash: await hashPassword(password),
                 face_descriptors: Array.isArray(face_descriptors[0])
                     ? face_descriptors
@@ -213,7 +263,7 @@ export default async function handler(req, res) {
             });
             await writeAuditLog(getSession(req), existing.length ? "student.face_register" : "student.create",
                 "students", rows[0]?.id, {
-                nisn, email: email.trim().toLowerCase(), name: name.trim(), class_name: class_name.trim()
+                nisn, email: normalizedEmail, name: name.trim(), class_name: class_name.trim()
             });
             return res.status(201).json({ student: rows[0] });
         } catch (error) {

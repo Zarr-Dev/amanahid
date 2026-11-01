@@ -14,7 +14,7 @@ let SCHOOL_LOCATION = {
     name: "Al Fityan School"
 };
 const MAX_GPS_ACCURACY_METERS = 35;
-const FACE_MATCH_THRESHOLD = 0.45;
+const FACE_MATCH_THRESHOLD = 0.42;
 const MAX_FACE_SAMPLES = 5;
 
 const ROLE_T = {
@@ -100,6 +100,7 @@ const ROLE_T = {
 
 const EXTRA_T = {
     id: {
+        choosePhoto: "Pilih foto",
         heroHeaderNote: "AL FITYAN SCHOOL · SISTEM PRESENSI DIGITAL",
         heroFactRolesTitle: "3 peran, satu sistem", heroFactRolesDesc: "Admin · Guru · Siswa",
         heroFactChecksTitle: "Verifikasi berlapis", heroFactChecksDesc: "Wajah + lokasi",
@@ -109,6 +110,7 @@ const EXTRA_T = {
         welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
         welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
         loginAccessNote: "Admin, Guru, dan Siswa masuk dari formulir yang sama. Peran ditentukan otomatis berdasarkan akun resmi yang terdaftar.",
+        faceLowLight: "Pencahayaan terlalu redup. Arahkan cahaya ke wajah, bukan dari belakang.",
         captchaLabel: "VERIFIKASI SINGKAT", captchaAnswerPlaceholder: "Ketik jawaban",
         captchaHelp: "Selesaikan tantangan singkat ini. Soal dapat diganti dan selalu diperbarui setelah percobaan login.",
         captchaRefresh: "Ganti", captchaLoading: "Memuat tantangan keamanan…",
@@ -288,6 +290,7 @@ const EXTRA_T = {
         adminSettingsSaved: "Titik GPS, radius, dan aturan sekolah berhasil disimpan."
     },
     en: {
+        choosePhoto: "Choose photo",
         heroHeaderNote: "AL FITYAN SCHOOL · DIGITAL ATTENDANCE",
         heroFactRolesTitle: "3 roles, one system", heroFactRolesDesc: "Admin · Teacher · Student",
         heroFactChecksTitle: "Layered verification", heroFactChecksDesc: "Face + location",
@@ -297,6 +300,7 @@ const EXTRA_T = {
         welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
         welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
         loginAccessNote: "Admins, Teachers, and Students all use the same sign-in form. The system resolves each role from the registered school account.",
+        faceLowLight: "The image is too dark. Add light to your face and avoid strong backlighting.",
         captchaLabel: "QUICK SECURITY CHECK", captchaAnswerPlaceholder: "Type your answer",
         captchaHelp: "Solve this short challenge. Refresh it any time; a new one is issued after each login attempt.",
         captchaRefresh: "Refresh", captchaLoading: "Loading security challenge…",
@@ -476,6 +480,7 @@ const EXTRA_T = {
         adminSettingsSaved: "The GPS point, radius, and school rules were saved successfully."
     },
     ar: {
+        choosePhoto: "اختر صورة",
         heroHeaderNote: "مدرسة الفتيان · نظام الحضور الرقمي",
         heroFactRolesTitle: "ثلاثة أدوار، نظام واحد", heroFactRolesDesc: "الإدارة · المعلم · الطالب",
         heroFactChecksTitle: "تحقق متعدد العوامل", heroFactChecksDesc: "الوجه + الموقع",
@@ -485,6 +490,7 @@ const EXTRA_T = {
         welcomeDesc: "تسجل أمانة.id الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
         welcomeDesc: "تسجل أمانة الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
         loginAccessNote: "يستخدم المديرون والمعلمون والطلاب نموذج تسجيل الدخول نفسه. يحدد النظام الدور تلقائيًا من حساب المدرسة المسجل.",
+        faceLowLight: "الإضاءة ضعيفة جدًا. وجّه الضوء نحو الوجه وتجنب الإضاءة الخلفية القوية.",
         captchaLabel: "تحقق أمني سريع", captchaAnswerPlaceholder: "اكتب الإجابة",
         captchaHelp: "أكمل التحدي القصير. يمكنك تغييره، ويتم إصدار تحدٍّ جديد بعد كل محاولة دخول.",
         captchaRefresh: "تغيير", captchaLoading: "جارٍ تحميل التحدي الأمني…",
@@ -668,6 +674,10 @@ const EXTRA_T = {
 const state = {
     lang: "id",
     theme: "light",
+    userPreferences: { animations: true, charts: true, confirmAttendance: true, autoLock: true },
+    preferenceInactivityTimer: null,
+    lastPreferenceActivity: 0,
+    attendanceConfirmPending: false,
     user: null,
     students: [],
     attendance: [],
@@ -1422,6 +1432,123 @@ function setTheme(theme) {
     if (meta) meta.content = state.theme === "dark" ? "#111827" : "#f5f8ff";
 }
 
+const DEFAULT_USER_PREFERENCES = Object.freeze({
+    animations: true,
+    charts: true,
+    confirmAttendance: true,
+    autoLock: true
+});
+
+function userPreferenceStorageKey(user = state.user) {
+    if (!user || !["guru", "siswa"].includes(user.role) || !user.email) return null;
+    return `amanahid.preferences.v1.${user.role}.${String(user.email).trim().toLowerCase()}`;
+}
+
+function applyUserPreferences() {
+    const prefs = state.userPreferences || DEFAULT_USER_PREFERENCES;
+    document.body.classList.toggle("reduce-motion", prefs.animations === false);
+    document.querySelectorAll("[data-user-preference]").forEach(input => {
+        input.checked = prefs[input.dataset.userPreference] !== false;
+    });
+    $("teacher-preference-settings")?.classList.toggle("hidden", state.user?.role !== "guru");
+    $("student-preference-settings")?.classList.toggle("hidden", state.user?.role !== "siswa");
+    $("teacher-preference-chart")?.classList.toggle("hidden",
+        state.user?.role !== "guru" || prefs.charts === false);
+    $("student-preference-chart")?.classList.toggle("hidden",
+        state.user?.role !== "siswa" || prefs.charts === false);
+    renderPreferenceCharts();
+    schedulePreferenceInactivityLock();
+}
+
+function loadUserPreferences(user) {
+    state.userPreferences = { ...DEFAULT_USER_PREFERENCES };
+    const key = userPreferenceStorageKey(user);
+    if (key) {
+        try {
+            const saved = JSON.parse(window.localStorage.getItem(key) || "null");
+            if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+                for (const name of Object.keys(DEFAULT_USER_PREFERENCES)) {
+                    if (typeof saved[name] === "boolean") state.userPreferences[name] = saved[name];
+                }
+            }
+        } catch (error) {
+            console.warn("Personal preferences could not be read from this browser:", error);
+        }
+    }
+    applyUserPreferences();
+}
+
+function saveUserPreferences() {
+    const key = userPreferenceStorageKey();
+    if (!key) return;
+    try {
+        window.localStorage.setItem(key, JSON.stringify(state.userPreferences));
+    } catch (error) {
+        console.warn("Personal preferences could not be saved in this browser:", error);
+        toast("Pengaturan pribadi tidak dapat disimpan di browser ini.", "error");
+    }
+}
+
+function schedulePreferenceInactivityLock() {
+    if (state.preferenceInactivityTimer) {
+        window.clearTimeout(state.preferenceInactivityTimer);
+        state.preferenceInactivityTimer = null;
+    }
+    if (!state.user || !["guru", "siswa"].includes(state.user.role) ||
+        state.userPreferences?.autoLock === false) return;
+
+    const activeUser = state.user;
+    state.preferenceInactivityTimer = window.setTimeout(() => {
+        if (state.user !== activeUser) return;
+        stopAllCameras();
+        showAuth();
+        toast("Sesi diakhiri otomatis karena tidak ada aktivitas selama 15 menit.", "info");
+    }, 15 * 60 * 1000);
+}
+
+function handlePreferenceActivity() {
+    if (!state.user || !["guru", "siswa"].includes(state.user.role)) return;
+    const now = Date.now();
+    if (now - state.lastPreferenceActivity < 1000) return;
+    state.lastPreferenceActivity = now;
+    schedulePreferenceInactivityLock();
+}
+
+function renderPreferenceCharts() {
+    const user = state.user;
+    const render = (role, selector) => {
+        const container = document.querySelector(selector);
+        if (!container) return;
+        const records = (Array.isArray(state.attendance) ? state.attendance : [])
+            .filter(item => item && item.date &&
+                (role !== "siswa" || (user?.role === "siswa" && item.nisn === user.nisn)));
+        const days = Array.from({ length: 7 }, (_, index) => {
+            const date = new Date(Date.now() - (6 - index) * 86400000);
+            const key = localDateKey(date);
+            const count = records.filter(item => item.date === key).length;
+            return {
+                key,
+                count,
+                label: date.toLocaleDateString(
+                    state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID",
+                    { weekday: "short" }
+                )
+            };
+        });
+        const maxCount = Math.max(1, ...days.map(day => day.count));
+        container.innerHTML = days.map(day => {
+            const height = day.count ? Math.max(10, Math.round(day.count / maxCount * 100)) : 3;
+            return `<div class="preference-chart-column" title="${safeText(day.key)}: ${day.count}">
+                <strong>${day.count}</strong>
+                <div class="preference-chart-track"><span style="height:${height}%"></span></div>
+                <small>${safeText(day.label)}</small>
+            </div>`;
+        }).join("");
+    };
+    render("guru", '[data-chart-bars="teacher"]');
+    render("siswa", '[data-chart-bars="student"]');
+}
+
 // Authentication and single-page role routing
 function showView(target) {
     stopAllCameras();
@@ -1436,7 +1563,7 @@ function showView(target) {
 
     const titles = {
         "view-presensi": "teacherDashboard", "view-database": "database", "view-formulir": "formulir",
-        "view-s-presensi": "studentAttendance", "view-s-history": "studentHistory", "view-s-profile": "myProfile"
+        "view-s-presensi": "studentAttendance", "view-s-absence": "absenceFormTitle", "view-s-history": "studentHistory", "view-s-profile": "myProfile"
     };
     if (target.startsWith("view-s-")) $("student-page-title").textContent = tr(titles[target]);
     else $("page-title").textContent = tr(titles[target] || "dashboard");
@@ -1447,10 +1574,14 @@ function showView(target) {
         state.cloudDataPromise = loadCloudData();
     }
     if (target === "view-s-history") renderStudentHistory();
+    if (target === "view-s-absence") void loadStudentAbsenceRequests();
 }
 
 function showAuth({ clearSession = true } = {}) {
     stopAllCameras();
+    if (state.preferenceInactivityTimer) window.clearTimeout(state.preferenceInactivityTimer);
+    state.preferenceInactivityTimer = null;
+    document.body.classList.remove("reduce-motion");
     stopNetworkHeartbeat();
     if (clearSession) {
         sessionStorage.removeItem("amanahid.sessionToken");
@@ -1514,6 +1645,8 @@ async function showApp(user) {
     closeAuthModal();
     stopAllCameras();
     state.user = user;
+    loadUserPreferences(user);
+    state.lastPreferenceActivity = Date.now();
     if (user.role === "admin") {
         sessionStorage.setItem("amanahid.adminToken", user.token);
         sessionStorage.removeItem("amanahid.sessionToken");
@@ -1547,6 +1680,8 @@ async function showApp(user) {
     if (user.role === "admin") {
         if ($("admin-header-user")) $("admin-header-user").textContent = displayName;
         if ($("admin-header-avatar")) $("admin-header-avatar").textContent = initial;
+        if ($("admin-profile-name")) $("admin-profile-name").value = displayName;
+        if ($("admin-profile-email")) $("admin-profile-email").value = user.email ?? "";
         location.hash = "admin";
         showAdminView("admin-view-dashboard");
         await loadAdminDashboard();
@@ -1716,7 +1851,7 @@ function applyAdminFeatureFlags(features = {}) {
     });
     const radius = $("admin-setting-radius");
     if (radius) radius.disabled = features.geofence_radius_edit === false;
-    for (const id of ["admin-setting-timezone", "admin-setting-entry-time", "admin-setting-tolerance"]) {
+    for (const id of ["admin-setting-timezone", "admin-setting-entry-time", "admin-setting-dispensation-open", "admin-setting-dispensation-close", "admin-setting-tolerance"]) {
         const element = $(id);
         if (element) element.disabled = features.school_schedule_rules === false;
     }
@@ -2156,7 +2291,7 @@ async function loadAdminUsers() {
             <td>${safeText(user.name ?? user.email ?? "—")}</td><td>${safeText(user.email ?? "")}</td>
             <td>${safeText(user.parent_whatsapp ?? "—")}</td>
             <td>${safeText(user.role === "guru" ? tr("roleTeacher") : user.role === "siswa" ? tr("roleStudent") : tr("adminRole"))}</td><td>${safeText(user.is_active ? tr("activeStatus") : tr("inactiveStatus"))}</td>
-            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}">${safeText(tr("editAccount"))}</button>
+            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}" data-homeroom-class="${safeText(user.homeroom_class ?? "")}">${safeText(tr("editAccount"))}</button>
             <button class="button subtle" type="button" data-admin-disable="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" ${user.is_active ? "" : "disabled"}>${safeText(tr("deactivateAccount"))}</button></td>
         </tr>`).join("");
         $("admin-users-empty").classList.toggle("hidden", users.length > 0);
@@ -2174,6 +2309,8 @@ async function loadAdminSettings() {
         $("admin-setting-radius").value = settings?.radius ?? "";
         $("admin-setting-timezone").value = settings?.timezone ?? "";
         $("admin-setting-entry-time").value = settings?.entry_time ?? "";
+        $("admin-setting-dispensation-open").value = settings?.dispensation_open_time ?? "07:00";
+        $("admin-setting-dispensation-close").value = settings?.dispensation_close_time ?? "16:00";
         $("admin-setting-tolerance").value = settings?.late_tolerance_min ?? "";
         syncAdminSettingsMap({ center: true });
     } catch (error) {
@@ -2208,6 +2345,7 @@ function openProfile() {
     if (state.user?.role === "siswa") {
         showView("view-s-profile");
     } else {
+        $("teacher-preference-settings")?.classList.toggle("hidden", state.user?.role !== "guru");
         $("profile-modal").classList.remove("hidden");
     }
 }
@@ -2495,6 +2633,8 @@ function normalizeCloudStudent(student) {
         name: student.name,
         className: student.class_name,
         parentWhatsApp: student.parent_whatsapp || "",
+        address: student.address || "",
+        homeroomTeacherName: student.homeroom_teacher || "",
         faceDescriptors: Array.isArray(student.face_descriptors)
             ? student.face_descriptors
             : cached?.faceDescriptors || [],
@@ -2551,6 +2691,7 @@ function updateStats() {
     $("db-stat-students").textContent = state.students.length;
     $("db-stat-today").textContent = todayCount;
     $("student-count-badge").textContent = state.students.length;
+    renderPreferenceCharts();
 }
 
 function updateStudentProfile() {
@@ -2559,6 +2700,13 @@ function updateStudentProfile() {
     const student = state.students.find(item => item.nisn === user.nisn);
     $("student-profile-nisn").textContent = user.nisn || "—";
     $("student-profile-class").textContent = student?.className || "—";
+    const addressInput = $("student-profile-address");
+    if (addressInput && document.activeElement !== addressInput) addressInput.value = student?.address || "";
+    const homeroom = $("student-homeroom-teacher-name");
+    if (homeroom) {
+        homeroom.textContent = student?.homeroomTeacherName || "Belum ditetapkan oleh Admin";
+        homeroom.classList.toggle("is-unassigned", !student?.homeroomTeacherName);
+    }
 }
 
 function attendanceStatusLabel(record) {
@@ -2584,6 +2732,7 @@ function renderStudentHistory() {
             <td>${Math.round(item.confidence * 100)}%</td>
         </tr>`).join("");
     $("student-history-empty").classList.toggle("hidden", rows.length > 0);
+    renderPreferenceCharts();
 }
 
 function renderDatabase() {
@@ -2691,7 +2840,7 @@ async function checkGeofence() {
         let settled = false;
         const timeoutId = setTimeout(() => {
             finishWithError("gpsTimeout");
-        }, 12000);
+        }, 20000);
         const finish = result => {
             if (settled) return;
             settled = true;
@@ -2702,21 +2851,49 @@ async function checkGeofence() {
             const result = setLocationError(errorKey);
             finish(result);
         };
+        let firstFix = null;
         const onSuccess = position => {
             if (settled) return;
+            if (!firstFix) {
+                firstFix = position;
+                window.setTimeout(() => {
+                    if (settled) return;
+                    try {
+                        navigator.geolocation.getCurrentPosition(onSuccess, error => {
+                            if (!settled) finishWithError(geolocationErrorKey(error));
+                        }, { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 });
+                    } catch (error) {
+                        console.error("Second GPS request failed:", error);
+                        finishWithError("gpsFailed");
+                    }
+                }, 900);
+                return;
+            }
             try {
-                const { latitude, longitude, accuracy } = position.coords;
-                const distanceExact = calculateDistance(
-                    latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
-                );
-                const timestamp = Number.isFinite(position.timestamp) ? position.timestamp : Date.now();
+                const first = firstFix.coords;
+                const current = position.coords;
+                const firstAccuracy = Number(first.accuracy);
+                const accuracy = Number(current.accuracy);
+                const firstTimestamp = Number(firstFix.timestamp);
+                const timestamp = Number(position.timestamp);
+                const drift = calculateDistance(first.latitude, first.longitude, current.latitude, current.longitude);
+                const driftLimit = Math.max(70, firstAccuracy + accuracy + 20);
+                const staleOrFuture = !Number.isFinite(firstTimestamp) || !Number.isFinite(timestamp) ||
+                    firstTimestamp <= 0 || timestamp <= 0 || firstTimestamp > Date.now() + 3000 ||
+                    timestamp > Date.now() + 3000 || Date.now() - firstTimestamp > 30000 ||
+                    Date.now() - timestamp > 30000;
+                const latitude = Number(current.latitude);
+                const longitude = Number(current.longitude);
+                const distanceExact = calculateDistance(latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng);
                 const previousFix = state.lastGpsFix;
                 const elapsedSeconds = previousFix ? (timestamp - previousFix.timestamp) / 1000 : 0;
                 const estimatedSpeed = previousFix && elapsedSeconds > 0
                     ? calculateDistance(previousFix.lat, previousFix.lng, latitude, longitude) / elapsedSeconds
                     : 0;
-                const reportedSpeed = Number.isFinite(position.coords.speed) ? position.coords.speed : 0;
-                const fakeLocation = accuracy <= 0 || !Number.isFinite(accuracy) ||
+                const reportedSpeed = Number.isFinite(current.speed) ? current.speed : 0;
+                const fakeLocation = firstAccuracy <= 0 || accuracy <= 0 ||
+                    !Number.isFinite(firstAccuracy) || !Number.isFinite(accuracy) ||
+                    !Number.isFinite(drift) || drift > driftLimit || staleOrFuture ||
                     !Number.isFinite(distanceExact) || reportedSpeed > 55 ||
                     (elapsedSeconds >= 1 && elapsedSeconds <= 600 && estimatedSpeed > 55);
                 state.lastGpsFix = { lat: latitude, lng: longitude, timestamp };
@@ -3199,13 +3376,29 @@ function setAttendanceMessage(message) {
     }
 }
 
-function toggleAttendanceCamera() {
+async function toggleAttendanceCamera() {
     if (state.attendanceStream || state.attendanceStarting) {
         stopAttendanceCamera();
         toast(tr("cameraStopped"), "info");
         return;
     }
-    startAttendanceCamera();
+    if (state.attendanceConfirmPending) return;
+    if (state.userPreferences?.confirmAttendance !== false) {
+        state.attendanceConfirmPending = true;
+        try {
+            const confirmed = await openAppDialog({
+                title: "Konfirmasi presensi",
+                description: "Kamera akan diaktifkan untuk verifikasi wajah dan lokasi sebelum presensi dicatat.",
+                confirmLabel: "Mulai presensi",
+                cancelLabel: "Batal",
+                icon: "✓"
+            });
+            if (confirmed === null) return;
+        } finally {
+            state.attendanceConfirmPending = false;
+        }
+    }
+    await startAttendanceCamera();
 }
 
 function resizeOverlay(video, canvas) {
@@ -3228,10 +3421,22 @@ function drawDetections(video, canvas, detections) {
     faceapi.draw.drawFaceLandmarks(canvas, resized);
 }
 
+function getFaceDetectorOptions() {
+    if (!state.faceDetectorOptions) {
+        const cores = Number(navigator.hardwareConcurrency) || 4;
+        state.faceDetectorOptions = new faceapi.TinyFaceDetectorOptions({
+            inputSize: cores <= 4 ? 416 : 512,
+            scoreThreshold: 0.45
+        });
+    }
+    return state.faceDetectorOptions;
+}
+
 async function detectFaces(video) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 });
-    return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks().withFaceDescriptors();
+    return faceapi.detectAllFaces(video, getFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptors();
 }
 
 function isFaceDetectionUsable(detection, video) {
@@ -3241,11 +3446,31 @@ function isFaceDetectionUsable(detection, video) {
     const height = Number(box?.height);
     const sourceWidth = Number(video?.videoWidth) || 0;
     const sourceHeight = Number(video?.videoHeight) || 0;
-    const minimumWidth = Math.max(76, sourceWidth * 0.12);
-    const minimumHeight = Math.max(76, sourceHeight * 0.16);
-    return Number.isFinite(score) && score >= 0.58 &&
+    const minimumWidth = Math.max(64, sourceWidth * 0.10);
+    const minimumHeight = Math.max(64, sourceHeight * 0.13);
+    return Number.isFinite(score) && score >= 0.48 &&
         Number.isFinite(width) && width >= minimumWidth &&
         Number.isFinite(height) && height >= minimumHeight;
+}
+
+function isFrameTooDark(source) {
+    try {
+        const canvas = state.brightnessCanvas || (state.brightnessCanvas = document.createElement("canvas"));
+        canvas.width = 24;
+        canvas.height = 24;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) return false;
+        context.drawImage(source, 0, 0, 24, 24);
+        const pixels = context.getImageData(0, 0, 24, 24).data;
+        let luminance = 0;
+        const pixelCount = pixels.length / 4;
+        for (let index = 0; index < pixels.length; index += 4) {
+            luminance += 0.2126 * pixels[index] + 0.7152 * pixels[index + 1] + 0.0722 * pixels[index + 2];
+        }
+        return luminance / pixelCount < 42;
+    } catch {
+        return false;
+    }
 }
 
 function updateAttendanceLiveness(detection) {
@@ -3335,7 +3560,7 @@ function saveFaceSample(descriptor, quality = state.faceCandidateQuality, angle 
         toast(tr("faceUploadError"), "error");
         return false;
     }
-    if (typeof quality !== "number" || quality < 0.7) {
+    if (typeof quality !== "number" || quality < 0.55) {
         $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
         toast("Wajah kurang jelas, mendekatlah ke kamera.", "error");
         return false;
@@ -3376,6 +3601,26 @@ function updateProgress(percent, label) {
     $("status-presensi").textContent = label;
 }
 
+async function collectStableFaceDescriptor(video, stream) {
+    const samples = [];
+    for (let index = 0; index < 3; index++) {
+        if (index > 0) await new Promise(resolve => window.setTimeout(resolve, 140));
+        if (state.attendanceStream !== stream || !video || video.readyState < 2) throw new Error("Camera changed during sampling");
+        const detections = await detectFaces(video);
+        if (detections.length !== 1 || !isFaceDetectionUsable(detections[0], video)) throw new Error("Face sample quality changed");
+        const vector = Array.from(detections[0].descriptor || []);
+        if (vector.length !== 128 || vector.some(value => !Number.isFinite(value))) throw new Error("Invalid face descriptor");
+        if (samples.length) {
+            const drift = faceapi.euclideanDistance(new Float32Array(samples[0]), new Float32Array(vector));
+            if (!Number.isFinite(drift) || drift > 0.18) throw new Error("Face samples are inconsistent");
+        }
+        samples.push(vector);
+    }
+    return Array.from({ length: 128 }, (_, index) =>
+        samples.reduce((sum, vector) => sum + vector[index], 0) / samples.length
+    );
+}
+
 async function processAttendanceFrame() {
     if (state.attendanceBusy) return;
     if (!state.attendanceStream || state.attendanceRecorded) return;
@@ -3404,9 +3649,10 @@ async function processAttendanceFrame() {
 
         if (!detections.length) {
             if (state.livenessChallenge) state.livenessChallenge.frames = 0;
-            setAttendanceMessage(tr("faceNotFound"));
+            const message = isFrameTooDark(video) ? tr("faceLowLight") : tr("faceNotFound");
+            setAttendanceMessage(message);
             if (requestUser.role === "guru") {
-                updateProgress(0, tr("faceNotFound"));
+                updateProgress(0, message);
             }
             state.lastNose = null;
             state.movementFrames = 0;
@@ -3446,13 +3692,21 @@ async function processAttendanceFrame() {
         let faceProofToken = null;
         if (Date.now() - state.lastFaceMatchAt < 2500) return;
         state.lastFaceMatchAt = Date.now();
+        let stableDescriptor;
+        try {
+            stableDescriptor = await collectStableFaceDescriptor(video, requestStream);
+        } catch {
+            setAttendanceMessage("Wajah belum stabil. Posisikan wajah dengan jelas dan coba kembali.");
+            return;
+        }
+        if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         const result = await cloudRequest("/api/face-match", {
             method: "POST",
             role: requestUser.role,
             nisn: requestUser.nisn,
             body: {
                 ...(requestUser.role === "siswa" ? { nisn: requestUser.nisn } : {}),
-                descriptor: Array.from(detection.descriptor)
+                descriptor: stableDescriptor
             }
         });
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
@@ -3572,7 +3826,7 @@ async function processAttendanceFrame() {
     }
 }
 
-function scheduleAttendanceFrame(stream, startToken, delay = 250) {
+function scheduleAttendanceFrame(stream, startToken, delay = 350) {
     if (state.attendanceStream !== stream || state.attendanceRecorded ||
         startToken !== state.attendanceStartToken) return;
     const video = attendanceVideo();
@@ -3616,7 +3870,7 @@ async function startFormCamera() {
             return;
         }
         $("form-camera-placeholder").classList.add("hidden");
-        state.formTimer = setInterval(() => processFormFrame(), 350);
+        state.formTimer = setInterval(() => processFormFrame(), 550);
         toast(tr("cameraFormReady"), "success");
     } catch (error) {
         if (startToken === state.formStartToken) {
@@ -3645,7 +3899,7 @@ async function processFormFrame() {
             state.faceCandidateQuality = quality;
             $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
             if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
-                quality < 0.7 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
+                quality < 0.55 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
                 state.formStableFrames = 0;
                 state.lastFormNose = null;
                 if (quality < 0.7) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
@@ -3674,7 +3928,9 @@ async function processFormFrame() {
             state.faceCandidateQuality = null;
             state.formStableFrames = 0;
             state.lastFormNose = null;
-            $("form-face-status").textContent = tr("faceNotFound");
+            $("form-face-status").textContent = isFrameTooDark(video)
+                ? tr("faceLowLight")
+                : tr("faceNotFound");
         }
         updateFaceSampleCount();
     } catch (error) {
@@ -3686,33 +3942,81 @@ async function processFormFrame() {
     }
 }
 
+async function getVerifiedImageFormat(file) {
+    const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+    const jpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    const png = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 &&
+        bytes[2] === 0x4e && bytes[3] === 0x47 && bytes[4] === 0x0d &&
+        bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a;
+    const webp = bytes.length >= 12 &&
+        String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+        String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+    return jpeg ? "image/jpeg" : png ? "image/png" : webp ? "image/webp" : null;
+}
+
+async function decodeFaceUpload(file) {
+    let source;
+    let bitmap;
+    if (typeof createImageBitmap === "function") {
+        try {
+            bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+            source = bitmap;
+        } catch {
+            bitmap = null;
+        }
+    }
+    if (!source) source = await faceapi.bufferToImage(file);
+    const width = Number(source.naturalWidth || source.width);
+    const height = Number(source.naturalHeight || source.height);
+    if (!width || !height) {
+        bitmap?.close?.();
+        throw new Error("Image dimensions are invalid");
+    }
+    const scale = Math.min(1, 1600 / Math.max(width, height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext("2d", { alpha: false });
+    if (!context) {
+        bitmap?.close?.();
+        throw new Error("Image canvas is unavailable");
+    }
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    bitmap?.close?.();
+    return canvas;
+}
+
 async function readUploadedFace(file) {
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast(tr("faceUploadError"), "error");
+    if (file.size <= 0 || file.size > 15 * 1024 * 1024) {
+        toast("Ukuran foto harus lebih dari 0 dan maksimal 15 MB.", "error");
         return;
     }
-    if (!state.modelReady && !(await loadModels())) {
-        toast(tr("modelFailed"), "error");
-        return;
-    }
-
     try {
-        const image = await faceapi.bufferToImage(file);
-        const detections = await faceapi.detectAllFaces(
-            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 })
-        ).withFaceLandmarks().withFaceDescriptors();
-
-        if (detections.length !== 1) {
-            $("form-face-status").textContent = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
-            toast(detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound"), "error");
+        if (!await getVerifiedImageFormat(file)) {
+            toast("File tidak terbaca sebagai JPG, PNG, atau WebP yang valid.", "error");
             return;
         }
-
+        if (!state.modelReady && !(await loadModels())) {
+            toast(tr("modelFailed"), "error");
+            return;
+        }
+        const image = await decodeFaceUpload(file);
+        const detections = await faceapi.detectAllFaces(image, getFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptors();
+        if (detections.length !== 1) {
+            const message = detections.length > 1
+                ? tr("faceTooMany")
+                : isFrameTooDark(image) ? tr("faceLowLight") : tr("faceNotFound");
+            $("form-face-status").textContent = message;
+            toast(message, "error");
+            return;
+        }
         const detection = detections[0];
         const angle = faceAngleBucket(detection);
-        const sourceWidth = image.naturalWidth || image.width || 640;
-        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
+        const sourceWidth = image.width || 640;
+        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.18));
         if (!angle) {
             $("form-face-status").textContent = tr("faceTurnAngle");
             toast(tr("faceTurnAngle"), "error");
@@ -3730,7 +4034,7 @@ async function readUploadedFace(file) {
         }
     } catch (error) {
         console.error("Image processing error:", error);
-        toast(tr("faceUploadError"), "error");
+        toast("Foto gagal dibaca. Coba JPG/JPEG/PNG/WebP lain dengan wajah terlihat jelas.", "error");
     }
 }
 
@@ -3744,18 +4048,139 @@ async function readUploadedFaces(files) {
     }
 }
 
-async function submitStudentAbsence(event) {
+function updateDispensationFields() {
+    const active = $("absence-type")?.value === "dispensation";
+    const fields = $("dispensation-fields");
+    fields?.classList.toggle("hidden", !active);
+    fields?.setAttribute("aria-hidden", String(!active));
+    for (const id of ["dispensation-kind", "dispensation-start", "dispensation-end"]) {
+        const input = $(id);
+        if (input) input.required = Boolean(active);
+    }
+}
+
+function studentAbsenceStatusLabel(status) {
+    return ({
+        pending: "Menunggu peninjauan Guru",
+        awaiting_medical: "Disetujui bersyarat · bukti medis diperlukan",
+        evidence_submitted: "Bukti medis terkirim · menunggu peninjauan akhir",
+        approved: "Disetujui",
+        rejected: "Ditolak"
+    })[status] || "Status tidak diketahui";
+}
+
+function studentAbsenceTypeLabel(item) {
+    const labels = { sick: "Sakit", permission: "Izin", other: "Lainnya", dispensation: "Dispensasi" };
+    const kinds = {
+        temporary_exit: "Keluar sementara", late_arrival: "Datang terlambat",
+        early_departure: "Pulang lebih awal", class_permission: "Meninggalkan kelas", other: "Keperluan lainnya"
+    };
+    return (labels[item.absence_type] || "Pengajuan") +
+        (item.absence_type === "dispensation" && item.dispensation_kind
+            ? " · " + (kinds[item.dispensation_kind] || kinds.other) : "");
+}
+
+async function loadStudentAbsenceRequests() {
+    const container = $("student-absence-requests");
+    if (!container || state.user?.role !== "siswa") return;
+    container.innerHTML = '<p class="empty-state">Memuat pengajuan Anda…</p>';
+    try {
+        const result = await cloudRequest("/api/absence", { role: "siswa" });
+        const requests = Array.isArray(result.requests) ? result.requests : [];
+        if (!requests.length) {
+            container.innerHTML = '<p class="empty-state">Belum ada pengajuan. Formulir yang Anda kirim akan tampil di sini.</p>';
+            return;
+        }
+        container.innerHTML = requests.map(item => {
+            const times = item.absence_type === "dispensation" && item.start_time && item.end_time
+                ? '<p>Waktu: <strong>' + safeText(item.start_time) + '–' + safeText(item.end_time) + '</strong></p>' : "";
+            const days = Number.isInteger(item.estimated_rest_days)
+                ? '<p>Perkiraan istirahat: <strong>' + item.estimated_rest_days + ' hari</strong></p>' : "";
+            const statusClass = item.status === "approved" ? "status-approved" :
+                item.status === "rejected" ? "status-rejected" : "";
+            const medical = item.status === "awaiting_medical"
+                ? '<form class="medical-followup" data-medical-evidence-form="' + safeText(item.id) + '">' +
+                    '<div class="medical-followup-intro"><strong>Persetujuan bersyarat diterima</strong><p>Unggah bukti medis yang relevan dan masukkan perkiraan hari istirahat. Guru akan memeriksa dokumen ini sebelum keputusan akhir.</p></div>' +
+                    '<label>Bukti medis (PDF/JPG/PNG, maksimal 5 MB)<input type="file" name="medical_file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required></label>' +
+                    '<label>Estimasi istirahat (hari)<input type="number" name="rest_days" min="1" max="30" step="1" inputmode="numeric" required></label>' +
+                    '<label class="medical-honesty-check"><input type="checkbox" name="honest_confirmation" required><span>Saya menyatakan berkas yang diunggah benar dan berkaitan dengan pengajuan ini.</span></label>' +
+                    '<button class="button primary" type="submit">Kirim bukti untuk ditinjau</button></form>' : "";
+            return '<article class="student-absence-card"><div class="student-absence-card-head"><div><strong>' +
+                safeText(studentAbsenceTypeLabel(item)) + '</strong><small>' + safeText(formatDate(item.absence_date)) +
+                '</small></div><span class="absence-status-chip ' + statusClass + '">' +
+                safeText(studentAbsenceStatusLabel(item.status)) + '</span></div><p>' +
+                safeText(item.note) + '</p>' + times + days + medical + '</article>';
+        }).join("");
+    } catch (error) {
+        console.error("Student absence request load failed:", error);
+        container.innerHTML = '<p class="empty-state">Status belum dapat dimuat. Periksa koneksi lalu tekan Perbarui status.</p>';
+    }
+}
+
+async function submitMedicalEvidence(event) {
+    const form = event.target.closest("[data-medical-evidence-form]");
+    if (!form) return;
     event.preventDefault();
-    if (!state.user || state.user.role !== "siswa") {
-        toast(tr("absenceSubmitFailed"), "error");
+    const id = form.dataset.medicalEvidenceForm;
+    const file = form.querySelector('input[type="file"]')?.files?.[0];
+    const restDays = Number(form.querySelector('input[name="rest_days"]')?.value);
+    const confirmed = form.querySelector('input[name="honest_confirmation"]')?.checked === true;
+    const button = form.querySelector('button[type="submit"]');
+    const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
+    if (!id || !file || !allowedTypes.has(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024 ||
+        !Number.isInteger(restDays) || restDays < 1 || restDays > 30 || !confirmed) {
+        toast("Lengkapi bukti PDF/JPG/PNG, estimasi 1–30 hari, dan konfirmasi kejujuran.", "error");
         return;
     }
+    button.disabled = true;
+    try {
+        const upload = await cloudRequest("/api/absence?action=evidence-upload", {
+            method: "POST", role: "siswa", body: { id, content_type: file.type, size: file.size }
+        });
+        const response = await fetch(upload.uploadUrl, {
+            method: "PUT", headers: { "Content-Type": file.type, "x-upsert": "false" }, body: file
+        });
+        if (!response.ok) throw new Error("Unggahan bukti medis gagal. Periksa jaringan lalu coba kembali.");
+        await cloudRequest("/api/absence?action=evidence-submit", {
+            method: "POST", role: "siswa",
+            body: { id, path: upload.path, content_type: file.type, estimated_rest_days: restDays }
+        });
+        toast("Bukti medis berhasil dikirim dan menunggu pemeriksaan Guru.", "success");
+        await loadStudentAbsenceRequests();
+    } catch (error) {
+        toast(error.message || "Bukti medis gagal dikirim.", "error");
+    } finally {
+        button.disabled = false;
+    }
+}
+
+async function downloadMedicalEvidence(id) {
+    const result = await cloudRequest("/api/absence?action=evidence-download&id=" + encodeURIComponent(id), {
+        role: state.user?.role
+    });
+    const response = await fetch(result.signedUrl);
+    if (!response.ok) throw new Error("Dokumen medis tidak dapat dibuka.");
+    const blobUrl = URL.createObjectURL(await response.blob());
+    const anchor = document.createElement("a");
+    anchor.href = blobUrl; anchor.download = "bukti-medis-" + id;
+    document.body.appendChild(anchor); anchor.click(); anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+}
+
+async function submitStudentAbsence(event) {
+    event.preventDefault();
+    if (!state.user || state.user.role !== "siswa") { toast(tr("absenceSubmitFailed"), "error"); return; }
     const button = $("btn-submit-absence");
     const status = $("absence-form-status");
     const body = { date: $("absence-date").value, type: $("absence-type").value, note: $("absence-note").value.trim() };
-    if (!body.date || !body.note) {
-        toast(tr("absenceRequired"), "error");
-        return;
+    if (!body.date || !body.note) { toast(tr("absenceRequired"), "error"); return; }
+    if (body.type === "dispensation") {
+        body.dispensation_kind = $("dispensation-kind").value;
+        body.start_time = $("dispensation-start").value;
+        body.end_time = $("dispensation-end").value;
+        if (!body.start_time || !body.end_time || body.end_time <= body.start_time) {
+            toast("Jam selesai harus lebih lambat daripada jam mulai.", "error"); return;
+        }
     }
     button.disabled = true;
     status.textContent = tr("absenceSending");
@@ -3765,12 +4190,11 @@ async function submitStudentAbsence(event) {
         $("absence-note").value = "";
         toast(tr("absenceSubmitted"), "success");
         if (result.whatsapp?.error) toast(tr("absenceWhatsappFailed"), "error");
+        await loadStudentAbsenceRequests();
     } catch (error) {
         status.textContent = error.message || tr("absenceSubmitFailed");
         toast(status.textContent, "error");
-    } finally {
-        button.disabled = false;
-    }
+    } finally { button.disabled = false; }
 }
 
 async function loadAbsenceRequests() {
@@ -3779,15 +4203,33 @@ async function loadAbsenceRequests() {
     try {
         const result = await cloudRequest("/api/absence", { role: "guru" });
         const rows = Array.isArray(result.requests) ? result.requests : [];
+        if (result.requires_homeroom_assignment) {
+            tbody.innerHTML = '<tr><td colspan="7">Akun Guru ini belum ditetapkan sebagai wali kelas oleh Admin.</td></tr>';
+            $("absence-requests-empty")?.classList.add("hidden");
+            return;
+        }
         tbody.innerHTML = rows.map(item => {
-            const typeLabel = tr("absenceType_" + item.absence_type);
-            const statusLabel = tr("absenceStatus_" + item.status);
-            const action = item.status === "pending"
-                ? '<button class="button subtle" type="button" data-absence-review="approved" data-absence-id="' + safeText(item.id) + '">' + safeText(tr("approveAbsence")) + '</button> <button class="button danger-outline" type="button" data-absence-review="rejected" data-absence-id="' + safeText(item.id) + '">' + safeText(tr("rejectAbsence")) + '</button>'
-                : safeText(statusLabel);
+            const labels = { sick: "Sakit", permission: "Izin", other: "Lainnya", dispensation: "Dispensasi" };
+            const kinds = { temporary_exit: "Keluar sementara", late_arrival: "Datang terlambat", early_departure: "Pulang lebih awal", class_permission: "Meninggalkan kelas", other: "Keperluan lainnya" };
+            const typeLabel = (labels[item.absence_type] || "Pengajuan") +
+                (item.absence_type === "dispensation" && item.dispensation_kind ? " · " + (kinds[item.dispensation_kind] || "Lainnya") : "");
+            const statusLabel = studentAbsenceStatusLabel(item.status);
+            const times = item.absence_type === "dispensation" && item.start_time && item.end_time
+                ? '<br><small>' + safeText(item.start_time) + '–' + safeText(item.end_time) + '</small>' : "";
+            const days = Number.isInteger(item.estimated_rest_days)
+                ? '<br><small>Estimasi istirahat: ' + item.estimated_rest_days + ' hari</small>' : "";
+            let action = safeText(statusLabel);
+            if (item.status === "pending") {
+                const label = item.absence_type === "sick" ? "Setujui bersyarat" : tr("approveAbsence");
+                action = '<button class="button subtle" type="button" data-absence-review="approved" data-absence-id="' + safeText(item.id) + '">' + safeText(label) + '</button> <button class="button danger-outline" type="button" data-absence-review="rejected" data-absence-id="' + safeText(item.id) + '">' + safeText(tr("rejectAbsence")) + '</button>';
+            } else if (item.status === "evidence_submitted") {
+                action = '<button class="button secondary" type="button" data-absence-evidence="' + safeText(item.id) + '">Tinjau bukti</button> <button class="button subtle" type="button" data-absence-review="approved" data-absence-id="' + safeText(item.id) + '">Setujui akhir</button> <button class="button danger-outline" type="button" data-absence-review="rejected" data-absence-id="' + safeText(item.id) + '">Tolak</button>';
+            } else if (item.status === "awaiting_medical") {
+                action += '<br><button class="button danger-outline" type="button" data-absence-review="rejected" data-absence-id="' + safeText(item.id) + '">Tolak</button>';
+            }
             return '<tr><td>' + safeText(item.name) + '</td><td>' + safeText(item.class_name) + '</td><td>' +
-                safeText(formatDate(item.absence_date)) + '</td><td>' + safeText(typeLabel) + '</td><td>' +
-                safeText(item.note) + '</td><td>' + safeText(statusLabel) + '</td><td>' + action + '</td></tr>';
+                safeText(formatDate(item.absence_date)) + '</td><td>' + safeText(typeLabel) + times + '</td><td>' +
+                safeText(item.note) + days + '</td><td>' + safeText(statusLabel) + '</td><td>' + action + '</td></tr>';
         }).join("");
         $("absence-requests-empty")?.classList.toggle("hidden", rows.length > 0);
     } catch (error) {
@@ -3797,6 +4239,14 @@ async function loadAbsenceRequests() {
 }
 
 async function handleAbsenceReview(event) {
+    const evidenceButton = event.target.closest("[data-absence-evidence]");
+    if (evidenceButton) {
+        evidenceButton.disabled = true;
+        try { await downloadMedicalEvidence(evidenceButton.dataset.absenceEvidence); }
+        catch (error) { toast(error.message || "Bukti medis tidak dapat dibuka.", "error"); }
+        finally { evidenceButton.disabled = false; }
+        return;
+    }
     const button = event.target.closest("[data-absence-review]");
     if (!button) return;
     button.disabled = true;
@@ -4406,8 +4856,11 @@ function setupEvents() {
     });
     const updateAdminStudentFields = () => {
         const isStudent = $("admin-user-role").value === "siswa";
+        const isTeacher = $("admin-user-role").value === "guru";
         $("admin-student-fields").classList.toggle("hidden", !isStudent);
         $("admin-student-fields").setAttribute("aria-hidden", String(!isStudent));
+        $("admin-teacher-fields")?.classList.toggle("hidden", !isTeacher);
+        $("admin-teacher-fields")?.setAttribute("aria-hidden", String(!isTeacher));
         $("admin-user-nisn").required = isStudent;
         $("admin-user-class").required = isStudent;
     };
@@ -4434,6 +4887,9 @@ function setupEvents() {
                 return;
             }
             if (parentWhatsApp) body.parent_whatsapp = parentWhatsApp.replace(/^08/, "628");
+        } else {
+            const homeroomClass = $("admin-user-homeroom-class")?.value.trim();
+            if (homeroomClass) body.homeroom_class = homeroomClass;
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
             toast("Masukkan email akun yang valid.", "error");
@@ -4492,6 +4948,10 @@ function setupEvents() {
                 placeholder: "08xxxxxxxxxx atau 628xxxxxxxxxx",
                 value: button.dataset.parentWhatsapp || "", pattern: "(08|628)[0-9]{8,13}"
             });
+            if (table === "teachers") fields.push({
+                name: "homeroom_class", label: "Kelas wali (kosongkan untuk melepas)", type: "text",
+                placeholder: "Contoh: XI IPA 1", value: button.dataset.homeroomClass || ""
+            });
             const result = await openAppDialog({
                 title: "Ubah akun",
                 description: "Isi hanya data yang ingin diubah. Kolom kosong tidak akan mengubah data saat ini.",
@@ -4509,7 +4969,8 @@ function setupEvents() {
                 }
                 body.parent_whatsapp = normalized.replace(/^08/, "628");
             }
-            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) {
+            if (result.homeroom_class !== undefined) body.homeroom_class = result.homeroom_class.trim();
+            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined && body.homeroom_class === undefined) {
                 toast("Tidak ada perubahan yang dimasukkan.", "info"); return;
             }
             try {
@@ -4528,6 +4989,8 @@ function setupEvents() {
             radius: Number($("admin-setting-radius").value),
             timezone: $("admin-setting-timezone").value.trim(),
             entry_time: $("admin-setting-entry-time").value,
+            dispensation_open_time: $("admin-setting-dispensation-open").value,
+            dispensation_close_time: $("admin-setting-dispensation-close").value,
             late_tolerance_min: Number($("admin-setting-tolerance").value)
         };
         const submitButton = $("admin-settings-form").querySelector('button[type="submit"]');
@@ -4576,24 +5039,45 @@ function setupEvents() {
     $("admin-test-whatsapp-send")?.addEventListener("click", () => void sendAdminWhatsAppTest());
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const name = $("admin-profile-name").value.trim();
+        const email = $("admin-profile-email").value.trim().toLowerCase();
         const password = $("admin-new-password").value;
-        if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) ||
-            !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+        if (!name || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            toast("Nama dan email Admin harus diisi dengan format yang valid.", "error");
+            return;
+        }
+        if (password && (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) ||
+            !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password))) {
             toast("Kata sandi harus 12+ karakter dan berisi huruf besar/kecil, angka, serta simbol.", "error");
             return;
         }
+        const submit = $("admin-profile-form").querySelector('button[type="submit"]');
+        if (submit) submit.disabled = true;
         try {
-            await cloudRequest("/api/admin/profile", {
+            const result = await cloudRequest("/api/admin/profile", {
                 method: "PUT",
                 body: {
                     current_password: await passwordDigest($("admin-current-password").value),
-                    password
+                    name,
+                    email,
+                    ...(password ? { password } : {})
                 }
             });
-            $("admin-profile-form").reset();
-            toast("Kata sandi Admin berhasil diubah.", "success");
+            if (result?.token && result?.user) {
+                state.user = { ...state.user, ...result.user, token: result.token };
+                sessionStorage.setItem("amanahid.adminToken", result.token);
+                $("admin-header-user").textContent = result.user.name;
+                $("admin-header-avatar").textContent = result.user.name.trim().charAt(0).toUpperCase() || "A";
+                $("admin-profile-name").value = result.user.name;
+                $("admin-profile-email").value = result.user.email;
+            }
+            $("admin-current-password").value = "";
+            $("admin-new-password").value = "";
+            toast("Profil Admin berhasil diperbarui.", "success");
         } catch (error) {
             toastAdminError(error);
+        } finally {
+            if (submit) submit.disabled = false;
         }
     });
 
@@ -4643,13 +5127,37 @@ function setupEvents() {
         showAuth();
         toast(tr("loggedOut"), "info");
     });
-    $("btn-student-save-profile").addEventListener("click", () => {
+    $("btn-student-save-profile").addEventListener("click", async () => {
         setTheme($("student-theme-select").value);
         setLanguage($("student-profile-language").value);
-        toast(tr("settingsSaved"), "success");
+        const button = $("btn-student-save-profile");
+        const address = $("student-profile-address")?.value.trim() || "";
+        const student = state.students.find(item => item.nisn === state.user?.nisn);
+        if (!student) { toast("Data siswa belum termuat. Muat ulang profil lalu coba lagi.", "error"); return; }
+        button.disabled = true;
+        try {
+            const result = await cloudRequest("/api/students", { method: "PATCH", role: "siswa", body: { address } });
+            student.address = result.student?.address || "";
+            updateStudentProfile();
+            toast("Alamat dan pengaturan profil berhasil disimpan.", "success");
+        } catch (error) { toast(error.message || "Alamat gagal disimpan.", "error"); }
+        finally { button.disabled = false; }
     });
     $("student-theme-select").addEventListener("change", () => setTheme($("student-theme-select").value));
     $("student-profile-language").addEventListener("change", () => setLanguage($("student-profile-language").value));
+    document.querySelectorAll("[data-user-preference]").forEach(input => {
+        input.addEventListener("change", () => {
+            const key = input.dataset.userPreference;
+            if (!Object.hasOwn(DEFAULT_USER_PREFERENCES, key)) return;
+            state.userPreferences = { ...state.userPreferences, [key]: input.checked };
+            saveUserPreferences();
+            applyUserPreferences();
+            toast("Pengaturan pribadi berhasil diperbarui.", "success");
+        });
+    });
+    for (const eventName of ["pointerdown", "keydown", "touchstart", "wheel"]) {
+        window.addEventListener(eventName, handlePreferenceActivity, { passive: true });
+    }
     $("btn-student-attendance").addEventListener("click", toggleAttendanceCamera);
     $("btn-attendance-switch").addEventListener("click", toggleAttendanceCamera);
 
@@ -4674,13 +5182,22 @@ function setupEvents() {
         toast(tr("cameraFormOff"), "info");
     });
 
-    $("photo-upload").addEventListener("change", event => {
-        readUploadedFaces(Array.from(event.target.files || []));
+    $("photo-upload").addEventListener("change", async event => {
+        const files = Array.from(event.target.files || []);
+        const name = $("photo-upload-name");
+        if (name) name.textContent = files.length
+            ? files.map(file => file.name).join(", ")
+            : "Belum ada file dipilih";
+        await readUploadedFaces(files);
         event.target.value = "";
     });
 
     $("student-form").addEventListener("submit", registerStudent);
     $("student-absence-form")?.addEventListener("submit", submitStudentAbsence);
+    $("absence-type")?.addEventListener("change", updateDispensationFields);
+    updateDispensationFields();
+    $("student-absence-requests")?.addEventListener("submit", submitMedicalEvidence);
+    $("btn-refresh-student-absence")?.addEventListener("click", loadStudentAbsenceRequests);
     $("btn-refresh-absence-requests")?.addEventListener("click", loadAbsenceRequests);
     $("absence-requests-tbody")?.addEventListener("click", handleAbsenceReview);
     $("input-parent-wa").addEventListener("invalid", event => {

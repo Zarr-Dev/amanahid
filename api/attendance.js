@@ -134,7 +134,7 @@ export default async function handler(req, res) {
             Math.abs(lat) > 90 || Math.abs(lng) > 180 || accuracy <= 0 || confidence < 0.3 || confidence > 1) {
             return jsonError(res, 400, "Invalid location or confidence values");
         }
-        if (Math.abs(Date.now() - gpsTimestamp) > 30_000) {
+        if (gpsTimestamp > Date.now() + 3_000 || Date.now() - gpsTimestamp > 30_000) {
             return failedAttendance(req, res, role, 400, { error: "GPS_FIX_STALE", message: "Location data is stale. Check GPS again." });
         }
         if (speed > 55) {

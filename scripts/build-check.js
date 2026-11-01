@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/_lib/test-tools.js", "api/auth/login.js",
-    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase-demo-accounts.sql"
+    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261101120000_student_absence_evidence_dispensation_and_homeroom.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -120,13 +120,26 @@ const htmlChecks = [
     ["admin GPS diagnostics", /id="admin-test-gps-run"/],
     ["compact shared login CAPTCHA", /id="login-captcha-answer"/],
     ["server CAPTCHA refresh control", /id="login-captcha-refresh"/],
+    ["custom accessible face photo picker input", /id="photo-upload" class="face-upload-input"/],
+    ["styled photo picker trigger", /class="button secondary face-upload-button"/],
+    ["visible uploaded photo filename", /id="photo-upload-name"/],
     ["editable school GPS map", /id="admin-school-map"/],
     ["Admin school-to-device distance", /id="admin-map-device-distance"/],
     ["Admin school GPS accuracy diagnostics", /id="admin-map-device-accuracy"/],
     ["Admin WhatsApp consent checkbox", /class="admin-test-consent"[\s\S]*?type="checkbox"/],
     ["Admin account export", /id="admin-export-users"/],
-    ["Admin audit export", /id="admin-export-audit"/]
+    ["Admin audit export", /id="admin-export-audit"/],
+    ["Teacher personal preference switches", /id="teacher-preference-settings"[\s\S]*?data-user-preference="animations"[\s\S]*?data-user-preference="charts"[\s\S]*?data-user-preference="confirmAttendance"[\s\S]*?data-user-preference="autoLock"/],
+    ["Student personal preference switches", /id="student-preference-settings"[\s\S]*?data-user-preference="animations"[\s\S]*?data-user-preference="charts"[\s\S]*?data-user-preference="confirmAttendance"[\s\S]*?data-user-preference="autoLock"/],
+    ["Teacher attendance chart", /id="teacher-preference-chart"[\s\S]*?data-chart-bars="teacher"/],
+    ["Student attendance chart", /id="student-preference-chart"[\s\S]*?data-chart-bars="student"/],
+    ["Admin self profile name and email fields", /id="admin-profile-name"[\s\S]*?id="admin-profile-email"[\s\S]*?id="admin-current-password"/]
 ];
+const personalPreferenceCount = (html.match(/data-user-preference="/g) || []).length;
+if (personalPreferenceCount !== 8) {
+    console.error(`Build check failed: exactly four personal switches per Guru/Siswa role are required; found ${personalPreferenceCount}.`);
+    process.exit(1);
+}
 const navIconCount = (html.match(/class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24">/g) || []).length;
 if (navIconCount !== 13 || !css.includes(".nav-symbol svg") ||
     !css.includes(".nav-link:hover .nav-symbol svg")) {
@@ -184,8 +197,17 @@ const cssChecks = [
     ["mobile safe-area bottom nav", /height:\s*66px;[\s\S]{0,180}padding-bottom:\s*max\(5px,\s*env\(safe-area-inset-bottom\)\)/],
     ["touch-scrollable tables", /\.table-wrap\s*\{[^}]*overflow-x:\s*auto;[^}]*-webkit-overflow-scrolling:\s*touch;/s],
     ["large screen content width cap", /@media\s*\(min-width:\s*1600px\)[\s\S]*?\.app-shell\s*\{\s*max-width:\s*1600px;/],
-    ["absence form styling", /\.absence-form-panel\s+\.registration-form/]
+    ["absence form styling", /\.absence-form-panel\s+\.registration-form/],
+    ["personal preference switch styling", /\.preference-switch input\[type="checkbox"\]\s*\{/],
+    ["responsive attendance chart styling", /\.preference-chart-bars\s*\{[\s\S]*?grid-template-columns:\s*repeat\(7,/],
+    ["user-configurable reduced motion", /body\.reduce-motion \*[\s\S]*?animation-duration:\s*\.01ms/]
+
 ];
+cssChecks.push(
+    ["student absence responsive layout", /\.absence-form-layout\s*\{/],
+    ["student homeroom profile emphasis", /\.homeroom-card\s*\{/],
+    ["student medical evidence form styling", /\.medical-followup\s*\{/]
+);
 for (const [label, pattern] of cssChecks) {
     if (!pattern.test(css)) {
         console.error(`Build check failed: missing ${label} in public/style.css.`);
@@ -221,7 +243,19 @@ if (!js.includes('phase === "pending" ? "disabled"') ||
     process.exit(1);
 }
 
-if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 512, scoreThreshold: 0.55") ||
+if (!js.includes("DEFAULT_USER_PREFERENCES") ||
+    !js.includes("15 * 60 * 1000") ||
+    !js.includes("function renderPreferenceCharts") ||
+    !js.includes("attendanceConfirmPending") ||
+    !allApiSource.includes("async function updateAdminProfile") ||
+    !allApiSource.includes("previous_email_changed")) {
+    console.error("Build check failed: personal security settings, attendance charts, or Admin self-profile API wiring is missing.");
+    process.exit(1);
+}
+
+if (!js.includes("@v0.22.2/weights") ||
+    !js.includes("inputSize: cores <= 4 ? 416 : 512") || !js.includes("scoreThreshold: 0.45") ||
+    !js.includes("function getFaceDetectorOptions") || !js.includes("function isFrameTooDark") ||
     !js.includes("function updateAttendanceLiveness") || !js.includes("function isFaceDetectionUsable") ||
     !allApiSource.includes("FACE_MATCH_THRESHOLD = 0.42") ||
     !allApiSource.includes("GPS_BOUNDARY_UNCERTAIN")) {
@@ -263,12 +297,35 @@ if (!js.includes("function faceAngleBucket") || !allApiSource.includes("GPS_FIX_
     console.error("Build check failed: face-angle capture or fresh GPS checks are missing.");
     process.exit(1);
 }
-if (!js.includes("async function submitStudentAbsence") || !js.includes("loadAbsenceRequests")) {
-    console.error("Build check failed: student absence request workflow is missing.");
+if (!js.includes("async function submitStudentAbsence") || !js.includes("loadAbsenceRequests") ||
+    !js.includes("loadStudentAbsenceRequests") || !js.includes("submitMedicalEvidence") ||
+    !js.includes("collectStableFaceDescriptor") || !js.includes("let firstFix = null") ||
+    !allApiSource.includes("evidence-upload") || !allApiSource.includes("evidence-download") ||
+    !allApiSource.includes("evidence_submitted") || !allApiSource.includes("validMedicalMagicBytes")) {
+    console.error("Build check failed: student medical evidence workflow, teacher review, face consensus, or GPS consistency is missing.");
+    process.exit(1);
+}
+for (const id of ["student-absence-requests", "dispensation-fields", "student-homeroom-teacher-name",
+    "student-profile-address", "admin-user-homeroom-class", "admin-setting-dispensation-open",
+    "admin-setting-dispensation-close"]) {
+    if (!html.includes('id="' + id + '"')) {
+        console.error("Build check failed: missing student/admin workflow control " + id);
+        process.exit(1);
+    }
+}
+if (!/data-target="view-s-presensi"[\s\S]*?data-target="view-s-absence"[\s\S]*?data-target="view-s-history"/.test(html)) {
+    console.error("Build check failed: Siswa Formulir tab must sit directly below Presensi Saya.");
+    process.exit(1);
+}
+if (!allApiSource.includes("homeroom_class") || !allApiSource.includes("dispensation_open_time") ||
+    !allApiSource.includes("students:PATCH:address")) {
+    console.error("Build check failed: homeroom assignment, server-side dispensations, or student address ownership update is missing.");
     process.exit(1);
 }
 
-if (!js.includes("refreshLoginCaptcha()") || !js.includes("syncAdminSettingsMap") ||
+if (!js.includes("refreshLoginCaptcha()") || !js.includes("getVerifiedImageFormat") ||
+    !js.includes("createImageBitmap(file") || !js.includes("getFaceDetectorOptions") ||
+    !js.includes("syncAdminSettingsMap") ||
     !js.includes("/api/auth/login?action=captcha") || !js.includes("captchaToken: state.loginCaptchaToken")) {
     console.error("Build check failed: server-issued shared CAPTCHA or editable school GPS map is missing.");
     process.exit(1);

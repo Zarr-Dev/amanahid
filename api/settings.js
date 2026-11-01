@@ -22,6 +22,7 @@ function isValidSettings({ lat, lng, radius }) {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     const action = req.query?.action;
     // Liveness endpoint: confirms the function is running without requiring
     // database credentials or a live downstream dependency.

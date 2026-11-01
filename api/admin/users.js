@@ -20,7 +20,7 @@ function validBody(res, schema, body) {
 async function allUsers() {
     const [studentRows, teacherRows] = await Promise.all([
         supabaseRequest("students?select=id,nisn,email,name,class_name,parent_whatsapp,is_active,created_at&order=name.asc"),
-        supabaseRequest("teachers?select=id,email,name,is_active,created_at&order=name.asc")
+        supabaseRequest("teachers?select=id,email,name,homeroom_class,is_active,created_at&order=name.asc")
     ]);
     const students = Array.isArray(studentRows)
         ? studentRows.filter(user => user && typeof user === "object") : [];
@@ -33,6 +33,7 @@ async function allUsers() {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     const admin = await authorizeAdmin(req, res, "users");
     if (!admin) return;
     try {
@@ -48,7 +49,8 @@ export default async function handler(req, res) {
                 password: { type: "string", required: true, max: 128 },
                 nisn: { type: "string", max: 20, pattern: /^\d{8,20}$/ },
                 parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
-                class_name: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ }
+                class_name: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
+                homeroom_class: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ }
             };
             if (!validBody(res, schema, body)) return;
             const features = await getFeatureFlags();
@@ -58,21 +60,22 @@ export default async function handler(req, res) {
 
             const email = body.email.trim().toLowerCase();
             const name = body.name.trim();
-            const [studentEmailRows, teacherEmailRows] = await Promise.all([
+            const [studentEmailRows, teacherEmailRows, adminEmailRows] = await Promise.all([
                 supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
-                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
             ]);
-            if ((Array.isArray(studentEmailRows) && studentEmailRows.length) ||
-                (Array.isArray(teacherEmailRows) && teacherEmailRows.length)) {
+            if ([studentEmailRows, teacherEmailRows, adminEmailRows]
+                .some(rows => Array.isArray(rows) && rows.length > 0)) {
                 return jsonError(res, 409, "User email already exists");
             }
 
             const password_hash = await hashPassword(body.password);
             if (body.role === "guru") {
-                const rows = await supabaseRequest("teachers?select=id,email,name,created_at", {
+                const rows = await supabaseRequest("teachers?select=id,email,name,homeroom_class,created_at", {
                     method: "POST",
                     headers: { Prefer: "return=representation" },
-                    body: JSON.stringify({ email, name, password_hash, role: "guru", is_active: true })
+                    body: JSON.stringify({ email, name, password_hash, role: "guru", homeroom_class: body.homeroom_class?.trim() || null, is_active: true })
                 }) ?? [];
                 const created = Array.isArray(rows) ? (rows[0] ?? null) : null;
                 if (!created) return jsonError(res, 502, "Supabase did not return the created user");
@@ -125,18 +128,24 @@ export default async function handler(req, res) {
                 parent_whatsapp: { type: "string", max: 15, pattern: /^(?:|08\d{8,13}|628\d{8,13})$/ },
                 email: { type: "string", max: 254, pattern: EMAIL },
                 name: { type: "string", max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
-                password: { type: "string", max: 128 }
+                password: { type: "string", max: 128 },
+                homeroom_class: { type: "string", max: 40 }
             };
             if (!validBody(res, schema, body)) return;
-            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) {
+            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined && body.homeroom_class === undefined) {
                 return jsonError(res, 400, "At least one field must be changed");
             }
             if (body.email) {
+                const email = body.email.trim().toLowerCase();
                 const otherTable = body.table === "students" ? "teachers" : "students";
-                const duplicate = await supabaseRequest(
-                    `${otherTable}?select=id&email=eq.${encodeURIComponent(body.email.trim().toLowerCase())}&limit=1`
-                );
-                if ((Array.isArray(duplicate) ? duplicate.length : 0) > 0) return jsonError(res, 409, "User email already exists");
+                const [sameRole, otherRole, admins] = await Promise.all([
+                    supabaseRequest(`${body.table}?select=id&email=eq.${encodeURIComponent(email)}&id=neq.${encodeURIComponent(body.id)}&limit=1`),
+                    supabaseRequest(`${otherTable}?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                    supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
+                ]);
+                if ([sameRole, otherRole, admins].some(rows => Array.isArray(rows) && rows.length > 0)) {
+                    return jsonError(res, 409, "Email sudah digunakan oleh akun lain");
+                }
             }
             if (body.password && !validatePassword(body.password)) {
                 return jsonError(res, 400, "Password must contain 8 to 128 safe characters");
@@ -149,8 +158,12 @@ export default async function handler(req, res) {
                 if (body.table !== "students") return jsonError(res, 400, "WhatsApp wali hanya berlaku untuk akun siswa");
                 values.parent_whatsapp = body.parent_whatsapp ? body.parent_whatsapp.replace(/^08/, "628") : null;
             }
+            if (body.homeroom_class !== undefined) {
+                if (body.table !== "teachers") return jsonError(res, 400, "Kelas wali hanya berlaku untuk akun Guru");
+                values.homeroom_class = body.homeroom_class.trim() || null;
+            }
             const rows = await supabaseRequest(
-                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email,name,parent_whatsapp`,
+                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email,name,parent_whatsapp,homeroom_class`,
                 { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(values) }
             ) ?? [];
             const updated = Array.isArray(rows) ? (rows[0] ?? null) : null;

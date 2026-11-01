@@ -14,6 +14,7 @@ import adminDashboardStatsHandler from "../api/admin/audit.js";
 import adminProfileHandler from "../api/admin/settings.js";
 import adminSettingsHandler from "../api/admin/settings.js";
 import attendanceHandler from "../api/attendance.js";
+import { validMedicalMagicBytes, validDispensationWindow } from "../api/absence.js";
 import faceMatchHandler from "../api/face-match.js";
 import sendWhatsAppHandler from "../api/send-wa.js";
 import settingsHandler from "../api/settings.js";
@@ -66,6 +67,11 @@ test("login CAPTCHA uses encrypted, expiring, server-verified challenges", () =>
     assert.equal(verifyLoginCaptcha(challenge.token, "definitely-wrong"), false);
     assert.equal(verifyLoginCaptcha(`${challenge.token}x`, challenge.answer), false);
     assert.equal(verifyLoginCaptcha(challenge.token, ""), false);
+    for (let index = 0; index < 40; index++) {
+        const next = createLoginCaptcha(index % 3 === 0 ? "id" : index % 3 === 1 ? "en" : "ar");
+        assert.equal(verifyLoginCaptcha(next.token, next.answer), true);
+        assert.equal(verifyLoginCaptcha(next.token, "wrong-answer"), false);
+    }
 });
 
 test("login CAPTCHA endpoint returns only a challenge prompt and encrypted token", async () => {
@@ -201,6 +207,100 @@ test("admin login issues a signed token and records a login", async t => {
     assert.equal(verifyToken(res.body.token)?.role, "admin");
     assert.ok(requests.some(request => request.method === "PATCH"));
     assert.ok(requests.some(request => request.url.includes("audit_log")));
+});
+
+test("Admin can update name, email, and password only after current-password verification", async t => {
+    const currentPassword = "SecureCurrent!234";
+    const nextPassword = "SecureNewPassword!567";
+    const currentHash = await hashPassword(currentPassword);
+    const currentDigest = createHash("sha256").update(currentPassword).digest("hex");
+    const adminId = "11111111-1111-4111-8111-111111111111";
+    const token = signToken({ email: "admin@example.com", name: "Old Admin", role: "admin" });
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    let patchPayload = null;
+
+    globalThis.fetch = async (url, init = {}) => {
+        const urlText = String(url);
+        const method = init.method || "GET";
+        const endpoint = urlText.split("/rest/v1/")[1] || "";
+        calls.push({ endpoint, method, body: init.body || null });
+        let data = [];
+        if (endpoint.startsWith("admin_users?select=email,name,is_active")) {
+            data = [{ email: "admin@example.com", name: "Old Admin", is_active: true }];
+        } else if (endpoint.startsWith("admin_users?select=id,email,name,password_hash,is_active")) {
+            data = [{
+                id: adminId, email: "admin@example.com", name: "Old Admin",
+                password_hash: currentHash, is_active: true
+            }];
+        } else if (endpoint.startsWith("admin_users?id=eq.") && method === "PATCH") {
+            patchPayload = JSON.parse(init.body || "{}");
+            data = [{
+                id: adminId, email: patchPayload.email, name: patchPayload.name, is_active: true
+            }];
+        }
+        return new Response(JSON.stringify(data), { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = {
+        method: "PUT",
+        headers: { origin: "https://school.example", "x-admin-token": token },
+        query: { action: "profile" },
+        socket: { remoteAddress: "test-admin-profile-update" },
+        body: {
+            current_password: currentDigest,
+            name: "New Administrator",
+            email: "new-admin@example.com",
+            password: nextPassword
+        }
+    };
+    const res = responseMock();
+    await adminProfileHandler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.user.name, "New Administrator");
+    assert.equal(res.body.user.email, "new-admin@example.com");
+    assert.equal(verifyToken(res.body.token)?.email, "new-admin@example.com");
+    assert.equal(verifyToken(res.body.token)?.role, "admin");
+    assert.equal(typeof patchPayload.password_hash, "string");
+    assert.match(patchPayload.password_hash, /^\$2[aby]\$12\$/);
+    assert.notEqual(patchPayload.password_hash, nextPassword);
+    const auditCall = calls.find(call => call.endpoint.startsWith("audit_log"));
+    assert.ok(auditCall, "profile changes must be audited");
+    assert.equal(String(auditCall.body).includes(nextPassword), false);
+});
+
+test("Admin profile changes reject an incorrect current password", async t => {
+    const currentPassword = "SecureCurrent!234";
+    const currentHash = await hashPassword(currentPassword);
+    const token = signToken({ email: "admin@example.com", name: "Admin", role: "admin" });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async url => {
+        const endpoint = String(url).split("/rest/v1/")[1] || "";
+        const data = endpoint.startsWith("admin_users?select=email,name,is_active")
+            ? [{ email: "admin@example.com", name: "Admin", is_active: true }]
+            : endpoint.startsWith("admin_users?select=id,email,name,password_hash,is_active")
+                ? [{ id: "11111111-1111-4111-8111-111111111111", email: "admin@example.com",
+                    name: "Admin", password_hash: currentHash, is_active: true }]
+                : [];
+        return new Response(JSON.stringify(data), { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const res = responseMock();
+    await adminProfileHandler({
+        method: "PUT",
+        headers: { origin: "https://school.example", "x-admin-token": token },
+        query: { action: "profile" },
+        socket: { remoteAddress: "test-admin-profile-wrong-password" },
+        body: {
+            current_password: createHash("sha256").update("WrongCurrent!234").digest("hex"),
+            name: "Changed Name"
+        }
+    }, res);
+    assert.equal(res.statusCode, 401);
+    assert.match(res.body.error, /Current password/i);
 });
 
 test("admin APIs handle empty and null Supabase results", async t => {
@@ -690,4 +790,24 @@ test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role table
     assert.ok(requests.some(request => request.url.includes("teachers?select=")));
     assert.ok(requests.some(request => request.url.includes("students?select=email,name,nisn,password_hash,is_active")));
     assert.ok(requests.filter(request => request.method === "PATCH").length >= 3);
+});
+
+
+test("medical evidence verifies PDF, JPEG and PNG signatures", () => {
+    assert.equal(validMedicalMagicBytes(Buffer.from("%PDF-1.7\\n"), "application/pdf"), true);
+    assert.equal(validMedicalMagicBytes(Buffer.from([0xff, 0xd8, 0xff, 0xdb]), "image/jpeg"), true);
+    assert.equal(validMedicalMagicBytes(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), "image/png"), true);
+    assert.equal(validMedicalMagicBytes(Buffer.from("not really a PDF"), "application/pdf"), false);
+    assert.equal(validMedicalMagicBytes(Buffer.from("%PDF-1.7"), "image/png"), false);
+});
+
+test("dispensation is limited to today, service hours, and a four-hour maximum", () => {
+    const settings = { timezone: "Asia/Jakarta", dispensation_open_time: "07:00", dispensation_close_time: "16:00" };
+    const now = new Date("2026-11-01T03:00:00.000Z"); // 10:00 WIB
+    assert.equal(validDispensationWindow("2026-11-01", "10:15", "11:15", settings, now), true);
+    assert.equal(validDispensationWindow("2026-11-02", "10:15", "11:15", settings, now), false);
+    assert.equal(validDispensationWindow("2026-11-01", "06:00", "06:30", settings, now), false);
+    assert.equal(validDispensationWindow("2026-11-01", "10:15", "14:15", settings, now), true);
+    assert.equal(validDispensationWindow("2026-11-01", "10:15", "14:30", settings, now), false);
+    assert.equal(validDispensationWindow("2026-11-01", "15:30", "16:30", settings, now), false);
 });
