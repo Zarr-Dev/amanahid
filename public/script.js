@@ -674,6 +674,10 @@ const EXTRA_T = {
 const state = {
     lang: "id",
     theme: "light",
+    userPreferences: { animations: true, charts: true, confirmAttendance: true, autoLock: true },
+    preferenceInactivityTimer: null,
+    lastPreferenceActivity: 0,
+    attendanceConfirmPending: false,
     user: null,
     students: [],
     attendance: [],
@@ -1428,6 +1432,123 @@ function setTheme(theme) {
     if (meta) meta.content = state.theme === "dark" ? "#111827" : "#f5f8ff";
 }
 
+const DEFAULT_USER_PREFERENCES = Object.freeze({
+    animations: true,
+    charts: true,
+    confirmAttendance: true,
+    autoLock: true
+});
+
+function userPreferenceStorageKey(user = state.user) {
+    if (!user || !["guru", "siswa"].includes(user.role) || !user.email) return null;
+    return `amanahid.preferences.v1.${user.role}.${String(user.email).trim().toLowerCase()}`;
+}
+
+function applyUserPreferences() {
+    const prefs = state.userPreferences || DEFAULT_USER_PREFERENCES;
+    document.body.classList.toggle("reduce-motion", prefs.animations === false);
+    document.querySelectorAll("[data-user-preference]").forEach(input => {
+        input.checked = prefs[input.dataset.userPreference] !== false;
+    });
+    $("teacher-preference-settings")?.classList.toggle("hidden", state.user?.role !== "guru");
+    $("student-preference-settings")?.classList.toggle("hidden", state.user?.role !== "siswa");
+    $("teacher-preference-chart")?.classList.toggle("hidden",
+        state.user?.role !== "guru" || prefs.charts === false);
+    $("student-preference-chart")?.classList.toggle("hidden",
+        state.user?.role !== "siswa" || prefs.charts === false);
+    renderPreferenceCharts();
+    schedulePreferenceInactivityLock();
+}
+
+function loadUserPreferences(user) {
+    state.userPreferences = { ...DEFAULT_USER_PREFERENCES };
+    const key = userPreferenceStorageKey(user);
+    if (key) {
+        try {
+            const saved = JSON.parse(window.localStorage.getItem(key) || "null");
+            if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+                for (const name of Object.keys(DEFAULT_USER_PREFERENCES)) {
+                    if (typeof saved[name] === "boolean") state.userPreferences[name] = saved[name];
+                }
+            }
+        } catch (error) {
+            console.warn("Personal preferences could not be read from this browser:", error);
+        }
+    }
+    applyUserPreferences();
+}
+
+function saveUserPreferences() {
+    const key = userPreferenceStorageKey();
+    if (!key) return;
+    try {
+        window.localStorage.setItem(key, JSON.stringify(state.userPreferences));
+    } catch (error) {
+        console.warn("Personal preferences could not be saved in this browser:", error);
+        toast("Pengaturan pribadi tidak dapat disimpan di browser ini.", "error");
+    }
+}
+
+function schedulePreferenceInactivityLock() {
+    if (state.preferenceInactivityTimer) {
+        window.clearTimeout(state.preferenceInactivityTimer);
+        state.preferenceInactivityTimer = null;
+    }
+    if (!state.user || !["guru", "siswa"].includes(state.user.role) ||
+        state.userPreferences?.autoLock === false) return;
+
+    const activeUser = state.user;
+    state.preferenceInactivityTimer = window.setTimeout(() => {
+        if (state.user !== activeUser) return;
+        stopAllCameras();
+        showAuth();
+        toast("Sesi diakhiri otomatis karena tidak ada aktivitas selama 15 menit.", "info");
+    }, 15 * 60 * 1000);
+}
+
+function handlePreferenceActivity() {
+    if (!state.user || !["guru", "siswa"].includes(state.user.role)) return;
+    const now = Date.now();
+    if (now - state.lastPreferenceActivity < 1000) return;
+    state.lastPreferenceActivity = now;
+    schedulePreferenceInactivityLock();
+}
+
+function renderPreferenceCharts() {
+    const user = state.user;
+    const render = (role, selector) => {
+        const container = document.querySelector(selector);
+        if (!container) return;
+        const records = (Array.isArray(state.attendance) ? state.attendance : [])
+            .filter(item => item && item.date &&
+                (role !== "siswa" || (user?.role === "siswa" && item.nisn === user.nisn)));
+        const days = Array.from({ length: 7 }, (_, index) => {
+            const date = new Date(Date.now() - (6 - index) * 86400000);
+            const key = localDateKey(date);
+            const count = records.filter(item => item.date === key).length;
+            return {
+                key,
+                count,
+                label: date.toLocaleDateString(
+                    state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID",
+                    { weekday: "short" }
+                )
+            };
+        });
+        const maxCount = Math.max(1, ...days.map(day => day.count));
+        container.innerHTML = days.map(day => {
+            const height = day.count ? Math.max(10, Math.round(day.count / maxCount * 100)) : 3;
+            return `<div class="preference-chart-column" title="${safeText(day.key)}: ${day.count}">
+                <strong>${day.count}</strong>
+                <div class="preference-chart-track"><span style="height:${height}%"></span></div>
+                <small>${safeText(day.label)}</small>
+            </div>`;
+        }).join("");
+    };
+    render("guru", '[data-chart-bars="teacher"]');
+    render("siswa", '[data-chart-bars="student"]');
+}
+
 // Authentication and single-page role routing
 function showView(target) {
     stopAllCameras();
@@ -1457,6 +1578,9 @@ function showView(target) {
 
 function showAuth({ clearSession = true } = {}) {
     stopAllCameras();
+    if (state.preferenceInactivityTimer) window.clearTimeout(state.preferenceInactivityTimer);
+    state.preferenceInactivityTimer = null;
+    document.body.classList.remove("reduce-motion");
     stopNetworkHeartbeat();
     if (clearSession) {
         sessionStorage.removeItem("amanahid.sessionToken");
@@ -1520,6 +1644,8 @@ async function showApp(user) {
     closeAuthModal();
     stopAllCameras();
     state.user = user;
+    loadUserPreferences(user);
+    state.lastPreferenceActivity = Date.now();
     if (user.role === "admin") {
         sessionStorage.setItem("amanahid.adminToken", user.token);
         sessionStorage.removeItem("amanahid.sessionToken");
@@ -1553,6 +1679,8 @@ async function showApp(user) {
     if (user.role === "admin") {
         if ($("admin-header-user")) $("admin-header-user").textContent = displayName;
         if ($("admin-header-avatar")) $("admin-header-avatar").textContent = initial;
+        if ($("admin-profile-name")) $("admin-profile-name").value = displayName;
+        if ($("admin-profile-email")) $("admin-profile-email").value = user.email ?? "";
         location.hash = "admin";
         showAdminView("admin-view-dashboard");
         await loadAdminDashboard();
@@ -2214,6 +2342,7 @@ function openProfile() {
     if (state.user?.role === "siswa") {
         showView("view-s-profile");
     } else {
+        $("teacher-preference-settings")?.classList.toggle("hidden", state.user?.role !== "guru");
         $("profile-modal").classList.remove("hidden");
     }
 }
@@ -2557,6 +2686,7 @@ function updateStats() {
     $("db-stat-students").textContent = state.students.length;
     $("db-stat-today").textContent = todayCount;
     $("student-count-badge").textContent = state.students.length;
+    renderPreferenceCharts();
 }
 
 function updateStudentProfile() {
@@ -2590,6 +2720,7 @@ function renderStudentHistory() {
             <td>${Math.round(item.confidence * 100)}%</td>
         </tr>`).join("");
     $("student-history-empty").classList.toggle("hidden", rows.length > 0);
+    renderPreferenceCharts();
 }
 
 function renderDatabase() {
@@ -3205,13 +3336,29 @@ function setAttendanceMessage(message) {
     }
 }
 
-function toggleAttendanceCamera() {
+async function toggleAttendanceCamera() {
     if (state.attendanceStream || state.attendanceStarting) {
         stopAttendanceCamera();
         toast(tr("cameraStopped"), "info");
         return;
     }
-    startAttendanceCamera();
+    if (state.attendanceConfirmPending) return;
+    if (state.userPreferences?.confirmAttendance !== false) {
+        state.attendanceConfirmPending = true;
+        try {
+            const confirmed = await openAppDialog({
+                title: "Konfirmasi presensi",
+                description: "Kamera akan diaktifkan untuk verifikasi wajah dan lokasi sebelum presensi dicatat.",
+                confirmLabel: "Mulai presensi",
+                cancelLabel: "Batal",
+                icon: "✓"
+            });
+            if (confirmed === null) return;
+        } finally {
+            state.attendanceConfirmPending = false;
+        }
+    }
+    await startAttendanceCamera();
 }
 
 function resizeOverlay(video, canvas) {
@@ -4665,24 +4812,45 @@ function setupEvents() {
     $("admin-test-whatsapp-send")?.addEventListener("click", () => void sendAdminWhatsAppTest());
     $("admin-profile-form").addEventListener("submit", async event => {
         event.preventDefault();
+        const name = $("admin-profile-name").value.trim();
+        const email = $("admin-profile-email").value.trim().toLowerCase();
         const password = $("admin-new-password").value;
-        if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) ||
-            !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+        if (!name || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            toast("Nama dan email Admin harus diisi dengan format yang valid.", "error");
+            return;
+        }
+        if (password && (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) ||
+            !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password))) {
             toast("Kata sandi harus 12+ karakter dan berisi huruf besar/kecil, angka, serta simbol.", "error");
             return;
         }
+        const submit = $("admin-profile-form").querySelector('button[type="submit"]');
+        if (submit) submit.disabled = true;
         try {
-            await cloudRequest("/api/admin/profile", {
+            const result = await cloudRequest("/api/admin/profile", {
                 method: "PUT",
                 body: {
                     current_password: await passwordDigest($("admin-current-password").value),
-                    password
+                    name,
+                    email,
+                    ...(password ? { password } : {})
                 }
             });
-            $("admin-profile-form").reset();
-            toast("Kata sandi Admin berhasil diubah.", "success");
+            if (result?.token && result?.user) {
+                state.user = { ...state.user, ...result.user, token: result.token };
+                sessionStorage.setItem("amanahid.adminToken", result.token);
+                $("admin-header-user").textContent = result.user.name;
+                $("admin-header-avatar").textContent = result.user.name.trim().charAt(0).toUpperCase() || "A";
+                $("admin-profile-name").value = result.user.name;
+                $("admin-profile-email").value = result.user.email;
+            }
+            $("admin-current-password").value = "";
+            $("admin-new-password").value = "";
+            toast("Profil Admin berhasil diperbarui.", "success");
         } catch (error) {
             toastAdminError(error);
+        } finally {
+            if (submit) submit.disabled = false;
         }
     });
 
@@ -4739,6 +4907,19 @@ function setupEvents() {
     });
     $("student-theme-select").addEventListener("change", () => setTheme($("student-theme-select").value));
     $("student-profile-language").addEventListener("change", () => setLanguage($("student-profile-language").value));
+    document.querySelectorAll("[data-user-preference]").forEach(input => {
+        input.addEventListener("change", () => {
+            const key = input.dataset.userPreference;
+            if (!Object.hasOwn(DEFAULT_USER_PREFERENCES, key)) return;
+            state.userPreferences = { ...state.userPreferences, [key]: input.checked };
+            saveUserPreferences();
+            applyUserPreferences();
+            toast("Pengaturan pribadi berhasil diperbarui.", "success");
+        });
+    });
+    for (const eventName of ["pointerdown", "keydown", "touchstart", "wheel"]) {
+        window.addEventListener(eventName, handlePreferenceActivity, { passive: true });
+    }
     $("btn-student-attendance").addEventListener("click", toggleAttendanceCamera);
     $("btn-attendance-switch").addEventListener("click", toggleAttendanceCamera);
 
