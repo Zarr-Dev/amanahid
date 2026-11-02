@@ -48,11 +48,20 @@ export default async function handler(req, res) {
         if (!validation.valid) return jsonError(res, 400, validation.error);
         if (!validatePassword(body.password)) return jsonError(res, 400, "Invalid password");
         try {
+            const email = body.email.trim().toLowerCase();
+            const [studentEmailRows, adminEmailRows] = await Promise.all([
+                supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
+            ]);
+            if ((Array.isArray(studentEmailRows) && studentEmailRows.length) ||
+                (Array.isArray(adminEmailRows) && adminEmailRows.length)) {
+                return jsonError(res, 409, "User email already exists");
+            }
             const rows = await supabaseRequest("teachers?select=id,email,name,created_at", {
                 method: "POST",
                 headers: { Prefer: "return=representation" },
                 body: JSON.stringify({
-                    email: body.email.trim().toLowerCase(),
+                    email,
                     name: body.name.trim(),
                     password_hash: await hashPassword(body.password)
                 })
