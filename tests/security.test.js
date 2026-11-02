@@ -708,7 +708,29 @@ test("Admin cannot provision a Guru or Siswa with an email already held by an Ad
     assert.equal(requests.some(request => request.method === "POST"), false);
 });
 
-test("attendance API blocks bulk deletion even for a signed-in teacher", async () => {
+test("attendance API blocks bulk deletion even for a signed-in teacher", async t => {
+    const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY"];
+    const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        for (const key of keys) {
+            if (previous[key] === undefined) delete process.env[key];
+            else process.env[key] = previous[key];
+        }
+        globalThis.fetch = originalFetch;
+    });
+    process.env.APP_ORIGIN = "https://school.example";
+    process.env.SUPABASE_URL = "https://supabase.example";
+    process.env.SUPABASE_SECRET_KEY = "test-service-secret";
+    globalThis.fetch = async url => {
+        if (String(url).includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "teacher@example.com", is_active: true }
+            ]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+
     const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
     const req = requestMock("DELETE", teacherToken, "test-attendance-bulk-delete-denied");
     req.query = { all: "1" };
