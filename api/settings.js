@@ -6,7 +6,7 @@ import {
     jsonError,
     jsonSupabaseError,
     supabaseRequest,
-    verifyTeacherSession
+    verifyAdminSession
 } from "./_lib/supabase.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
@@ -148,7 +148,7 @@ export default async function handler(req, res) {
 
     if (req.method === "PUT") {
         try {
-            if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+            if (!await verifyAdminSession(req)) return jsonError(res, 403, "Administrator role is required");
         } catch (error) {
             console.error("School settings authorization failed:", error);
             return jsonSupabaseError(res, error, "Unable to validate teacher session");
