@@ -43,6 +43,7 @@ async function updateAdminPassword(req, res, admin) {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     const action = req.query?.action;
     const admin = await authorizeAdmin(req, res, action === "test-tools" ? "test-tools" : "settings");
     if (!admin) return;
