@@ -39,3 +39,14 @@ jobs:
 
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Package clean source archive for VS Code
+        run: git archive --format=zip --prefix=amanahid/ --output=amanahid-vscode-source.zip HEAD
+
+      - name: Upload VS Code source archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: amanahid-vscode-source
+          path: amanahid-vscode-source.zip
+          if-no-files-found: error
+          retention-days: 7
