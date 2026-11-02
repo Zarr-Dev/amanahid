@@ -187,10 +187,12 @@ export default async function handler(req, res) {
             if (duplicateIdentity) {
                 return jsonError(res, 409, "These face samples closely match a different registered student. Verify the identity with a teacher before continuing.");
             }
-            const teacherEmail = await supabaseRequest(
-                `teachers?select=id&email=eq.${encodeURIComponent(email.trim().toLowerCase())}&limit=1`
-            );
-            if (teacherEmail.length) return jsonError(res, 409, "User email already exists");
+            const normalizedEmail = email.trim().toLowerCase();
+            const [teacherEmail, adminEmail] = await Promise.all([
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`)
+            ]);
+            if (teacherEmail.length || adminEmail.length) return jsonError(res, 409, "User email already exists");
             const values = {
                 nisn,
                 name: name.trim(),
