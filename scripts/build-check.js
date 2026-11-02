@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/_lib/test-tools.js", "api/auth/login.js",
-    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase-demo-accounts.sql"
+    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261102003205_lockdown_direct_public_api_grants.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -39,6 +39,25 @@ if (!vercel.$schema?.includes("openapi.vercel.sh/vercel.json") ||
     !vercel.functions?.["api/admin/*.js"] || !vercel.functions?.["api/auth/*.js"] ||
     !vercel.functions?.["api/settings.js"]) {
     console.error("vercel.json schema or explicit serverless function settings are missing.");
+    process.exit(1);
+}
+
+const securityHeaders = (vercel.headers || []).find(item => item.source === "/(.*)")?.headers || [];
+const securityHeaderValues = Object.fromEntries(securityHeaders.map(header => [header.key.toLowerCase(), header.value]));
+const requiredSecurityHeaders = [
+    "strict-transport-security",
+    "x-content-type-options",
+    "x-frame-options",
+    "referrer-policy",
+    "permissions-policy",
+    "content-security-policy"
+];
+if (requiredSecurityHeaders.some(key => !securityHeaderValues[key]) ||
+    !securityHeaderValues["content-security-policy"].includes("frame-ancestors 'none'") ||
+    !securityHeaderValues["content-security-policy"].includes("object-src 'none'") ||
+    !securityHeaderValues["permissions-policy"].includes("camera=(self)") ||
+    !securityHeaderValues["permissions-policy"].includes("geolocation=(self)")) {
+    console.error("Build check failed: production security headers or camera/GPS permissions policy are incomplete.");
     process.exit(1);
 }
 
