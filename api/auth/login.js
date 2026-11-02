@@ -9,6 +9,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CAPTCHA_ANSWER = /^[A-Za-z0-9]{1,12}$/;
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     if (req.query?.action === "captcha") {
         if (req.method !== "GET") {
             res.setHeader("Allow", "GET");
