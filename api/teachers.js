@@ -4,6 +4,7 @@ import { getRequestRole, isAllowedOrigin, jsonError, jsonSupabaseError, rateLimi
 import { validateSchema } from "./_lib/validate.js";
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
 
     if (req.method === "GET") {
