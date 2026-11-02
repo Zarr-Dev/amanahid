@@ -221,11 +221,13 @@ if (!js.includes('phase === "pending" ? "disabled"') ||
     process.exit(1);
 }
 
-if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 512, scoreThreshold: 0.55") ||
+if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 320, scoreThreshold: 0.55") ||
+    !js.includes("withDescriptors = false") || !js.includes("withDescriptors: true") ||
     !js.includes("function updateAttendanceLiveness") || !js.includes("function isFaceDetectionUsable") ||
+    !css.includes(".camera-stage canvas") || !css.includes("transform: scaleX(-1)") ||
     !allApiSource.includes("FACE_MATCH_THRESHOLD = 0.42") ||
     !allApiSource.includes("GPS_BOUNDARY_UNCERTAIN")) {
-    console.error("Build check failed: pinned face model, face quality/liveness checks, or conservative server matching/geofence guards are missing.");
+    console.error("Build check failed: optimized face pipeline, aligned camera overlay, pinned face model, or server-side security guards are missing.");
     process.exit(1);
 }
 
