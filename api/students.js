@@ -14,7 +14,6 @@ import { validateSchema } from "./_lib/validate.js";
 import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
 
 const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at";
-const STUDENT_COLUMNS_WITH_FACES = `${STUDENT_COLUMNS},face_descriptors`;
 
 function isValidDescriptors(descriptors) {
     const samples = Array.isArray(descriptors?.[0]) ? descriptors : [descriptors];
@@ -29,7 +28,12 @@ function parseNisn(value) {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store");
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
+    if (req.method === "DELETE") {
+        res.setHeader("Allow", "GET, PATCH, POST");
+        return jsonError(res, 403, "Student records are managed through Admin account deactivation; permanent deletion is disabled.");
+    }
 
     if (req.method === "GET") {
         let role;
@@ -40,19 +44,14 @@ export default async function handler(req, res) {
             return jsonSupabaseError(res, error, "Unable to validate student session");
         }
         if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
-        const withFaces = req.query?.with_faces === "1";
         const nisn = req.query?.nisn;
         if (role === "siswa" && (!parseNisn(nisn) || getSession(req)?.nisn !== nisn)) {
             return jsonError(res, 403, "Students can only access their own record");
         }
-        if (withFaces && role !== "guru" && role !== "admin") {
-            return jsonError(res, 403, "Face descriptors are not available for this request");
-        }
         try {
-            const columns = withFaces ? STUDENT_COLUMNS_WITH_FACES : STUDENT_COLUMNS;
             const filter = parseNisn(nisn) ? `&nisn=eq.${encodeURIComponent(nisn)}` : "";
             const students = await supabaseRequest(
-                `students?select=${columns}${filter}&is_active=eq.true&order=name.asc`
+                `students?select=${STUDENT_COLUMNS}${filter}&is_active=eq.true&order=name.asc`
             );
             return res.status(200).json({ students });
         } catch (error) {
@@ -100,7 +99,7 @@ export default async function handler(req, res) {
             });
             if (duplicateIdentity) return jsonError(res, 409, "These face samples closely match a different student. Verify the identity before replacing the face data.");
             const updated = await supabaseRequest(
-                "students?id=eq." + encodeURIComponent(students[0].id) + "&select=id,nisn,name,class_name,parent_whatsapp,face_descriptors,created_at,email",
+                "students?id=eq." + encodeURIComponent(students[0].id) + "&select=id,nisn,name,class_name,parent_whatsapp,created_at,email",
                 {
                     method: "PATCH",
                     headers: { Prefer: "return=representation" },
@@ -204,8 +203,8 @@ export default async function handler(req, res) {
                     : [face_descriptors]
             };
             const query = existing.length
-                ? `students?id=eq.${encodeURIComponent(existing[0].id)}&select=id,nisn,name,class_name,parent_whatsapp,face_descriptors,created_at,email`
-                : "students?select=id,nisn,name,class_name,parent_whatsapp,face_descriptors,created_at,email";
+                ? `students?id=eq.${encodeURIComponent(existing[0].id)}&select=id,nisn,name,class_name,parent_whatsapp,created_at,email`
+                : "students?select=id,nisn,name,class_name,parent_whatsapp,created_at,email";
             const rows = await supabaseRequest(query, {
                 method: existing.length ? "PATCH" : "POST",
                 headers: { Prefer: "return=representation" },
