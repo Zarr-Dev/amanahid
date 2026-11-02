@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     }
     if (role !== "siswa") return jsonError(res, 403, "Student session is required");
     const session = getSession(req);
-    if (!session?.nisn || !/^\\d{8,20}$/.test(session.nisn)) {
+    if (!session?.nisn || !/^\d{8,20}$/.test(session.nisn)) {
         return jsonError(res, 403, "Student identity is required");
     }
     if (req.method === "GET") {
