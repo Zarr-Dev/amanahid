@@ -1476,7 +1476,7 @@ body.theme-dark .auth-footer .lang-btn.active {
 .camera-stage {
     position: relative;
     width: 100%;
-    aspect-ratio: 16/9;
+    aspect-ratio: 4/3;
     min-height: 230px;
     max-height: 510px;
     overflow: hidden;
@@ -1501,6 +1501,7 @@ body.theme-dark .auth-footer .lang-btn.active {
 .camera-stage canvas {
     z-index: 2;
     pointer-events: none;
+    transform: scaleX(-1);
 }
 
 .camera-placeholder {
@@ -2047,7 +2048,7 @@ td {
 
 .form-camera-stage {
     position: relative;
-    aspect-ratio: 16/9;
+    aspect-ratio: 4/3;
     min-height: 190px;
     overflow: hidden;
     border-radius: 12px;
@@ -2069,6 +2070,7 @@ td {
 
 .form-camera-stage canvas {
     pointer-events: none;
+    transform: scaleX(-1);
 }
 
 .form-camera-placeholder {
@@ -2671,7 +2673,9 @@ html[dir="rtl"] body {
 }
 
 html[dir="rtl"] .camera-stage video,
-html[dir="rtl"] .form-camera-stage video {
+html[dir="rtl"] .camera-stage canvas,
+html[dir="rtl"] .form-camera-stage video,
+html[dir="rtl"] .form-camera-stage canvas {
     transform: none;
 }
 

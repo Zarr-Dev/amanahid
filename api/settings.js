@@ -26,6 +26,7 @@ export default async function handler(req, res) {
     // Liveness endpoint: confirms the function is running without requiring
     // database credentials or a live downstream dependency.
     if (action === "health") {
+        res.setHeader("Cache-Control", "no-store, max-age=0");
         if (req.method !== "GET" && req.method !== "HEAD") {
             res.setHeader("Allow", "GET, HEAD");
             return res.status(405).json({ error: "Method not allowed", method: req.method });
@@ -37,14 +38,13 @@ export default async function handler(req, res) {
         const payload = {
             ok: true,
             service: "Amanah.id API",
-            runtime: process.version,
             checks: {
                 api: "ok",
                 configuration: missing.length ? "missing" : "ok",
                 database: "not_checked",
                 whatsapp: process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured"
             },
-            authentication: { configured: missing.length === 0, missing }
+            authentication: { configured: missing.length === 0 }
         };
         return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
     }
@@ -52,6 +52,7 @@ export default async function handler(req, res) {
     // Readiness endpoint: checks required server configuration and an actual
     // Supabase round-trip. WhatsApp is optional and never blocks attendance readiness.
     if (action === "ready") {
+        res.setHeader("Cache-Control", "no-store, max-age=0");
         if (req.method !== "GET" && req.method !== "HEAD") {
             res.setHeader("Allow", "GET, HEAD");
             return res.status(405).json({ error: "Method not allowed", method: req.method });
@@ -65,9 +66,8 @@ export default async function handler(req, res) {
             const payload = {
                 ok: false,
                 service: "Amanah.id API",
-                runtime: process.version,
-                checks: { api: "ok", configuration: "failed", database: "not_checked", whatsapp },
-                missing
+                    checks: { api: "ok", configuration: "failed", database: "not_checked", whatsapp },
+                error: "Service configuration unavailable"
             };
             return req.method === "HEAD" ? res.status(503).end() : res.status(503).json(payload);
         }
@@ -77,8 +77,7 @@ export default async function handler(req, res) {
             const payload = {
                 ok: true,
                 service: "Amanah.id API",
-                runtime: process.version,
-                checks: { api: "ok", configuration: "ok", database: "ok", whatsapp }
+                    checks: { api: "ok", configuration: "ok", database: "ok", whatsapp }
             };
             return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
         } catch (error) {
@@ -86,13 +85,13 @@ export default async function handler(req, res) {
             const payload = {
                 ok: false,
                 service: "Amanah.id API",
-                runtime: process.version,
-                checks: { api: "ok", configuration: "ok", database: "error", whatsapp }
+                    checks: { api: "ok", configuration: "ok", database: "error", whatsapp }
             };
             return req.method === "HEAD" ? res.status(503).end() : res.status(503).json(payload);
         }
     }
     if (action === "features") {
+        res.setHeader("Cache-Control", "no-store, max-age=0");
         if (req.method !== "GET") {
             res.setHeader("Allow", "GET");
             return jsonError(res, 405, "Method not allowed");

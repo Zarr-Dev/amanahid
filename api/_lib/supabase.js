@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { verifyToken } from "./admin-auth.js";
 
 export function getMissingAuthConfiguration() {
@@ -11,31 +12,60 @@ export function getMissingAuthConfiguration() {
     return missing;
 }
 
+function parseOrigin(value) {
+    if (typeof value !== "string" || !value) return null;
+    try {
+        const parsed = new URL(value);
+        if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+        return parsed.origin;
+    } catch {
+        return null;
+    }
+}
+
 export function isAllowedOrigin(req) {
     const allowedOrigins = new Set([
-        process.env.APP_ORIGIN?.replace(/\/+$/, ""),
+        parseOrigin(process.env.APP_ORIGIN),
         "https://amanahid.netlify.app"
     ].filter(Boolean));
 
-    const requestOrigin = req.headers.origin;
-    if (requestOrigin) return allowedOrigins.has(requestOrigin.replace(/\/+$/, ""));
-
-    const referer = req.headers.referer;
-    if (!referer) return false;
-    try {
-        return allowedOrigins.has(new URL(referer).origin);
-    } catch {
-        return false;
+    const requestOrigin = req.headers?.origin;
+    if (typeof requestOrigin === "string" && requestOrigin) {
+        // Browsers serialize Origin as an origin, never as a path-bearing URL.
+        const parsedOrigin = parseOrigin(requestOrigin);
+        return parsedOrigin === requestOrigin && allowedOrigins.has(parsedOrigin);
     }
+
+    const referer = req.headers?.referer;
+    if (!referer) return false;
+    const parsedRefererOrigin = parseOrigin(referer);
+    return Boolean(parsedRefererOrigin && allowedOrigins.has(parsedRefererOrigin));
 }
+
+// Vercel overwrites these platform headers with the public client IP. Prefer
+// the Vercel-specific form and accept only a validated IP literal.
+export function getClientIp(req) {
+    const headers = req.headers || {};
+    const candidates = [
+        headers["x-vercel-forwarded-for"],
+        headers["x-forwarded-for"],
+        headers["x-real-ip"]
+    ];
+    for (const candidate of candidates) {
+        if (typeof candidate !== "string") continue;
+        const value = candidate.trim();
+        if (isIP(value)) return value.toLowerCase();
+    }
+    const socketAddress = req.socket?.remoteAddress;
+    return typeof socketAddress === "string" && isIP(socketAddress)
+        ? socketAddress.toLowerCase()
+        : "unknown";
+}
+
 const rateLimitBuckets = new Map();
 
 export function rateLimit(req, key, maxRequests, windowMs, res) {
-    const forwardedFor = req.headers["x-forwarded-for"];
-    const forwardedIps = typeof forwardedFor === "string" ? forwardedFor.split(",") : [];
-    const ip = forwardedIps.length
-        ? forwardedIps[forwardedIps.length - 1].trim()
-        : req.socket?.remoteAddress || "unknown";
+    const ip = getClientIp(req);
     const bucketKey = `${ip}:${key}`;
     const now = Date.now();
     const timestamps = (rateLimitBuckets.get(bucketKey) || [])

@@ -1980,7 +1980,7 @@ async function startAdminTestCamera() {
             } finally {
                 adminTestBusy = false;
             }
-        }, 250);
+        }, 500);
     } catch (error) {
         stopAdminTestCamera();
         $("admin-test-model-state").textContent = tr("testModelFailed");
@@ -3228,10 +3228,13 @@ function drawDetections(video, canvas, detections) {
     faceapi.draw.drawFaceLandmarks(canvas, resized);
 }
 
-async function detectFaces(video) {
+async function detectFaces(video, { withDescriptors = false } = {}) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 });
-    return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks().withFaceDescriptors();
+    // 320px is sufficient for the 480x360 camera stream and substantially
+    // cheaper than running 512px detection on every liveness frame.
+    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 });
+    const landmarksTask = faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks();
+    return withDescriptors ? landmarksTask.withFaceDescriptors() : landmarksTask;
 }
 
 function isFaceDetectionUsable(detection, video) {
@@ -3441,6 +3444,22 @@ async function processAttendanceFrame() {
             return;
         }
 
+        // Extract the descriptor only for the final server-side face match.
+        const descriptorDetections = await detectFaces(video, { withDescriptors: true });
+        if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
+        if (descriptorDetections.length !== 1 ||
+            !isFaceDetectionUsable(descriptorDetections[0], video)) {
+            const message = descriptorDetections.length > 1
+                ? tr("faceTooMany")
+                : descriptorDetections.length === 0
+                    ? tr("faceNotFound")
+                    : tr("faceQualityLow");
+            setAttendanceMessage(message);
+            if (requestUser.role === "guru") updateProgress(0, message);
+            return;
+        }
+        const descriptorDetection = descriptorDetections[0];
+
         let student;
         let confidence;
         let faceProofToken = null;
@@ -3452,7 +3471,7 @@ async function processAttendanceFrame() {
             nisn: requestUser.nisn,
             body: {
                 ...(requestUser.role === "siswa" ? { nisn: requestUser.nisn } : {}),
-                descriptor: Array.from(detection.descriptor)
+                descriptor: Array.from(descriptorDetection.descriptor)
             }
         });
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
@@ -3572,7 +3591,7 @@ async function processAttendanceFrame() {
     }
 }
 
-function scheduleAttendanceFrame(stream, startToken, delay = 250) {
+function scheduleAttendanceFrame(stream, startToken, delay = 450) {
     if (state.attendanceStream !== stream || state.attendanceRecorded ||
         startToken !== state.attendanceStartToken) return;
     const video = attendanceVideo();
@@ -3616,7 +3635,7 @@ async function startFormCamera() {
             return;
         }
         $("form-camera-placeholder").classList.add("hidden");
-        state.formTimer = setInterval(() => processFormFrame(), 350);
+        state.formTimer = setInterval(() => processFormFrame(), 550);
         toast(tr("cameraFormReady"), "success");
     } catch (error) {
         if (startToken === state.formStartToken) {
@@ -3641,7 +3660,7 @@ async function processFormFrame() {
             const nose = detection.landmarks.getNose()?.[3];
             const sourceWidth = video.videoWidth || 480;
             const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
-            state.faceCandidate = Array.from(detection.descriptor);
+            state.faceCandidate = null;
             state.faceCandidateQuality = quality;
             $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
             if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
@@ -3656,9 +3675,17 @@ async function processFormFrame() {
                 }
                 state.lastFormNose = { x: nose.x, y: nose.y };
                 if (state.formStableFrames >= 3) {
-                    if (angle && saveFaceSample(detection.descriptor, quality, angle)) {
-                        toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
+                    let saved = false;
+                    if (angle) {
+                        const sampleDetections = await detectFaces(video, { withDescriptors: true });
+                        if (state.formStream !== requestStream) return;
+                        const sample = sampleDetections.length === 1 ? sampleDetections[0] : null;
+                        if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample) === angle) {
+                            const sampleQuality = sample.score * Math.min(1, sample.box.width / (sourceWidth * 0.22));
+                            saved = saveFaceSample(sample.descriptor, sampleQuality, angle);
+                        }
                     }
+                    if (saved) toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
                     state.formStableFrames = 0;
                     state.lastFormNose = null;
                 }
