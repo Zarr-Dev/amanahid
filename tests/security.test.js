@@ -48,13 +48,17 @@ function responseMock() {
 }
 
 function requestMock(method, token, ip) {
+    const digest = createHash("sha256").update(String(ip)).digest();
+    const remoteAddress = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(String(ip))
+        ? ip
+        : `198.18.${digest[0]}.${digest[1]}`;
     return {
         method,
         headers: {
             origin: "https://school.example",
             ...(token ? { "x-session-token": token } : {})
         },
-        socket: { remoteAddress: ip }
+        socket: { remoteAddress }
     };
 }
 
@@ -424,7 +428,7 @@ test("attendance returns machine-readable GPS errors and limits repeated failure
     };
     t.after(() => { globalThis.fetch = originalFetch; });
     const token = signToken({ email: "student@example.com", name: "Student", role: "siswa", nisn: "12345678" });
-    const ip = `test-attendance-${Date.now()}`;
+    const ip = "198.18.44.1";
     let firstResponse;
     for (let attempt = 0; attempt < 7; attempt++) {
         const req = {
@@ -489,7 +493,7 @@ test("attendance rejects GPS fixes whose uncertainty overlaps the geofence bound
             }, 120_000),
             "x-idempotency-key": "00000000-0000-4000-8000-000000000188"
         },
-        socket: { remoteAddress: "test-gps-boundary-uncertain" },
+        socket: { remoteAddress: "198.18.44.2" },
         body: {
             nisn: "12345678", lat: -6.25, lng: 106.6004,
             accuracy: 10, gpsTimestamp: Date.now(), speed: 0, confidence: 0.9
@@ -525,7 +529,7 @@ test("authentication endpoints clearly report missing production configuration b
     }, adminRes);
     assert.equal(adminRes.statusCode, 503);
     assert.match(adminRes.body.error, /belum dikonfigurasi/);
-    assert.match(adminRes.body.error, /SESSION_SECRET/);
+    assert.doesNotMatch(adminRes.body.error, /APP_ORIGIN|SUPABASE_URL|SUPABASE_SECRET_KEY|SESSION_SECRET/);
 
     const userRes = responseMock();
     await authLoginHandler({
