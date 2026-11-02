@@ -719,3 +719,59 @@ test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role table
     assert.ok(requests.some(request => request.url.includes("students?select=email,name,nisn,password_hash,is_active")));
     assert.ok(requests.filter(request => request.method === "PATCH").length >= 3);
 });
+
+
+test("teacher roster never receives biometric descriptors, even with the legacy query flag", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    const requests = [];
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        requests.push(requestUrl);
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,nisn,name,class_name,parent_whatsapp,created_at")) {
+            return new Response(JSON.stringify([{
+                id: "123e4567-e89b-42d3-a456-426614174000",
+                nisn: "12345678",
+                name: "Student",
+                class_name: "XI IPA 1",
+                parent_whatsapp: null,
+                created_at: "2026-11-02T00:00:00Z"
+            }]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = requestMock("GET", teacherToken, "test-no-face-descriptor-export");
+    req.query = { with_faces: "1" };
+    const res = responseMock();
+    await studentsHandler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.students[0].face_descriptors, undefined);
+    assert.ok(requests.some(url => url.includes("students?select=id,nisn,name,class_name,parent_whatsapp,created_at")));
+    assert.ok(requests.every(url => !url.includes("face_descriptors")));
+});
+
+test("student permanent-delete endpoint is disabled", async () => {
+    const req = requestMock("DELETE", null, "test-student-delete-disabled");
+    req.query = { all: "1" };
+    const res = responseMock();
+    await studentsHandler(req, res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /Admin account deactivation/);
+});
+
+test("teachers cannot modify school geofence settings through the legacy settings endpoint", async () => {
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    const req = requestMock("PUT", teacherToken, "test-teacher-geofence-denied");
+    req.body = { lat: -6.2, lng: 106.6, radius: 500 };
+    req.query = {};
+    const res = responseMock();
+    await settingsHandler(req, res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /Administrator role/);
+});
