@@ -3268,26 +3268,6 @@ function updateAttendanceLiveness(detection) {
     return { completed: challenge.completed, progress: challenge.total, messageKey };
 }
 
-function getStudentDescriptors(student) {
-    const samples = Array.isArray(student.faceDescriptors)
-        ? student.faceDescriptors
-        : student.descriptor?.length ? [student.descriptor] : [];
-    return samples.filter(sample => Array.isArray(sample) && sample.length === 128 &&
-        sample.every(Number.isFinite)).map(sample => new Float32Array(sample));
-}
-
-function createFaceMatcher(students) {
-    const labeledDescriptors = students.map(student => {
-        const descriptors = getStudentDescriptors(student);
-        return descriptors.length
-            ? new faceapi.LabeledFaceDescriptors(student.nisn, descriptors)
-            : null;
-    }).filter(Boolean);
-    return labeledDescriptors.length
-        ? new faceapi.FaceMatcher(labeledDescriptors, FACE_MATCH_THRESHOLD)
-        : null;
-}
-
 function updateFaceSampleCount() {
     if ($("face-sample-count")) {
         $("face-sample-count").textContent = tr("faceSamplesCount", { count: state.faceSamples.length });
@@ -3380,11 +3360,6 @@ async function processAttendanceFrame() {
         const candidates = requestUser.role === "siswa"
             ? state.students.filter(item => item.nisn === requestUser.nisn)
             : state.students;
-        if (requestUser.role === "guru" &&
-            !candidates.some(student => getStudentDescriptors(student).length)) {
-            setAttendanceMessage(tr("faceNotRegistered"));
-            return;
-        }
         await new Promise(resolve => window.requestAnimationFrame(resolve));
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         if (video.readyState < 2) return;
