@@ -12,6 +12,7 @@ import { hashPassword, validatePassword } from "./_lib/admin-auth.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
 import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
+import { handleStudentNotifications } from "./_lib/student-notifications.js";
 
 const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at";
 const STUDENT_COLUMNS_WITH_FACES = `${STUDENT_COLUMNS},face_descriptors`;
@@ -30,6 +31,7 @@ function parseNisn(value) {
 
 export default async function handler(req, res) {
     if (!isAllowedOrigin(req)) return jsonError(res, 403, "Request origin is not allowed");
+    if (req.query?.action === "notifications") return handleStudentNotifications(req, res);
 
     if (req.method === "GET") {
         let role;
