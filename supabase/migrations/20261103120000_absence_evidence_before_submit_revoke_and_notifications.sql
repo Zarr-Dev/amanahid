@@ -192,7 +192,7 @@ REVOKE ALL ON FUNCTION public.notify_homeroom_teacher_of_absence() FROM PUBLIC, 
 REVOKE ALL ON FUNCTION public.notify_student_of_absence_status() FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.enforce_student_homeroom_assignment() FROM PUBLIC, anon, authenticated;
 
-CREATE OR REPLACE FUNCTION public.require_sick_evidence_before_insert()
+CREATE OR REPLACE FUNCTION public.require_sick_evidence_before_write()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public, pg_temp AS $amanah$
 BEGIN
   IF NEW.absence_type = 'sick' AND NEW.status = 'pending'
@@ -205,8 +205,10 @@ END;
 $amanah$;
 DROP TRIGGER IF EXISTS absence_requests_require_sick_evidence ON public.absence_requests;
 CREATE TRIGGER absence_requests_require_sick_evidence
-BEFORE INSERT ON public.absence_requests
-FOR EACH ROW EXECUTE FUNCTION public.require_sick_evidence_before_insert();
-REVOKE ALL ON FUNCTION public.require_sick_evidence_before_insert() FROM PUBLIC, anon, authenticated;
+BEFORE INSERT OR UPDATE OF absence_type, status, medical_evidence_path, medical_evidence_uploaded_at
+ON public.absence_requests
+FOR EACH ROW EXECUTE FUNCTION public.require_sick_evidence_before_write();
+REVOKE ALL ON FUNCTION public.require_sick_evidence_before_write() FROM PUBLIC, anon, authenticated;
+DROP FUNCTION IF EXISTS public.require_sick_evidence_before_insert();
 
 NOTIFY pgrst, 'reload schema';
