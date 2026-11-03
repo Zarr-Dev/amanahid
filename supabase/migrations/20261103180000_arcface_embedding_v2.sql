@@ -124,6 +124,23 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.has_student_face_embeddings(
+    p_student_id uuid,
+    p_model_key text
+)
+RETURNS boolean
+LANGUAGE sql
+SECURITY INVOKER
+SET search_path = pg_catalog, public, private
+AS $function$
+    SELECT EXISTS (
+        SELECT 1
+        FROM private.student_face_embeddings
+        WHERE student_id = p_student_id
+          AND model_key = p_model_key
+    );
+$function$;
+
 CREATE OR REPLACE FUNCTION public.match_student_face_embeddings(
     p_model_key text,
     p_query_embeddings jsonb,
@@ -203,5 +220,7 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.replace_student_face_embeddings(uuid, text, jsonb) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.match_student_face_embeddings(text, jsonb, uuid, uuid, uuid, integer) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.has_student_face_embeddings(uuid, text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.replace_student_face_embeddings(uuid, text, jsonb) TO service_role;
 GRANT EXECUTE ON FUNCTION public.match_student_face_embeddings(text, jsonb, uuid, uuid, uuid, integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.has_student_face_embeddings(uuid, text) TO service_role;
