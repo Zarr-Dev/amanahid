@@ -3965,7 +3965,22 @@ async function handleAbsenceReview(event) {
             method: "PATCH", role: "guru",
             body: { id: button.dataset.absenceId, status: nextStatus }
         });
+        // The server has confirmed the status transition. Remove stale review actions
+        // immediately so a second click cannot submit an obsolete decision.
+        const card = button.closest("[data-absence-card], .absence-request-card, tr") || button.parentElement;
+        if (card) {
+            card.querySelectorAll("[data-absence-review]").forEach(action => action.remove());
+            const statusNode = card.querySelector("[data-absence-status], .absence-status");
+            if (statusNode) {
+                statusNode.textContent = nextStatus === "approved" ? tr("absenceStatus_approved") :
+                    nextStatus === "rejected" ? tr("absenceStatus_rejected") : tr("absenceStatus_revoked");
+                statusNode.dataset.absenceStatus = nextStatus;
+            }
+            card.dataset.absenceCurrentStatus = nextStatus;
+        }
         toast(nextStatus === "revoked" ? "Persetujuan berhasil dicabut. Status siswa telah diperbarui." : tr("absenceReviewSaved"), "success");
+        // Reload canonical server state; if refresh fails, the action remains removed
+        // because the PATCH itself already succeeded.
         await loadAbsenceRequests();
     } catch (error) {
         toast(error.message || tr("absenceReviewFailed"), "error");
