@@ -131,7 +131,7 @@ export default async function handler(req, res) {
             if (!created) return jsonError(res, 502, "Supabase did not return the created student");
             await writeAuditLog(admin, "siswa.create", "students", created.id, {
                 email, name, role: "siswa", nisn: body.nisn, class_name: body.class_name.trim(),
-                homeroom_teacher_id: homeroomTeacher.id,
+                homeroom_teacher_id: homeroomTeacher?.id || null,
                 face_enrollment_required: true
             });
             return res.status(201).json({ user: { ...created, role: "siswa", table: "students", face_enrollment_required: true } });
