@@ -725,7 +725,8 @@ const state = {
     mapEditMode: false,
     mapDraftLocation: null,
     splashTimers: [],
-    medicalEvidenceRequest: null
+    medicalEvidenceRequest: null,
+    adminTeachers: []
 };
 let authModalTrigger = null;
 let heroTitleMeasure = null;
@@ -1228,13 +1229,25 @@ function openAppDialog({ title, description = "", fields = [], confirmLabel = "S
         const label = document.createElement("label");
         label.className = "app-dialog-field";
         label.append(document.createTextNode(field.label));
-        const input = document.createElement("input");
+        const input = field.type === "select"
+            ? document.createElement("select")
+            : document.createElement("input");
         input.name = field.name;
-        input.type = field.type || "text";
+        if (field.type !== "select") input.type = field.type || "text";
         input.autocomplete = field.autocomplete || "off";
         input.placeholder = field.placeholder || "";
-        input.value = field.value || "";
         input.required = Boolean(field.required);
+        if (field.type === "select") {
+            for (const optionData of field.options || []) {
+                const option = document.createElement("option");
+                option.value = String(optionData.value ?? "");
+                option.textContent = String(optionData.label ?? optionData.value ?? "");
+                input.append(option);
+            }
+            input.value = field.value || "";
+        } else {
+            input.value = field.value || "";
+        }
         if (field.pattern) input.pattern = field.pattern;
         if (field.minLength) input.minLength = field.minLength;
         if (field.maxLength) input.maxLength = field.maxLength;
@@ -1257,7 +1270,7 @@ function setupAppDialog() {
         if (modal.classList.contains("hidden")) return;
         if (event.key === "Escape") { event.preventDefault(); closeAppDialog(null); }
         if (event.key === "Tab") {
-            const focusable = [...modal.querySelectorAll("input, button")].filter(el => !el.disabled);
+            const focusable = [...modal.querySelectorAll("input, select, button")].filter(el => !el.disabled);
             if (!focusable.length) return;
             const first = focusable[0], last = focusable[focusable.length - 1];
             if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
@@ -2153,10 +2166,11 @@ async function loadAdminUsers() {
         const response = await cloudRequest("/api/admin/users");
         const users = Array.isArray(response?.users)
             ? response.users.filter(user => user && typeof user === "object") : [];
+        state.adminTeachers = users.filter(user => user.role === "guru" && user.is_active);
         const teacherSelect = $("admin-user-homeroom-teacher");
         if (teacherSelect) {
             const selectedTeacher = teacherSelect.value;
-            const teachers = users.filter(user => user.role === "guru" && user.is_active);
+            const teachers = state.adminTeachers;
             teacherSelect.innerHTML = '<option value="">Pilih guru wali kelas</option>' +
                 teachers.map(teacher => {
                     const classLabel = teacher.homeroom_class ? " · " + teacher.homeroom_class : " · kelas belum ditetapkan";
@@ -2172,6 +2186,7 @@ async function loadAdminUsers() {
             <td>${safeText(user.role === "siswa" ? user.homeroom_teacher?.name || "Belum ditetapkan" : user.homeroom_class || "—")}</td>
             <td>${safeText(user.is_active ? tr("activeStatus") : tr("inactiveStatus"))}</td>
             <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}">${safeText(tr("editAccount"))}</button>
+            ${user.role === "siswa" ? '<button class="button subtle" type="button" data-admin-assign-homeroom="' + safeText(user.id ?? "") + '" data-current-homeroom="' + safeText(user.homeroom_teacher_id ?? "") + '">Atur wali kelas</button>' : ""}
             <button class="button subtle" type="button" data-admin-disable="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" ${user.is_active ? "" : "disabled"}>${safeText(tr("deactivateAccount"))}</button></td>
         </tr>`).join("");
         $("admin-users-empty").classList.toggle("hidden", users.length > 0);
@@ -4628,8 +4643,54 @@ function setupEvents() {
         }
     });
     $("admin-users-tbody").addEventListener("click", async event => {
-        const button = event.target.closest("[data-admin-edit], [data-admin-disable]");
+        const button = event.target.closest("[data-admin-edit], [data-admin-disable], [data-admin-assign-homeroom]");
         if (!button) return;
+        if (button.hasAttribute("data-admin-assign-homeroom")) {
+            const studentId = button.dataset.adminAssignHomeroom;
+            const options = [
+                { value: "", label: "Pilih wali kelas" },
+                ...state.adminTeachers.map(teacher => ({
+                    value: teacher.id,
+                    label: (teacher.name || teacher.email) +
+                        (teacher.homeroom_class ? " · " + teacher.homeroom_class : "")
+                }))
+            ];
+            const result = await openAppDialog({
+                title: "Tetapkan wali kelas",
+                description: "Pilih guru aktif yang bertanggung jawab atas kelas siswa ini. Kelas siswa harus sesuai dengan kelas wali kelas.",
+                fields: [{
+                    name: "homeroom_teacher_id",
+                    label: "Wali kelas",
+                    type: "select",
+                    required: true,
+                    value: button.dataset.currentHomeroom || "",
+                    options
+                }],
+                confirmLabel: "Simpan wali kelas",
+                cancelLabel: "Batal",
+                icon: "⌂"
+            });
+            if (result === null) return;
+            if (!result.homeroom_teacher_id) {
+                toast("Pilih wali kelas terlebih dahulu.", "error");
+                return;
+            }
+            try {
+                await cloudRequest("/api/admin/users", {
+                    method: "PUT",
+                    body: {
+                        id: studentId,
+                        table: "students",
+                        homeroom_teacher_id: result.homeroom_teacher_id
+                    }
+                });
+                await loadAdminUsers();
+                toast("Wali kelas berhasil ditetapkan.", "success");
+            } catch (error) {
+                toastAdminError(error);
+            }
+            return;
+        }
         const id = button.dataset.adminEdit || button.dataset.adminDisable;
         const table = button.dataset.table;
         if (button.hasAttribute("data-admin-disable")) {
