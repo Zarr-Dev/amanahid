@@ -113,7 +113,7 @@ function normalizeRow(row) {
         status: row.status,
         created_at: row.created_at,
         reviewed_at: row.reviewed_at,
-        medical_evidence_uploaded: Boolean(row.medical_evidence_path && row.medical_evidence_uploaded_at)
+        medical_evidence_uploaded: Boolean(row.medical_evidence_path)
     };
 }
 
@@ -322,9 +322,6 @@ export default async function handler(req, res) {
             }
             if (body.action === "medical-evidence-confirm") {
                 return await confirmMedicalEvidence(req, res, session, body);
-            }
-            if (body.action === "medical-evidence-view") {
-                return await viewMedicalEvidence(req, res, role, session, body);
             }
             if (body.action) return jsonError(res, 400, "Unknown absence action");
 
