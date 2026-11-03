@@ -5,20 +5,22 @@ import {
 import { validateSchema } from "./_lib/validate.js";
 import { signToken } from "./_lib/admin-auth.js";
 import { writeAuditLog } from "./_lib/audit.js";
-import { getFeatureFlags } from "./_lib/features.js";
 
-const FACE_MATCH_THRESHOLD = 0.42;
-const FACE_AMBIGUITY_MARGIN = 0.05;
-const DESCRIPTOR_LENGTH = 128;
+const FACE_MODEL_KEY = "auraface-glintr100-int8-v1";
+const FACE_EMBEDDING_DIMENSIONS = 512;
+// Conservative starting point only. Calibrate against consented, representative
+// school-device samples before enabling real attendance decisions.
+const FACE_MATCH_COSINE_DISTANCE_THRESHOLD = 0.32;
+const FACE_AMBIGUITY_MARGIN = 0.035;
 
-function validSamples(value) {
-    const samples = Array.isArray(value?.[0]) ? value : [value];
-    return samples.filter(sample => Array.isArray(sample) && sample.length === DESCRIPTOR_LENGTH &&
-        sample.every(item => typeof item === "number" && Number.isFinite(item)));
-}
-
-function descriptorDistance(a, b) {
-    return Math.sqrt(a.reduce((sum, value, index) => sum + (value - b[index]) ** 2, 0));
+function normalizeIncomingEmbedding(values) {
+    if (!Array.isArray(values) || values.length !== FACE_EMBEDDING_DIMENSIONS ||
+        !values.every(value => typeof value === "number" && Number.isFinite(value))) {
+        return null;
+    }
+    const norm = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0));
+    if (!Number.isFinite(norm) || norm < 0.98 || norm > 1.02) return null;
+    return values.map(value => value / norm);
 }
 
 export default async function handler(req, res) {
@@ -36,92 +38,134 @@ export default async function handler(req, res) {
         console.error("Face verification session validation failed:", error);
         return jsonSupabaseError(res, error, "Unable to validate session");
     }
-    if (role !== "siswa" && role !== "guru") return jsonError(res, 403, "Student or teacher role is required");
-    if (!rateLimit(req, `face-match:POST:${role}`, role === "guru" ? 30 : 20, 60_000, res)) {
+    if (role !== "siswa" && role !== "guru") {
+        return jsonError(res, 403, "Student or teacher role is required");
+    }
+    if (!rateLimit(req, "face-match:POST:" + role, role === "guru" ? 30 : 20, 60_000, res)) {
         return jsonError(res, 429, "Too many face verification attempts");
     }
 
     const body = req.body || {};
     const validation = validateSchema({
-        nisn: { type: "string", max: 20, pattern: /^\d{8,20}$/ },
-        descriptor: {
-            type: "array", required: true, min: DESCRIPTOR_LENGTH, max: DESCRIPTOR_LENGTH,
+        model_key: { type: "string", required: true, max: 80, min: 1 },
+        embedding: {
+            type: "array",
+            required: true,
+            min: FACE_EMBEDDING_DIMENSIONS,
+            max: FACE_EMBEDDING_DIMENSIONS,
             validate: value => typeof value === "number" && Number.isFinite(value)
         }
     }, body);
     if (!validation.valid) return jsonError(res, 400, validation.error);
-    const session = getSession(req);
-    const { descriptor } = body;
-    if (role === "siswa" && (typeof body.nisn !== "string" || body.nisn !== session?.nisn)) {
-        return jsonError(res, 403, "Students can only verify their own face");
+    if (body.model_key !== FACE_MODEL_KEY) {
+        return jsonError(res, 409, "Face model version mismatch. Re-enroll the student with the current model.");
+    }
+    const embedding = normalizeIncomingEmbedding(body.embedding);
+    if (!embedding) {
+        return jsonError(res, 400, "A normalized 512-dimensional face embedding is required");
     }
 
+    const session = getSession(req);
+    let studentId = null;
+    let teacherId = null;
+    let expectedNisn = null;
+
     try {
-        let students;
         if (role === "siswa") {
-            students = await supabaseRequest(
-                `students?select=nisn,name,face_descriptors,is_active&nisn=eq.${encodeURIComponent(session.nisn)}&limit=1`
+            if (!session?.nisn) return jsonError(res, 403, "A valid student session is required");
+            const rows = await supabaseRequest(
+                "students?select=id,nisn,name,is_active&nisn=eq." +
+                encodeURIComponent(session.nisn) + "&is_active=eq.true&limit=1"
             );
+            const ownStudent = rows?.[0];
+            if (!ownStudent || ownStudent.nisn !== session.nisn) {
+                return jsonError(res, 403, "An active student account is required");
+            }
+            studentId = ownStudent.id;
+            expectedNisn = ownStudent.nisn;
         } else {
             const teacherRows = await supabaseRequest(
-                "teachers?select=id&email=eq." + encodeURIComponent(session?.email || "") + "&is_active=eq.true&limit=1"
+                "teachers?select=id&email=eq." +
+                encodeURIComponent(session?.email || "") + "&is_active=eq.true&limit=1"
             );
             const teacher = teacherRows?.[0];
             if (!teacher) return jsonError(res, 403, "An active teacher account is required");
-            students = await supabaseRequest(
-                "students?select=nisn,name,face_descriptors,is_active,homeroom_teacher_id&is_active=eq.true&homeroom_teacher_id=eq." + encodeURIComponent(teacher.id) + "&limit=1000",
-                { headers: { Range: "0-999" } }
-            );
-        }
-        const candidates = (Array.isArray(students) ? students : []).filter(student => student?.is_active)
-            .flatMap(student => validSamples(student.face_descriptors).map(sample => ({ student, sample })));
-        if (!candidates.length) {
-            await writeAuditLog(session, "face.verify", "students", role === "siswa" ? session.nisn : "none", {
-                match: false, registered: false, role
-            });
-            return res.status(200).json({ match: false, registered: false });
+            teacherId = teacher.id;
         }
 
-        // Compare the best sample per person, not every sample as a separate identity.
-        const nearestByStudent = new Map();
-        for (const candidate of candidates) {
-            const distance = descriptorDistance(candidate.sample, descriptor);
-            const key = String(candidate.student.nisn);
-            const current = nearestByStudent.get(key);
-            if (!current || distance < current.distance) {
-                nearestByStudent.set(key, { ...candidate, distance });
-            }
+        // Embeddings never leave the private schema. The database performs the
+        // similarity search and returns only candidate identity + distance.
+        const ranked = await supabaseRequest("rpc/match_student_face_embeddings", {
+            method: "POST",
+            body: JSON.stringify({
+                p_model_key: FACE_MODEL_KEY,
+                p_query_embeddings: [{ embedding }],
+                p_teacher_id: teacherId,
+                p_student_id: studentId,
+                p_exclude_student_id: null,
+                p_limit: 2
+            })
+        });
+
+        const candidates = Array.isArray(ranked) ? ranked
+            .filter(row => typeof row?.student_id === "string" &&
+                typeof row?.nisn === "string" &&
+                typeof row?.distance === "number" &&
+                Number.isFinite(row.distance) &&
+                row.distance >= 0 && row.distance <= 2) : [];
+        if (!candidates.length) {
+            await writeAuditLog(session, "face.verify", "students", studentId || teacherId || "none", {
+                match: false, registered: false, role, model_key: FACE_MODEL_KEY
+            });
+            return res.status(200).json({ match: false, registered: false, model_key: FACE_MODEL_KEY });
         }
-        const ranked = [...nearestByStudent.values()].sort((a, b) => a.distance - b.distance);
-        const best = ranked[0] || null;
-        const second = ranked[1] || null;
-        const features = await getFeatureFlags();
+
+        const best = candidates[0];
+        const second = candidates[1] || null;
         const ambiguous = Boolean(
             role === "guru" &&
-            features.face_ambiguity_guard !== false &&
-            best && second &&
-            best.distance <= FACE_MATCH_THRESHOLD &&
-            second.distance <= FACE_MATCH_THRESHOLD &&
+            best.distance <= FACE_MATCH_COSINE_DISTANCE_THRESHOLD &&
+            second &&
+            second.distance <= FACE_MATCH_COSINE_DISTANCE_THRESHOLD &&
             second.distance - best.distance <= FACE_AMBIGUITY_MARGIN
         );
-        const match = Boolean(best && best.distance <= FACE_MATCH_THRESHOLD && !ambiguous);
-        const matchedNisn = match ? best.student.nisn : null;
-        const confidence = best ? Math.max(0, Math.min(1, 1 - best.distance)) : 0;
-        await writeAuditLog(session, "face.verify", "students", matchedNisn || (role === "siswa" ? session.nisn : "unknown"), {
-            match, registered: true, role, ambiguous,
-            nearest_distance: Number.isFinite(best?.distance) ? Number(best.distance.toFixed(5)) : null,
+        const match = Boolean(
+            best.distance <= FACE_MATCH_COSINE_DISTANCE_THRESHOLD &&
+            !ambiguous &&
+            (role !== "siswa" || best.student_id === studentId)
+        );
+        const similarity = Math.max(0, Math.min(1, 1 - best.distance));
+        const matchedNisn = match ? best.nisn : null;
+
+        await writeAuditLog(session, "face.verify", "students", matchedNisn || (role === "siswa" ? expectedNisn : "unknown"), {
+            match,
+            registered: true,
+            role,
+            ambiguous,
+            model_key: FACE_MODEL_KEY,
+            nearest_distance: Number(best.distance.toFixed(5)),
             runner_up_distance: Number.isFinite(second?.distance) ? Number(second.distance.toFixed(5)) : null
         });
+
         const proofToken = match
             ? signToken({
-                email: session.email, role, nisn: matchedNisn,
-                purpose: "attendance_face", faceVerified: true, confidence
+                email: session.email,
+                role,
+                nisn: matchedNisn,
+                purpose: "attendance_face",
+                faceVerified: true,
+                faceModel: FACE_MODEL_KEY,
+                confidence: similarity
             }, 120_000)
             : null;
+
         return res.status(200).json({
-            match, registered: true, confidence,
+            match,
+            registered: true,
+            confidence: similarity,
+            model_key: FACE_MODEL_KEY,
             ...(ambiguous ? { ambiguous: true } : {}),
-            ...(match ? { nisn: matchedNisn, name: best.student.name, proofToken } : {})
+            ...(match ? { nisn: matchedNisn, name: best.name, proofToken } : {})
         });
     } catch (error) {
         console.error("Face verification failed:", error);
