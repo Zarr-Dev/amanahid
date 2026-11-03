@@ -14,6 +14,16 @@ import { writeAuditLog } from "./_lib/audit.js";
 const TYPES = new Set(["sick", "permission", "other"]);
 const STATUSES = new Set(["approved", "rejected"]);
 
+async function getTeacherHomeroomClass(req) {
+    const session = getSession(req);
+    if (!session?.email) return null;
+    const rows = await supabaseRequest(
+        "teachers?select=homeroom_class&email=eq." + encodeURIComponent(session.email) + "&is_active=eq.true&limit=1"
+    );
+    const value = rows?.[0]?.homeroom_class;
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 function normalizeRow(row) {
     const student = row.students || {};
     return {
@@ -43,14 +53,28 @@ export default async function handler(req, res) {
     }
     const session = getSession(req);
     if (req.method === "GET") {
-        if (role === "guru") {
+        if (role === "admin") {
             try {
                 const rows = await supabaseRequest(
                     "absence_requests?select=*,students!inner(nisn,name,class_name)&order=created_at.desc&limit=500"
                 );
                 return res.status(200).json({ requests: rows.map(normalizeRow) });
             } catch (error) {
-                console.error("Absence request list failed:", error);
+                console.error("Admin absence request list failed:", error);
+                return jsonSupabaseError(res, error, "Unable to load absence requests");
+            }
+        }
+        if (role === "guru") {
+            try {
+                const homeroomClass = await getTeacherHomeroomClass(req);
+                if (!homeroomClass) return jsonError(res, 403, "A homeroom class must be assigned before reviewing student absence requests");
+                const rows = await supabaseRequest(
+                    "absence_requests?select=*,students!inner(nisn,name,class_name)&students.class_name=eq." +
+                    encodeURIComponent(homeroomClass) + "&order=created_at.desc&limit=500"
+                );
+                return res.status(200).json({ requests: rows.map(normalizeRow) });
+            } catch (error) {
+                console.error("Teacher absence request list failed:", error);
                 return jsonSupabaseError(res, error, "Unable to load absence requests");
             }
         }
@@ -138,17 +162,32 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "PATCH") {
+        if (role !== "guru" && role !== "admin") return jsonError(res, 403, "Teacher or Admin role is required");
+        let homeroomClass = null;
         try {
-            if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+            if (role === "admin") {
+                if (!await verifyAdminSession(req)) return jsonError(res, 403, "Administrator role is required");
+            } else {
+                homeroomClass = await getTeacherHomeroomClass(req);
+                if (!homeroomClass) return jsonError(res, 403, "A homeroom class must be assigned before reviewing student absence requests");
+            }
         } catch (error) {
             console.error("Absence review authorization failed:", error);
-            return jsonSupabaseError(res, error, "Unable to validate teacher session");
+            return jsonSupabaseError(res, error, "Unable to validate review permissions");
         }
         const body = req.body || {};
         const id = typeof body.id === "string" ? body.id : "";
         const status = body.status;
         if (!/^[0-9a-f-]{36}$/i.test(id) || !STATUSES.has(status)) return jsonError(res, 400, "Invalid request id or review status");
         try {
+            if (role === "guru") {
+                const scopedRows = await supabaseRequest(
+                    "absence_requests?id=eq." + encodeURIComponent(id) + "&status=eq.pending&select=id,students!inner(class_name)&limit=1"
+                );
+                if (!scopedRows.length || scopedRows[0]?.students?.class_name !== homeroomClass) {
+                    return jsonError(res, 404, "Absence request was not found in your assigned homeroom class");
+                }
+            }
             const rows = await supabaseRequest(
                 "absence_requests?id=eq." + encodeURIComponent(id) + "&status=eq.pending&select=id,student_id,absence_date,absence_type,note,status,created_at",
                 {
