@@ -742,29 +742,9 @@ test("attendance API blocks bulk deletion even for a signed-in teacher", async t
 });
 
 
-test("teacher absence list is denied until a homeroom class is assigned", async t => {
+test("teacher with no linked homeroom students receives an empty request list", async t => {
     const originalFetch = globalThis.fetch;
-    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
-    globalThis.fetch = async url => {
-        const requestUrl = String(url);
-        if (requestUrl.includes("teachers?select=email,is_active")) {
-            return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
-        }
-        if (requestUrl.includes("teachers?select=homeroom_class")) {
-            return new Response(JSON.stringify([{ homeroom_class: null }]), { status: 200 });
-        }
-        throw new Error("Unexpected data query");
-    };
-    t.after(() => { globalThis.fetch = originalFetch; });
-    const req = requestMock("GET", teacherToken, "test-absence-unassigned-teacher");
-    const res = responseMock();
-    await absenceHandler(req, res);
-    assert.equal(res.statusCode, 403);
-    assert.match(res.body.error, /homeroom class must be assigned/i);
-});
-
-test("teacher absence list is scoped to the assigned homeroom class", async t => {
-    const originalFetch = globalThis.fetch;
+    const teacherId = "11111111-1111-4111-8111-111111111111";
     const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
     const requests = [];
     globalThis.fetch = async url => {
@@ -773,20 +753,125 @@ test("teacher absence list is scoped to the assigned homeroom class", async t =>
         if (requestUrl.includes("teachers?select=email,is_active")) {
             return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
         }
-        if (requestUrl.includes("teachers?select=homeroom_class")) {
-            return new Response(JSON.stringify([{ homeroom_class: "XIA" }]), { status: 200 });
+        if (requestUrl.includes("teachers?select=id,name,email,homeroom_class")) {
+            return new Response(JSON.stringify([{
+                id: teacherId, name: "Teacher", email: "teacher@example.com", homeroom_class: null
+            }]), { status: 200 });
         }
         if (requestUrl.includes("absence_requests?select=*,students!inner")) {
             return new Response("[]", { status: 200 });
         }
-        throw new Error("Unexpected data query");
+        if (requestUrl.includes("teacher_notifications?select=id,title,body,related_id,created_at")) {
+            return new Response("[]", { status: 200 });
+        }
+        throw new Error("Unexpected data query: " + requestUrl);
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("GET", teacherToken, "test-absence-no-linked-students");
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body.requests, []);
+    assert.ok(requests.some(url => url.includes("students.homeroom_teacher_id=eq." + teacherId)));
+});
+
+test("teacher absence list is scoped to the exact homeroom teacher relationship", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherId = "22222222-2222-4222-8222-222222222222";
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    const requests = [];
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        requests.push(requestUrl);
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("teachers?select=id,name,email,homeroom_class")) {
+            return new Response(JSON.stringify([{
+                id: teacherId, name: "Teacher", email: "teacher@example.com", homeroom_class: "XIA"
+            }]), { status: 200 });
+        }
+        if (requestUrl.includes("absence_requests?select=*,students!inner")) {
+            return new Response("[]", { status: 200 });
+        }
+        if (requestUrl.includes("teacher_notifications?select=id,title,body,related_id,created_at")) {
+            return new Response("[]", { status: 200 });
+        }
+        throw new Error("Unexpected data query: " + requestUrl);
     };
     t.after(() => { globalThis.fetch = originalFetch; });
     const req = requestMock("GET", teacherToken, "test-absence-homeroom-scope");
     const res = responseMock();
     await absenceHandler(req, res);
     assert.equal(res.statusCode, 200);
-    assert.ok(requests.some(url => url.includes("students.class_name=eq.XIA")));
+    assert.ok(requests.some(url => url.includes("students.homeroom_teacher_id=eq." + teacherId)));
+});
+
+test("dispensation is rejected when the student has not recorded attendance today", async t => {
+    const originalFetch = globalThis.fetch;
+    const studentId = "33333333-3333-4333-8333-333333333333";
+    const studentToken = signToken({
+        email: "student@example.com", role: "siswa", nisn: "12345678"
+    });
+    const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(new Date());
+    const date = parts.find(part => part.type === "year").value + "-" +
+        parts.find(part => part.type === "month").value + "-" +
+        parts.find(part => part.type === "day").value;
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("students?select=email,nisn,is_active")) {
+            return new Response(JSON.stringify([{
+                email: "student@example.com", nisn: "12345678", is_active: true
+            }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,nisn,name,class_name,parent_whatsapp,homeroom_teacher_id")) {
+            return new Response(JSON.stringify([{
+                id: studentId, nisn: "12345678", name: "Student", class_name: "XIA",
+                homeroom_teacher_id: "44444444-4444-4444-8444-444444444444"
+            }]), { status: 200 });
+        }
+        if (requestUrl.includes("attendance?select=id&student_id=eq.")) {
+            return new Response("[]", { status: 200 });
+        }
+        throw new Error("Unexpected data query: " + requestUrl);
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("POST", studentToken, "test-dispensation-requires-attendance");
+    req.body = {
+        date, type: "dispensation", note: "Kegiatan sekolah",
+        lat: -6.25359, lng: 106.60299, accuracy: 8, gpsTimestamp: Date.now()
+    };
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /record your school attendance/i);
+});
+
+test("sick absence requests require a severity selection", async t => {
+    const originalFetch = globalThis.fetch;
+    const studentToken = signToken({
+        email: "student@example.com", role: "siswa", nisn: "12345678"
+    });
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("students?select=email,nisn,is_active")) {
+            return new Response(JSON.stringify([{
+                email: "student@example.com", nisn: "12345678", is_active: true
+            }]), { status: 200 });
+        }
+        throw new Error("Unexpected data query: " + requestUrl);
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("POST", studentToken, "test-sick-severity-required");
+    req.body = {
+        date: "2026-11-03", type: "sick", note: "Sedang tidak sehat"
+    };
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 400);
+    assert.match(res.body.error, /severity/i);
 });
 
 test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role tables", async t => {
