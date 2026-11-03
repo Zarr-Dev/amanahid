@@ -2547,11 +2547,17 @@ async function refreshMedicalEvidenceGate() {
         state.medicalEvidenceRequest = due;
         const gate = $("medical-evidence-gate");
         if (gate) gate.classList.toggle("hidden", !due);
+        const studentDashboard = $("dashboard-siswa");
+        if (studentDashboard) {
+            if (due) studentDashboard.setAttribute("inert", "");
+            else studentDashboard.removeAttribute("inert");
+        }
         if (due) {
             $("medical-evidence-description").textContent =
                 "Pengajuan sakit tanggal " + formatDate(due.absence_date) +
                 " telah disetujui guru. Unggah surat keterangan dokter untuk melanjutkan penggunaan presensi.";
             $("medical-evidence-status").textContent = "";
+            $("medical-evidence-file")?.focus();
         }
     } catch (error) {
         console.error("Medical evidence status could not be checked:", error);
