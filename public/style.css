@@ -4170,64 +4170,6 @@ body.theme-dark .auth-screen {
     line-height: 1.5;
 }
 
-/* A required evidence step is a blocking, accessible student workflow. */
-.medical-evidence-gate {
-    position: fixed;
-    z-index: 5000;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-    overflow-y: auto;
-    background: rgba(12, 20, 34, .72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-.medical-evidence-card {
-    width: min(100%, 520px);
-    padding: clamp(22px, 4vw, 34px);
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    background: var(--surface-solid);
-    box-shadow: 0 28px 90px rgba(0, 0, 0, .28);
-}
-.medical-evidence-card h2 {
-    margin: 9px 0 10px;
-    color: var(--text);
-    font-size: clamp(22px, 4vw, 30px);
-    line-height: 1.15;
-}
-.medical-evidence-card > p {
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.65;
-}
-.medical-evidence-form {
-    display: grid;
-    gap: 12px;
-    margin-top: 18px;
-}
-.medical-evidence-form label {
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 750;
-}
-.medical-evidence-form input[type="file"] {
-    width: 100%;
-    padding: 12px;
-    border: 1px dashed var(--border-strong, var(--border));
-    border-radius: 14px;
-    background: var(--surface-soft);
-    color: var(--text);
-    font-size: 12px;
-}
-.medical-evidence-privacy {
-    margin: 18px 0 0;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-    font-size: 11px !important;
-}
-
 /* The CAPTCHA refresh is an icon control, not a text action. */
 .captcha-refresh {
     display: inline-grid;
@@ -4258,8 +4200,7 @@ body.theme-dark .auth-screen {
 .captcha-refresh svg {
     transition: transform .18s ease;
 }
-body.theme-dark .absence-extra-field,
-body.theme-dark .medical-evidence-form input[type="file"] {
+body.theme-dark .absence-extra-field {
     background: var(--surface-soft);
 }
 body.theme-dark .dispensation-notice {
@@ -4275,9 +4216,6 @@ body.theme-dark .homeroom-profile-card {
     .homeroom-profile-card {
         padding: 17px;
         border-radius: 15px;
-    }
-    .medical-evidence-card {
-        border-radius: 19px;
     }
 }
 @media (prefers-reduced-motion: reduce) {
