@@ -213,7 +213,19 @@ export default async function handler(req, res) {
                 "students?select=id,email,face_descriptors&nisn=eq." + encodeURIComponent(nisn) + "&limit=1"
             );
             if (existing.length && Array.isArray(existing[0].face_descriptors) && existing[0].face_descriptors.length > 0) {
-                return jsonError(res, 409, "This student already has legacy face data. Use the face replacement workflow to migrate to ArcFace.");
+                return jsonError(res, 409, "This student has legacy face data. Use the face replacement workflow to migrate to ArcFace.");
+            }
+            if (existing.length) {
+                const hasCurrentTemplates = await supabaseRequest("rpc/has_student_face_embeddings", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        p_student_id: existing[0].id,
+                        p_model_key: FACE_MODEL_KEY
+                    })
+                });
+                if (hasCurrentTemplates === true) {
+                    return jsonError(res, 409, "This student already has ArcFace templates. Use the face replacement workflow instead of creating the account again.");
+                }
             }
 
             const normalizedEmail = email.trim().toLowerCase();
