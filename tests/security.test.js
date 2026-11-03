@@ -830,6 +830,67 @@ test("teacher absence list is scoped to the exact homeroom teacher relationship"
     assert.ok(requests.some(url => url.includes("students.homeroom_teacher_id=eq." + teacherId)));
 });
 
+test("sick absence requires a verified medical file before submission and routes to Walas", async t => {
+    const originalFetch = globalThis.fetch;
+    const studentId = "33333333-3333-4333-8333-333333333333";
+    const teacherId = "44444444-4444-4444-8444-444444444444";
+    const requestId = "55555555-5555-4555-8555-555555555555";
+    const filePath = studentId + "/" + requestId + "/66666666-6666-4666-8666-666666666666.pdf";
+    const token = signToken({ email: "student@example.com", role: "siswa", nisn: "12345678" });
+    const calls = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        calls.push({ url: requestUrl, method: init.method || "GET", body: init.body });
+        if (requestUrl.includes("students?select=email,nisn,is_active")) {
+            return new Response(JSON.stringify([{ email: "student@example.com", nisn: "12345678", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,nisn,name,class_name,parent_whatsapp,homeroom_teacher_id")) {
+            return new Response(JSON.stringify([{ id: studentId, nisn: "12345678", name: "Student", class_name: "XI IPA 1", homeroom_teacher_id: teacherId, parent_whatsapp: null }]), { status: 200 });
+        }
+        if (requestUrl.includes("/storage/v1/object/info/medical-evidence/")) {
+            return new Response(JSON.stringify({ size: 2048, mimetype: "application/pdf" }), { status: 200 });
+        }
+        if (requestUrl.includes("absence_requests?select=id,status")) return new Response("[]", { status: 200 });
+        if (requestUrl.includes("absence_requests?select=id,student_id,absence_date,absence_type,severity,note,status,created_at,medical_evidence_path")) {
+            assert.equal(init.method, "POST");
+            const payload = JSON.parse(init.body);
+            assert.equal(payload.status, "pending");
+            assert.equal(payload.medical_evidence_path, filePath);
+            assert.equal(Boolean(payload.medical_evidence_uploaded_at), true);
+            return new Response(JSON.stringify([{ id: requestId, student_id: studentId, absence_date: "2026-11-02", absence_type: "sick", severity: "moderate", note: "Istirahat sesuai surat dokter", status: "pending", medical_evidence_path: filePath }]), { status: 201 });
+        }
+        if (requestUrl.includes("audit_log")) return new Response("[]", { status: 201 });
+        if (requestUrl.includes("teacher_notifications?select=id&related_id=")) return new Response(JSON.stringify([{ id: "77777777-7777-4777-8777-777777777777" }]), { status: 200 });
+        throw new Error("Unexpected request: " + requestUrl);
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("POST", token, "test-sick-evidence-before-submit");
+    req.body = { date: "2026-11-02", type: "sick", severity: "moderate", note: "Istirahat sesuai surat dokter", evidence_request_id: requestId, medical_evidence_path: filePath };
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.body.request.status, "pending");
+    assert.equal(res.body.teacher_notification.created, true);
+    assert.equal(calls.some(call => call.url.includes("teacher_notifications?select=id&related_id=")), true);
+});
+
+test("sick absence is rejected when no medical evidence is attached", async t => {
+    const originalFetch = globalThis.fetch;
+    const token = signToken({ email: "student@example.com", role: "siswa", nisn: "12345678" });
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("students?select=email,nisn,is_active")) return new Response(JSON.stringify([{ email: "student@example.com", nisn: "12345678", is_active: true }]), { status: 200 });
+        if (requestUrl.includes("students?select=id,nisn,name,class_name,parent_whatsapp,homeroom_teacher_id")) return new Response(JSON.stringify([{ id: "33333333-3333-4333-8333-333333333333", nisn: "12345678", name: "Student", class_name: "XI IPA 1", homeroom_teacher_id: "44444444-4444-4444-8444-444444444444" }]), { status: 200 });
+        throw new Error("Medical evidence must be rejected before storage or insertion");
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("POST", token, "test-sick-evidence-required");
+    req.body = { date: "2026-11-02", type: "sick", severity: "moderate", note: "Istirahat" };
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 400);
+    assert.match(res.body.error, /surat keterangan sakit wajib diunggah/i);
+});
 test("dispensation is rejected when the student has not recorded attendance today", async t => {
     const originalFetch = globalThis.fetch;
     const studentId = "33333333-3333-4333-8333-333333333333";
