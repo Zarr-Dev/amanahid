@@ -14,6 +14,7 @@ import adminDashboardStatsHandler from "../api/admin/audit.js";
 import adminProfileHandler from "../api/admin/settings.js";
 import adminSettingsHandler from "../api/admin/settings.js";
 import attendanceHandler from "../api/attendance.js";
+import absenceHandler from "../api/absence.js";
 import faceMatchHandler from "../api/face-match.js";
 import sendWhatsAppHandler from "../api/send-wa.js";
 import settingsHandler from "../api/settings.js";
@@ -738,6 +739,54 @@ test("attendance API blocks bulk deletion even for a signed-in teacher", async t
     await attendanceHandler(req, res);
     assert.equal(res.statusCode, 403);
     assert.match(res.body.error, /Bulk attendance deletion is disabled/);
+});
+
+
+test("teacher absence list is denied until a homeroom class is assigned", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("teachers?select=homeroom_class")) {
+            return new Response(JSON.stringify([{ homeroom_class: null }]), { status: 200 });
+        }
+        throw new Error("Unexpected data query");
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("GET", teacherToken, "test-absence-unassigned-teacher");
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /homeroom class must be assigned/i);
+});
+
+test("teacher absence list is scoped to the assigned homeroom class", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    const requests = [];
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        requests.push(requestUrl);
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("teachers?select=homeroom_class")) {
+            return new Response(JSON.stringify([{ homeroom_class: "XIA" }]), { status: 200 });
+        }
+        if (requestUrl.includes("absence_requests?select=*,students!inner")) {
+            return new Response("[]", { status: 200 });
+        }
+        throw new Error("Unexpected data query");
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("GET", teacherToken, "test-absence-homeroom-scope");
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.ok(requests.some(url => url.includes("students.class_name=eq.XIA")));
 });
 
 test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role tables", async t => {
