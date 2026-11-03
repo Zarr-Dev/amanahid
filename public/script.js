@@ -2535,6 +2535,7 @@ function normalizeCloudStudent(student) {
 async function refreshMedicalEvidenceGate() {
     if (state.user?.role !== "siswa") {
         $("medical-evidence-gate")?.classList.add("hidden");
+        $("dashboard-siswa")?.removeAttribute("inert");
         state.medicalEvidenceRequest = null;
         return;
     }
