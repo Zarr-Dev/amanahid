@@ -90,17 +90,17 @@ export default async function handler(req, res) {
             if (typeof body.class_name !== "string" || !body.class_name.trim()) {
                 return jsonError(res, 400, "Kelas siswa wajib diisi");
             }
-            if (typeof body.homeroom_teacher_id !== "string" || !UUID.test(body.homeroom_teacher_id)) {
-                return jsonError(res, 400, "Wali kelas wajib dipilih sebelum akun siswa dibuat");
-            }
-            const homeroomRows = await supabaseRequest(
-                "teachers?select=id,name,homeroom_class,is_active&id=eq." +
-                encodeURIComponent(body.homeroom_teacher_id) + "&limit=1"
-            );
-            const homeroomTeacher = homeroomRows?.[0];
-            if (!homeroomTeacher?.is_active) return jsonError(res, 400, "Wali kelas yang dipilih tidak aktif atau tidak ditemukan");
-            if (homeroomTeacher.homeroom_class && homeroomTeacher.homeroom_class.trim() !== body.class_name.trim()) {
-                return jsonError(res, 409, "Kelas siswa harus sesuai dengan kelas wali kelas yang dipilih");
+            let homeroomTeacher = null;
+            if (body.homeroom_teacher_id !== undefined && body.homeroom_teacher_id !== "") {
+                if (!UUID.test(body.homeroom_teacher_id)) return jsonError(res, 400, "Invalid homeroom teacher");
+                const homeroomRows = await supabaseRequest(
+                    "teachers?select=id,name,homeroom_class,is_active&id=eq." + encodeURIComponent(body.homeroom_teacher_id) + "&limit=1"
+                );
+                homeroomTeacher = homeroomRows?.[0] || null;
+                if (!homeroomTeacher?.is_active) return jsonError(res, 400, "Wali kelas yang dipilih tidak aktif atau tidak ditemukan");
+                if (homeroomTeacher.homeroom_class && homeroomTeacher.homeroom_class.trim() !== body.class_name.trim()) {
+                    return jsonError(res, 409, "Kelas siswa harus sesuai dengan kelas wali kelas yang dipilih");
+                }
             }
 
             const duplicateNisn = await supabaseRequest(
@@ -118,7 +118,7 @@ export default async function handler(req, res) {
                     nisn: body.nisn,
                     name,
                     class_name: body.class_name.trim(),
-                    homeroom_teacher_id: homeroomTeacher.id,
+                    homeroom_teacher_id: homeroomTeacher?.id || null,
                     parent_whatsapp: body.parent_whatsapp ? body.parent_whatsapp.replace(/^08/, "628") : null,
                     face_descriptors: [],
                     email,
@@ -131,7 +131,7 @@ export default async function handler(req, res) {
             if (!created) return jsonError(res, 502, "Supabase did not return the created student");
             await writeAuditLog(admin, "siswa.create", "students", created.id, {
                 email, name, role: "siswa", nisn: body.nisn, class_name: body.class_name.trim(),
-                homeroom_teacher_id: homeroomTeacher.id,
+                homeroom_teacher_id: homeroomTeacher?.id || null,
                 face_enrollment_required: true
             });
             return res.status(201).json({ user: { ...created, role: "siswa", table: "students", face_enrollment_required: true } });

@@ -4170,64 +4170,6 @@ body.theme-dark .auth-screen {
     line-height: 1.5;
 }
 
-/* A required evidence step is a blocking, accessible student workflow. */
-.medical-evidence-gate {
-    position: fixed;
-    z-index: 5000;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-    overflow-y: auto;
-    background: rgba(12, 20, 34, .72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-.medical-evidence-card {
-    width: min(100%, 520px);
-    padding: clamp(22px, 4vw, 34px);
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    background: var(--surface-solid);
-    box-shadow: 0 28px 90px rgba(0, 0, 0, .28);
-}
-.medical-evidence-card h2 {
-    margin: 9px 0 10px;
-    color: var(--text);
-    font-size: clamp(22px, 4vw, 30px);
-    line-height: 1.15;
-}
-.medical-evidence-card > p {
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.65;
-}
-.medical-evidence-form {
-    display: grid;
-    gap: 12px;
-    margin-top: 18px;
-}
-.medical-evidence-form label {
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 750;
-}
-.medical-evidence-form input[type="file"] {
-    width: 100%;
-    padding: 12px;
-    border: 1px dashed var(--border-strong, var(--border));
-    border-radius: 14px;
-    background: var(--surface-soft);
-    color: var(--text);
-    font-size: 12px;
-}
-.medical-evidence-privacy {
-    margin: 18px 0 0;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-    font-size: 11px !important;
-}
-
 /* The CAPTCHA refresh is an icon control, not a text action. */
 .captcha-refresh {
     display: inline-grid;
@@ -4258,8 +4200,7 @@ body.theme-dark .auth-screen {
 .captcha-refresh svg {
     transition: transform .18s ease;
 }
-body.theme-dark .absence-extra-field,
-body.theme-dark .medical-evidence-form input[type="file"] {
+body.theme-dark .absence-extra-field {
     background: var(--surface-soft);
 }
 body.theme-dark .dispensation-notice {
@@ -4276,9 +4217,6 @@ body.theme-dark .homeroom-profile-card {
         padding: 17px;
         border-radius: 15px;
     }
-    .medical-evidence-card {
-        border-radius: 19px;
-    }
 }
 @media (prefers-reduced-motion: reduce) {
     .captcha-refresh svg { transition: none; }
@@ -4287,3 +4225,120 @@ body.theme-dark .homeroom-profile-card {
 .student-profile-panel {
     max-width: 760px;
 }
+
+/* Calm, consistent form controls and absence history cards. */
+.form-stack > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.form-stack > select,
+.form-stack > textarea,
+.form-stack input[type="text"],
+.form-stack input[type="email"],
+.form-stack input[type="tel"],
+.form-stack input[type="password"],
+.form-stack input[type="date"],
+.form-stack select,
+.form-stack textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--surface-solid);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+.form-stack > textarea, .form-stack textarea { min-height: 108px; resize: vertical; }
+.form-stack input::placeholder, .form-stack textarea::placeholder { color: var(--muted); opacity: .8; }
+.form-stack input:focus, .form-stack select:focus, .form-stack textarea:focus {
+    border-color: var(--blue);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(57, 120, 246, .12);
+}
+.form-stack input:disabled, .form-stack select:disabled, .form-stack textarea:disabled { opacity: .65; cursor: not-allowed; }
+.form-stack input[type="file"] {
+    width: 100%; min-height: 48px; padding: 9px;
+    border: 1px dashed var(--border); border-radius: 13px;
+    background: var(--surface-soft); color: var(--text); font-size: 13px;
+}
+.form-stack input[type="file"]::file-selector-button {
+    min-height: 32px; margin-right: 10px; padding: 6px 11px;
+    border: 0; border-radius: 9px; background: var(--blue-soft);
+    color: var(--blue-dark); font: inherit; font-weight: 700; cursor: pointer;
+}
+.student-absence-history { margin-top: 16px; }
+.absence-request-list { display: grid; gap: 10px; }
+.absence-request-card {
+    padding: 14px 15px; border: 1px solid var(--border);
+    border-radius: 15px; background: var(--surface-soft);
+    animation: absenceCardIn .18s ease both;
+}
+.absence-request-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.absence-request-card-top strong { font-size: 14px; }
+.absence-request-card p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.absence-request-status {
+    display: inline-flex; max-width: 62%; padding: 5px 9px;
+    border-radius: 999px; background: var(--blue-soft); color: var(--blue-dark);
+    font-size: 11px; font-weight: 750; line-height: 1.3; text-align: right;
+}
+.absence-request-card.is-approved .absence-request-status { background: rgba(33, 154, 115, .12); color: var(--green); }
+.absence-request-card.is-rejected .absence-request-status,
+.absence-request-card.is-revoked .absence-request-status { background: rgba(223, 75, 90, .12); color: var(--red); }
+.absence-request-meta { display: block; margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+@keyframes absenceCardIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+body.theme-dark .form-stack > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+body.theme-dark .form-stack > select, body.theme-dark .form-stack > textarea,
+body.theme-dark .form-stack input:not([type="file"]), body.theme-dark .form-stack select,
+body.theme-dark .form-stack textarea { background: var(--surface-solid); color: var(--text); }
+body.theme-dark .absence-request-card { background: var(--surface-soft); }
+@media (max-width: 560px) {
+    .absence-request-card { padding: 12px; border-radius: 13px; }
+    .absence-request-card-top { flex-direction: column; gap: 7px; }
+    .absence-request-status { max-width: 100%; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .absence-request-card { animation: none; }
+    .form-stack > input, .form-stack > select, .form-stack > textarea { transition: none; }
+}
+/* Amanah ID finishing pass: consistent native controls, contained layout and mobile camera ergonomics. */
+:root { color-scheme: light; }
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { min-width: 320px; overflow-x: clip; }
+button, input, select, textarea { font: inherit; }
+button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue, #3978f6) 55%, transparent); outline-offset: 2px; }
+input[type=file] { display:block; width:100%; max-width:100%; min-width:0; padding: .65rem; border:1px solid var(--border,#d9e0ec); border-radius:14px; background:var(--surface-soft,#f7f9fc); color:var(--text,#182033); }
+input[type=file]::file-selector-button { appearance:none; border:0; border-radius:10px; padding:.65rem .9rem; margin:0 .65rem .15rem 0; background:var(--blue,#3978f6); color:white; font-weight:700; cursor:pointer; transition:filter .15s ease, transform .15s ease; }
+input[type=file]::file-selector-button:hover { filter:brightness(.96); }
+input[type=file]::file-selector-button:active { transform:scale(.98); }
+/* Prevent oversized headings and controls from escaping cards or dialogs. */
+.auth-copy h1, h1, h2, h3 { overflow-wrap:anywhere; }
+.modal-card, .dashboard-card, .form-stack, .form-stack > * { min-width:0; }
+img, video, canvas, iframe { max-width:100%; }
+video { object-fit:cover; }
+@media (max-width: 760px) {
+  .modal-backdrop { padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); align-items:flex-start; overflow-y:auto; }
+  .modal-card { width:min(100%, 620px); max-height:calc(100dvh - 20px); overflow-y:auto; border-radius:18px; }
+  .form-stack { gap:10px; }
+  .form-stack input:not([type=checkbox]):not([type=radio]), .form-stack select, .form-stack textarea { min-height:48px; font-size:16px; }
+  .button, button { min-height:42px; }
+  .table-wrap, .data-table-wrap { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+}
+@media (max-width: 480px) {
+  body { font-size:14px; }
+  .dashboard-content, .dashboard-main, .main-content { padding-inline:12px !important; }
+  .modal-card { border-radius:16px; }
+  .auth-copy h1 { font-size:clamp(30px, 8.8vw, 42px); }
+  .auth-description { max-width:100%; }
+  .auth-footer { flex-wrap:wrap; gap:12px; }
+}
+/* Camera should use the available viewport and safe areas, especially on mobile. */
+.camera-screen, .attendance-camera, #attendance-camera-screen { min-width:0; }
+@media (max-width: 760px) {
+  .camera-screen, .attendance-camera, #attendance-camera-screen { width:100%; max-width:100vw; min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); padding: max(8px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom)); }
+  .camera-screen video, .attendance-camera video, #attendance-camera-screen video { width:100%; height:auto; max-height:65dvh; aspect-ratio:4/3; object-fit:cover; border-radius:16px; }
+  .camera-screen canvas, .attendance-camera canvas, #attendance-camera-screen canvas { max-width:100%; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }

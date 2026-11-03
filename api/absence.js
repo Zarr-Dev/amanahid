@@ -14,7 +14,7 @@ import { sendWhatsApp } from "./_lib/whatsapp.js";
 import { writeAuditLog } from "./_lib/audit.js";
 
 const TYPES = new Set(["sick", "permission", "other", "dispensation"]);
-const STATUSES = new Set(["approved", "rejected"]);
+const STATUSES = new Set(["approved", "rejected", "revoked"]);
 const SICK_SEVERITIES = new Set(["mild", "moderate", "severe"]);
 const MAX_MEDICAL_FILE_BYTES = 5 * 1024 * 1024;
 const MEDICAL_FILE_TYPES = new Map([
@@ -113,97 +113,43 @@ function normalizeRow(row) {
         status: row.status,
         created_at: row.created_at,
         reviewed_at: row.reviewed_at,
+        reviewed_by: row.reviewed_by || null,
         medical_evidence_uploaded: Boolean(row.medical_evidence_path)
     };
+}
+
+async function inspectMedicalEvidenceUpload(studentId, requestId, objectPath) {
+    const prefix = String(studentId) + "/" + String(requestId) + "/";
+    const filename = typeof objectPath === "string" && objectPath.startsWith(prefix) ? objectPath.slice(prefix.length) : "";
+    if (!/^[0-9a-f-]{36}\.(pdf|jpg|png)$/i.test(filename)) return { error: "Invalid medical evidence reference" };
+    const infoResponse = await storageRequest("/object/info/medical-evidence/" + encodeStoragePath(objectPath), { method: "GET" });
+    const info = await infoResponse.json();
+    const actualSize = Number(info?.size ?? info?.metadata?.size);
+    const actualType = String(info?.mimetype ?? info?.contentType ?? info?.metadata?.mimetype ?? "").toLowerCase();
+    if (!Number.isSafeInteger(actualSize) || actualSize < 1 || actualSize > MAX_MEDICAL_FILE_BYTES || !MEDICAL_FILE_TYPES.has(actualType)) {
+        return { error: "Uploaded file type or size is not allowed" };
+    }
+    if (!filename.toLowerCase().endsWith("." + MEDICAL_FILE_TYPES.get(actualType))) return { error: "Uploaded file extension does not match its content type" };
+    return { objectPath, actualSize, actualType };
 }
 
 async function signMedicalEvidenceUpload(req, res, session, body) {
     const student = await getStudentForSession(session);
     if (!student) return jsonError(res, 404, "Student account was not found");
-
+    if (!student.homeroom_teacher_id) {
+        return jsonError(res, 409, "Akun siswa belum ditautkan ke wali kelas. Hubungi Admin sebelum mengirim surat sakit.");
+    }
     const requestId = typeof body.request_id === "string" ? body.request_id : "";
     const mimeType = typeof body.mime_type === "string" ? body.mime_type.toLowerCase() : "";
     const fileSize = Number(body.file_size);
     const extension = MEDICAL_FILE_TYPES.get(mimeType);
-    if (!/^[0-9a-f-]{36}$/i.test(requestId) || !extension ||
-        !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > MAX_MEDICAL_FILE_BYTES) {
+    if (!/^[0-9a-f-]{36}$/i.test(requestId) || !extension || !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > MAX_MEDICAL_FILE_BYTES) {
         return jsonError(res, 400, "Choose a PDF, JPG, or PNG file up to 5 MB");
     }
-
-    const requests = await supabaseRequest(
-        "absence_requests?select=id,student_id,absence_type,status,medical_evidence_path" +
-        "&id=eq." + encodeURIComponent(requestId) +
-        "&student_id=eq." + encodeURIComponent(student.id) +
-        "&absence_type=eq.sick&status=eq.approved&limit=1"
-    );
-    if (!requests.length) return jsonError(res, 404, "An approved sick request was not found");
-    if (requests[0].medical_evidence_path) return jsonError(res, 409, "Medical evidence has already been uploaded");
-
-    const objectPath = `${student.id}/${requestId}/${randomUUID()}.${extension}`;
-    const uploadUrl = await createSignedStorageUrl(
-        `/object/upload/sign/medical-evidence/${encodeStoragePath(objectPath)}`,
-        {}
-    );
-    return res.status(200).json({ upload_url: uploadUrl, path: objectPath, expires_in: 7200 });
+    const objectPath = student.id + "/" + requestId + "/" + randomUUID() + "." + extension;
+    const uploadUrl = await createSignedStorageUrl("/object/upload/sign/medical-evidence/" + encodeStoragePath(objectPath), {});
+    return res.status(200).json({ upload_url: uploadUrl, path: objectPath, request_id: requestId, expires_in: 7200 });
 }
-
-async function confirmMedicalEvidence(req, res, session, body) {
-    const student = await getStudentForSession(session);
-    if (!student) return jsonError(res, 404, "Student account was not found");
-    const requestId = typeof body.request_id === "string" ? body.request_id : "";
-    const objectPath = typeof body.path === "string" ? body.path : "";
-    const safePath = new RegExp(
-        "^" + student.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
-        "/" + requestId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
-        "/[0-9a-f-]{36}\\.(pdf|jpg|png)$",
-        "i"
-    );
-    if (!/^[0-9a-f-]{36}$/i.test(requestId) || !safePath.test(objectPath)) {
-        return jsonError(res, 400, "Invalid medical evidence reference");
-    }
-
-    const requests = await supabaseRequest(
-        "absence_requests?select=id,student_id,absence_type,status,medical_evidence_path" +
-        "&id=eq." + encodeURIComponent(requestId) +
-        "&student_id=eq." + encodeURIComponent(student.id) +
-        "&absence_type=eq.sick&status=eq.approved&limit=1"
-    );
-    if (!requests.length) return jsonError(res, 404, "An approved sick request was not found");
-    if (requests[0].medical_evidence_path) return jsonError(res, 409, "Medical evidence has already been uploaded");
-
-    const infoResponse = await storageRequest(
-        `/object/info/medical-evidence/${encodeStoragePath(objectPath)}`,
-        { method: "GET" }
-    );
-    const info = await infoResponse.json();
-    const actualSize = Number(info?.size ?? info?.metadata?.size);
-    const actualType = String(info?.mimetype ?? info?.contentType ?? info?.metadata?.mimetype ?? "").toLowerCase();
-    if (!Number.isSafeInteger(actualSize) || actualSize < 1 || actualSize > MAX_MEDICAL_FILE_BYTES ||
-        !MEDICAL_FILE_TYPES.has(actualType)) {
-        return jsonError(res, 400, "Uploaded file type or size is not allowed");
-    }
-
-    const updated = await supabaseRequest(
-        "absence_requests?id=eq." + encodeURIComponent(requestId) +
-        "&student_id=eq." + encodeURIComponent(student.id) +
-        "&status=eq.approved&medical_evidence_path=is.null&select=id,medical_evidence_uploaded_at",
-        {
-            method: "PATCH",
-            headers: { Prefer: "return=representation" },
-            body: JSON.stringify({
-                medical_evidence_path: objectPath,
-                medical_evidence_uploaded_at: new Date().toISOString()
-            })
-        }
-    );
-    if (!updated.length) return jsonError(res, 409, "The medical evidence requirement has already been completed");
-    await writeAuditLog(session, "absence_request.medical_evidence_upload", "absence_requests", requestId, {
-        file_type: actualType,
-        file_size: actualSize
-    });
-    return res.status(200).json({ uploaded: true });
-}
-
 async function viewMedicalEvidence(req, res, role, session, body) {
     if (role !== "guru" && role !== "admin") return jsonError(res, 403, "Teacher or Admin role is required");
     const requestId = typeof body.request_id === "string" ? body.request_id : "";
@@ -320,9 +266,6 @@ export default async function handler(req, res) {
             if (body.action === "medical-evidence-sign") {
                 return await signMedicalEvidenceUpload(req, res, session, body);
             }
-            if (body.action === "medical-evidence-confirm") {
-                return await confirmMedicalEvidence(req, res, session, body);
-            }
             if (body.action) return jsonError(res, 400, "Unknown absence action");
 
             const { date, type } = body;
@@ -339,11 +282,24 @@ export default async function handler(req, res) {
             if (type === "sick" && !SICK_SEVERITIES.has(severity)) {
                 return jsonError(res, 400, "A severity selection is required: choose mild, moderate, or severe.");
             }
+            if (type !== "sick" && (body.medical_evidence_path || body.evidence_request_id)) {
+                return jsonError(res, 400, "Medical evidence is only accepted for sick requests");
+            }
 
             const student = await getStudentForSession(session);
             if (!student) return jsonError(res, 404, "Student account was not found");
             if (!student.homeroom_teacher_id) {
-                return jsonError(res, 409, "Your account has not been linked to a homeroom teacher yet");
+                return jsonError(res, 409, "Akun siswa belum ditautkan ke wali kelas. Hubungi Admin untuk memperbarui profil siswa.");
+            }
+
+            let medicalEvidence = null;
+            if (type === "sick") {
+                const requestId = typeof body.evidence_request_id === "string" ? body.evidence_request_id : "";
+                if (!/^[0-9a-f-]{36}$/i.test(requestId) || typeof body.medical_evidence_path !== "string") {
+                    return jsonError(res, 400, "Surat keterangan sakit wajib diunggah sebelum pengajuan dikirim");
+                }
+                medicalEvidence = await inspectMedicalEvidenceUpload(student.id, requestId, body.medical_evidence_path);
+                if (medicalEvidence.error) return jsonError(res, 400, medicalEvidence.error);
             }
 
             if (type === "dispensation") {
@@ -388,7 +344,7 @@ export default async function handler(req, res) {
             if (existing.length) return jsonError(res, 409, "A pending request already exists for this date");
 
             const rows = await supabaseRequest(
-                "absence_requests?select=id,student_id,absence_date,absence_type,severity,note,status,created_at",
+                "absence_requests?select=id,student_id,absence_date,absence_type,severity,note,status,created_at,medical_evidence_path,medical_evidence_uploaded_at",
                 {
                     method: "POST",
                     headers: { Prefer: "return=representation" },
@@ -398,7 +354,11 @@ export default async function handler(req, res) {
                         absence_type: type,
                         severity,
                         note,
-                        status: "pending"
+                        status: "pending",
+                        ...(medicalEvidence ? {
+                            medical_evidence_path: medicalEvidence.objectPath,
+                            medical_evidence_uploaded_at: new Date().toISOString()
+                        } : {})
                     })
                 }
             );
@@ -411,7 +371,7 @@ export default async function handler(req, res) {
             });
 
             let teacherNotification = { created: false };
-            if (type === "dispensation" && row?.id) {
+            if (row?.id) {
                 const notificationRows = await supabaseRequest(
                     "teacher_notifications?select=id&related_id=eq." + encodeURIComponent(row.id) + "&limit=1"
                 );
@@ -430,8 +390,14 @@ export default async function handler(req, res) {
                 const message = "Amanah ID: pengajuan " + typeLabel + " " + student.name +
                     " tanggal " + date + " telah diterima dan menunggu peninjauan sekolah.";
                 try {
-                    await sendWhatsApp(target, message);
-                    whatsapp = { sent: true, skipped: false };
+                    const providerResult = await sendWhatsApp(target, message);
+                    whatsapp = {
+                        queued: true,
+                        skipped: false,
+                        request_id: providerResult?.requestid ?? null,
+                        message_ids: Array.isArray(providerResult?.id) ? providerResult.id : [],
+                        process: providerResult?.process || "pending"
+                    };
                 } catch (error) {
                     console.error("Absence WhatsApp notification failed:", error);
                     whatsapp = { sent: false, skipped: false, error: "WhatsApp notification failed" };
@@ -470,11 +436,12 @@ export default async function handler(req, res) {
         if (!/^[0-9a-f-]{36}$/i.test(id) || !STATUSES.has(status)) {
             return jsonError(res, 400, "Invalid request id or review status");
         }
+        const expectedCurrentStatus = status === "revoked" ? "approved" : "pending";
         try {
             if (teacher) {
                 const scopedRows = await supabaseRequest(
                     "absence_requests?id=eq." + encodeURIComponent(id) +
-                    "&status=eq.pending&select=id,students!inner(homeroom_teacher_id)&limit=1"
+                    "&status=eq." + expectedCurrentStatus + "&select=id,students!inner(homeroom_teacher_id)&limit=1"
                 );
                 if (!scopedRows.length || scopedRows[0]?.students?.homeroom_teacher_id !== teacher.id) {
                     return jsonError(res, 404, "Absence request was not found for your homeroom students");
@@ -482,7 +449,7 @@ export default async function handler(req, res) {
             }
             const rows = await supabaseRequest(
                 "absence_requests?id=eq." + encodeURIComponent(id) +
-                "&status=eq.pending&select=id,student_id,absence_date,absence_type,severity,note,status,created_at,reviewed_at",
+                "&status=eq." + expectedCurrentStatus + "&select=id,student_id,absence_date,absence_type,severity,note,status,created_at,reviewed_at,reviewed_by",
                 {
                     method: "PATCH",
                     headers: { Prefer: "return=representation" },
@@ -494,7 +461,7 @@ export default async function handler(req, res) {
                 }
             );
             if (!rows.length) return jsonError(res, 409, "Request was already reviewed or no longer exists");
-            await writeAuditLog(session, "absence_request.review", "absence_requests", id, { status });
+            await writeAuditLog(session, status === "revoked" ? "absence_request.revoke" : "absence_request.review", "absence_requests", id, { status, previous_status: expectedCurrentStatus });
             return res.status(200).json({ request: rows[0] });
         } catch (error) {
             console.error("Absence request review failed:", error);

@@ -122,41 +122,57 @@ export async function supabaseRequest(path, options = {}) {
     const secretKey = process.env.SUPABASE_SECRET_KEY;
     if (!supabaseUrl || !secretKey) throw new Error("Supabase environment variables are not configured");
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8_000);
+    const method = String(requestOptions.method || "GET").toUpperCase();
+    const retryableRead = method === "GET";
+    const maxAttempts = retryableRead ? 2 : 1;
     let response;
     let responseText;
-    try {
-        response = await fetch(`${supabaseUrl.replace(/\/+$/, "")}/rest/v1/${path}`, {
-            ...requestOptions,
-            signal: controller.signal,
-            headers: {
-                apikey: secretKey,
-                "Content-Type": "application/json",
-                ...requestOptions.headers
-            }
-        });
-        responseText = await response.text();
-    } catch (cause) {
-        if (cause?.name === "AbortError") {
-            const error = new Error("Supabase request timed out after 8 seconds");
-            error.status = 504;
-            error.code = "SUPABASE_TIMEOUT";
-            throw error;
-        }
-        throw cause;
-    } finally {
-        clearTimeout(timeoutId);
-    }
-    let payload = null;
-    if (responseText) {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8_000);
         try {
-            payload = JSON.parse(responseText);
-        } catch {
-            throw new Error("Supabase returned an invalid response");
+            response = await fetch(`${supabaseUrl.replace(/\/+$/, "")}/rest/v1/${path}`, {
+                ...requestOptions,
+                cache: "no-store",
+                signal: controller.signal,
+                headers: {
+                    apikey: secretKey,
+                    Authorization: `Bearer ${secretKey}`,
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                    ...requestOptions.headers
+                }
+            });
+            responseText = await response.text();
+        } catch (cause) {
+            if (cause?.name === "AbortError") {
+                const error = new Error("Supabase request timed out after 8 seconds");
+                error.status = 504;
+                error.code = "SUPABASE_TIMEOUT";
+                throw error;
+            }
+            if (!retryableRead || attempt + 1 >= maxAttempts || !(cause instanceof TypeError)) throw cause;
+            await new Promise(resolve => setTimeout(resolve, 120 * (attempt + 1)));
+            continue;
+        } finally {
+            clearTimeout(timeoutId);
         }
+        if (retryableRead && [429, 502, 503, 504].includes(response.status) && attempt + 1 < maxAttempts) {
+            const retryAfter = Number(response.headers.get("retry-after"));
+            const delay = Number.isFinite(retryAfter) && retryAfter > 0
+                ? Math.min(800, retryAfter * 1000)
+                : 120 * (attempt + 1);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+        }
+        break;
     }
 
+    let payload = null;
+    if (responseText) {
+        try { payload = JSON.parse(responseText); }
+        catch { throw new Error("Supabase returned an invalid response"); }
+    }
     if (!response.ok) {
         const error = new Error(payload?.message || "Supabase request failed");
         error.status = response.status;

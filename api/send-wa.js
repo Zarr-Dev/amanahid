@@ -4,7 +4,8 @@ import {
     isAllowedOrigin,
     jsonError,
     jsonSupabaseError,
-    rateLimit
+    rateLimit,
+    supabaseRequest
 } from "./_lib/supabase.js";
 import { sendWhatsApp } from "./_lib/whatsapp.js";
 import { validateSchema } from "./_lib/validate.js";
@@ -50,9 +51,29 @@ export default async function handler(req, res) {
     }
 
     try {
-        await sendWhatsApp(target, message);
-        await writeAuditLog(getSession(req), "whatsapp.send", "whatsapp", target, { message_length: message.length });
-        return res.status(200).json({ ok: true });
+        const session = getSession(req);
+        if (!session?.email) return jsonError(res, 401, "Teacher session is required");
+        const teacherRows = await supabaseRequest(
+            "teachers?select=id&email=eq." + encodeURIComponent(session.email) + "&is_active=eq.true&limit=1"
+        );
+        const teacher = teacherRows?.[0];
+        if (!teacher) return jsonError(res, 403, "An active teacher account is required");
+        const allowedParents = await supabaseRequest(
+            "students?select=id&is_active=eq.true&homeroom_teacher_id=eq." + encodeURIComponent(teacher.id) +
+            "&parent_whatsapp=eq." + encodeURIComponent(target) + "&limit=1"
+        );
+        if (!Array.isArray(allowedParents) || !allowedParents.length) {
+            return jsonError(res, 404, "Recipient is not a parent contact assigned to your homeroom");
+        }
+        const providerResult = await sendWhatsApp(target, message);
+        await writeAuditLog(session, "whatsapp.send", "whatsapp", target, { message_length: message.length });
+        return res.status(200).json({
+            ok: true,
+            queued: true,
+            request_id: providerResult?.requestid ?? null,
+            message_ids: Array.isArray(providerResult?.id) ? providerResult.id : [],
+            process: providerResult?.process || "pending"
+        });
     } catch (error) {
         console.error("Fonnte request error:", error);
         if (error.message === "FONNTE_TOKEN is not configured") {

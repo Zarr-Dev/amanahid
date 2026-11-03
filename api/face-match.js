@@ -63,8 +63,13 @@ export default async function handler(req, res) {
                 `students?select=nisn,name,face_descriptors,is_active&nisn=eq.${encodeURIComponent(session.nisn)}&limit=1`
             );
         } else {
+            const teacherRows = await supabaseRequest(
+                "teachers?select=id&email=eq." + encodeURIComponent(session?.email || "") + "&is_active=eq.true&limit=1"
+            );
+            const teacher = teacherRows?.[0];
+            if (!teacher) return jsonError(res, 403, "An active teacher account is required");
             students = await supabaseRequest(
-                "students?select=nisn,name,face_descriptors,is_active&is_active=eq.true&limit=1000",
+                "students?select=nisn,name,face_descriptors,is_active,homeroom_teacher_id&is_active=eq.true&homeroom_teacher_id=eq." + encodeURIComponent(teacher.id) + "&limit=1000",
                 { headers: { Range: "0-999" } }
             );
         }

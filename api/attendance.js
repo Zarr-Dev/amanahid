@@ -79,7 +79,15 @@ export default async function handler(req, res) {
             if (!features.attendance_history) return featureDisabled(res, "attendance_history", "Riwayat presensi sedang dinonaktifkan");
             const settingsRows = await supabaseRequest("school_settings?select=entry_time,late_tolerance_min&limit=1");
             const schedule = Array.isArray(settingsRows) ? settingsRows[0] : null;
-            let query = "attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name)&order=date.desc,time.desc";
+            let query = "attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name,homeroom_teacher_id)&order=date.desc,time.desc";
+            if (role === "guru") {
+                const teacherRows = await supabaseRequest(
+                    "teachers?select=id&email=eq." + encodeURIComponent(getSession(req)?.email || "") + "&is_active=eq.true&limit=1"
+                );
+                const teacher = teacherRows?.[0];
+                if (!teacher) return jsonError(res, 403, "An active teacher account is required");
+                query += "&students.homeroom_teacher_id=eq." + encodeURIComponent(teacher.id);
+            }
             if (role === "siswa") {
                 const nisn = getSession(req)?.nisn;
                 if (typeof nisn !== "string" || !/^\d{8,20}$/.test(nisn)) {
@@ -211,28 +219,22 @@ export default async function handler(req, res) {
             }
 
             const students = await supabaseRequest(
-                `students?select=id,nisn,name,class_name,parent_whatsapp&is_active=eq.true&nisn=eq.${encodeURIComponent(nisn)}&limit=1`
+                `students?select=id,nisn,name,class_name,parent_whatsapp,homeroom_teacher_id&is_active=eq.true&nisn=eq.${encodeURIComponent(nisn)}&limit=1`
             );
             if (!students.length) {
                 return failedAttendance(req, res, role, 404, { error: "Student is not registered" });
             }
             const student = students[0];
-            const { date, time } = jakartaDateTime();
-
-            // A teacher-approved sick request requires a doctor's letter before
-            // the student can use the attendance workflow again.
-            if (role === "siswa") {
-                const medicalEvidenceDue = await supabaseRequest(
-                    "absence_requests?select=id&student_id=eq." + encodeURIComponent(student.id) +
-                    "&absence_type=eq.sick&status=eq.approved&medical_evidence_path=is.null&limit=1"
+            if (role === "guru") {
+                const teacherRows = await supabaseRequest(
+                    "teachers?select=id&email=eq." + encodeURIComponent(session?.email || "") + "&is_active=eq.true&limit=1"
                 );
-                if (medicalEvidenceDue.length) {
-                    return res.status(423).json({
-                        error: "MEDICAL_EVIDENCE_REQUIRED",
-                        message: "Upload the doctor's letter for your approved sick request before recording attendance."
-                    });
+                const teacher = teacherRows?.[0];
+                if (!teacher || student.homeroom_teacher_id !== teacher.id) {
+                    return jsonError(res, 403, "Teachers can only record attendance for students in their homeroom");
                 }
             }
+            const { date, time } = jakartaDateTime();
 
             const existing = await supabaseRequest(
                 `attendance?select=id,student_id,date,time,confidence,method,created_at,idempotency_key,students!inner(nisn,name,class_name)&student_id=eq.${encodeURIComponent(student.id)}&date=eq.${date}&limit=1`
@@ -325,10 +327,20 @@ export default async function handler(req, res) {
         }
         try {
             const session = getSession(req);
-            await supabaseRequest(`attendance${deleteAll ? "" : `?id=eq.${encodeURIComponent(id)}`}`, {
-                method: "DELETE"
-            });
-            await writeAuditLog(session, "attendance.delete", "attendance", id || "all", {});
+            const teacherRows = await supabaseRequest(
+                "teachers?select=id&email=eq." + encodeURIComponent(session?.email || "") + "&is_active=eq.true&limit=1"
+            );
+            const teacher = teacherRows?.[0];
+            if (!teacher) return jsonError(res, 403, "An active teacher account is required");
+            if (deleteAll) return jsonError(res, 403, "Bulk attendance deletion is disabled. Correct individual records instead.");
+            const scopedRows = await supabaseRequest(
+                `attendance?select=id,students!inner(homeroom_teacher_id)&id=eq.${encodeURIComponent(id)}&limit=1`
+            );
+            if (!scopedRows.length || scopedRows[0]?.students?.homeroom_teacher_id !== teacher.id) {
+                return jsonError(res, 404, "Attendance record was not found in your homeroom");
+            }
+            await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+            await writeAuditLog(session, "attendance.delete", "attendance", id, { teacher_id: teacher.id });
             return res.status(200).json({ ok: true });
         } catch (error) {
             console.error("Attendance delete failed:", error);
