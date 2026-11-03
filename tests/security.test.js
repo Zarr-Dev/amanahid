@@ -830,6 +830,80 @@ test("teacher absence list is scoped to the exact homeroom teacher relationship"
     assert.ok(requests.some(url => url.includes("students.homeroom_teacher_id=eq." + teacherId)));
 });
 
+test("teacher WhatsApp messages are queued only for parent contacts in the assigned homeroom", async t => {
+    const originalFetch = globalThis.fetch;
+    const previousUrl = process.env.SUPABASE_URL;
+    const previousKey = process.env.SUPABASE_SECRET_KEY;
+    const previousFonnte = process.env.FONNTE_TOKEN;
+    process.env.SUPABASE_URL = "https://mock-project.supabase.co";
+    process.env.SUPABASE_SECRET_KEY = "service-role-test";
+    process.env.FONNTE_TOKEN = "fonnte-test-token";
+    const teacherId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const target = "6281234567890";
+    let fonnteCalls = 0;
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("teachers?select=email,is_active")) return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        if (requestUrl.includes("system_settings?id=eq.00000000-0000-0000-0000-000000000002")) return new Response(JSON.stringify([{ feature_flags: { parent_notifications: true } }]), { status: 200 });
+        if (requestUrl.includes("teachers?select=id&email=eq.teacher%40example.com")) return new Response(JSON.stringify([{ id: teacherId }]), { status: 200 });
+        if (requestUrl.includes("students?select=id&is_active=eq.true&homeroom_teacher_id=eq." + teacherId)) return new Response(JSON.stringify([{ id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd" }]), { status: 200 });
+        if (requestUrl === "https://api.fonnte.com/send") {
+            fonnteCalls += 1;
+            assert.ok(init.body instanceof FormData);
+            assert.equal(init.body.get("target"), target);
+            assert.equal(init.body.get("connectOnly"), "false");
+            return new Response(JSON.stringify({ status: true, process: "pending", requestid: 123, id: ["456"] }), { status: 200 });
+        }
+        if (requestUrl.includes("audit_log")) return new Response("[]", { status: 201 });
+        throw new Error("Unexpected request: " + requestUrl);
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+        for (const [key, value] of [["SUPABASE_URL", previousUrl], ["SUPABASE_SECRET_KEY", previousKey], ["FONNTE_TOKEN", previousFonnte]]) {
+            if (value === undefined) delete process.env[key]; else process.env[key] = value;
+        }
+    });
+    const token = signToken({ email: "teacher@example.com", role: "guru" });
+    const req = requestMock("POST", token, "test-teacher-parent-whatsapp");
+    req.body = { target, message: "Amanah ID: pemberitahuan untuk orang tua siswa." };
+    const res = responseMock();
+    await sendWhatsAppHandler(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.queued, true);
+    assert.equal(res.body.process, "pending");
+    assert.equal(fonnteCalls, 1);
+});
+
+test("teacher WhatsApp endpoint denies parent contacts outside the assigned homeroom", async t => {
+    const originalFetch = globalThis.fetch;
+    const previousUrl = process.env.SUPABASE_URL;
+    const previousKey = process.env.SUPABASE_SECRET_KEY;
+    process.env.SUPABASE_URL = "https://mock-project.supabase.co";
+    process.env.SUPABASE_SECRET_KEY = "service-role-test";
+    const teacherId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+    let fonnteCalls = 0;
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("teachers?select=email,is_active")) return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        if (requestUrl.includes("system_settings?id=eq.00000000-0000-0000-0000-000000000002")) return new Response(JSON.stringify([{ feature_flags: { parent_notifications: true } }]), { status: 200 });
+        if (requestUrl.includes("teachers?select=id&email=eq.teacher%40example.com")) return new Response(JSON.stringify([{ id: teacherId }]), { status: 200 });
+        if (requestUrl.includes("students?select=id&is_active=eq.true&homeroom_teacher_id=eq." + teacherId)) return new Response("[]", { status: 200 });
+        if (requestUrl === "https://api.fonnte.com/send") { fonnteCalls += 1; throw new Error("Fonnte must not be called"); }
+        throw new Error("Unexpected request: " + requestUrl);
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+        if (previousUrl === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = previousUrl;
+        if (previousKey === undefined) delete process.env.SUPABASE_SECRET_KEY; else process.env.SUPABASE_SECRET_KEY = previousKey;
+    });
+    const token = signToken({ email: "teacher@example.com", role: "guru" });
+    const req = requestMock("POST", token, "test-teacher-cross-homeroom-whatsapp");
+    req.body = { target: "6289876543210", message: "Amanah ID: pemberitahuan yang tidak diizinkan." };
+    const res = responseMock();
+    await sendWhatsAppHandler(req, res);
+    assert.equal(res.statusCode, 404);
+    assert.equal(fonnteCalls, 0);
+});
 test("assigned Walas can revoke an approved absence and the API records the transition", async t => {
     const originalFetch = globalThis.fetch;
     const teacherId = "88888888-8888-4888-8888-888888888888";
