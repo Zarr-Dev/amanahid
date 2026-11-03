@@ -181,6 +181,11 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$;
+$;
+
+DROP TRIGGER IF EXISTS students_enforce_homeroom_assignment ON public.students;
+CREATE TRIGGER students_enforce_homeroom_assignment
+BEFORE INSERT OR UPDATE OF homeroom_teacher_id, class_name ON public.students
+FOR EACH ROW EXECUTE FUNCTION public.enforce_student_homeroom_assignment();
 
 NOTIFY pgrst, 'reload schema';
