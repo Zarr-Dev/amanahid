@@ -2185,8 +2185,7 @@ async function loadAdminUsers() {
             <td>${safeText(user.role === "guru" ? tr("roleTeacher") : user.role === "siswa" ? tr("roleStudent") : tr("adminRole"))}</td>
             <td>${safeText(user.role === "siswa" ? user.homeroom_teacher?.name || "Belum ditetapkan" : user.homeroom_class || "—")}</td>
             <td>${safeText(user.is_active ? tr("activeStatus") : tr("inactiveStatus"))}</td>
-            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}">${safeText(tr("editAccount"))}</button>
-            ${user.role === "siswa" ? '<button class="button subtle" type="button" data-admin-assign-homeroom="' + safeText(user.id ?? "") + '" data-current-homeroom="' + safeText(user.homeroom_teacher_id ?? "") + '">Atur wali kelas</button>' : ""}
+            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}" data-current-homeroom="${safeText(user.homeroom_teacher_id ?? "")}" data-class-name="${safeText(user.class_name ?? "")}">${safeText(tr("editAccount"))}</button>
             <button class="button subtle" type="button" data-admin-disable="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" ${user.is_active ? "" : "disabled"}>${safeText(tr("deactivateAccount"))}</button></td>
         </tr>`).join("");
         $("admin-users-empty").classList.toggle("hidden", users.length > 0);
@@ -4551,7 +4550,6 @@ function setupEvents() {
         $("admin-student-fields").setAttribute("aria-hidden", String(!isStudent));
         $("admin-user-nisn").required = isStudent;
         $("admin-user-class").required = isStudent;
-        $("admin-user-homeroom-teacher").required = isStudent;
     };
     $("admin-user-role").addEventListener("change", updateAdminStudentFields);
     updateAdminStudentFields();
@@ -4569,12 +4567,7 @@ function setupEvents() {
         if (role === "siswa") {
             body.nisn = $("admin-user-nisn").value.trim();
             body.class_name = $("admin-user-class").value.trim();
-            body.homeroom_teacher_id = $("admin-user-homeroom-teacher").value;
-            if (!body.homeroom_teacher_id) {
-                toast("Pilih wali kelas sebelum membuat akun siswa.", "error");
-                $("admin-user-homeroom-teacher").focus();
-                return;
-            }
+
             const parentWhatsApp = $("admin-user-parent-whatsapp").value.trim();
             if (parentWhatsApp && !/^(08|628)\d{8,13}$/.test(parentWhatsApp)) {
                 toast(tr("invalidWhatsApp"), "error");
@@ -4614,54 +4607,8 @@ function setupEvents() {
         }
     });
     $("admin-users-tbody").addEventListener("click", async event => {
-        const button = event.target.closest("[data-admin-edit], [data-admin-disable], [data-admin-assign-homeroom]");
+        const button = event.target.closest("[data-admin-edit], [data-admin-disable]");
         if (!button) return;
-        if (button.hasAttribute("data-admin-assign-homeroom")) {
-            const studentId = button.dataset.adminAssignHomeroom;
-            const options = [
-                { value: "", label: "Pilih wali kelas" },
-                ...state.adminTeachers.map(teacher => ({
-                    value: teacher.id,
-                    label: (teacher.name || teacher.email) +
-                        (teacher.homeroom_class ? " · " + teacher.homeroom_class : "")
-                }))
-            ];
-            const result = await openAppDialog({
-                title: "Tetapkan wali kelas",
-                description: "Pilih guru aktif yang bertanggung jawab atas kelas siswa ini. Kelas siswa harus sesuai dengan kelas wali kelas.",
-                fields: [{
-                    name: "homeroom_teacher_id",
-                    label: "Wali kelas",
-                    type: "select",
-                    required: true,
-                    value: button.dataset.currentHomeroom || "",
-                    options
-                }],
-                confirmLabel: "Simpan wali kelas",
-                cancelLabel: "Batal",
-                icon: "⌂"
-            });
-            if (result === null) return;
-            if (!result.homeroom_teacher_id) {
-                toast("Pilih wali kelas terlebih dahulu.", "error");
-                return;
-            }
-            try {
-                await cloudRequest("/api/admin/users", {
-                    method: "PUT",
-                    body: {
-                        id: studentId,
-                        table: "students",
-                        homeroom_teacher_id: result.homeroom_teacher_id
-                    }
-                });
-                await loadAdminUsers();
-                toast("Wali kelas berhasil ditetapkan.", "success");
-            } catch (error) {
-                toastAdminError(error);
-            }
-            return;
-        }
         const id = button.dataset.adminEdit || button.dataset.adminDisable;
         const table = button.dataset.table;
         if (button.hasAttribute("data-admin-disable")) {
@@ -4681,11 +4628,22 @@ function setupEvents() {
                 { name: "name", label: "Nama lengkap baru", type: "text", placeholder: "Nama pengguna", autocomplete: "name" },
                 { name: "password", label: "Kata sandi baru", type: "password", placeholder: "Kosongkan jika tidak diubah", autocomplete: "new-password", minLength: 8 }
             ];
-            if (table === "students") fields.push({
-                name: "parent_whatsapp", label: "WhatsApp orang tua", type: "tel",
-                placeholder: "08xxxxxxxxxx atau 628xxxxxxxxxx",
-                value: button.dataset.parentWhatsapp || "", pattern: "(08|628)[0-9]{8,13}"
-            });
+            if (table === "students") {
+                fields.push({
+                    name: "parent_whatsapp", label: "WhatsApp orang tua", type: "tel",
+                    placeholder: "08xxxxxxxxxx atau 628xxxxxxxxxx",
+                    value: button.dataset.parentWhatsapp || "", pattern: "(08|628)[0-9]{8,13}"
+                });
+                const currentClass = (button.dataset.className || "").trim();
+                const walasOptions = [
+                    { value: "", label: "Belum ditetapkan" },
+                    ...state.adminTeachers.filter(teacher => !teacher.homeroom_class || teacher.homeroom_class.trim() === currentClass).map(teacher => ({
+                        value: teacher.id,
+                        label: (teacher.name || teacher.email) + (teacher.homeroom_class ? " · " + teacher.homeroom_class : " · kelas akan mengikuti siswa")
+                    }))
+                ];
+                fields.push({ name: "homeroom_teacher_id", label: "Wali kelas", type: "select", value: button.dataset.currentHomeroom || "", options: walasOptions });
+            }
             const result = await openAppDialog({
                 title: "Ubah akun",
                 description: "Isi hanya data yang ingin diubah. Kolom kosong tidak akan mengubah data saat ini.",
@@ -4703,7 +4661,8 @@ function setupEvents() {
                 }
                 body.parent_whatsapp = normalized.replace(/^08/, "628");
             }
-            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) {
+            if (result.homeroom_teacher_id && result.homeroom_teacher_id !== (button.dataset.currentHomeroom || "")) body.homeroom_teacher_id = result.homeroom_teacher_id;
+            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined && body.homeroom_teacher_id === undefined) {
                 toast("Tidak ada perubahan yang dimasukkan.", "info"); return;
             }
             try {
