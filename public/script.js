@@ -3824,10 +3824,36 @@ async function processFormFrame() {
     }
 }
 
+async function decodeFaceUpload(file) {
+    if (!(file instanceof Blob) || file.size === 0) throw new Error("empty-image");
+    // Browsers and mobile camera apps frequently omit or mislabel MIME types.
+    // Decode the bytes first; the decoder is the source of truth, not filename.
+    if (typeof createImageBitmap === "function") {
+        try {
+            const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+            if (bitmap.width > 0 && bitmap.height > 0) return bitmap;
+            bitmap.close?.();
+        } catch (error) {
+            console.warn("createImageBitmap decode fallback:", error?.name || error);
+        }
+    }
+    const objectUrl = URL.createObjectURL(file);
+    try {
+        const image = new Image();
+        image.decoding = "async";
+        image.src = objectUrl;
+        await image.decode();
+        if (!image.naturalWidth || !image.naturalHeight) throw new Error("invalid-image-dimensions");
+        return image;
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
 async function readUploadedFace(file) {
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast(tr("faceUploadError"), "error");
+    if (file.size > 15 * 1024 * 1024) {
+        toast("Foto terlalu besar (maksimal 15 MB). Pilih foto yang lebih kecil.", "error");
         return;
     }
     if (!state.modelReady && !(await loadModels())) {
@@ -3835,27 +3861,35 @@ async function readUploadedFace(file) {
         return;
     }
 
+    let image = null;
     try {
-        const image = await faceapi.bufferToImage(file);
+        image = await decodeFaceUpload(file);
+        const width = image.width || image.naturalWidth;
+        const height = image.height || image.naturalHeight;
+        if (!width || !height || width < 96 || height < 96) {
+            throw new Error("image-resolution-too-small");
+        }
         const detections = await faceapi.detectAllFaces(
-            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 })
+            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.48 })
         ).withFaceLandmarks();
 
         if (detections.length !== 1) {
-            $("form-face-status").textContent = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
-            toast(detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound"), "error");
+            const message = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
+            $("form-face-status").textContent = message;
+            toast(message, "error");
             return;
         }
 
         const detection = detections[0];
         const angle = faceAngleBucket(detection);
-        const sourceWidth = image.naturalWidth || image.width || 640;
-        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
+        const sourceWidth = width || 640;
+        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.18));
         if (!angle) {
             $("form-face-status").textContent = tr("faceTurnAngle");
             toast(tr("faceTurnAngle"), "error");
             return;
         }
+        if (!globalThis.crypto?.subtle) throw new Error("secure-context-required");
         const hash = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
         const imageHash = Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, "0")).join("");
         if (state.faceImageHashes.has(imageHash)) {
@@ -3869,7 +3903,15 @@ async function readUploadedFace(file) {
         }
     } catch (error) {
         console.error("Image processing error:", error);
-        toast(tr("faceUploadError"), "error");
+        const reason = error?.message === "secure-context-required"
+            ? "Pemrosesan foto membutuhkan HTTPS atau localhost."
+            : error?.message === "image-resolution-too-small"
+                ? "Resolusi foto terlalu kecil. Gunakan foto minimal 96 × 96 piksel."
+                : tr("faceUploadError");
+        $("form-face-status").textContent = reason;
+        toast(reason, "error");
+    } finally {
+        image?.close?.();
     }
 }
 
