@@ -124,7 +124,7 @@ export async function supabaseRequest(path, options = {}) {
 
     const method = String(requestOptions.method || "GET").toUpperCase();
     const retryableRead = method === "GET";
-    const maxAttempts = retryableRead ? 3 : 1;
+    const maxAttempts = retryableRead ? 2 : 1;
     let response;
     let responseText;
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
