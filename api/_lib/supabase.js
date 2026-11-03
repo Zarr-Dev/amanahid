@@ -131,7 +131,7 @@ export async function supabaseRequest(path, options = {}) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8_000);
         try {
-            response = await fetch(`${supabaseUrl.replace(/\\/+$/, "")}/rest/v1/${path}`, {
+            response = await fetch(`${supabaseUrl.replace(/\/+$/, "")}/rest/v1/${path}`, {
                 ...requestOptions,
                 cache: "no-store",
                 signal: controller.signal,
