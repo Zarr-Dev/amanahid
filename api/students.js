@@ -13,7 +13,7 @@ import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
 import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
 
-const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at";
+const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)";
 
 function isValidDescriptors(descriptors) {
     const samples = Array.isArray(descriptors?.[0]) ? descriptors : [descriptors];
@@ -193,10 +193,21 @@ export default async function handler(req, res) {
                 supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`)
             ]);
             if (teacherEmail.length || adminEmail.length) return jsonError(res, 409, "User email already exists");
+            const teacherRows = await supabaseRequest(
+                "teachers?select=id,homeroom_class&email=eq." +
+                encodeURIComponent(getSession(req)?.email || "") + "&is_active=eq.true&limit=1"
+            );
+            const assignedTeacher = teacherRows?.[0];
+            if (!assignedTeacher) return jsonError(res, 403, "An active teacher account is required to register a student");
+            if (assignedTeacher.homeroom_class && assignedTeacher.homeroom_class.trim() !== class_name.trim()) {
+                return jsonError(res, 403, "You can only register students in your assigned homeroom class");
+            }
+
             const values = {
                 nisn,
                 name: name.trim(),
                 class_name: class_name.trim(),
+                homeroom_teacher_id: assignedTeacher.id,
                 parent_whatsapp: parent_whatsapp || null,
                 email: email.trim().toLowerCase(),
                 password_hash: await hashPassword(password),
