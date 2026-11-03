@@ -2470,6 +2470,7 @@ function stopNetworkHeartbeat() {
     }
     state.networkHeartbeatTimer = null;
     state.networkHeartbeatBusy = false;
+    stopAbsenceSync();
     $("network-status-teacher")?.classList.add("hidden");
     $("network-status-student")?.classList.add("hidden");
 }
