@@ -240,7 +240,7 @@ if (!js.includes('phase === "pending" ? "disabled"') ||
     process.exit(1);
 }
 
-if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 320, scoreThreshold: 0.55") ||
+if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 320, scoreThreshold: 0.50") ||
     !js.includes("withDescriptors = false") || !js.includes("withDescriptors: true") ||
     !js.includes("function updateAttendanceLiveness") || !js.includes("function isFaceDetectionUsable") ||
     !css.includes(".camera-stage canvas") || !css.includes("transform: scaleX(-1)") ||
