@@ -3079,7 +3079,7 @@ async function getCameraStream() {
                 facingMode: "user",
                 width: { ideal: 480 },
                 height: { ideal: 360 },
-                frameRate: { ideal: 15, max: 20 }
+                frameRate: { ideal: 24, max: 30 }
             }
         });
     } catch (error) {
@@ -3297,7 +3297,7 @@ async function detectFaces(video, { withDescriptors = false } = {}) {
     if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
     // 320px is sufficient for the 480x360 camera stream and substantially
     // cheaper than running 512px detection on every liveness frame.
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 });
+    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.50 });
     const landmarksTask = faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks();
     return withDescriptors ? landmarksTask.withFaceDescriptors() : landmarksTask;
 }
@@ -3311,7 +3311,7 @@ function isFaceDetectionUsable(detection, video) {
     const sourceHeight = Number(video?.videoHeight) || 0;
     const minimumWidth = Math.max(76, sourceWidth * 0.12);
     const minimumHeight = Math.max(76, sourceHeight * 0.16);
-    return Number.isFinite(score) && score >= 0.58 &&
+    return Number.isFinite(score) && score >= 0.54 &&
         Number.isFinite(width) && width >= minimumWidth &&
         Number.isFinite(height) && height >= minimumHeight;
 }
@@ -3631,7 +3631,7 @@ async function processAttendanceFrame() {
     }
 }
 
-function scheduleAttendanceFrame(stream, startToken, delay = 450) {
+function scheduleAttendanceFrame(stream, startToken, delay = 220) {
     if (state.attendanceStream !== stream || state.attendanceRecorded ||
         startToken !== state.attendanceStartToken) return;
     const video = attendanceVideo();
@@ -3675,7 +3675,7 @@ async function startFormCamera() {
             return;
         }
         $("form-camera-placeholder").classList.add("hidden");
-        state.formTimer = setInterval(() => processFormFrame(), 550);
+        state.formTimer = setInterval(() => processFormFrame(), 350);
         toast(tr("cameraFormReady"), "success");
     } catch (error) {
         if (startToken === state.formStartToken) {
