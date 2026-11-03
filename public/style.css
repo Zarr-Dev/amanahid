@@ -4094,3 +4094,192 @@ body.theme-dark .auth-screen {
     }
     .admin-test-card .admin-test-consent > input[type="checkbox"] { transition: none !important; }
 }
+
+
+/* Student absence forms: only show the controls relevant to the selected type. */
+.absence-extra-field {
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface-soft);
+}
+.dispensation-notice {
+    padding: 15px 16px;
+    border: 1px solid rgba(40, 143, 104, .24);
+    border-radius: 16px;
+    background: rgba(40, 143, 104, .075);
+}
+.dispensation-notice strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 800;
+}
+.dispensation-notice p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.absence-form-panel .registration-form {
+    gap: 12px;
+}
+.absence-form-panel .registration-form > label {
+    margin-top: 4px;
+}
+
+/* Give the assigned homeroom teacher a clear place in the student's profile. */
+.homeroom-profile-card {
+    width: 100%;
+    margin: 18px 0 22px;
+    padding: 20px 22px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 100% 0, rgba(105, 130, 190, .12), transparent 44%),
+        var(--surface-soft);
+}
+.homeroom-profile-card .section-kicker {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .12em;
+}
+.homeroom-profile-card h3 {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+.homeroom-profile-card > strong {
+    display: block;
+    overflow-wrap: anywhere;
+    color: var(--text);
+    font-size: clamp(21px, 4vw, 29px);
+    font-weight: 850;
+    line-height: 1.2;
+}
+.homeroom-profile-card p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* A required evidence step is a blocking, accessible student workflow. */
+.medical-evidence-gate {
+    position: fixed;
+    z-index: 5000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    overflow-y: auto;
+    background: rgba(12, 20, 34, .72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.medical-evidence-card {
+    width: min(100%, 520px);
+    padding: clamp(22px, 4vw, 34px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: var(--surface-solid);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, .28);
+}
+.medical-evidence-card h2 {
+    margin: 9px 0 10px;
+    color: var(--text);
+    font-size: clamp(22px, 4vw, 30px);
+    line-height: 1.15;
+}
+.medical-evidence-card > p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.65;
+}
+.medical-evidence-form {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+}
+.medical-evidence-form label {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 750;
+}
+.medical-evidence-form input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed var(--border-strong, var(--border));
+    border-radius: 14px;
+    background: var(--surface-soft);
+    color: var(--text);
+    font-size: 12px;
+}
+.medical-evidence-privacy {
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 11px !important;
+}
+
+/* The CAPTCHA refresh is an icon control, not a text action. */
+.captcha-refresh {
+    display: inline-grid;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+}
+.captcha-refresh svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.captcha-refresh:disabled {
+    cursor: wait;
+    opacity: .55;
+}
+.captcha-refresh:not(:disabled):hover svg {
+    transform: rotate(22deg);
+}
+.captcha-refresh svg {
+    transition: transform .18s ease;
+}
+body.theme-dark .absence-extra-field,
+body.theme-dark .medical-evidence-form input[type="file"] {
+    background: var(--surface-soft);
+}
+body.theme-dark .dispensation-notice {
+    border-color: rgba(90, 185, 145, .28);
+    background: rgba(40, 143, 104, .12);
+}
+body.theme-dark .homeroom-profile-card {
+    background:
+        radial-gradient(circle at 100% 0, rgba(105, 130, 190, .17), transparent 44%),
+        var(--surface-soft);
+}
+@media (max-width: 520px) {
+    .homeroom-profile-card {
+        padding: 17px;
+        border-radius: 15px;
+    }
+    .medical-evidence-card {
+        border-radius: 19px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .captcha-refresh svg { transition: none; }
+}
