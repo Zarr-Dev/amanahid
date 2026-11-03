@@ -322,17 +322,23 @@ test("admin APIs handle empty and null Supabase results", async t => {
 
 test("server face matching issues a short-lived attendance proof for the matched student", async t => {
     const originalFetch = globalThis.fetch;
+    const teacherId = "11111111-1111-4111-8111-111111111111";
     const teacherToken = signToken({ email: "guru@example.com", name: "Guru", role: "guru" });
     const descriptor = Array.from({ length: 128 }, (_, index) => index / 1000);
+    const requests = [];
     let auditWritten = false;
     globalThis.fetch = async (url, init = {}) => {
         const requestUrl = String(url);
+        requests.push(requestUrl);
         if (requestUrl.includes("teachers?select=email,is_active")) {
             return new Response(JSON.stringify([{ email: "guru@example.com", is_active: true }]), { status: 200 });
         }
-        if (requestUrl.includes("students?select=nisn,name,face_descriptors,is_active")) {
+        if (requestUrl.includes("teachers?select=id&email=eq.guru%40example.com")) {
+            return new Response(JSON.stringify([{ id: teacherId }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=nisn,name,face_descriptors,is_active,homeroom_teacher_id")) {
             return new Response(JSON.stringify([{
-                nisn: "12345678", name: "Student", is_active: true, face_descriptors: [descriptor]
+                nisn: "12345678", name: "Student", is_active: true, homeroom_teacher_id: teacherId, face_descriptors: [descriptor]
             }]), { status: 200 });
         }
         if (requestUrl.includes("audit_log") && init.method === "POST") {
@@ -356,10 +362,13 @@ test("server face matching issues a short-lived attendance proof for the matched
     assert.equal(proof?.purpose, "attendance_face");
     assert.equal(proof?.role, "guru");
     assert.equal(proof?.nisn, "12345678");
+    assert.ok(requests.some(url => url.includes("homeroom_teacher_id=eq." + teacherId)),
+        "teacher face candidates must be scoped to the assigned homeroom");
     assert.equal(auditWritten, true);
 });
 test("server rejects ambiguous face matches between two distinct students", async t => {
     const originalFetch = globalThis.fetch;
+    const teacherId = "22222222-2222-4222-8222-222222222222";
     const teacherToken = signToken({ email: "guru@example.com", name: "Guru", role: "guru" });
     const descriptor = Array.from({ length: 128 }, () => 0);
     const nearPositive = Array.from({ length: 128 }, () => 0.01);
@@ -369,10 +378,13 @@ test("server rejects ambiguous face matches between two distinct students", asyn
         if (requestUrl.includes("teachers?select=email,is_active")) {
             return new Response(JSON.stringify([{ email: "guru@example.com", is_active: true }]), { status: 200 });
         }
-        if (requestUrl.includes("students?select=nisn,name,face_descriptors,is_active")) {
+        if (requestUrl.includes("teachers?select=id&email=eq.guru%40example.com")) {
+            return new Response(JSON.stringify([{ id: teacherId }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=nisn,name,face_descriptors,is_active,homeroom_teacher_id")) {
             return new Response(JSON.stringify([
-                { nisn: "12345678", name: "Student A", is_active: true, face_descriptors: [nearPositive] },
-                { nisn: "87654321", name: "Student B", is_active: true, face_descriptors: [nearNegative] }
+                { nisn: "12345678", name: "Student A", is_active: true, homeroom_teacher_id: teacherId, face_descriptors: [nearPositive] },
+                { nisn: "87654321", name: "Student B", is_active: true, homeroom_teacher_id: teacherId, face_descriptors: [nearNegative] }
             ]), { status: 200 });
         }
         return new Response("[]", { status: 200 });
@@ -960,6 +972,9 @@ test("teacher roster never receives biometric descriptors, even with the legacy 
         if (requestUrl.includes("teachers?select=email,is_active")) {
             return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
         }
+        if (requestUrl.includes("teachers?select=id&email=eq.teacher%40example.com")) {
+            return new Response(JSON.stringify([{ id: "33333333-3333-4333-8333-333333333333" }]), { status: 200 });
+        }
         if (requestUrl.includes("students?select=id,nisn,name,class_name,parent_whatsapp,created_at")) {
             return new Response(JSON.stringify([{
                 id: "123e4567-e89b-42d3-a456-426614174000",
@@ -967,6 +982,8 @@ test("teacher roster never receives biometric descriptors, even with the legacy 
                 name: "Student",
                 class_name: "XI IPA 1",
                 parent_whatsapp: null,
+                homeroom_teacher_id: "33333333-3333-4333-8333-333333333333",
+                homeroom_teacher: { name: "Teacher", email: "teacher@example.com" },
                 created_at: "2026-11-02T00:00:00Z"
             }]), { status: 200 });
         }
