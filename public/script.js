@@ -2304,6 +2304,7 @@ async function cloudRequest(path, {
         try {
             const response = await fetch(path, {
                 method,
+                cache: "no-store",
                 headers,
                 signal: controller.signal,
                 ...(body === undefined ? {} : { body: JSON.stringify(body) })
@@ -2379,7 +2380,8 @@ async function cloudRequest(path, {
                 lastError.cause = cause;
             }
             const isServerError = [500, 502, 503, 504].includes(lastError.status);
-            const retryLimit = isServerError ? 3 : lastError.type === "network" ? 2 : 0;
+            const retrySafe = method === "GET" || method === "HEAD" || Boolean(idempotencyKey);
+            const retryLimit = !retrySafe ? 0 : isServerError ? 3 : lastError.type === "network" ? 2 : 0;
             if (attempt >= retryLimit) {
                 const status = Number.isInteger(lastError.status)
                     ? `HTTP ${lastError.status}`
