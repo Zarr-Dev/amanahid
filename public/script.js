@@ -2167,18 +2167,7 @@ async function loadAdminUsers() {
         const users = Array.isArray(response?.users)
             ? response.users.filter(user => user && typeof user === "object") : [];
         state.adminTeachers = users.filter(user => user.role === "guru" && user.is_active);
-        const teacherSelect = $("admin-user-homeroom-teacher");
-        if (teacherSelect) {
-            const selectedTeacher = teacherSelect.value;
-            const teachers = state.adminTeachers;
-            teacherSelect.innerHTML = '<option value="">Pilih guru wali kelas</option>' +
-                teachers.map(teacher => {
-                    const classLabel = teacher.homeroom_class ? " · " + teacher.homeroom_class : " · kelas belum ditetapkan";
-                    return '<option value="' + safeText(teacher.id) + '">' +
-                        safeText(teacher.name || teacher.email) + safeText(classLabel) + '</option>';
-                }).join("");
-            if (teachers.some(teacher => teacher.id === selectedTeacher)) teacherSelect.value = selectedTeacher;
-        }
+
         $("admin-users-tbody").innerHTML = users.map(user => `<tr>
             <td>${safeText(user.name ?? user.email ?? "—")}</td><td>${safeText(user.email ?? "")}</td>
             <td>${safeText(user.parent_whatsapp ?? "—")}</td>
@@ -2534,6 +2523,7 @@ function normalizeCloudStudent(student) {
 }
 
 async function loadStudentAbsenceRequests({ silent = false } = {}) {
+    startAbsenceSync();
     if (state.user?.role !== "siswa") return;
     const list = $("student-absence-requests-list");
     if (!list) return;
@@ -3900,6 +3890,7 @@ async function submitStudentAbsence(event) {
     } finally { button.disabled = false; }
 }
 async function loadAbsenceRequests({ silent = false } = {}) {
+    startAbsenceSync();
     const tbody = $("absence-requests-tbody");
     if (!tbody || state.user?.role !== "guru") return;
     try {
