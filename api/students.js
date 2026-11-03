@@ -15,12 +15,47 @@ import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
 
 const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)";
 
-function isValidDescriptors(descriptors) {
-    const samples = Array.isArray(descriptors?.[0]) ? descriptors : [descriptors];
-    return samples.length >= 1 && samples.length <= 5 && samples.every(sample =>
-        Array.isArray(sample) && sample.length === 128 &&
-        sample.every(value => typeof value === "number" && Number.isFinite(value))
-    );
+const FACE_MODEL_KEY = "auraface-glintr100-int8-v1";
+const FACE_SAMPLE_ANGLES = new Set(["front", "left", "right", "up", "down"]);
+const FACE_EMBEDDING_DIMENSIONS = 512;
+
+function normalizeFaceEmbeddings(samples, modelKey) {
+    if (modelKey !== FACE_MODEL_KEY || !Array.isArray(samples) || samples.length !== 5) return null;
+    const seenAngles = new Set();
+    const normalized = [];
+    for (const sample of samples) {
+        if (!sample || !FACE_SAMPLE_ANGLES.has(sample.sample_angle) ||
+            seenAngles.has(sample.sample_angle) ||
+            typeof sample.quality !== "number" || !Number.isFinite(sample.quality) ||
+            sample.quality < 0.70 || sample.quality > 1 ||
+            !Array.isArray(sample.embedding) || sample.embedding.length !== FACE_EMBEDDING_DIMENSIONS ||
+            !sample.embedding.every(value => typeof value === "number" && Number.isFinite(value))) {
+            return null;
+        }
+        const norm = Math.sqrt(sample.embedding.reduce((sum, value) => sum + value * value, 0));
+        if (!Number.isFinite(norm) || norm < 0.98 || norm > 1.02) return null;
+        seenAngles.add(sample.sample_angle);
+        normalized.push({
+            sample_angle: sample.sample_angle,
+            quality: sample.quality,
+            embedding: sample.embedding.map(value => value / norm)
+        });
+    }
+    return seenAngles.size === 5 ? normalized : null;
+}
+
+async function replaceFaceEmbeddings(studentId, samples) {
+    const result = await supabaseRequest("rpc/replace_student_face_embeddings", {
+        method: "POST",
+        body: JSON.stringify({
+            p_student_id: studentId,
+            p_model_key: FACE_MODEL_KEY,
+            p_samples: samples
+        })
+    });
+    const count = Number(Array.isArray(result) ? result[0] : result);
+    if (count !== 5) throw new Error("Database did not confirm all five ArcFace templates");
+    return count;
 }
 
 function parseNisn(value) {
@@ -83,11 +118,9 @@ export default async function handler(req, res) {
         if (!features.face_enrollment) return featureDisabled(res, "face_enrollment", "Pendaftaran wajah sedang dinonaktifkan");
         const body = req.body || {};
         const nisn = body.nisn;
-        const face_descriptors = body.face_descriptors;
-        if (!parseNisn(nisn) || !isValidDescriptors(face_descriptors) ||
-            !Array.isArray(face_descriptors) || face_descriptors.length !== 5 ||
-            !face_descriptors.every(sample => Array.isArray(sample) && sample.length === 128)) {
-            return jsonError(res, 400, "A valid NISN and five face-angle descriptors are required");
+        const faceEmbeddings = normalizeFaceEmbeddings(body.face_embeddings, body.model_key);
+        if (!parseNisn(nisn) || !faceEmbeddings) {
+            return jsonError(res, 400, "A valid NISN and five normalized 512D ArcFace embeddings are required");
         }
         try {
             const teacherRows = await supabaseRequest(
@@ -96,34 +129,33 @@ export default async function handler(req, res) {
             const teacher = teacherRows?.[0];
             if (!teacher) return jsonError(res, 403, "An active teacher account is required");
             const students = await supabaseRequest(
-                "students?select=id,nisn,name,face_descriptors,homeroom_teacher_id&nisn=eq." + encodeURIComponent(nisn) + "&is_active=eq.true&limit=1"
+                "students?select=id,nisn,name,homeroom_teacher_id&nisn=eq." + encodeURIComponent(nisn) + "&is_active=eq.true&limit=1"
             );
-            if (!students.length || students[0].homeroom_teacher_id !== teacher.id) return jsonError(res, 404, "Student was not found in your homeroom");
-            const otherStudents = await supabaseRequest(
-                "students?select=nisn,face_descriptors&is_active=eq.true&limit=1000"
-            );
-            const duplicateIdentity = otherStudents.some(other => {
-                if (other.nisn === nisn || !isValidDescriptors(other.face_descriptors)) return false;
-                const samples = Array.isArray(other.face_descriptors[0]) ? other.face_descriptors : [other.face_descriptors];
-                return face_descriptors.some(sample => samples.some(otherSample => {
-                    let squared = 0;
-                    for (let i = 0; i < 128; i++) squared += (sample[i] - otherSample[i]) ** 2;
-                    return Math.sqrt(squared) < 0.28;
-                }));
-            });
-            if (duplicateIdentity) return jsonError(res, 409, "These face samples closely match a different student. Verify the identity before replacing the face data.");
+            if (!students.length || students[0].homeroom_teacher_id !== teacher.id) {
+                return jsonError(res, 404, "Student was not found in your homeroom");
+            }
+
+            // The private RPC atomically replaces all five templates. Legacy
+            // 128D descriptors are cleared only after the new set is stored.
+            await replaceFaceEmbeddings(students[0].id, faceEmbeddings);
             const updated = await supabaseRequest(
-                "students?id=eq." + encodeURIComponent(students[0].id) + "&select=id,nisn,name,class_name,parent_whatsapp,created_at,email",
+                "students?id=eq." + encodeURIComponent(students[0].id) +
+                "&select=id,nisn,name,class_name,parent_whatsapp,created_at,email,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)",
                 {
                     method: "PATCH",
                     headers: { Prefer: "return=representation" },
-                    body: JSON.stringify({ face_descriptors })
+                    body: JSON.stringify({ face_descriptors: [] })
                 }
             );
-            await writeAuditLog(getSession(req), "student.face_update", "students", students[0].id, { nisn });
-            return res.status(200).json({ student: updated[0] });
+            await writeAuditLog(getSession(req), "student.face_update_v2", "students", students[0].id, {
+                nisn,
+                model_key: FACE_MODEL_KEY,
+                sample_count: faceEmbeddings.length,
+                dimensions: FACE_EMBEDDING_DIMENSIONS
+            });
+            return res.status(200).json({ student: updated[0], face_model: FACE_MODEL_KEY, embedding_dimensions: FACE_EMBEDDING_DIMENSIONS });
         } catch (error) {
-            console.error("Student face update failed:", error);
+            console.error("Student ArcFace update failed:", error);
             return jsonSupabaseError(res, error, "Unable to update student face data");
         }
     }
@@ -143,68 +175,51 @@ export default async function handler(req, res) {
         if (!features.face_enrollment) return featureDisabled(res, "face_enrollment", "Pendaftaran wajah sedang dinonaktifkan");
         const body = req.body || {};
         const validation = validateSchema({
-            nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
+            nisn: { type: "string", required: true, max: 20, pattern: /^\\d{8,20}$/ },
             name: { type: "string", required: true, max: 120, min: 1 },
             class_name: { type: "string", required: true, max: 40, min: 1 },
-            parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
-            email: { type: "string", required: true, max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+            parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\\d{8,13}$/ },
+            email: { type: "string", required: true, max: 254, pattern: /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/ },
             password: { type: "string", required: true, max: 128 },
-            face_descriptors: {
-                type: "array", required: true, min: 1, max: 640,
-                validate: item => typeof item === "number" && Number.isFinite(item) ||
-                    Array.isArray(item) && item.length === 128 &&
-                    item.every(value => typeof value === "number" && Number.isFinite(value))
-            }
+            model_key: { type: "string", required: true, max: 80, min: 1 },
+            face_embeddings: { type: "array", required: true, min: 5, max: 5 }
         }, body);
         if (!validation.valid) return jsonError(res, 400, validation.error);
-        const { nisn, name, class_name, parent_whatsapp, face_descriptors, email, password } = body;
+        const { nisn, name, class_name, parent_whatsapp, email, password } = body;
+        const faceEmbeddings = normalizeFaceEmbeddings(body.face_embeddings, body.model_key);
+        if (!faceEmbeddings) {
+            return jsonError(res, 400, "Five unique angle samples with normalized 512D ArcFace embeddings are required");
+        }
         if (!validatePassword(password)) return jsonError(res, 400, "Password must contain 8 to 128 safe characters");
-        if (typeof parent_whatsapp === "string" && /[\u0000-\u001F\u007F]/.test(parent_whatsapp)) {
+        if (typeof parent_whatsapp === "string" && /[\\u0000-\\u001F\\u007F]/.test(parent_whatsapp)) {
             return jsonError(res, 400, "Invalid parent WhatsApp number");
         }
         if (!parseNisn(nisn)) return jsonError(res, 400, "NISN must contain 8 to 20 digits");
         if (typeof name !== "string" || !name.trim() || name.trim().length > 120 ||
-            /[\u0000-\u001F\u007F]/.test(name)) {
+            /[\\u0000-\\u001F\\u007F]/.test(name)) {
             return jsonError(res, 400, "Student name is required");
         }
         if (typeof class_name !== "string" || !class_name.trim() || class_name.trim().length > 40 ||
-            /[\u0000-\u001F\u007F]/.test(class_name)) {
+            /[\\u0000-\\u001F\\u007F]/.test(class_name)) {
             return jsonError(res, 400, "Class name is required");
         }
         if (parent_whatsapp === "") {
             return jsonError(res, 400, "Invalid parent WhatsApp number");
         }
-        if (!isValidDescriptors(face_descriptors)) {
-            return jsonError(res, 400, "Face descriptors must contain 1 to 5 arrays of 128 finite numbers");
-        }
 
+        let newlyCreatedStudentId = null;
         try {
             const existing = await supabaseRequest(
-                `students?select=id,email,face_descriptors&nisn=eq.${encodeURIComponent(nisn)}&limit=1`
+                "students?select=id,email,face_descriptors&nisn=eq." + encodeURIComponent(nisn) + "&limit=1"
             );
-            if (existing.length && isValidDescriptors(existing[0].face_descriptors)) {
-                return jsonError(res, 409, "A student with this NISN already has registered face samples");
+            if (existing.length && Array.isArray(existing[0].face_descriptors) && existing[0].face_descriptors.length > 0) {
+                return jsonError(res, 409, "This student already has legacy face data. Use the face replacement workflow to migrate to ArcFace.");
             }
-            const registeredStudents = await supabaseRequest(
-                "students?select=id,nisn,face_descriptors&is_active=eq.true&limit=1000"
-            );
-            const submittedSamples = Array.isArray(face_descriptors[0]) ? face_descriptors : [face_descriptors];
-            const duplicateIdentity = registeredStudents.some(other => {
-                if (other.nisn === nisn || !isValidDescriptors(other.face_descriptors)) return false;
-                const otherSamples = Array.isArray(other.face_descriptors[0]) ? other.face_descriptors : [other.face_descriptors];
-                return submittedSamples.some(sample => otherSamples.some(otherSample => {
-                    let squared = 0;
-                    for (let i = 0; i < 128; i++) squared += (sample[i] - otherSample[i]) ** 2;
-                    return Math.sqrt(squared) < 0.28;
-                }));
-            });
-            if (duplicateIdentity) {
-                return jsonError(res, 409, "These face samples closely match a different registered student. Verify the identity with a teacher before continuing.");
-            }
+
             const normalizedEmail = email.trim().toLowerCase();
             const [teacherEmail, adminEmail] = await Promise.all([
-                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`),
-                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`)
+                supabaseRequest("teachers?select=id&email=eq." + encodeURIComponent(normalizedEmail) + "&limit=1"),
+                supabaseRequest("admin_users?select=id&email=eq." + encodeURIComponent(normalizedEmail) + "&limit=1")
             ]);
             if (teacherEmail.length || adminEmail.length) return jsonError(res, 409, "User email already exists");
             const teacherRows = await supabaseRequest(
@@ -223,29 +238,53 @@ export default async function handler(req, res) {
                 class_name: class_name.trim(),
                 homeroom_teacher_id: assignedTeacher.id,
                 parent_whatsapp: parent_whatsapp || null,
-                email: email.trim().toLowerCase(),
+                email: normalizedEmail,
                 password_hash: await hashPassword(password),
-                face_descriptors: Array.isArray(face_descriptors[0])
-                    ? face_descriptors
-                    : [face_descriptors]
+                // Required legacy column remains empty; current face templates are private pgvector rows.
+                face_descriptors: existing.length ? existing[0].face_descriptors : []
             };
             const query = existing.length
-                ? `students?id=eq.${encodeURIComponent(existing[0].id)}&select=id,nisn,name,class_name,parent_whatsapp,created_at,email,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)`
+                ? "students?id=eq." + encodeURIComponent(existing[0].id) +
+                    "&select=id,nisn,name,class_name,parent_whatsapp,created_at,email,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)"
                 : "students?select=id,nisn,name,class_name,parent_whatsapp,created_at,email,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)";
             const rows = await supabaseRequest(query, {
                 method: existing.length ? "PATCH" : "POST",
                 headers: { Prefer: "return=representation" },
                 body: JSON.stringify(values)
             });
-            await writeAuditLog(getSession(req), existing.length ? "student.face_register" : "student.create",
-                "students", rows[0]?.id, {
-                nisn, email: email.trim().toLowerCase(), name: name.trim(), class_name: class_name.trim()
+            const savedStudent = rows?.[0];
+            if (!savedStudent?.id) throw new Error("Student account was not returned by the database");
+            if (!existing.length) newlyCreatedStudentId = savedStudent.id;
+
+            await replaceFaceEmbeddings(savedStudent.id, faceEmbeddings);
+            await writeAuditLog(getSession(req), existing.length ? "student.face_register_v2" : "student.create_v2",
+                "students", savedStudent.id, {
+                    nisn,
+                    email: normalizedEmail,
+                    name: name.trim(),
+                    class_name: class_name.trim(),
+                    model_key: FACE_MODEL_KEY,
+                    sample_count: faceEmbeddings.length,
+                    dimensions: FACE_EMBEDDING_DIMENSIONS
+                });
+            return res.status(201).json({
+                student: savedStudent,
+                face_model: FACE_MODEL_KEY,
+                embedding_dimensions: FACE_EMBEDDING_DIMENSIONS
             });
-            return res.status(201).json({ student: rows[0] });
         } catch (error) {
+            // Avoid leaving a new student account that silently appears enrolled
+            // when the private biometric template write fails.
+            if (newlyCreatedStudentId) {
+                try {
+                    await supabaseRequest("students?id=eq." + encodeURIComponent(newlyCreatedStudentId), { method: "DELETE" });
+                } catch (cleanupError) {
+                    console.error("Student cleanup after face enrollment failure failed:", cleanupError);
+                }
+            }
             if (error.code === "23505") return jsonError(res, 409, "A student with this NISN already exists");
-            console.error("Student insert failed:", error);
-            return jsonSupabaseError(res, error, "Unable to save student");
+            console.error("Student ArcFace registration failed:", error);
+            return jsonSupabaseError(res, error, "Unable to save student and face embeddings");
         }
     }
 
