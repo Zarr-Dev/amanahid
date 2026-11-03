@@ -14,15 +14,18 @@ export async function sendWhatsApp(target, message) {
     let response;
     let payload;
     try {
+        const form = new FormData();
+        form.set("target", target);
+        form.set("message", message);
+        form.set("connectOnly", "false");
         response = await fetch("https://api.fonnte.com/send", {
             method: "POST",
             cache: "no-store",
             headers: {
                 Authorization: token,
-                Accept: "application/json",
-                "Content-Type": "application/x-www-form-urlencoded"
+                Accept: "application/json"
             },
-            body: new URLSearchParams({ target, message, connectOnly: "false" }),
+            body: form,
             signal: controller.signal
         });
         const responseText = await response.text();
@@ -44,7 +47,7 @@ export async function sendWhatsApp(target, message) {
     }
 
     if (!response.ok || payload?.status === false || payload?.status === "false" || payload?.status !== true && payload?.status !== "true") {
-        const error = new Error("WhatsApp provider did not confirm message delivery");
+        const error = new Error("WhatsApp provider rejected the request or did not accept the message");
         error.status = response.status;
         error.code = "FONNTE_REJECTED";
         throw error;
