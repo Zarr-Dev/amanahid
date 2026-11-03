@@ -193,7 +193,7 @@ REVOKE ALL ON FUNCTION public.notify_student_of_absence_status() FROM PUBLIC, an
 REVOKE ALL ON FUNCTION public.enforce_student_homeroom_assignment() FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.require_sick_evidence_before_insert()
-RETURNS trigger LANGUAGE plpgsql SET search_path = public, pg_temp AS $
+RETURNS trigger LANGUAGE plpgsql SET search_path = public, pg_temp AS $amanah$
 BEGIN
   IF NEW.absence_type = 'sick' AND NEW.status = 'pending'
     AND (NEW.medical_evidence_path IS NULL OR NEW.medical_evidence_uploaded_at IS NULL) THEN
