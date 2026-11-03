@@ -5,13 +5,13 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const requiredFiles = [
-    "package.json", "package-lock.json", "vercel.json", "public/index.html", "public/style.css", "public/script.js",
+    "package.json", "package-lock.json", "vercel.json", "public/index.html", "public/style.css", "public/script.js", "public/face-engine.js",
     "public/assets/amanah-favicon.png", "public/assets/amanah-favicon.svg",
     "api/_lib/admin-auth.js", "api/_lib/admin-api.js", "api/_lib/audit.js",
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/_lib/test-tools.js", "api/auth/login.js",
-    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261102003205_lockdown_direct_public_api_grants.sql", "supabase/migrations/20261103100000_add_homeroom_dispensation_and_medical_evidence.sql", "supabase/migrations/20261103120000_absence_evidence_before_submit_revoke_and_notifications.sql", "supabase-demo-accounts.sql"
+    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261102003205_lockdown_direct_public_api_grants.sql", "supabase/migrations/20261103100000_add_homeroom_dispensation_and_medical_evidence.sql", "supabase/migrations/20261103120000_absence_evidence_before_submit_revoke_and_notifications.sql", "supabase/migrations/20261103180000_arcface_embedding_v2.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -82,7 +82,7 @@ if (!/function\s+initialize\s*\(/.test(frontendSource) || !/initialize\s*\(\s*\)
 }
 
 const apiFiles = collectJs(join(root, "api"));
-const jsFiles = [...apiFiles, ...collectJs(join(root, "scripts")), join(root, "public/script.js")];
+const jsFiles = [...apiFiles, ...collectJs(join(root, "scripts")), join(root, "public/script.js"), join(root, "public/face-engine.js")];
 for (const file of jsFiles) {
     const result = spawnSync(process.execPath, ["--check", file], { encoding: "utf8" });
     if (result.status !== 0) {
@@ -240,13 +240,26 @@ if (!js.includes('phase === "pending" ? "disabled"') ||
     process.exit(1);
 }
 
-if (!js.includes("@v0.22.2/weights") || !js.includes("inputSize: 320, scoreThreshold: 0.50") ||
-    !js.includes("withDescriptors = false") || !js.includes("withDescriptors: true") ||
+const faceEngineSource = readFileSync(join(root, "public/face-engine.js"), "utf8");
+const faceMigration = readFileSync(join(root, "supabase/migrations/20261103180000_arcface_embedding_v2.sql"), "utf8");
+if (!js.includes("AURAFACE") && !js.includes("createAmanahFaceEngine") ||
+    !js.includes("faceEngine.embed(video, detection)") ||
+    !js.includes("model_key: \"auraface-glintr100-int8-v1\"") ||
+    !js.includes("face_embeddings: state.faceSamples") ||
+    !faceEngineSource.includes("FACE_EMBEDDING_DIMENSIONS = 512") ||
+    !faceEngineSource.includes("computeSimilarityTransform") ||
+    !faceEngineSource.includes("FACE_MODEL_SHA256") ||
+    !faceEngineSource.includes("SHA-256") ||
+    !allApiSource.includes("FACE_MODEL_KEY = \"auraface-glintr100-int8-v1\"") ||
+    !allApiSource.includes("rpc/match_student_face_embeddings") ||
+    !allApiSource.includes("rpc/replace_student_face_embeddings") ||
+    !faceMigration.includes("CREATE SCHEMA IF NOT EXISTS private") ||
+    !faceMigration.includes("extensions.vector(512)") ||
+    !faceMigration.includes("REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated") ||
     !js.includes("function updateAttendanceLiveness") || !js.includes("function isFaceDetectionUsable") ||
     !css.includes(".camera-stage canvas") || !css.includes("transform: scaleX(-1)") ||
-    !allApiSource.includes("FACE_MATCH_THRESHOLD = 0.42") ||
     !allApiSource.includes("GPS_BOUNDARY_UNCERTAIN")) {
-    console.error("Build check failed: optimized face pipeline, aligned camera overlay, pinned face model, or server-side security guards are missing.");
+    console.error("Build check failed: ArcFace 512D embedding pipeline, model integrity, private pgvector storage, or server-side face scope is missing.");
     process.exit(1);
 }
 
