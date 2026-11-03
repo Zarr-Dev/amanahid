@@ -2662,7 +2662,10 @@ async function loadCloudData(user = state.user) {
         if (user.role === "siswa") await refreshMedicalEvidenceGate();
     } catch (error) {
         console.error("Cloud data load failed:", error);
-        if (token === state.cloudLoadToken && state.user === user) toast(tr("cloudLoadFailed"), "error");
+        if (token === state.cloudLoadToken && state.user === user) {
+            toast(tr("cloudLoadFailed"), "error");
+            if (user.role === "siswa") await refreshMedicalEvidenceGate();
+        }
     }
 }
 
