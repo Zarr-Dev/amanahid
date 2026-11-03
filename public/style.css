@@ -4287,3 +4287,79 @@ body.theme-dark .homeroom-profile-card {
 .student-profile-panel {
     max-width: 760px;
 }
+
+/* Calm, consistent form controls and absence history cards. */
+.form-stack > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.form-stack > select,
+.form-stack > textarea,
+.form-stack input[type="text"],
+.form-stack input[type="email"],
+.form-stack input[type="tel"],
+.form-stack input[type="password"],
+.form-stack input[type="date"],
+.form-stack select,
+.form-stack textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--surface-solid);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+.form-stack > textarea, .form-stack textarea { min-height: 108px; resize: vertical; }
+.form-stack input::placeholder, .form-stack textarea::placeholder { color: var(--muted); opacity: .8; }
+.form-stack input:focus, .form-stack select:focus, .form-stack textarea:focus {
+    border-color: var(--blue);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(57, 120, 246, .12);
+}
+.form-stack input:disabled, .form-stack select:disabled, .form-stack textarea:disabled { opacity: .65; cursor: not-allowed; }
+.form-stack input[type="file"] {
+    width: 100%; min-height: 48px; padding: 9px;
+    border: 1px dashed var(--border); border-radius: 13px;
+    background: var(--surface-soft); color: var(--text); font-size: 13px;
+}
+.form-stack input[type="file"]::file-selector-button {
+    min-height: 32px; margin-right: 10px; padding: 6px 11px;
+    border: 0; border-radius: 9px; background: var(--blue-soft);
+    color: var(--blue-dark); font: inherit; font-weight: 700; cursor: pointer;
+}
+.student-absence-history { margin-top: 16px; }
+.absence-request-list { display: grid; gap: 10px; }
+.absence-request-card {
+    padding: 14px 15px; border: 1px solid var(--border);
+    border-radius: 15px; background: var(--surface-soft);
+    animation: absenceCardIn .18s ease both;
+}
+.absence-request-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.absence-request-card-top strong { font-size: 14px; }
+.absence-request-card p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.absence-request-status {
+    display: inline-flex; max-width: 62%; padding: 5px 9px;
+    border-radius: 999px; background: var(--blue-soft); color: var(--blue-dark);
+    font-size: 11px; font-weight: 750; line-height: 1.3; text-align: right;
+}
+.absence-request-card.is-approved .absence-request-status { background: rgba(33, 154, 115, .12); color: var(--green); }
+.absence-request-card.is-rejected .absence-request-status,
+.absence-request-card.is-revoked .absence-request-status { background: rgba(223, 75, 90, .12); color: var(--red); }
+.absence-request-meta { display: block; margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+@keyframes absenceCardIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+body.theme-dark .form-stack > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+body.theme-dark .form-stack > select, body.theme-dark .form-stack > textarea,
+body.theme-dark .form-stack input:not([type="file"]), body.theme-dark .form-stack select,
+body.theme-dark .form-stack textarea { background: var(--surface-solid); color: var(--text); }
+body.theme-dark .absence-request-card { background: var(--surface-soft); }
+@media (max-width: 560px) {
+    .absence-request-card { padding: 12px; border-radius: 13px; }
+    .absence-request-card-top { flex-direction: column; gap: 7px; }
+    .absence-request-status { max-width: 100%; text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .absence-request-card { animation: none; }
+    .form-stack > input, .form-stack > select, .form-stack > textarea { transition: none; }
+}
