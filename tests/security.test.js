@@ -320,25 +320,26 @@ test("admin APIs handle empty and null Supabase results", async t => {
     assert.equal(invalidCaptchaResponse.statusCode, 400);
 });
 
-test("server face matching issues a short-lived attendance proof for the matched student", async t => {
+test("ArcFace 512D match uses the private pgvector RPC and issues a short-lived attendance proof", async t => {
     const originalFetch = globalThis.fetch;
     const teacherId = "11111111-1111-4111-8111-111111111111";
+    const studentId = "33333333-3333-4333-8333-333333333333";
     const teacherToken = signToken({ email: "guru@example.com", name: "Guru", role: "guru" });
-    const descriptor = Array.from({ length: 128 }, (_, index) => index / 1000);
+    const embedding = [1, ...Array.from({ length: 511 }, () => 0)];
     const requests = [];
     let auditWritten = false;
     globalThis.fetch = async (url, init = {}) => {
         const requestUrl = String(url);
-        requests.push(requestUrl);
+        requests.push({ url: requestUrl, method: init.method || "GET", body: init.body });
         if (requestUrl.includes("teachers?select=email,is_active")) {
             return new Response(JSON.stringify([{ email: "guru@example.com", is_active: true }]), { status: 200 });
         }
         if (requestUrl.includes("teachers?select=id&email=eq.guru%40example.com")) {
             return new Response(JSON.stringify([{ id: teacherId }]), { status: 200 });
         }
-        if (requestUrl.includes("students?select=nisn,name,face_descriptors,is_active,homeroom_teacher_id")) {
+        if (requestUrl.includes("/rpc/match_student_face_embeddings")) {
             return new Response(JSON.stringify([{
-                nisn: "12345678", name: "Student", is_active: true, homeroom_teacher_id: teacherId, face_descriptors: [descriptor]
+                student_id: studentId, nisn: "12345678", name: "Student", distance: 0.11
             }]), { status: 200 });
         }
         if (requestUrl.includes("audit_log") && init.method === "POST") {
@@ -352,27 +353,31 @@ test("server face matching issues a short-lived attendance proof for the matched
     await faceMatchHandler({
         method: "POST",
         headers: { origin: "https://school.example", "x-session-token": teacherToken },
-        socket: { remoteAddress: "test-teacher-face-match" },
-        body: { descriptor }
+        socket: { remoteAddress: "test-teacher-face-match-v2" },
+        body: { model_key: "auraface-glintr100-int8-v1", embedding }
     }, res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.match, true);
     assert.equal(res.body.nisn, "12345678");
+    assert.equal(res.body.model_key, "auraface-glintr100-int8-v1");
     const proof = verifyToken(res.body.proofToken);
     assert.equal(proof?.purpose, "attendance_face");
     assert.equal(proof?.role, "guru");
     assert.equal(proof?.nisn, "12345678");
-    assert.ok(requests.some(url => url.includes("homeroom_teacher_id=eq." + teacherId)),
-        "teacher face candidates must be scoped to the assigned homeroom");
+    const rpc = requests.find(item => item.url.includes("/rpc/match_student_face_embeddings"));
+    assert.ok(rpc, "face search must be performed in the private database RPC");
+    assert.equal(JSON.parse(rpc.body).p_teacher_id, teacherId, "teacher search must be scoped to the assigned homeroom");
+    assert.equal(JSON.parse(rpc.body).p_query_embeddings[0].embedding.length, 512);
+    assert.equal(requests.some(item => item.url.includes("face_descriptors")), false,
+        "the server must not download legacy face galleries");
     assert.equal(auditWritten, true);
 });
-test("server rejects ambiguous face matches between two distinct students", async t => {
+
+test("ArcFace matching rejects an ambiguous pair instead of selecting one student", async t => {
     const originalFetch = globalThis.fetch;
     const teacherId = "22222222-2222-4222-8222-222222222222";
     const teacherToken = signToken({ email: "guru@example.com", name: "Guru", role: "guru" });
-    const descriptor = Array.from({ length: 128 }, () => 0);
-    const nearPositive = Array.from({ length: 128 }, () => 0.01);
-    const nearNegative = Array.from({ length: 128 }, () => -0.01);
+    const embedding = [1, ...Array.from({ length: 511 }, () => 0)];
     globalThis.fetch = async (url, init = {}) => {
         const requestUrl = String(url);
         if (requestUrl.includes("teachers?select=email,is_active")) {
@@ -381,10 +386,10 @@ test("server rejects ambiguous face matches between two distinct students", asyn
         if (requestUrl.includes("teachers?select=id&email=eq.guru%40example.com")) {
             return new Response(JSON.stringify([{ id: teacherId }]), { status: 200 });
         }
-        if (requestUrl.includes("students?select=nisn,name,face_descriptors,is_active,homeroom_teacher_id")) {
+        if (requestUrl.includes("/rpc/match_student_face_embeddings")) {
             return new Response(JSON.stringify([
-                { nisn: "12345678", name: "Student A", is_active: true, homeroom_teacher_id: teacherId, face_descriptors: [nearPositive] },
-                { nisn: "87654321", name: "Student B", is_active: true, homeroom_teacher_id: teacherId, face_descriptors: [nearNegative] }
+                { student_id: "33333333-3333-4333-8333-333333333333", nisn: "12345678", name: "Student A", distance: 0.10 },
+                { student_id: "44444444-4444-4444-8444-444444444444", nisn: "87654321", name: "Student B", distance: 0.12 }
             ]), { status: 200 });
         }
         return new Response("[]", { status: 200 });
@@ -394,14 +399,83 @@ test("server rejects ambiguous face matches between two distinct students", asyn
     await faceMatchHandler({
         method: "POST",
         headers: { origin: "https://school.example", "x-session-token": teacherToken },
-        socket: { remoteAddress: "test-face-ambiguous" },
-        body: { descriptor }
+        socket: { remoteAddress: "test-face-ambiguous-v2" },
+        body: { model_key: "auraface-glintr100-int8-v1", embedding }
     }, res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.registered, true);
     assert.equal(res.body.match, false);
     assert.equal(res.body.ambiguous, true);
     assert.equal(res.body.proofToken, undefined);
+});
+
+test("student ArcFace matching is constrained to the authenticated student's row", async t => {
+    const originalFetch = globalThis.fetch;
+    const studentId = "55555555-5555-4555-8555-555555555555";
+    const studentToken = signToken({ email: "student@example.com", name: "Student", role: "siswa", nisn: "12345678" });
+    const embedding = [1, ...Array.from({ length: 511 }, () => 0)];
+    let rpcPayload = null;
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("students?select=email,nisn,is_active")) {
+            return new Response(JSON.stringify([{ email: "student@example.com", nisn: "12345678", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,nisn,name,is_active")) {
+            return new Response(JSON.stringify([{ id: studentId, nisn: "12345678", name: "Student", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("/rpc/match_student_face_embeddings")) {
+            rpcPayload = JSON.parse(init.body);
+            return new Response(JSON.stringify([{
+                student_id: studentId, nisn: "12345678", name: "Student", distance: 0.14
+            }]), { status: 200 });
+        }
+        return new Response("[]", { status: 201 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const res = responseMock();
+    await faceMatchHandler({
+        method: "POST",
+        headers: { origin: "https://school.example", "x-session-token": studentToken },
+        socket: { remoteAddress: "test-student-face-scope-v2" },
+        body: { model_key: "auraface-glintr100-int8-v1", embedding, nisn: "99999999" }
+    }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.match, true);
+    assert.equal(rpcPayload.p_student_id, studentId);
+    assert.equal(rpcPayload.p_teacher_id, null);
+});
+
+test("ArcFace API rejects wrong model versions and non-normalized 512D embeddings", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherToken = signToken({ email: "guru@example.com", name: "Guru", role: "guru" });
+    let rpcCalled = false;
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([{ email: "guru@example.com", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("/rpc/match_student_face_embeddings")) rpcCalled = true;
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const wrongModel = responseMock();
+    await faceMatchHandler({
+        method: "POST",
+        headers: { origin: "https://school.example", "x-session-token": teacherToken },
+        socket: { remoteAddress: "test-face-model-version" },
+        body: { model_key: "old-model", embedding: [1, ...Array.from({ length: 511 }, () => 0)] }
+    }, wrongModel);
+    assert.equal(wrongModel.statusCode, 409);
+
+    const invalidEmbedding = responseMock();
+    await faceMatchHandler({
+        method: "POST",
+        headers: { origin: "https://school.example", "x-session-token": teacherToken },
+        socket: { remoteAddress: "test-face-model-norm" },
+        body: { model_key: "auraface-glintr100-int8-v1", embedding: Array.from({ length: 512 }, () => 0.5) }
+    }, invalidEmbedding);
+    assert.equal(invalidEmbedding.statusCode, 400);
+    assert.equal(rpcCalled, false);
 });
 
 test("student attendance rejects requests without a recent server-verified face proof", async t => {
