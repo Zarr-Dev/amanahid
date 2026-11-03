@@ -4638,7 +4638,10 @@ function setupEvents() {
                 const currentClass = (button.dataset.className || "").trim();
                 const walasOptions = [
                     { value: "", label: "Belum ditetapkan" },
-                    ...state.adminTeachers.filter(teacher => !teacher.homeroom_class || teacher.homeroom_class.trim() === currentClass).map(teacher => ({
+                    ...state.adminTeachers.filter(teacher =>
+                        (teacher.is_active && (!teacher.homeroom_class || teacher.homeroom_class.trim() === currentClass)) ||
+                        teacher.id === (button.dataset.currentHomeroom || "")
+                    ).map(teacher => ({
                         value: teacher.id,
                         label: (teacher.name || teacher.email) + (teacher.homeroom_class ? " · " + teacher.homeroom_class : " · kelas akan mengikuti siswa")
                     }))
