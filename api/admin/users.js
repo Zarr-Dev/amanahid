@@ -144,10 +144,12 @@ export default async function handler(req, res) {
                 parent_whatsapp: { type: "string", max: 15, pattern: /^(?:|08\d{8,13}|628\d{8,13})$/ },
                 email: { type: "string", max: 254, pattern: EMAIL },
                 name: { type: "string", max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
-                password: { type: "string", max: 128 }
+                password: { type: "string", max: 128 },
+                homeroom_teacher_id: { type: "string", max: 36, pattern: UUID }
             };
             if (!validBody(res, schema, body)) return;
-            if (!body.email && !body.name && !body.password && body.parent_whatsapp === undefined) {
+            if (!body.email && !body.name && !body.password &&
+                body.parent_whatsapp === undefined && body.homeroom_teacher_id === undefined) {
                 return jsonError(res, 400, "At least one field must be changed");
             }
             if (body.email) {
@@ -173,8 +175,26 @@ export default async function handler(req, res) {
                 if (body.table !== "students") return jsonError(res, 400, "WhatsApp wali hanya berlaku untuk akun siswa");
                 values.parent_whatsapp = body.parent_whatsapp ? body.parent_whatsapp.replace(/^08/, "628") : null;
             }
+            if (body.homeroom_teacher_id !== undefined) {
+                if (body.table !== "students") return jsonError(res, 400, "Wali kelas hanya dapat diubah pada akun siswa");
+                const studentRows = await supabaseRequest(
+                    "students?select=id,class_name&id=eq." + encodeURIComponent(body.id) + "&limit=1"
+                );
+                const student = studentRows?.[0];
+                if (!student) return jsonError(res, 404, "Student account was not found");
+                const teacherRows = await supabaseRequest(
+                    "teachers?select=id,homeroom_class,is_active&id=eq." +
+                    encodeURIComponent(body.homeroom_teacher_id) + "&limit=1"
+                );
+                const teacher = teacherRows?.[0];
+                if (!teacher?.is_active) return jsonError(res, 400, "The selected homeroom teacher is unavailable");
+                if (teacher.homeroom_class && teacher.homeroom_class.trim() !== student.class_name.trim()) {
+                    return jsonError(res, 409, "Student class must match the selected homeroom teacher class");
+                }
+                values.homeroom_teacher_id = teacher.id;
+            }
             const rows = await supabaseRequest(
-                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email,name,parent_whatsapp`,
+                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email,name,parent_whatsapp,homeroom_teacher_id`,
                 { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(values) }
             ) ?? [];
             const updated = Array.isArray(rows) ? (rows[0] ?? null) : null;
