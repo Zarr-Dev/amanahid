@@ -188,4 +188,25 @@ CREATE TRIGGER students_enforce_homeroom_assignment
 BEFORE INSERT OR UPDATE OF homeroom_teacher_id, class_name ON public.students
 FOR EACH ROW EXECUTE FUNCTION public.enforce_student_homeroom_assignment();
 
+REVOKE ALL ON FUNCTION public.notify_homeroom_teacher_of_absence() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.notify_student_of_absence_status() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.enforce_student_homeroom_assignment() FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.require_sick_evidence_before_insert()
+RETURNS trigger LANGUAGE plpgsql SET search_path = public, pg_temp AS $
+BEGIN
+  IF NEW.absence_type = 'sick' AND NEW.status = 'pending'
+    AND (NEW.medical_evidence_path IS NULL OR NEW.medical_evidence_uploaded_at IS NULL) THEN
+    RAISE EXCEPTION 'A verified medical evidence upload is required before a sick request can be submitted'
+      USING errcode = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$;
+DROP TRIGGER IF EXISTS absence_requests_require_sick_evidence ON public.absence_requests;
+CREATE TRIGGER absence_requests_require_sick_evidence
+BEFORE INSERT ON public.absence_requests
+FOR EACH ROW EXECUTE FUNCTION public.require_sick_evidence_before_insert();
+REVOKE ALL ON FUNCTION public.require_sick_evidence_before_insert() FROM PUBLIC, anon, authenticated;
+
 NOTIFY pgrst, 'reload schema';
