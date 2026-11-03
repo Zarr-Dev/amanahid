@@ -136,6 +136,9 @@ async function inspectMedicalEvidenceUpload(studentId, requestId, objectPath) {
 async function signMedicalEvidenceUpload(req, res, session, body) {
     const student = await getStudentForSession(session);
     if (!student) return jsonError(res, 404, "Student account was not found");
+    if (!student.homeroom_teacher_id) {
+        return jsonError(res, 409, "Akun siswa belum ditautkan ke wali kelas. Hubungi Admin sebelum mengirim surat sakit.");
+    }
     const requestId = typeof body.request_id === "string" ? body.request_id : "";
     const mimeType = typeof body.mime_type === "string" ? body.mime_type.toLowerCase() : "";
     const fileSize = Number(body.file_size);
@@ -387,8 +390,14 @@ export default async function handler(req, res) {
                 const message = "Amanah ID: pengajuan " + typeLabel + " " + student.name +
                     " tanggal " + date + " telah diterima dan menunggu peninjauan sekolah.";
                 try {
-                    await sendWhatsApp(target, message);
-                    whatsapp = { sent: true, skipped: false };
+                    const providerResult = await sendWhatsApp(target, message);
+                    whatsapp = {
+                        queued: true,
+                        skipped: false,
+                        request_id: providerResult?.requestid ?? null,
+                        message_ids: Array.isArray(providerResult?.id) ? providerResult.id : [],
+                        process: providerResult?.process || "pending"
+                    };
                 } catch (error) {
                     console.error("Absence WhatsApp notification failed:", error);
                     whatsapp = { sent: false, skipped: false, error: "WhatsApp notification failed" };
