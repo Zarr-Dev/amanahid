@@ -216,8 +216,8 @@ export default async function handler(req, res) {
                     : [face_descriptors]
             };
             const query = existing.length
-                ? `students?id=eq.${encodeURIComponent(existing[0].id)}&select=id,nisn,name,class_name,parent_whatsapp,created_at,email`
-                : "students?select=id,nisn,name,class_name,parent_whatsapp,created_at,email";
+                ? `students?id=eq.${encodeURIComponent(existing[0].id)}&select=id,nisn,name,class_name,parent_whatsapp,created_at,email,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)`
+                : "students?select=id,nisn,name,class_name,parent_whatsapp,created_at,email,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)";
             const rows = await supabaseRequest(query, {
                 method: existing.length ? "PATCH" : "POST",
                 headers: { Prefer: "return=representation" },
