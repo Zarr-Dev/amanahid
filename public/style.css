@@ -4283,3 +4283,7 @@ body.theme-dark .homeroom-profile-card {
 @media (prefers-reduced-motion: reduce) {
     .captcha-refresh svg { transition: none; }
 }
+
+.student-profile-panel {
+    max-width: 760px;
+}
