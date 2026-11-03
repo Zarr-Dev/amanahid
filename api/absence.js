@@ -299,11 +299,23 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
+        const body = req.body || {};
+        if (body.action === "medical-evidence-view") {
+            if (role !== "guru" && role !== "admin") return jsonError(res, 403, "Teacher or Admin role is required");
+            if (!rateLimit(req, "absence:evidence-view", 10, 60_000, res)) {
+                return jsonError(res, 429, "Too many evidence preview requests. Try again later.");
+            }
+            try {
+                return await viewMedicalEvidence(req, res, role, session, body);
+            } catch (error) {
+                console.error("Medical evidence preview failed:", error);
+                return jsonSupabaseError(res, error, "Unable to open medical evidence");
+            }
+        }
         if (role !== "siswa" || !session?.nisn) return jsonError(res, 403, "Only a signed-in student can submit an absence request");
         if (!rateLimit(req, "absence:POST:siswa", 8, 60_000, res)) {
             return jsonError(res, 429, "Too many absence requests. Try again later.");
         }
-        const body = req.body || {};
         try {
             if (body.action === "medical-evidence-sign") {
                 return await signMedicalEvidenceUpload(req, res, session, body);
