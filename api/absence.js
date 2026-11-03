@@ -337,7 +337,7 @@ export default async function handler(req, res) {
                 return jsonError(res, 400, "The note must contain 1 to 1000 valid characters");
             }
             if (type === "sick" && !SICK_SEVERITIES.has(severity)) {
-                return jsonError(res, 400, "Choose mild, moderate, or severe for a sick request");
+                return jsonError(res, 400, "A severity selection is required: choose mild, moderate, or severe.");
             }
 
             const student = await getStudentForSession(session);
