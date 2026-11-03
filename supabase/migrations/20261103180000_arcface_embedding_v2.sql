@@ -67,14 +67,14 @@ BEGIN
 
     IF (
         SELECT count(DISTINCT item->>'sample_angle')
-        FROM jsonb_array_elements(p_samples) AS item
+        FROM jsonb_array_elements(p_samples) AS items(item)
         WHERE item->>'sample_angle' IN ('front', 'left', 'right', 'up', 'down')
     ) <> 5 THEN
         RAISE EXCEPTION 'five unique face angles are required' USING ERRCODE = '22023';
     END IF;
 
     -- Validate all samples before replacing any prior template.
-    FOR v_sample IN SELECT value FROM jsonb_array_elements(p_samples)
+    FOR v_sample IN SELECT item FROM jsonb_array_elements(p_samples) AS items(item)
     LOOP
         v_angle := v_sample->>'sample_angle';
         IF v_angle NOT IN ('front', 'left', 'right', 'up', 'down') THEN
@@ -86,7 +86,7 @@ BEGIN
         END IF;
         IF EXISTS (
             SELECT 1
-            FROM jsonb_array_elements(v_sample->'embedding') AS component
+            FROM jsonb_array_elements(v_sample->'embedding') AS components(component)
             WHERE jsonb_typeof(component) IS DISTINCT FROM 'number'
                OR abs((component #>> '{}')::double precision) > 10
         ) THEN
@@ -156,12 +156,12 @@ BEGIN
     END IF;
     IF EXISTS (
         SELECT 1
-        FROM jsonb_array_elements(p_query_embeddings) AS item
+        FROM jsonb_array_elements(p_query_embeddings) AS items(item)
         WHERE jsonb_typeof(item->'embedding') IS DISTINCT FROM 'array'
            OR jsonb_array_length(item->'embedding') <> 512
            OR EXISTS (
                 SELECT 1
-                FROM jsonb_array_elements(item->'embedding') AS component
+                FROM jsonb_array_elements(item->'embedding') AS components(component)
                 WHERE jsonb_typeof(component) IS DISTINCT FROM 'number'
                    OR abs((component #>> '{}')::double precision) > 10
            )
