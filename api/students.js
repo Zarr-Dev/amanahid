@@ -175,11 +175,11 @@ export default async function handler(req, res) {
         if (!features.face_enrollment) return featureDisabled(res, "face_enrollment", "Pendaftaran wajah sedang dinonaktifkan");
         const body = req.body || {};
         const validation = validateSchema({
-            nisn: { type: "string", required: true, max: 20, pattern: /^\\d{8,20}$/ },
+            nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
             name: { type: "string", required: true, max: 120, min: 1 },
             class_name: { type: "string", required: true, max: 40, min: 1 },
-            parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\\d{8,13}$/ },
-            email: { type: "string", required: true, max: 254, pattern: /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/ },
+            parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
+            email: { type: "string", required: true, max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
             password: { type: "string", required: true, max: 128 },
             model_key: { type: "string", required: true, max: 80, min: 1 },
             face_embeddings: { type: "array", required: true, min: 5, max: 5 }
@@ -191,16 +191,16 @@ export default async function handler(req, res) {
             return jsonError(res, 400, "Five unique angle samples with normalized 512D ArcFace embeddings are required");
         }
         if (!validatePassword(password)) return jsonError(res, 400, "Password must contain 8 to 128 safe characters");
-        if (typeof parent_whatsapp === "string" && /[\\u0000-\\u001F\\u007F]/.test(parent_whatsapp)) {
+        if (typeof parent_whatsapp === "string" && /[\u0000-\u001F\u007F]/.test(parent_whatsapp)) {
             return jsonError(res, 400, "Invalid parent WhatsApp number");
         }
         if (!parseNisn(nisn)) return jsonError(res, 400, "NISN must contain 8 to 20 digits");
         if (typeof name !== "string" || !name.trim() || name.trim().length > 120 ||
-            /[\\u0000-\\u001F\\u007F]/.test(name)) {
+            /[\u0000-\u001F\u007F]/.test(name)) {
             return jsonError(res, 400, "Student name is required");
         }
         if (typeof class_name !== "string" || !class_name.trim() || class_name.trim().length > 40 ||
-            /[\\u0000-\\u001F\\u007F]/.test(class_name)) {
+            /[\u0000-\u001F\u007F]/.test(class_name)) {
             return jsonError(res, 400, "Class name is required");
         }
         if (parent_whatsapp === "") {
