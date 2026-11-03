@@ -830,6 +830,60 @@ test("teacher absence list is scoped to the exact homeroom teacher relationship"
     assert.ok(requests.some(url => url.includes("students.homeroom_teacher_id=eq." + teacherId)));
 });
 
+test("assigned Walas can revoke an approved absence and the API records the transition", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherId = "88888888-8888-4888-8888-888888888888";
+    const requestId = "99999999-9999-4999-8999-999999999999";
+    const teacherToken = signToken({ email: "teacher@example.com", name: "Teacher", role: "guru" });
+    const calls = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        calls.push({ url: requestUrl, method: init.method || "GET", body: init.body });
+        if (requestUrl.includes("teachers?select=email,is_active")) return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        if (requestUrl.includes("teachers?select=id,name,email,homeroom_class&email=eq.teacher%40example.com")) return new Response(JSON.stringify([{ id: teacherId, name: "Teacher", email: "teacher@example.com", homeroom_class: "XI IPA 1" }]), { status: 200 });
+        if (requestUrl.includes("absence_requests?id=eq." + requestId) && requestUrl.includes("students!inner(homeroom_teacher_id)")) return new Response(JSON.stringify([{ id: requestId, students: { homeroom_teacher_id: teacherId } }]), { status: 200 });
+        if (requestUrl.includes("absence_requests?id=eq." + requestId) && init.method === "PATCH") {
+            const payload = JSON.parse(init.body);
+            assert.equal(payload.status, "revoked");
+            assert.equal(payload.reviewed_by, "teacher@example.com");
+            return new Response(JSON.stringify([{ id: requestId, student_id: "77777777-7777-4777-8777-777777777777", status: "revoked", reviewed_by: "teacher@example.com" }]), { status: 200 });
+        }
+        if (requestUrl.includes("audit_log")) return new Response("[]", { status: 201 });
+        throw new Error("Unexpected request: " + requestUrl);
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("PATCH", teacherToken, "test-walas-revoke-approved-absence");
+    req.body = { id: requestId, status: "revoked" };
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.request.status, "revoked");
+    assert.ok(calls.some(call => call.method === "PATCH" && call.url.includes("status=eq.approved")));
+    assert.ok(calls.some(call => call.url.includes("audit_log")));
+});
+
+test("Walas cannot revoke an approved absence belonging to another homeroom", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const requestId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const teacherToken = signToken({ email: "teacher@example.com", name: "Teacher", role: "guru" });
+    let patchAttempted = false;
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("teachers?select=email,is_active")) return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        if (requestUrl.includes("teachers?select=id,name,email,homeroom_class&email=eq.teacher%40example.com")) return new Response(JSON.stringify([{ id: teacherId, name: "Teacher", email: "teacher@example.com", homeroom_class: "XI IPA 1" }]), { status: 200 });
+        if (requestUrl.includes("absence_requests?id=eq." + requestId) && requestUrl.includes("students!inner(homeroom_teacher_id)")) return new Response("[]", { status: 200 });
+        if (init.method === "PATCH") patchAttempted = true;
+        throw new Error("Unexpected request: " + requestUrl);
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const req = requestMock("PATCH", teacherToken, "test-walas-cross-homeroom-revoke-denied");
+    req.body = { id: requestId, status: "revoked" };
+    const res = responseMock();
+    await absenceHandler(req, res);
+    assert.equal(res.statusCode, 404);
+    assert.equal(patchAttempted, false, "out-of-scope request must never reach the update operation");
+});
 test("sick absence requires a verified medical file before submission and routes to Walas", async t => {
     const originalFetch = globalThis.fetch;
     const studentId = "33333333-3333-4333-8333-333333333333";
