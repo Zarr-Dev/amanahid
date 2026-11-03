@@ -725,7 +725,7 @@ const state = {
     mapEditMode: false,
     mapDraftLocation: null,
     splashTimers: [],
-    medicalEvidenceRequest: null,
+    absenceSyncTimer: null,
     adminTeachers: []
 };
 let authModalTrigger = null;
@@ -2532,109 +2532,47 @@ function normalizeCloudStudent(student) {
     };
 }
 
-async function refreshMedicalEvidenceGate() {
-    if (state.user?.role !== "siswa") {
-        $("medical-evidence-gate")?.classList.add("hidden");
-        $("dashboard-siswa")?.removeAttribute("inert");
-        state.medicalEvidenceRequest = null;
-        return;
-    }
+async function loadStudentAbsenceRequests({ silent = false } = {}) {
+    if (state.user?.role !== "siswa") return;
+    const list = $("student-absence-requests-list");
+    if (!list) return;
     try {
         const result = await cloudRequest("/api/absence", { role: "siswa" });
         const requests = Array.isArray(result.requests) ? result.requests : [];
-        const due = requests.find(item =>
-            item.absence_type === "sick" && item.status === "approved" && !item.medical_evidence_uploaded
-        ) || null;
-        state.medicalEvidenceRequest = due;
-        const gate = $("medical-evidence-gate");
-        if (gate) gate.classList.toggle("hidden", !due);
-        const studentDashboard = $("dashboard-siswa");
-        if (studentDashboard) {
-            if (due) studentDashboard.setAttribute("inert", "");
-            else studentDashboard.removeAttribute("inert");
-        }
-        $("medical-evidence-form")?.classList.toggle("hidden", false);
-        $("btn-retry-medical-evidence")?.classList.add("hidden");
-        $("medical-evidence-file").disabled = false;
-        $("btn-upload-medical-evidence").disabled = false;
-        if (due) {
-            $("medical-evidence-description").textContent =
-                "Pengajuan sakit tanggal " + formatDate(due.absence_date) +
-                " telah disetujui guru. Unggah surat keterangan dokter untuk melanjutkan penggunaan presensi.";
-            $("medical-evidence-status").textContent = "";
-            $("medical-evidence-file")?.focus();
-        }
+        const statusLabels = { pending: "Menunggu peninjauan wali kelas", approved: "Disetujui wali kelas", rejected: "Ditolak wali kelas", revoked: "Persetujuan dicabut oleh wali kelas" };
+        list.innerHTML = requests.map(item => {
+            const typeLabel = item.absence_type === "dispensation" ? "Dispensasi" : tr("absenceType_" + item.absence_type);
+            const evidence = item.absence_type === "sick" ? '<span class="absence-request-meta">' + (item.medical_evidence_uploaded ? "Surat dokter terlampir" : "Surat dokter belum terlampir") + '</span>' : "";
+            const status = statusLabels[item.status] || tr("absenceStatus_" + item.status);
+            const stateClass = item.status === "revoked" ? "is-revoked" : item.status === "rejected" ? "is-rejected" : item.status === "approved" ? "is-approved" : "is-pending";
+            return '<article class="absence-request-card ' + stateClass + '">' +
+                '<div class="absence-request-card-top"><strong>' + safeText(typeLabel) + '</strong><span class="absence-request-status">' + safeText(status) + '</span></div>' +
+                '<p>' + safeText(formatDate(item.absence_date)) + ' · ' + safeText(item.note || "—") + '</p>' + evidence +
+                (item.reviewed_at ? '<small class="absence-request-meta">Diperbarui ' + safeText(new Date(item.reviewed_at).toLocaleString("id-ID")) + '</small>' : "") + '</article>';
+        }).join("");
+        $("student-absence-empty")?.classList.toggle("hidden", requests.length > 0);
     } catch (error) {
-        console.error("Medical evidence status could not be checked:", error);
-        // Fail closed: never let a student continue to attendance while the
-        // required medical-evidence status is unknown.
-        state.medicalEvidenceRequest = null;
-        $("dashboard-siswa")?.setAttribute("inert", "");
-        $("medical-evidence-gate")?.classList.remove("hidden");
-        $("medical-evidence-description").textContent =
-            "Status surat dokter belum dapat diverifikasi. Presensi sementara dikunci demi keamanan data. Periksa koneksi lalu coba kembali.";
-        $("medical-evidence-form")?.classList.add("hidden");
-        $("btn-retry-medical-evidence")?.classList.remove("hidden");
-        $("medical-evidence-status").textContent = error.message || "Pemeriksaan status gagal.";
-        $("btn-retry-medical-evidence")?.focus();
+        console.error("Student absence status could not load:", error);
+        if (!silent) toast(error.message || "Riwayat pengajuan gagal dimuat.", "error");
     }
 }
 
-async function uploadRequiredMedicalEvidence(event) {
-    event.preventDefault();
-    const request = state.medicalEvidenceRequest;
-    const file = $("medical-evidence-file")?.files?.[0];
-    const button = $("btn-upload-medical-evidence");
-    const status = $("medical-evidence-status");
-    if (!request || !file) {
-        status.textContent = "Pilih surat keterangan dokter terlebih dahulu.";
-        return;
-    }
-    const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
-    if (!allowedTypes.includes(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) {
-        status.textContent = "Gunakan file PDF, JPG, atau PNG dengan ukuran maksimal 5 MB.";
-        return;
-    }
-    button.disabled = true;
-    status.textContent = "Menyiapkan unggahan privat...";
-    try {
-        const signed = await cloudRequest("/api/absence", {
-            method: "POST",
-            role: "siswa",
-            body: {
-                action: "medical-evidence-sign",
-                request_id: request.id,
-                mime_type: file.type,
-                file_size: file.size
-            }
-        });
-        const uploadResponse = await fetch(signed.upload_url, {
-            method: "PUT",
-            headers: { "Content-Type": file.type },
-            body: file
-        });
-        if (!uploadResponse.ok) throw new Error("Berkas gagal diunggah ke penyimpanan privat.");
-        await cloudRequest("/api/absence", {
-            method: "POST",
-            role: "siswa",
-            body: {
-                action: "medical-evidence-confirm",
-                request_id: request.id,
-                path: signed.path
-            }
-        });
-        $("medical-evidence-form").reset();
-        toast("Surat dokter berhasil diunggah.", "success");
-        await refreshMedicalEvidenceGate();
-    } catch (error) {
-        console.error("Medical evidence upload failed:", error);
-        status.textContent = error.message || "Unggahan gagal. Periksa berkas dan coba lagi.";
-        toast(status.textContent, "error");
-    } finally {
-        button.disabled = false;
-    }
+function startAbsenceSync() {
+    if (state.absenceSyncTimer) return;
+    state.absenceSyncTimer = window.setInterval(() => {
+        if (!state.user || document.hidden) return;
+        const teacherList = $("absence-requests-tbody");
+        const studentList = $("student-absence-requests-list");
+        if (state.user.role === "guru" && teacherList?.getClientRects().length) void loadAbsenceRequests({ silent: true });
+        if (state.user.role === "siswa" && studentList?.getClientRects().length) void loadStudentAbsenceRequests({ silent: true });
+    }, 25_000);
 }
 
+function syncAbsenceOnReturn() {
+    if (!state.user || document.hidden) return;
+    if (state.user.role === "guru" && $("absence-requests-tbody")?.getClientRects().length) void loadAbsenceRequests({ silent: true });
+    if (state.user.role === "siswa" && $("student-absence-requests-list")?.getClientRects().length) void loadStudentAbsenceRequests({ silent: true });
+}
 async function loadCloudData(user = state.user) {
     if (!user) return;
     const token = ++state.cloudLoadToken;
@@ -2659,12 +2597,12 @@ async function loadCloudData(user = state.user) {
         renderStudentHistory();
         updateStudentProfile();
         updateStats();
-        if (user.role === "siswa") await refreshMedicalEvidenceGate();
+        if (user.role === "siswa") await loadStudentAbsenceRequests({ silent: true });
     } catch (error) {
         console.error("Cloud data load failed:", error);
         if (token === state.cloudLoadToken && state.user === user) {
             toast(tr("cloudLoadFailed"), "error");
-            if (user.role === "siswa") await refreshMedicalEvidenceGate();
+            if (user.role === "siswa") await loadStudentAbsenceRequests({ silent: true });
         }
     }
 }
@@ -3880,6 +3818,11 @@ function updateAbsenceTypeFields() {
     const isDispensation = type === "dispensation";
     $("absence-severity-wrap")?.classList.toggle("hidden", !isSick);
     if ($("absence-severity")) $("absence-severity").required = isSick;
+    $("absence-evidence-wrap")?.classList.toggle("hidden", !isSick);
+    if ($("absence-medical-file")) {
+        $("absence-medical-file").required = isSick;
+        if (!isSick) $("absence-medical-file").value = "";
+    }
     $("absence-dispensation-hint")?.classList.toggle("hidden", !isDispensation);
     if ($("absence-date")) {
         $("absence-date").disabled = isDispensation;
@@ -3914,48 +3857,48 @@ async function getFreshDispensationLocation() {
 
 async function submitStudentAbsence(event) {
     event.preventDefault();
-    if (!state.user || state.user.role !== "siswa") {
-        toast(tr("absenceSubmitFailed"), "error");
-        return;
-    }
+    if (!state.user || state.user.role !== "siswa") { toast(tr("absenceSubmitFailed"), "error"); return; }
     const button = $("btn-submit-absence");
     const status = $("absence-form-status");
     const type = $("absence-type").value;
-    const body = {
-        date: type === "dispensation" ? localDateKey() : $("absence-date").value,
-        type,
-        note: $("absence-note").value.trim()
-    };
-    if (type === "sick") body.severity = $("absence-severity").value;
-    if (!body.date || !body.note) {
-        toast(tr("absenceRequired"), "error");
-        return;
+    const file = $("absence-medical-file")?.files?.[0] || null;
+    const body = { date: type === "dispensation" ? localDateKey() : $("absence-date").value, type, note: $("absence-note").value.trim() };
+    if (type === "sick") {
+        body.severity = $("absence-severity").value;
+        if (!file || !["application/pdf", "image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) {
+            toast("Surat dokter wajib dilampirkan dalam format PDF, JPG, atau PNG dengan ukuran maksimal 5 MB.", "error");
+            $("absence-medical-file")?.focus(); return;
+        }
     }
+    if (!body.date || !body.note) { toast(tr("absenceRequired"), "error"); return; }
     button.disabled = true;
-    status.textContent = type === "dispensation"
-        ? "Memeriksa presensi dan lokasi sekolah..."
-        : tr("absenceSending");
+    status.textContent = type === "dispensation" ? "Memeriksa presensi dan lokasi sekolah..." : tr("absenceSending");
     try {
+        if (type === "sick") {
+            status.textContent = "Memvalidasi dan mengunggah surat dokter secara privat...";
+            const evidenceRequestId = createIdempotencyKey();
+            const signed = await cloudRequest("/api/absence", { method: "POST", role: "siswa", body: { action: "medical-evidence-sign", request_id: evidenceRequestId, mime_type: file.type, file_size: file.size } });
+            const uploadResponse = await fetch(signed.upload_url, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+            if (!uploadResponse.ok) throw new Error("Surat dokter gagal diunggah. Periksa koneksi lalu coba kembali.");
+            body.evidence_request_id = evidenceRequestId;
+            body.medical_evidence_path = signed.path;
+        }
         if (type === "dispensation") Object.assign(body, await getFreshDispensationLocation());
+        status.textContent = "Mengirim pengajuan ke wali kelas...";
         const result = await cloudRequest("/api/absence", { method: "POST", role: "siswa", body });
         status.textContent = tr("absenceSubmitted");
         $("absence-note").value = "";
-        toast(type === "dispensation"
-            ? "Pengajuan dispensasi terkirim ke wali kelas."
-            : tr("absenceSubmitted"), "success");
+        if (type === "sick" && $("absence-medical-file")) $("absence-medical-file").value = "";
+        toast(type === "dispensation" ? "Pengajuan dispensasi terkirim ke wali kelas." : type === "sick" ? "Surat dokter terlampir. Pengajuan sakit langsung dikirim ke wali kelas." : tr("absenceSubmitted"), "success");
         if (result.whatsapp?.error) toast(tr("absenceWhatsappFailed"), "error");
-        if (type === "dispensation" && !result.teacher_notification?.created) {
-            toast("Pengajuan tersimpan, tetapi notifikasi wali kelas belum terkonfirmasi. Hubungi Admin.", "warning");
-        }
+        if (!result.teacher_notification?.created) toast("Pengajuan tersimpan, tetapi notifikasi wali kelas belum terkonfirmasi. Hubungi Admin.", "warning");
+        await loadStudentAbsenceRequests({ silent: true });
     } catch (error) {
         status.textContent = error.message || tr("absenceSubmitFailed");
         toast(status.textContent, "error");
-    } finally {
-        button.disabled = false;
-    }
+    } finally { button.disabled = false; }
 }
-
-async function loadAbsenceRequests() {
+async function loadAbsenceRequests({ silent = false } = {}) {
     const tbody = $("absence-requests-tbody");
     if (!tbody || state.user?.role !== "guru") return;
     try {
@@ -3971,10 +3914,12 @@ async function loadAbsenceRequests() {
                 ? "Dispensasi" : tr("absenceType_" + item.absence_type);
             const severity = ({ mild: "Ringan", moderate: "Sedang", severe: "Berat" })[item.severity];
             const detailType = typeLabel + (severity ? " · " + severity : "");
-            const statusLabel = tr("absenceStatus_" + item.status);
+            const statusLabel = item.status === "revoked" ? "Dicabut oleh wali kelas" : tr("absenceStatus_" + item.status);
             let action = item.status === "pending"
                 ? '<button class="button subtle" type="button" data-absence-review="approved" data-absence-id="' + safeText(item.id) + '">' + safeText(tr("approveAbsence")) + '</button> <button class="button danger-outline" type="button" data-absence-review="rejected" data-absence-id="' + safeText(item.id) + '">' + safeText(tr("rejectAbsence")) + '</button>'
-                : safeText(statusLabel);
+                : item.status === "approved"
+                    ? '<button class="button danger-outline" type="button" data-absence-review="revoked" data-absence-id="' + safeText(item.id) + '">Cabut persetujuan</button>'
+                    : safeText(statusLabel);
             if (item.absence_type === "sick" && item.medical_evidence_uploaded) {
                 action += ' <button class="button subtle" type="button" data-medical-evidence-view="' + safeText(item.id) + '">Lihat surat dokter</button>';
             }
@@ -3985,7 +3930,7 @@ async function loadAbsenceRequests() {
         $("absence-requests-empty")?.classList.toggle("hidden", rows.length > 0);
     } catch (error) {
         console.error("Absence request load failed:", error);
-        toast(tr("absenceLoadFailed"), "error");
+        if (!silent) toast(tr("absenceLoadFailed"), "error");
     }
 }
 
@@ -4012,13 +3957,15 @@ async function handleAbsenceReview(event) {
     }
     const button = event.target.closest("[data-absence-review]");
     if (!button) return;
+    const nextStatus = button.dataset.absenceReview;
+    if (nextStatus === "revoked" && !window.confirm("Cabut persetujuan pengajuan ini? Status terbaru akan langsung terlihat oleh siswa.")) return;
     button.disabled = true;
     try {
         await cloudRequest("/api/absence", {
             method: "PATCH", role: "guru",
-            body: { id: button.dataset.absenceId, status: button.dataset.absenceReview }
+            body: { id: button.dataset.absenceId, status: nextStatus }
         });
-        toast(tr("absenceReviewSaved"), "success");
+        toast(nextStatus === "revoked" ? "Persetujuan berhasil dicabut. Status siswa telah diperbarui." : tr("absenceReviewSaved"), "success");
         await loadAbsenceRequests();
     } catch (error) {
         toast(error.message || tr("absenceReviewFailed"), "error");
@@ -4930,10 +4877,11 @@ function setupEvents() {
     $("student-absence-form")?.addEventListener("submit", submitStudentAbsence);
     $("absence-type")?.addEventListener("change", updateAbsenceTypeFields);
     updateAbsenceTypeFields();
-    $("medical-evidence-form")?.addEventListener("submit", uploadRequiredMedicalEvidence);
-    $("btn-retry-medical-evidence")?.addEventListener("click", () => void refreshMedicalEvidenceGate());
+
     $("btn-refresh-absence-requests")?.addEventListener("click", loadAbsenceRequests);
     $("absence-requests-tbody")?.addEventListener("click", handleAbsenceReview);
+    document.addEventListener("visibilitychange", syncAbsenceOnReturn);
+    window.addEventListener("focus", syncAbsenceOnReturn);
     $("input-parent-wa").addEventListener("invalid", event => {
         event.preventDefault();
         toast(tr("invalidWhatsApp"), "error");
