@@ -22,7 +22,7 @@ export async function sendWhatsApp(target, message) {
                 Accept: "application/json",
                 "Content-Type": "application/x-www-form-urlencoded"
             },
-            body: new URLSearchParams({ target, message }),
+            body: new URLSearchParams({ target, message, connectOnly: "false" }),
             signal: controller.signal
         });
         const responseText = await response.text();
