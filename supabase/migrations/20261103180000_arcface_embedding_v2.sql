@@ -29,10 +29,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE private.student_face_embeddings TO
 CREATE INDEX IF NOT EXISTS student_face_embeddings_model_student_idx
     ON private.student_face_embeddings (model_key, student_id);
 
-CREATE INDEX IF NOT EXISTS student_face_embeddings_embedding_hnsw_idx
-    ON private.student_face_embeddings
-    USING hnsw (embedding extensions.vector_cosine_ops)
-    WITH (m = 16, ef_construction = 64);
+-- The current school roster is small enough for a bounded database-side cosine scan.
+-- Avoid an ANN index until production query volume and recall are measured.
 
 COMMENT ON TABLE private.student_face_embeddings IS
     'Private biometric embeddings for Amanah ID. Templates are model-versioned, 512D ArcFace vectors; do not expose through public Data API or student roster endpoints.';
