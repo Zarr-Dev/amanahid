@@ -4301,3 +4301,44 @@ body.theme-dark .absence-request-card { background: var(--surface-soft); }
     .absence-request-card { animation: none; }
     .form-stack > input, .form-stack > select, .form-stack > textarea { transition: none; }
 }
+/* Amanah ID finishing pass: consistent native controls, contained layout and mobile camera ergonomics. */
+:root { color-scheme: light; }
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { min-width: 320px; overflow-x: clip; }
+button, input, select, textarea { font: inherit; }
+button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue, #3978f6) 55%, transparent); outline-offset: 2px; }
+input[type=file] { display:block; width:100%; max-width:100%; min-width:0; padding: .65rem; border:1px solid var(--border,#d9e0ec); border-radius:14px; background:var(--surface-soft,#f7f9fc); color:var(--text,#182033); }
+input[type=file]::file-selector-button { appearance:none; border:0; border-radius:10px; padding:.65rem .9rem; margin:0 .65rem .15rem 0; background:var(--blue,#3978f6); color:white; font-weight:700; cursor:pointer; transition:filter .15s ease, transform .15s ease; }
+input[type=file]::file-selector-button:hover { filter:brightness(.96); }
+input[type=file]::file-selector-button:active { transform:scale(.98); }
+/* Prevent oversized headings and controls from escaping cards or dialogs. */
+.auth-copy h1, h1, h2, h3 { overflow-wrap:anywhere; }
+.modal-card, .dashboard-card, .form-stack, .form-stack > * { min-width:0; }
+img, video, canvas, iframe { max-width:100%; }
+video { object-fit:cover; }
+@media (max-width: 760px) {
+  .modal-backdrop { padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); align-items:flex-start; overflow-y:auto; }
+  .modal-card { width:min(100%, 620px); max-height:calc(100dvh - 20px); overflow-y:auto; border-radius:18px; }
+  .form-stack { gap:10px; }
+  .form-stack input:not([type=checkbox]):not([type=radio]), .form-stack select, .form-stack textarea { min-height:48px; font-size:16px; }
+  .button, button { min-height:42px; }
+  .table-wrap, .data-table-wrap { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+}
+@media (max-width: 480px) {
+  body { font-size:14px; }
+  .dashboard-content, .dashboard-main, .main-content { padding-inline:12px !important; }
+  .modal-card { border-radius:16px; }
+  .auth-copy h1 { font-size:clamp(30px, 8.8vw, 42px); }
+  .auth-description { max-width:100%; }
+  .auth-footer { flex-wrap:wrap; gap:12px; }
+}
+/* Camera should use the available viewport and safe areas, especially on mobile. */
+.camera-screen, .attendance-camera, #attendance-camera-screen { min-width:0; }
+@media (max-width: 760px) {
+  .camera-screen, .attendance-camera, #attendance-camera-screen { width:100%; max-width:100vw; min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); padding: max(8px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom)); }
+  .camera-screen video, .attendance-camera video, #attendance-camera-screen video { width:100%; height:auto; max-height:65dvh; aspect-ratio:4/3; object-fit:cover; border-radius:16px; }
+  .camera-screen canvas, .attendance-camera canvas, #attendance-camera-screen canvas { max-width:100%; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
