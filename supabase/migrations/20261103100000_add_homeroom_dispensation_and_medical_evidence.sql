@@ -1,164 +1,209 @@
--- Link every newly created student to one active homeroom teacher.
--- Existing student rows are intentionally left untouched; Admin can link them
--- through a separately reviewed data-maintenance workflow.
-alter table public.students
-  add column if not exists homeroom_teacher_id uuid;
+-- Amanah ID production schema synchronization.
+-- This migration is backward-compatible with the existing medical-evidence schema.
+-- It deliberately leaves existing student homeroom assignments NULL for Admin review.
 
-alter table public.students
-  add constraint students_homeroom_teacher_id_fkey
-  foreign key (homeroom_teacher_id) references public.teachers(id) on delete restrict;
+ALTER TABLE public.students
+  ADD COLUMN IF NOT EXISTS homeroom_teacher_id uuid;
 
-create index if not exists students_homeroom_teacher_idx
-  on public.students (homeroom_teacher_id);
-
--- Expand absence request categories and add minimal illness metadata.
-alter table public.absence_requests
-  drop constraint if exists absence_requests_absence_type_check;
-
-alter table public.absence_requests
-  add constraint absence_requests_absence_type_check
-  check (absence_type in ('sick', 'permission', 'other', 'dispensation'));
-
-alter table public.absence_requests
-  add column if not exists severity text,
-  add column if not exists medical_evidence_path text,
-  add column if not exists medical_evidence_uploaded_at timestamptz;
-
-alter table public.absence_requests
-  drop constraint if exists absence_requests_severity_check;
-
-alter table public.absence_requests
-  add constraint absence_requests_severity_check
-  check (
-    (absence_type = 'sick' and (severity is null or severity in ('mild', 'moderate', 'severe'))) or
-    (absence_type <> 'sick' and severity is null)
-  ) not valid;
-
--- Teacher-side notification inbox. The browser has no direct table access.
-create table if not exists public.teacher_notifications (
-  id uuid primary key default gen_random_uuid(),
-  teacher_id uuid not null references public.teachers(id) on delete restrict,
-  event_type text not null check (event_type in ('dispensation_submitted')),
-  title text not null check (char_length(title) between 1 and 160),
-  body text not null check (char_length(body) between 1 and 1000),
-  related_id uuid references public.absence_requests(id) on delete cascade,
-  read_at timestamptz,
-  created_at timestamptz not null default now(),
-  idempotency_key text not null unique
-);
-
-create index if not exists teacher_notifications_teacher_created_idx
-  on public.teacher_notifications (teacher_id, created_at desc);
-
-create index if not exists teacher_notifications_unread_idx
-  on public.teacher_notifications (teacher_id, created_at desc)
-  where read_at is null;
-
-alter table public.teacher_notifications enable row level security;
-revoke all on public.teacher_notifications from anon, authenticated, public;
-
--- Enforce homeroom assignment at the database boundary as well as in the API.
--- A teacher's first assigned student establishes their homeroom class; subsequent
--- students must belong to that same class.
-create or replace function public.enforce_student_homeroom_assignment()
-returns trigger
-language plpgsql
-set search_path = public, pg_temp
-as $$
-declare
-  teacher_class text;
-  teacher_active boolean;
-begin
-  if new.homeroom_teacher_id is null then
-    raise exception 'A homeroom teacher must be assigned to every new or reassigned student'
-      using errcode = '23514';
-  end if;
-
-  select homeroom_class, is_active
-    into teacher_class, teacher_active
-    from public.teachers
-    where id = new.homeroom_teacher_id
-    for update;
-
-  if not found or teacher_active is distinct from true then
-    raise exception 'The selected homeroom teacher is unavailable'
-      using errcode = '23503';
-  end if;
-
-  if teacher_class is null or btrim(teacher_class) = '' then
-    update public.teachers
-      set homeroom_class = btrim(new.class_name)
-      where id = new.homeroom_teacher_id;
-  elsif btrim(teacher_class) <> btrim(new.class_name) then
-    raise exception 'Student class must match the homeroom teacher class'
-      using errcode = '23514';
-  end if;
-
-  return new;
-end;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'students_homeroom_teacher_id_fkey'
+      AND conrelid = 'public.students'::regclass
+  ) THEN
+    ALTER TABLE public.students
+      ADD CONSTRAINT students_homeroom_teacher_id_fkey
+      FOREIGN KEY (homeroom_teacher_id)
+      REFERENCES public.teachers(id)
+      ON DELETE RESTRICT;
+  END IF;
+END;
 $$;
 
-drop trigger if exists students_enforce_homeroom_assignment on public.students;
-create trigger students_enforce_homeroom_assignment
-before insert or update of homeroom_teacher_id, class_name on public.students
-for each row execute function public.enforce_student_homeroom_assignment();
+CREATE INDEX IF NOT EXISTS students_homeroom_teacher_idx
+  ON public.students (homeroom_teacher_id);
 
--- Create an inbox event atomically with every approved-scope dispensasi request.
-create or replace function public.notify_homeroom_teacher_of_dispensation()
-returns trigger
-language plpgsql
-set search_path = public, pg_temp
-as $$
-declare
+ALTER TABLE public.absence_requests
+  DROP CONSTRAINT IF EXISTS absence_requests_absence_type_check;
+
+ALTER TABLE public.absence_requests
+  ADD CONSTRAINT absence_requests_absence_type_check
+  CHECK (absence_type IN ('sick', 'permission', 'other', 'dispensation'));
+
+ALTER TABLE public.absence_requests
+  ADD COLUMN IF NOT EXISTS severity text,
+  ADD COLUMN IF NOT EXISTS medical_evidence_path text,
+  ADD COLUMN IF NOT EXISTS medical_evidence_uploaded_at timestamptz;
+
+ALTER TABLE public.absence_requests
+  DROP CONSTRAINT IF EXISTS absence_requests_severity_check;
+
+ALTER TABLE public.absence_requests
+  ADD CONSTRAINT absence_requests_severity_check
+  CHECK (
+    (absence_type = 'sick' AND (severity IS NULL OR severity IN ('mild', 'moderate', 'severe'))) OR
+    (absence_type <> 'sick' AND severity IS NULL)
+  ) NOT VALID;
+
+-- The database previously enforced a legacy workflow using medical_file_path,
+-- medical_file_mime and medical_uploaded_at. The current API uses the new
+-- medical_evidence_path / medical_evidence_uploaded_at pair after approval.
+-- Keep both representations valid so existing records and old clients remain safe.
+ALTER TABLE public.absence_requests
+  DROP CONSTRAINT IF EXISTS absence_requests_medical_evidence_check;
+
+ALTER TABLE public.absence_requests
+  ADD CONSTRAINT absence_requests_medical_evidence_check
+  CHECK (
+    (
+      absence_type <> 'sick'
+      AND severity IS NULL
+      AND estimated_rest_days IS NULL
+      AND medical_file_path IS NULL
+      AND medical_file_mime IS NULL
+      AND medical_uploaded_at IS NULL
+      AND medical_evidence_path IS NULL
+      AND medical_evidence_uploaded_at IS NULL
+    )
+    OR
+    (
+      absence_type = 'sick'
+      AND (severity IS NULL OR severity IN ('mild', 'moderate', 'severe'))
+      AND (
+        (medical_evidence_path IS NULL AND medical_evidence_uploaded_at IS NULL)
+        OR
+        (medical_evidence_path IS NOT NULL AND medical_evidence_uploaded_at IS NOT NULL)
+      )
+      AND (
+        (
+          status IN ('pending', 'awaiting_medical')
+          AND estimated_rest_days IS NULL
+          AND medical_file_path IS NULL
+          AND medical_file_mime IS NULL
+          AND medical_uploaded_at IS NULL
+        )
+        OR
+        (
+          status IN ('evidence_submitted', 'approved')
+          AND estimated_rest_days BETWEEN 1 AND 30
+          AND medical_file_path IS NOT NULL
+          AND medical_file_mime IN ('application/pdf', 'image/jpeg', 'image/png')
+          AND medical_uploaded_at IS NOT NULL
+        )
+        OR
+        (
+          status = 'rejected'
+          AND (
+            (
+              estimated_rest_days IS NULL
+              AND medical_file_path IS NULL
+              AND medical_file_mime IS NULL
+              AND medical_uploaded_at IS NULL
+            )
+            OR
+            (
+              estimated_rest_days BETWEEN 1 AND 30
+              AND medical_file_path IS NOT NULL
+              AND medical_file_mime IN ('application/pdf', 'image/jpeg', 'image/png')
+              AND medical_uploaded_at IS NOT NULL
+            )
+          )
+        )
+        OR
+        (
+          status IN ('pending', 'approved', 'rejected')
+          AND estimated_rest_days IS NULL
+          AND medical_file_path IS NULL
+          AND medical_file_mime IS NULL
+          AND medical_uploaded_at IS NULL
+        )
+      )
+    )
+  ) NOT VALID;
+
+ALTER TABLE public.absence_requests
+  VALIDATE CONSTRAINT absence_requests_severity_check;
+ALTER TABLE public.absence_requests
+  VALIDATE CONSTRAINT absence_requests_medical_evidence_check;
+
+-- The browser has no direct table access; Vercel uses the server-side secret.
+CREATE TABLE IF NOT EXISTS public.teacher_notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  teacher_id uuid NOT NULL REFERENCES public.teachers(id) ON DELETE RESTRICT,
+  event_type text NOT NULL CHECK (event_type IN ('dispensation_submitted')),
+  title text NOT NULL CHECK (char_length(title) BETWEEN 1 AND 160),
+  body text NOT NULL CHECK (char_length(body) BETWEEN 1 AND 1000),
+  related_id uuid REFERENCES public.absence_requests(id) ON DELETE CASCADE,
+  read_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  idempotency_key text NOT NULL UNIQUE
+);
+
+CREATE INDEX IF NOT EXISTS teacher_notifications_teacher_created_idx
+  ON public.teacher_notifications (teacher_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS teacher_notifications_unread_idx
+  ON public.teacher_notifications (teacher_id, created_at DESC)
+  WHERE read_at IS NULL;
+
+ALTER TABLE public.teacher_notifications ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.teacher_notifications FROM anon, authenticated, public;
+
+CREATE OR REPLACE FUNCTION public.notify_homeroom_teacher_of_dispensation()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+DECLARE
   teacher_id_value uuid;
   student_name_value text;
   student_class_value text;
-begin
-  if new.absence_type <> 'dispensation' then
-    return new;
-  end if;
+BEGIN
+  IF NEW.absence_type <> 'dispensation' THEN
+    RETURN NEW;
+  END IF;
 
-  select s.homeroom_teacher_id, s.name, s.class_name
-    into teacher_id_value, student_name_value, student_class_value
-    from public.students s
-    where s.id = new.student_id;
+  SELECT s.homeroom_teacher_id, s.name, s.class_name
+    INTO teacher_id_value, student_name_value, student_class_value
+    FROM public.students s
+    WHERE s.id = NEW.student_id;
 
-  if teacher_id_value is null then
-    raise exception 'Student has no assigned homeroom teacher'
-      using errcode = '23514';
-  end if;
+  IF teacher_id_value IS NULL THEN
+    RAISE EXCEPTION 'Student has no assigned homeroom teacher'
+      USING errcode = '23514';
+  END IF;
 
-  insert into public.teacher_notifications (
+  INSERT INTO public.teacher_notifications (
     teacher_id, event_type, title, body, related_id, idempotency_key
-  ) values (
+  ) VALUES (
     teacher_id_value,
     'dispensation_submitted',
     'Pengajuan dispensasi baru',
-    student_name_value || ' (' || student_class_value || ') mengajukan dispensasi pada ' || new.absence_date::text || '.',
-    new.id,
-    'dispensation:' || new.id::text
+    student_name_value || ' (' || student_class_value || ') mengajukan dispensasi pada ' || NEW.absence_date::text || '.',
+    NEW.id,
+    'dispensation:' || NEW.id::text
   )
-  on conflict (idempotency_key) do nothing;
+  ON CONFLICT (idempotency_key) DO NOTHING;
 
-  return new;
-end;
+  RETURN NEW;
+END;
 $$;
 
-drop trigger if exists absence_request_notify_homeroom_teacher on public.absence_requests;
-create trigger absence_request_notify_homeroom_teacher
-after insert on public.absence_requests
-for each row execute function public.notify_homeroom_teacher_of_dispensation();
+DROP TRIGGER IF EXISTS absence_request_notify_homeroom_teacher ON public.absence_requests;
+CREATE TRIGGER absence_request_notify_homeroom_teacher
+AFTER INSERT ON public.absence_requests
+FOR EACH ROW EXECUTE FUNCTION public.notify_homeroom_teacher_of_dispensation();
 
--- Keep the medical evidence bucket private and restrict the accepted file types.
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values (
+-- Keep medical evidence private and restrict accepted file types.
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
   'medical-evidence',
   'medical-evidence',
   false,
   5242880,
-  array['application/pdf', 'image/jpeg', 'image/png']
+  ARRAY['application/pdf', 'image/jpeg', 'image/png']
 )
-on conflict (id) do update set
+ON CONFLICT (id) DO UPDATE SET
   public = false,
   file_size_limit = 5242880,
-  allowed_mime_types = excluded.allowed_mime_types;
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
