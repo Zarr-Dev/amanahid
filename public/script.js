@@ -111,7 +111,7 @@ const EXTRA_T = {
         loginAccessNote: "Admin, Guru, dan Siswa masuk dari formulir yang sama. Peran ditentukan otomatis berdasarkan akun resmi yang terdaftar.",
         captchaLabel: "VERIFIKASI SINGKAT", captchaAnswerPlaceholder: "Ketik jawaban",
         captchaHelp: "Selesaikan tantangan singkat ini. Soal dapat diganti dan selalu diperbarui setelah percobaan login.",
-        captchaRefresh: "Ganti", captchaLoading: "Memuat tantangan keamanan…",
+        captchaRefresh: "Perbarui tantangan keamanan", captchaLoading: "Memuat tantangan keamanan…",
         captchaUnavailable: "Tantangan keamanan belum tersedia. Periksa koneksi lalu coba lagi.",
         mockTotalStudents: "Peran akun", mockRegistered: "Admin · Guru · Siswa", mockCheckedIn: "Faktor presensi", mockSecurityFactors: "Wajah + GPS",
         mockLatestAttendance: "Alur akses", mockViewAll: "Terintegrasi", mockRoleAdmin: "Administrator",
@@ -299,7 +299,7 @@ const EXTRA_T = {
         loginAccessNote: "Admins, Teachers, and Students all use the same sign-in form. The system resolves each role from the registered school account.",
         captchaLabel: "QUICK SECURITY CHECK", captchaAnswerPlaceholder: "Type your answer",
         captchaHelp: "Solve this short challenge. Refresh it any time; a new one is issued after each login attempt.",
-        captchaRefresh: "Refresh", captchaLoading: "Loading security challenge…",
+        captchaRefresh: "Refresh the security challenge", captchaLoading: "Loading security challenge…",
         captchaUnavailable: "The security challenge is unavailable. Check your connection and try again.",
         mockTotalStudents: "Account roles", mockRegistered: "Admin · Teacher · Student", mockCheckedIn: "Attendance factors", mockSecurityFactors: "Face + GPS",
         mockLatestAttendance: "Access flow", mockViewAll: "Integrated", mockRoleAdmin: "Administrator",
@@ -487,7 +487,7 @@ const EXTRA_T = {
         loginAccessNote: "يستخدم المديرون والمعلمون والطلاب نموذج تسجيل الدخول نفسه. يحدد النظام الدور تلقائيًا من حساب المدرسة المسجل.",
         captchaLabel: "تحقق أمني سريع", captchaAnswerPlaceholder: "اكتب الإجابة",
         captchaHelp: "أكمل التحدي القصير. يمكنك تغييره، ويتم إصدار تحدٍّ جديد بعد كل محاولة دخول.",
-        captchaRefresh: "تغيير", captchaLoading: "جارٍ تحميل التحدي الأمني…",
+        captchaRefresh: "تحديث تحدي الأمان", captchaLoading: "جارٍ تحميل التحدي الأمني…",
         captchaUnavailable: "التحدي الأمني غير متاح. تحقق من الاتصال وحاول مرة أخرى.",
         mockTotalStudents: "أدوار الحساب", mockRegistered: "مدير · معلّم · طالب", mockCheckedIn: "عوامل الحضور", mockSecurityFactors: "الوجه + GPS",
         mockLatestAttendance: "مسار الدخول", mockViewAll: "متكامل", mockRoleAdmin: "المدير",
@@ -724,7 +724,8 @@ const state = {
     schoolSettingsLoaded: false,
     mapEditMode: false,
     mapDraftLocation: null,
-    splashTimers: []
+    splashTimers: [],
+    medicalEvidenceRequest: null
 };
 let authModalTrigger = null;
 let heroTitleMeasure = null;
@@ -2493,6 +2494,8 @@ function normalizeCloudStudent(student) {
         nisn: student.nisn,
         name: student.name,
         className: student.class_name,
+        homeroomTeacherId: student.homeroom_teacher_id || "",
+        homeroomTeacherName: student.homeroom_teacher?.name || "",
         parentWhatsApp: student.parent_whatsapp || "",
         registeredDate: student.created_at
             ? new Date(student.created_at).toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID")
@@ -2524,6 +2527,7 @@ async function loadCloudData(user = state.user) {
         renderStudentHistory();
         updateStudentProfile();
         updateStats();
+        if (user.role === "siswa") await refreshMedicalEvidenceGate();
     } catch (error) {
         console.error("Cloud data load failed:", error);
         if (token === state.cloudLoadToken && state.user === user) toast(tr("cloudLoadFailed"), "error");
@@ -2546,6 +2550,8 @@ function updateStudentProfile() {
     const student = state.students.find(item => item.nisn === user.nisn);
     $("student-profile-nisn").textContent = user.nisn || "—";
     $("student-profile-class").textContent = student?.className || "—";
+    const homeroom = $("student-profile-homeroom");
+    if (homeroom) homeroom.textContent = student?.homeroomTeacherName || "Belum ditetapkan";
 }
 
 function attendanceStatusLabel(record) {
