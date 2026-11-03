@@ -71,7 +71,7 @@ RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $amanah$
 DECLARE
   teacher_id_value uuid;
   student_name_value text;
@@ -108,7 +108,7 @@ BEGIN
   ON CONFLICT (idempotency_key) DO NOTHING;
   RETURN NEW;
 END;
-$$;
+$amanah$;
 
 DROP TRIGGER IF EXISTS absence_request_notify_homeroom_teacher ON public.absence_requests;
 CREATE TRIGGER absence_request_notify_homeroom_teacher
@@ -120,7 +120,7 @@ RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $amanah$
 DECLARE
   event_type_value text;
   title_value text;
@@ -150,7 +150,7 @@ BEGIN
   ON CONFLICT (idempotency_key) DO NOTHING;
   RETURN NEW;
 END;
-$$;
+$amanah$;
 
 DROP TRIGGER IF EXISTS absence_request_notify_student_status ON public.absence_requests;
 CREATE TRIGGER absence_request_notify_student_status
@@ -162,7 +162,7 @@ CREATE OR REPLACE FUNCTION public.enforce_student_homeroom_assignment()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = public, pg_temp
-AS $$
+AS $amanah$
 DECLARE
   teacher_class text;
   teacher_active boolean;
@@ -181,7 +181,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$amanah$;
 
 DROP TRIGGER IF EXISTS students_enforce_homeroom_assignment ON public.students;
 CREATE TRIGGER students_enforce_homeroom_assignment
@@ -202,7 +202,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$amanah$;
 DROP TRIGGER IF EXISTS absence_requests_require_sick_evidence ON public.absence_requests;
 CREATE TRIGGER absence_requests_require_sick_evidence
 BEFORE INSERT ON public.absence_requests
