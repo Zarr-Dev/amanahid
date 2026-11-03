@@ -614,12 +614,20 @@ test("Admin can create a Siswa login with NISN and class, but face enrollment re
                 { email: "admin@example.com", name: "Admin", is_active: true }
             ]), { status: 200 });
         }
+        if (requestUrl.includes("teachers?select=id,name,homeroom_class,is_active&id=")) {
+            return new Response(JSON.stringify([{
+                id: "223e4567-e89b-42d3-a456-426614174000",
+                name: "Teacher Demo",
+                homeroom_class: null,
+                is_active: true
+            }]), { status: 200 });
+        }
         if (requestUrl.includes("students?select=id&email=") ||
             requestUrl.includes("teachers?select=id&email=") ||
             requestUrl.includes("students?select=id&nisn=")) {
             return new Response("[]", { status: 200 });
         }
-        if (requestUrl.includes("students?select=id,nisn,email,name,class_name,created_at") &&
+        if (requestUrl.includes("students?select=id,nisn,email,name,class_name,homeroom_teacher_id,created_at") &&
             init.method === "POST") {
             return new Response(JSON.stringify([{
                 id: "123e4567-e89b-42d3-a456-426614174000",
@@ -627,6 +635,7 @@ test("Admin can create a Siswa login with NISN and class, but face enrollment re
                 email: "student@example.com",
                 name: "Student Demo",
                 class_name: "XI IPA 1",
+                homeroom_teacher_id: "223e4567-e89b-42d3-a456-426614174000",
                 created_at: "2026-10-26T00:00:00Z"
             }]), { status: 201 });
         }
@@ -644,7 +653,8 @@ test("Admin can create a Siswa login with NISN and class, but face enrollment re
             name: "Student Demo",
             password: "SecureExample!234",
             nisn: "1234567890",
-            class_name: "XI IPA 1"
+            class_name: "XI IPA 1",
+            homeroom_teacher_id: "223e4567-e89b-42d3-a456-426614174000"
         }
     };
     const res = responseMock();
@@ -652,9 +662,10 @@ test("Admin can create a Siswa login with NISN and class, but face enrollment re
     assert.equal(res.statusCode, 201);
     assert.equal(res.body.user.role, "siswa");
     assert.equal(res.body.user.face_enrollment_required, true);
-    const insert = requests.find(request => request.method === "POST" && request.url.includes("students?select=id,nisn"));
+    const insert = requests.find(request => request.method === "POST" && request.url.includes("students?select=id,nisn,email,name,class_name,homeroom_teacher_id,created_at"));
     assert.ok(insert);
     assert.deepEqual(JSON.parse(insert.body).face_descriptors, []);
+    assert.equal(JSON.parse(insert.body).homeroom_teacher_id, "223e4567-e89b-42d3-a456-426614174000");
     assert.ok(requests.some(request => request.url.includes("audit_log")));
 });
 
