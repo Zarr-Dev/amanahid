@@ -49,9 +49,18 @@ export default async function handler(req, res) {
             return jsonError(res, 403, "Students can only access their own record");
         }
         try {
+            let homeroomFilter = "";
+            if (role === "guru") {
+                const teacherRows = await supabaseRequest(
+                    "teachers?select=id&email=eq." + encodeURIComponent(getSession(req)?.email || "") + "&is_active=eq.true&limit=1"
+                );
+                const teacher = teacherRows?.[0];
+                if (!teacher) return jsonError(res, 403, "An active teacher account is required");
+                homeroomFilter = "&homeroom_teacher_id=eq." + encodeURIComponent(teacher.id);
+            }
             const filter = parseNisn(nisn) ? `&nisn=eq.${encodeURIComponent(nisn)}` : "";
             const students = await supabaseRequest(
-                `students?select=${STUDENT_COLUMNS}${filter}&is_active=eq.true&order=name.asc`
+                `students?select=${STUDENT_COLUMNS}${filter}${homeroomFilter}&is_active=eq.true&order=name.asc`
             );
             return res.status(200).json({ students });
         } catch (error) {
@@ -81,10 +90,15 @@ export default async function handler(req, res) {
             return jsonError(res, 400, "A valid NISN and five face-angle descriptors are required");
         }
         try {
-            const students = await supabaseRequest(
-                "students?select=id,nisn,name,face_descriptors&nisn=eq." + encodeURIComponent(nisn) + "&is_active=eq.true&limit=1"
+            const teacherRows = await supabaseRequest(
+                "teachers?select=id&email=eq." + encodeURIComponent(getSession(req)?.email || "") + "&is_active=eq.true&limit=1"
             );
-            if (!students.length) return jsonError(res, 404, "Student account was not found");
+            const teacher = teacherRows?.[0];
+            if (!teacher) return jsonError(res, 403, "An active teacher account is required");
+            const students = await supabaseRequest(
+                "students?select=id,nisn,name,face_descriptors,homeroom_teacher_id&nisn=eq." + encodeURIComponent(nisn) + "&is_active=eq.true&limit=1"
+            );
+            if (!students.length || students[0].homeroom_teacher_id !== teacher.id) return jsonError(res, 404, "Student was not found in your homeroom");
             const otherStudents = await supabaseRequest(
                 "students?select=nisn,face_descriptors&is_active=eq.true&limit=1000"
             );
@@ -247,11 +261,19 @@ export default async function handler(req, res) {
         if (!deleteAll && !parseNisn(nisn)) return jsonError(res, 400, "A valid NISN is required");
         try {
             const actor = getSession(req);
-            const filter = deleteAll ? "" : `?nisn=eq.${encodeURIComponent(nisn)}`;
+            const teacherRows = await supabaseRequest(
+                "teachers?select=id&email=eq." + encodeURIComponent(actor?.email || "") + "&is_active=eq.true&limit=1"
+            );
+            const teacher = teacherRows?.[0];
+            if (!teacher) return jsonError(res, 403, "An active teacher account is required");
+            const filter = deleteAll
+                ? "?homeroom_teacher_id=eq." + encodeURIComponent(teacher.id)
+                : "?nisn=eq." + encodeURIComponent(nisn) + "&homeroom_teacher_id=eq." + encodeURIComponent(teacher.id);
             const deleted = await supabaseRequest(`students?select=id,nisn${filter}`);
+            if (!deleteAll && !deleted.length) return jsonError(res, 404, "Student was not found in your homeroom");
             await supabaseRequest(`students${filter}`, { method: "DELETE" });
-            await writeAuditLog(actor, deleteAll ? "student.delete_all" : "student.delete", "students",
-                deleteAll ? "all" : nisn, { count: deleted.length });
+            await writeAuditLog(actor, deleteAll ? "student.delete_homeroom" : "student.delete", "students",
+                deleteAll ? teacher.id : nisn, { count: deleted.length, teacher_id: teacher.id });
             return res.status(200).json({ ok: true });
         } catch (error) {
             console.error("Student delete failed:", error);
