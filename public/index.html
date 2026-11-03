@@ -643,11 +643,7 @@
                                 maxlength="20" autocomplete="off">
                             <label for="admin-user-class" data-i18n="studentClass">Kelas siswa</label>
                             <input id="admin-user-class" type="text" maxlength="40" required>
-                            <label for="admin-user-homeroom-teacher">Wali kelas siswa</label>
-                            <select id="admin-user-homeroom-teacher" required>
-                                <option value="">Pilih guru wali kelas</option>
-                            </select>
-                            <p class="helper-text">Setiap siswa wajib terhubung ke satu guru wali kelas yang aktif. Kelas siswa harus sesuai dengan kelas wali kelas.</p>
+
                             <label for="admin-user-parent-whatsapp" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
                             <input id="admin-user-parent-whatsapp" type="tel" inputmode="tel" autocomplete="tel"
                                 maxlength="15" pattern="(?:08|628)[0-9]{8,13}"
@@ -1008,6 +1004,11 @@
                             </select>
                             <p class="helper-text">Pilih tingkat yang paling mendekati. Tidak perlu menuliskan diagnosis atau informasi medis pribadi.</p>
                         </div>
+                        <div id="absence-evidence-wrap" class="form-stack absence-evidence-field">
+                            <label for="absence-medical-file">Surat keterangan dokter <span class="required-mark">*</span></label>
+                            <input id="absence-medical-file" name="medical_evidence" type="file" accept="application/pdf,image/jpeg,image/png" required aria-describedby="absence-evidence-help">
+                            <p id="absence-evidence-help" class="helper-text">Wajib dilampirkan sebelum pengajuan sakit dikirim. PDF, JPG, atau PNG · Maksimal 5 MB. Berkas hanya dapat dibuka pihak sekolah yang berwenang.</p>
+                        </div>
                         <div id="absence-dispensation-hint" class="notice-card dispensation-notice hidden" role="note">
                             <strong>Dispensasi hanya dari dalam sekolah</strong>
                             <p>Presensi hari ini harus sudah tercatat. Saat mengirim, GPS akan memeriksa bahwa perangkat masih berada di dalam radius sekolah.</p>
@@ -1018,6 +1019,11 @@
                         <button id="btn-submit-absence" class="button primary full" type="submit" data-i18n="absenceSubmit">Kirim formulir</button>
                         <p id="absence-form-status" class="helper-text" role="status" aria-live="polite"></p>
                     </form>
+                </div>
+                <div class="panel student-absence-history">
+                    <div class="panel-heading"><div><h3>Riwayat pengajuan</h3><p class="muted">Pantau status izin dan pengajuan sakit di sini.</p></div></div>
+                    <div id="student-absence-requests-list" class="absence-request-list" aria-live="polite"></div>
+                    <p id="student-absence-empty" class="empty-state compact-empty">Belum ada pengajuan ketidakhadiran.</p>
                 </div>
             </section>
             <section id="view-s-profile" class="view hidden">
@@ -1144,25 +1150,6 @@
                     <button id="app-dialog-submit" class="button primary" type="submit">Simpan</button>
                 </div>
             </form>
-        </section>
-    </div>
-
-    <div id="medical-evidence-gate" class="medical-evidence-gate hidden" role="dialog"
-        aria-modal="true" aria-labelledby="medical-evidence-title">
-        <section class="medical-evidence-card">
-            <span class="section-kicker">TINDAK LANJUT PENGAJUAN SAKIT</span>
-            <h2 id="medical-evidence-title">Surat keterangan dokter diperlukan</h2>
-            <p id="medical-evidence-description">Pengajuan sakit Anda telah disetujui guru. Unggah surat keterangan dokter untuk melanjutkan penggunaan presensi.</p>
-            <form id="medical-evidence-form" class="medical-evidence-form">
-                <label for="medical-evidence-file">Surat keterangan dokter</label>
-                <input id="medical-evidence-file" type="file"
-                    accept="application/pdf,image/jpeg,image/png" required>
-                <p class="helper-text">PDF, JPG, atau PNG · Maksimal 5 MB. Foto harus terbaca dan cukup menampilkan suratnya.</p>
-                <button id="btn-upload-medical-evidence" class="button primary full" type="submit">Unggah surat</button>
-                <p id="medical-evidence-status" class="helper-text" role="status" aria-live="polite"></p>
-                <button id="btn-retry-medical-evidence" class="button subtle full hidden" type="button">Coba periksa kembali</button>
-            </form>
-            <p class="medical-evidence-privacy">Berkas disimpan di penyimpanan privat sekolah dan hanya dapat diakses oleh pihak sekolah yang berwenang.</p>
         </section>
     </div>
 
