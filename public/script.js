@@ -36,7 +36,7 @@ const ROLE_T = {
         roleTeacherMismatch: "Akun ini bukan akun guru. Silakan pilih peran Siswa.",
         roleStudentMismatch: "Akun ini bukan akun siswa. Silakan pilih peran Guru.",
         studentNeedsNisn: "Masukkan NISN yang didaftarkan oleh guru.",
-        studentUnlinked: "Akun sudah dibuat tetapi belum terhubung dengan data wajah. Minta guru mendaftarkan NISN Anda sebelum presensi.",
+        studentUnlinked: "Template wajah belum terdaftar dengan model biometrik terbaru. Hubungi guru untuk melakukan pendaftaran atau pembaruan wajah.",
         studentMatched: "Data wajah Anda sudah terhubung.",
         studentAlreadyPresent: "Presensi hari ini sudah tercatat untuk Anda.",
         studentAttendanceSuccess: "Presensi berhasil dicatat.",
@@ -62,7 +62,7 @@ const ROLE_T = {
         roleTeacherMismatch: "This is not a teacher account. Please select Student.",
         roleStudentMismatch: "This is not a student account. Please select Teacher.",
         studentNeedsNisn: "Enter the NISN registered by your teacher.",
-        studentUnlinked: "Your account was created but is not linked to a face record. Ask your teacher to register your NISN before checking in.",
+        studentUnlinked: "Your face template is not enrolled with the current biometric model. Ask your teacher to register or update your face before checking in.",
         studentMatched: "Your face record is linked.",
         studentAlreadyPresent: "Your attendance has already been recorded today.",
         studentAttendanceSuccess: "Attendance recorded successfully.",
@@ -88,7 +88,7 @@ const ROLE_T = {
         roleTeacherMismatch: "هذا ليس حساب معلّم. يرجى اختيار الطالب.",
         roleStudentMismatch: "هذا ليس حساب طالب. يرجى اختيار المعلّم.",
         studentNeedsNisn: "أدخل رقم NISN المسجل لدى المعلّم.",
-        studentUnlinked: "تم إنشاء الحساب لكنه غير مرتبط ببيانات الوجه. اطلب من المعلّم تسجيل رقم NISN قبل الحضور.",
+        studentUnlinked: "لم يتم تسجيل قالب وجهك باستخدام النموذج الحيوي الحالي. اطلب من المعلّم تسجيل وجهك أو تحديثه قبل الحضور.",
         studentMatched: "تم ربط بيانات وجهك.",
         studentAlreadyPresent: "تم تسجيل حضورك اليوم بالفعل.",
         studentAttendanceSuccess: "تم تسجيل الحضور بنجاح.",
@@ -3579,7 +3579,6 @@ async function processAttendanceFrame() {
             role: requestUser.role,
             nisn: requestUser.nisn,
             body: {
-                ...(requestUser.role === "siswa" ? { nisn: requestUser.nisn } : {}),
                 model_key: "auraface-glintr100-int8-v1",
                 embedding: embedded.embedding
             }
