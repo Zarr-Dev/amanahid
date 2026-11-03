@@ -48,7 +48,7 @@ export function extractArcFaceLandmarks(detection) {
 export function computeSimilarityTransform(sourcePoints, targetPoints = DESTINATION) {
     if (!Array.isArray(sourcePoints) || sourcePoints.length !== 5 ||
         !Array.isArray(targetPoints) || targetPoints.length !== 5 ||
-        !sourcePoints.every(finitePoint) || !targetPoints.every(finitePoint)) {
+        !sourcePoints.every(finitePoint) || !targetPoints.every(point => Array.isArray(point) && point.length === 2 && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])))) {
         throw new TypeError("Exactly five finite source and target landmarks are required");
     }
 
