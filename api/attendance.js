@@ -294,6 +294,9 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
+        if (req.query?.all === "1") {
+            return jsonError(res, 403, "Bulk attendance deletion is disabled. Correct individual records instead.");
+        }
         try {
             if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
         } catch (error) {

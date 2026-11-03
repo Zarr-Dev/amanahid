@@ -2488,16 +2488,12 @@ async function loadSchoolSettings({ preserveOnError = false } = {}) {
 }
 
 function normalizeCloudStudent(student) {
-    const cached = state.students.find(item => item.nisn === student.nisn);
     return {
         id: student.id,
         nisn: student.nisn,
         name: student.name,
         className: student.class_name,
         parentWhatsApp: student.parent_whatsapp || "",
-        faceDescriptors: Array.isArray(student.face_descriptors)
-            ? student.face_descriptors
-            : cached?.faceDescriptors || [],
         registeredDate: student.created_at
             ? new Date(student.created_at).toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID")
             : ""
@@ -2512,24 +2508,15 @@ async function loadCloudData(user = state.user) {
             ? cloudRequest(`/api/students?nisn=${encodeURIComponent(user.nisn)}`, {
                 role: user.role,
                 nisn: user.nisn
-            }).then(result => ({ students: result.students, faceStudents: [] }))
-            : Promise.all([
-                cloudRequest("/api/students", { role: user.role }),
-                cloudRequest("/api/students?with_faces=1", { role: user.role })
-            ]).then(([result, faces]) => ({ students: result.students, faceStudents: faces.students }));
+            })
+            : cloudRequest("/api/students", { role: user.role });
         const [studentData, attendanceResult] = await Promise.all([
             studentsRequest,
             cloudRequest("/api/attendance", { role: user.role, nisn: user.nisn })
         ]);
         if (token !== state.cloudLoadToken || state.user !== user) return;
 
-        const descriptorsByNisn = new Map(studentData.faceStudents.map(student =>
-            [student.nisn, student.face_descriptors]
-        ));
-        state.students = studentData.students.map(student => normalizeCloudStudent({
-            ...student,
-            face_descriptors: descriptorsByNisn.get(student.nisn)
-        }));
+        state.students = studentData.students.map(normalizeCloudStudent);
         state.attendance = attendanceResult.attendance;
         if (user.role === "guru") void loadAbsenceRequests();
         renderStudentList();
@@ -2624,7 +2611,7 @@ function renderStudentList() {
       <td>${safeText(s.className)}</td>
       <td>${safeText(s.parentWhatsApp || "—")}</td>
       <td>${safeText(s.registeredDate)}</td>
-      <td><button class="row-action" type="button" data-edit-student-face="${safeText(s.nisn)}">${safeText(tr("replaceFace"))}</button> <button class="row-action" type="button" data-delete-student="${safeText(s.nisn)}">${safeText(tr("delete"))}</button></td>
+      <td><button class="row-action" type="button" data-edit-student-face="${safeText(s.nisn)}">${safeText(tr("replaceFace"))}</button></td>
     </tr>`).join("");
     $("students-empty").classList.toggle("hidden", state.students.length > 0);
     $("student-count-badge").textContent = state.students.length;
@@ -3281,26 +3268,6 @@ function updateAttendanceLiveness(detection) {
     return { completed: challenge.completed, progress: challenge.total, messageKey };
 }
 
-function getStudentDescriptors(student) {
-    const samples = Array.isArray(student.faceDescriptors)
-        ? student.faceDescriptors
-        : student.descriptor?.length ? [student.descriptor] : [];
-    return samples.filter(sample => Array.isArray(sample) && sample.length === 128 &&
-        sample.every(Number.isFinite)).map(sample => new Float32Array(sample));
-}
-
-function createFaceMatcher(students) {
-    const labeledDescriptors = students.map(student => {
-        const descriptors = getStudentDescriptors(student);
-        return descriptors.length
-            ? new faceapi.LabeledFaceDescriptors(student.nisn, descriptors)
-            : null;
-    }).filter(Boolean);
-    return labeledDescriptors.length
-        ? new faceapi.FaceMatcher(labeledDescriptors, FACE_MATCH_THRESHOLD)
-        : null;
-}
-
 function updateFaceSampleCount() {
     if ($("face-sample-count")) {
         $("face-sample-count").textContent = tr("faceSamplesCount", { count: state.faceSamples.length });
@@ -3393,11 +3360,6 @@ async function processAttendanceFrame() {
         const candidates = requestUser.role === "siswa"
             ? state.students.filter(item => item.nisn === requestUser.nisn)
             : state.students;
-        if (requestUser.role === "guru" &&
-            !candidates.some(student => getStudentDescriptors(student).length)) {
-            setAttendanceMessage(tr("faceNotRegistered"));
-            return;
-        }
         await new Promise(resolve => window.requestAnimationFrame(resolve));
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         if (video.readyState < 2) return;
@@ -3991,30 +3953,11 @@ function beginFaceUpdate(nisn) {
     document.querySelector('[data-target="view-formulir"]')?.click();
 }
 
-async function removeStudent(nisn) {
-    try {
-        await cloudRequest(`/api/students?nisn=${encodeURIComponent(nisn)}`, {
-            method: "DELETE",
-            role: "guru"
-        });
-    } catch (error) {
-        console.error("Student deletion failed:", error);
-        toast(error.message || tr("cloudDeleteFailed"), "error");
-        return;
-    }
-    state.students = state.students.filter(s => s.nisn !== nisn);
-    state.attendance = state.attendance.filter(a => a.nisn !== nisn);
-    renderStudentList();
-    renderDatabase();
-    updateStats();
-    toast(tr("studentDeleted"), "success");
-}
-
 function openMap() {
     stopAllCameras();
     $("map-modal").classList.remove("hidden");
     setMapStatus();
-    $("school-location-editor").classList.toggle("hidden", state.user?.role !== "guru");
+    $("school-location-editor").classList.add("hidden");
     updateMapText();
 
     if (!window.L) {
@@ -4052,7 +3995,7 @@ function openMap() {
             }).addTo(state.map);
 
             state.map.on("click", event => {
-                if (!state.mapEditMode || state.user?.role !== "guru") return;
+                if (!state.mapEditMode || state.user?.role !== "admin") return;
                 state.mapDraftLocation = {
                     ...state.mapDraftLocation,
                     lat: event.latlng.lat,
@@ -4127,14 +4070,14 @@ function cancelSchoolLocationEdit() {
 }
 
 async function saveSchoolLocation() {
-    if (!state.mapDraftLocation || state.user?.role !== "guru") return;
+    if (!state.mapDraftLocation || state.user?.role !== "admin") return;
     const button = $("btn-save-school-location");
     button.disabled = true;
     $("school-location-edit-status").textContent = tr("locationSaving");
     try {
         const saved = await cloudRequest("/api/settings", {
             method: "PUT",
-            role: "guru",
+            role: "admin",
             body: {
                 lat: state.mapDraftLocation.lat,
                 lng: state.mapDraftLocation.lng,
@@ -4746,45 +4689,7 @@ function setupEvents() {
             beginFaceUpdate(editFace.dataset.editStudentFace);
             return;
         }
-        const button = event.target.closest("[data-delete-student]");
-        if (button) removeStudent(button.dataset.deleteStudent);
-    });
-
-    $("btn-delete-all").addEventListener("click", () => {
-        stopAllCameras();
-        $("confirm-dialog").classList.remove("hidden");
-    });
-
-    $("cancel-delete").addEventListener("click", () => {
-        $("confirm-dialog").classList.add("hidden");
-    });
-
-    $("confirm-delete").addEventListener("click", async () => {
-        try {
-            await cloudRequest("/api/students?all=1", { method: "DELETE", role: "guru" });
-        } catch (error) {
-            console.error("Bulk data deletion failed:", error);
-            toast(error.message || tr("cloudDeleteFailed"), "error");
-            $("confirm-dialog").classList.add("hidden");
-            return;
-        }
-        state.attendance = [];
-        state.students = [];
-        state.faceSamples = [];
-        state.faceSampleAngles = [];
-        state.faceImageHashes = new Set();
-        state.faceCandidate = null;
-        updateFaceSampleCount();
-        $("confirm-dialog").classList.add("hidden");
-        renderDatabase();
-        renderStudentList();
-        updateStats();
-        toast(tr("allDeleted"), "success");
-    });
-
-    $("confirm-dialog").addEventListener("click", event => {
-        if (event.target === $("confirm-dialog")) $("confirm-dialog").classList.add("hidden");
-    });
+        });
 
     $("btn-map").addEventListener("click", openMap);
     $("close-map").addEventListener("click", () => {
@@ -4800,7 +4705,7 @@ function setupEvents() {
     $("btn-check-map-location").addEventListener("click", refreshMapLocation);
     $("btn-refresh-map-location").addEventListener("click", refreshMapLocation);
     $("btn-edit-school-location").addEventListener("click", () => {
-        if (state.user?.role !== "guru") return;
+        if (state.user?.role !== "admin") return;
         if (state.mapEditMode) {
             cancelSchoolLocationEdit();
             return;

@@ -33,6 +33,7 @@ async function allUsers() {
 }
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     const admin = await authorizeAdmin(req, res, "users");
     if (!admin) return;
     try {
@@ -58,12 +59,14 @@ export default async function handler(req, res) {
 
             const email = body.email.trim().toLowerCase();
             const name = body.name.trim();
-            const [studentEmailRows, teacherEmailRows] = await Promise.all([
+            const [studentEmailRows, teacherEmailRows, adminEmailRows] = await Promise.all([
                 supabaseRequest(`students?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
-                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
+                supabaseRequest(`teachers?select=id&email=eq.${encodeURIComponent(email)}&limit=1`),
+                supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(email)}&limit=1`)
             ]);
             if ((Array.isArray(studentEmailRows) && studentEmailRows.length) ||
-                (Array.isArray(teacherEmailRows) && teacherEmailRows.length)) {
+                (Array.isArray(teacherEmailRows) && teacherEmailRows.length) ||
+                (Array.isArray(adminEmailRows) && adminEmailRows.length)) {
                 return jsonError(res, 409, "User email already exists");
             }
 
@@ -133,10 +136,15 @@ export default async function handler(req, res) {
             }
             if (body.email) {
                 const otherTable = body.table === "students" ? "teachers" : "students";
-                const duplicate = await supabaseRequest(
-                    `${otherTable}?select=id&email=eq.${encodeURIComponent(body.email.trim().toLowerCase())}&limit=1`
-                );
-                if ((Array.isArray(duplicate) ? duplicate.length : 0) > 0) return jsonError(res, 409, "User email already exists");
+                const normalizedEmail = body.email.trim().toLowerCase();
+                const [duplicateOtherRole, duplicateAdmin] = await Promise.all([
+                    supabaseRequest(`${otherTable}?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`),
+                    supabaseRequest(`admin_users?select=id&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`)
+                ]);
+                if ((Array.isArray(duplicateOtherRole) && duplicateOtherRole.length > 0) ||
+                    (Array.isArray(duplicateAdmin) && duplicateAdmin.length > 0)) {
+                    return jsonError(res, 409, "User email already exists");
+                }
             }
             if (body.password && !validatePassword(body.password)) {
                 return jsonError(res, 400, "Password must contain 8 to 128 safe characters");

@@ -657,6 +657,89 @@ test("Admin can create a Siswa login with NISN and class, but face enrollment re
     assert.ok(requests.some(request => request.url.includes("audit_log")));
 });
 
+
+test("Admin cannot provision a Guru or Siswa with an email already held by an Admin account", async t => {
+    const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SESSION_SECRET"];
+    const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        for (const key of keys) {
+            if (previous[key] === undefined) delete process.env[key];
+            else process.env[key] = previous[key];
+        }
+        globalThis.fetch = originalFetch;
+    });
+    process.env.APP_ORIGIN = "https://school.example";
+    process.env.SUPABASE_URL = "https://supabase.example";
+    process.env.SUPABASE_SECRET_KEY = "test-service-secret";
+    process.env.SESSION_SECRET = "test-session-secret-with-more-than-32-characters";
+
+    const adminToken = signToken({ email: "admin@example.com", name: "Admin", role: "admin" });
+    const requests = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        requests.push({ url: requestUrl, method: init.method || "GET" });
+        if (requestUrl.includes("admin_users?select=email,name,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "admin@example.com", name: "Admin", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("admin_users?select=id&email=")) {
+            return new Response(JSON.stringify([{ id: "existing-admin" }]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+
+    const req = {
+        method: "POST",
+        headers: { origin: "https://school.example", "x-admin-token": adminToken },
+        socket: { remoteAddress: "test-cross-role-email-collision" },
+        body: {
+            role: "guru",
+            email: "admin@example.com",
+            name: "Another account",
+            password: "SecureExample!234"
+        }
+    };
+    const res = responseMock();
+    await adminUsersHandler(req, res);
+    assert.equal(res.statusCode, 409);
+    assert.match(res.body.error, /email already exists/i);
+    assert.equal(requests.some(request => request.method === "POST"), false);
+});
+
+test("attendance API blocks bulk deletion even for a signed-in teacher", async t => {
+    const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY"];
+    const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+    const originalFetch = globalThis.fetch;
+    t.after(() => {
+        for (const key of keys) {
+            if (previous[key] === undefined) delete process.env[key];
+            else process.env[key] = previous[key];
+        }
+        globalThis.fetch = originalFetch;
+    });
+    process.env.APP_ORIGIN = "https://school.example";
+    process.env.SUPABASE_URL = "https://supabase.example";
+    process.env.SUPABASE_SECRET_KEY = "test-service-secret";
+    globalThis.fetch = async url => {
+        if (String(url).includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "teacher@example.com", is_active: true }
+            ]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    const req = requestMock("DELETE", teacherToken, "test-attendance-bulk-delete-denied");
+    req.query = { all: "1" };
+    const res = responseMock();
+    await attendanceHandler(req, res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /Bulk attendance deletion is disabled/);
+});
+
 test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role tables", async t => {
     const originalFetch = globalThis.fetch;
     const password = "SecureExample!234";
@@ -710,6 +793,7 @@ test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role table
         const res = responseMock();
         await authLoginHandler(req, res);
         assert.equal(res.statusCode, 200, `${account.role} login should succeed through the shared endpoint`);
+        assert.equal(res.headers["Cache-Control"], "no-store, max-age=0");
         assert.equal(res.body.user.role, account.role);
         assert.equal(verifyToken(res.body.token)?.role, account.role);
     }
@@ -718,4 +802,60 @@ test("one sign-in endpoint resolves Admin, Guru, and Siswa from their role table
     assert.ok(requests.some(request => request.url.includes("teachers?select=")));
     assert.ok(requests.some(request => request.url.includes("students?select=email,name,nisn,password_hash,is_active")));
     assert.ok(requests.filter(request => request.method === "PATCH").length >= 3);
+});
+
+
+test("teacher roster never receives biometric descriptors, even with the legacy query flag", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    const requests = [];
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        requests.push(requestUrl);
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([{ email: "teacher@example.com", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,nisn,name,class_name,parent_whatsapp,created_at")) {
+            return new Response(JSON.stringify([{
+                id: "123e4567-e89b-42d3-a456-426614174000",
+                nisn: "12345678",
+                name: "Student",
+                class_name: "XI IPA 1",
+                parent_whatsapp: null,
+                created_at: "2026-11-02T00:00:00Z"
+            }]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = requestMock("GET", teacherToken, "test-no-face-descriptor-export");
+    req.query = { with_faces: "1" };
+    const res = responseMock();
+    await studentsHandler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.students[0].face_descriptors, undefined);
+    assert.ok(requests.some(url => url.includes("students?select=id,nisn,name,class_name,parent_whatsapp,created_at")));
+    assert.ok(requests.every(url => !url.includes("face_descriptors")));
+});
+
+test("student permanent-delete endpoint is disabled", async () => {
+    const req = requestMock("DELETE", null, "test-student-delete-disabled");
+    req.query = { all: "1" };
+    const res = responseMock();
+    await studentsHandler(req, res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /Admin account deactivation/);
+});
+
+test("teachers cannot modify school geofence settings through the legacy settings endpoint", async () => {
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    const req = requestMock("PUT", teacherToken, "test-teacher-geofence-denied");
+    req.body = { lat: -6.2, lng: 106.6, radius: 500 };
+    req.query = {};
+    const res = responseMock();
+    await settingsHandler(req, res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /Administrator role/);
 });

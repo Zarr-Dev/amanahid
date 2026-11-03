@@ -54,6 +54,14 @@ function shuffle(values) {
     return result;
 }
 
+function decodeCanonicalBase64Url(value) {
+    if (typeof value !== "string" || !/^[A-Za-z0-9_-]+$/.test(value)) return null;
+    const decoded = Buffer.from(value, "base64url");
+    // Buffer's decoder accepts some non-canonical encodings that decode to
+    // the same bytes. Reject those variants so token tampering is detectable.
+    return decoded.toString("base64url") === value ? decoded : null;
+}
+
 function normaliseAnswer(value) {
     if (typeof value !== "string") return "";
     const answer = value.trim().normalize("NFKC").toUpperCase();
@@ -154,10 +162,11 @@ export function verifyLoginCaptcha(token, submittedAnswer) {
     if (!expectedAnswer) return false;
 
     try {
-        const iv = Buffer.from(parts[1], "base64url");
-        const tag = Buffer.from(parts[2], "base64url");
-        const ciphertext = Buffer.from(parts[3], "base64url");
-        if (iv.length !== 12 || tag.length !== 16 || ciphertext.length < 8 || ciphertext.length > 1024) return false;
+        const iv = decodeCanonicalBase64Url(parts[1]);
+        const tag = decodeCanonicalBase64Url(parts[2]);
+        const ciphertext = decodeCanonicalBase64Url(parts[3]);
+        if (!iv || !tag || !ciphertext ||
+            iv.length !== 12 || tag.length !== 16 || ciphertext.length < 8 || ciphertext.length > 1024) return false;
 
         const decipher = createDecipheriv("aes-256-gcm", getEncryptionKey(), iv);
         decipher.setAuthTag(tag);

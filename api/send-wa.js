@@ -12,6 +12,7 @@ import { writeAuditLog } from "./_lib/audit.js";
 import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
 
 export default async function handler(req, res) {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     if (req.method !== "POST") {
         res.setHeader("Allow", "POST");
         return jsonError(res, 405, "Method not allowed");
