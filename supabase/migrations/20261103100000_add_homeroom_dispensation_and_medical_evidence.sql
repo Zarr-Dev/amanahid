@@ -145,6 +145,8 @@ CREATE INDEX IF NOT EXISTS teacher_notifications_teacher_created_idx
 CREATE INDEX IF NOT EXISTS teacher_notifications_unread_idx
   ON public.teacher_notifications (teacher_id, created_at DESC)
   WHERE read_at IS NULL;
+CREATE INDEX IF NOT EXISTS teacher_notifications_related_id_idx
+  ON public.teacher_notifications (related_id);
 
 ALTER TABLE public.teacher_notifications ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.teacher_notifications FROM anon, authenticated, public;
