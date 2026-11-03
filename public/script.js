@@ -2553,6 +2553,10 @@ async function refreshMedicalEvidenceGate() {
             if (due) studentDashboard.setAttribute("inert", "");
             else studentDashboard.removeAttribute("inert");
         }
+        $("medical-evidence-form")?.classList.toggle("hidden", false);
+        $("btn-retry-medical-evidence")?.classList.add("hidden");
+        $("medical-evidence-file").disabled = false;
+        $("btn-upload-medical-evidence").disabled = false;
         if (due) {
             $("medical-evidence-description").textContent =
                 "Pengajuan sakit tanggal " + formatDate(due.absence_date) +
@@ -2562,7 +2566,17 @@ async function refreshMedicalEvidenceGate() {
         }
     } catch (error) {
         console.error("Medical evidence status could not be checked:", error);
-        toast("Status surat dokter belum dapat diperiksa. Presensi tetap terkunci sampai status berhasil diperbarui.", "warning");
+        // Fail closed: never let a student continue to attendance while the
+        // required medical-evidence status is unknown.
+        state.medicalEvidenceRequest = null;
+        $("dashboard-siswa")?.setAttribute("inert", "");
+        $("medical-evidence-gate")?.classList.remove("hidden");
+        $("medical-evidence-description").textContent =
+            "Status surat dokter belum dapat diverifikasi. Presensi sementara dikunci demi keamanan data. Periksa koneksi lalu coba kembali.";
+        $("medical-evidence-form")?.classList.add("hidden");
+        $("btn-retry-medical-evidence")?.classList.remove("hidden");
+        $("medical-evidence-status").textContent = error.message || "Pemeriksaan status gagal.";
+        $("btn-retry-medical-evidence")?.focus();
     }
 }
 
@@ -4914,6 +4928,7 @@ function setupEvents() {
     $("absence-type")?.addEventListener("change", updateAbsenceTypeFields);
     updateAbsenceTypeFields();
     $("medical-evidence-form")?.addEventListener("submit", uploadRequiredMedicalEvidence);
+    $("btn-retry-medical-evidence")?.addEventListener("click", () => void refreshMedicalEvidenceGate());
     $("btn-refresh-absence-requests")?.addEventListener("click", loadAbsenceRequests);
     $("absence-requests-tbody")?.addEventListener("click", handleAbsenceReview);
     $("input-parent-wa").addEventListener("invalid", event => {
