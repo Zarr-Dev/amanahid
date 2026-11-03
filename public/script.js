@@ -726,6 +726,7 @@ const state = {
     mapDraftLocation: null,
     splashTimers: [],
     absenceSyncTimer: null,
+    absenceSyncBusy: false,
     adminTeachers: []
 };
 let authModalTrigger = null;
@@ -2548,21 +2549,27 @@ async function loadStudentAbsenceRequests({ silent = false } = {}) {
     }
 }
 
-function startAbsenceSync() {
-    if (state.absenceSyncTimer) return;
-    state.absenceSyncTimer = window.setInterval(() => {
-        if (!state.user || document.hidden) return;
-        const teacherList = $("absence-requests-tbody");
-        const studentList = $("student-absence-requests-list");
-        if (state.user.role === "guru" && teacherList?.getClientRects().length) void loadAbsenceRequests({ silent: true });
-        if (state.user.role === "siswa" && studentList?.getClientRects().length) void loadStudentAbsenceRequests({ silent: true });
-    }, 25_000);
+function stopAbsenceSync() {
+    if (state.absenceSyncTimer) window.clearInterval(state.absenceSyncTimer);
+    state.absenceSyncTimer = null;
+    state.absenceSyncBusy = false;
 }
 
-function syncAbsenceOnReturn() {
-    if (!state.user || document.hidden) return;
-    if (state.user.role === "guru" && $("absence-requests-tbody")?.getClientRects().length) void loadAbsenceRequests({ silent: true });
-    if (state.user.role === "siswa" && $("student-absence-requests-list")?.getClientRects().length) void loadStudentAbsenceRequests({ silent: true });
+function startAbsenceSync() {
+    if (state.absenceSyncTimer) return;
+    state.absenceSyncTimer = window.setInterval(() => { void syncAbsenceOnReturn(); }, 25_000);
+}
+
+async function syncAbsenceOnReturn() {
+    if (!state.user || document.hidden || state.absenceSyncBusy) return;
+    const teacherVisible = state.user.role === "guru" && $("absence-requests-tbody")?.getClientRects().length;
+    const studentVisible = state.user.role === "siswa" && $("student-absence-requests-list")?.getClientRects().length;
+    if (!teacherVisible && !studentVisible) return;
+    state.absenceSyncBusy = true;
+    try {
+        if (teacherVisible) await loadAbsenceRequests({ silent: true });
+        else if (studentVisible) await loadStudentAbsenceRequests({ silent: true });
+    } finally { state.absenceSyncBusy = false; }
 }
 async function loadCloudData(user = state.user) {
     if (!user) return;
