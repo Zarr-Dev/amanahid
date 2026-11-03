@@ -674,6 +674,7 @@ const state = {
     modelReady: false,
     modelLoading: false,
     modelLoadingPromise: null,
+    faceEngine: null,
     faceDetectorOptions: null,
     attendanceStream: null,
     attendanceStarting: false,
@@ -2898,18 +2899,66 @@ function renderLocationBadge() {
 
 // Camera lifecycle and face recognition
 function displayModelError(error) {
-    console.error("AI model error:", error);
+    console.error("Face recognition model error:", error);
     state.modelReady = false;
     if ($("model-status")) {
         $("model-status").className = "model-badge error";
         $("model-status").textContent = tr("modelFailed");
     }
-    if ($("model-error-text")) $("model-error-text").textContent = tr("modelFailed");
+    if ($("model-error-text")) {
+        const detail = String(error?.message || "").slice(0, 180);
+        $("model-error-text").textContent = detail
+            ? tr("modelFailed") + " (" + detail + ")"
+            : tr("modelFailed");
+    }
+    $("model-error")?.classList.remove("hidden");
+}
+
+function loadExternalScript(url) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = url;
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        script.onload = resolve;
+        script.onerror = () => {
+            script.remove();
+            reject(new Error("Face detector library could not be loaded"));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+async function ensureFaceApi() {
+    if (window.faceapi) return window.faceapi;
+    const sources = [
+        "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js",
+        "https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"
+    ];
+    let lastError = null;
+    for (const source of sources) {
+        try {
+            await loadExternalScript(source);
+            if (window.faceapi) return window.faceapi;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw lastError || new Error("Face detector library unavailable");
+}
+
+function updateFaceModelProgress(progress) {
+    const label = progress?.message || tr("modelLoadingLong");
+    if ($("model-status")) {
+        $("model-status").className = "model-badge";
+        $("model-status").textContent = label;
+    }
+    if ($("model-error-text")) $("model-error-text").textContent = label;
     $("model-error")?.classList.remove("hidden");
 }
 
 function loadModels() {
-    if (state.modelReady) return Promise.resolve(true);
+    if (state.modelReady && state.faceEngine) return Promise.resolve(true);
     if (state.modelLoadingPromise) return state.modelLoadingPromise;
     state.modelLoading = true;
     if ($("model-status")) {
@@ -2919,17 +2968,40 @@ function loadModels() {
 
     state.modelLoadingPromise = (async () => {
         try {
-            if (!window.faceapi) throw new Error("face-api.js unavailable");
-            const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@v0.22.2/weights";
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(base),
-                faceapi.nets.faceLandmark68Net.loadFromUri(base),
-                faceapi.nets.faceRecognitionNet.loadFromUri(base)
-            ]);
+            const faceapi = await ensureFaceApi();
+            const detectorWeightSources = [
+                "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@v0.22.2/weights",
+                "https://unpkg.com/face-api.js@0.22.2/weights"
+            ];
+            let detectorReady = false;
+            for (const base of detectorWeightSources) {
+                try {
+                    if (!faceapi.nets.tinyFaceDetector.isLoaded) {
+                        await faceapi.nets.tinyFaceDetector.loadFromUri(base);
+                    }
+                    if (!faceapi.nets.faceLandmark68Net.isLoaded) {
+                        await faceapi.nets.faceLandmark68Net.loadFromUri(base);
+                    }
+                    detectorReady = faceapi.nets.tinyFaceDetector.isLoaded &&
+                        faceapi.nets.faceLandmark68Net.isLoaded;
+                    if (detectorReady) break;
+                } catch (error) {
+                    console.warn("Face detector weights mirror failed:", base, error);
+                }
+            }
+            if (!detectorReady) throw new Error("Face detector or landmark weights unavailable");
+
+            // Recognition is handled by the separate 512D AuraFace/ArcFace engine.
+            // face-api.js is retained only for lightweight detection and 68-point landmarks.
+            const engineModule = await import("./face-engine.js");
+            state.faceEngine = await engineModule.createAmanahFaceEngine({
+                onProgress: updateFaceModelProgress
+            });
+
             state.modelReady = true;
             if ($("model-status")) {
                 $("model-status").className = "model-badge ready";
-                $("model-status").textContent = tr("modelReady");
+                $("model-status").textContent = "ArcFace 512D siap";
             }
             $("model-error")?.classList.add("hidden");
             return true;
@@ -2938,6 +3010,8 @@ function loadModels() {
             return false;
         } finally {
             state.modelLoading = false;
+            // A failed load is retryable: do not keep a permanently resolved-false promise.
+            if (!state.modelReady) state.modelLoadingPromise = null;
         }
     })();
     return state.modelLoadingPromise;
@@ -3293,13 +3367,12 @@ function drawDetections(video, canvas, detections) {
     faceapi.draw.drawFaceLandmarks(canvas, resized);
 }
 
-async function detectFaces(video, { withDescriptors = false } = {}) {
-    if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    // 320px is sufficient for the 480x360 camera stream and substantially
-    // cheaper than running 512px detection on every liveness frame.
+async function detectFaces(video) {
+    if (!state.modelReady || !video?.videoWidth || video.readyState < 2) return [];
+    // The detector runs at a lightweight resolution; the separate ArcFace
+    // embedding model runs only after a single face passes quality and liveness checks.
     state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.50 });
-    const landmarksTask = faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks();
-    return withDescriptors ? landmarksTask.withFaceDescriptors() : landmarksTask;
+    return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks();
 }
 
 function isFaceDetectionUsable(detection, video) {
@@ -3377,38 +3450,46 @@ function faceAngleBucket(detection) {
     return null;
 }
 
-function saveFaceSample(descriptor, quality = state.faceCandidateQuality, angle = null) {
-    const values = Array.from(descriptor || []);
-    if (values.length !== 128 || !values.every(Number.isFinite)) {
-        toast(tr("faceUploadError"), "error");
+function saveFaceSample(embedding, quality = state.faceCandidateQuality, angle = null) {
+    const values = Array.from(embedding || [], Number);
+    if (values.length !== 512 || !values.every(Number.isFinite)) {
+        toast("Embedding ArcFace harus berisi 512 angka valid.", "error");
         return false;
     }
-    if (typeof quality !== "number" || quality < 0.7) {
-        $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
-        toast("Wajah kurang jelas, mendekatlah ke kamera.", "error");
+    const norm = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0));
+    if (norm < 0.98 || norm > 1.02) {
+        toast("Embedding wajah belum ternormalisasi dengan benar. Ambil sampel ulang.", "error");
+        return false;
+    }
+    if (typeof quality !== "number" || !Number.isFinite(quality) || quality < 0.7) {
+        $("form-face-status").textContent = "Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.";
+        toast("Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.", "error");
         return false;
     }
     if (state.faceSamples.length >= MAX_FACE_SAMPLES) {
         toast(tr("faceSampleLimit"), "info");
         return false;
     }
-    if (!['front', 'left', 'right', 'up', 'down'].includes(angle)) {
-        $('form-face-status').textContent = tr('faceTurnAngle');
+    if (!["front", "left", "right", "up", "down"].includes(angle)) {
+        $("form-face-status").textContent = tr("faceTurnAngle");
         return false;
     }
     if (state.faceSampleAngles.includes(angle)) {
-        $('form-face-status').textContent = tr('faceAngleAlreadyCaptured', { angle: tr('faceAngle_' + angle) });
+        $("form-face-status").textContent = tr("faceAngleAlreadyCaptured", { angle: tr("faceAngle_" + angle) });
         return false;
     }
-    const descriptorVector = new Float32Array(values);
-    if (state.faceSamples.some(sample =>
-        faceapi.euclideanDistance(descriptorVector, new Float32Array(sample)) < 0.05
-    )) {
-        $("form-face-status").textContent = "Ubah sudut wajah.";
-        toast("Ubah sudut wajah.", "info");
+    const duplicate = state.faceSamples.some(sample => {
+        const prior = sample.embedding || [];
+        let dot = 0;
+        for (let index = 0; index < 512; index += 1) dot += values[index] * prior[index];
+        return 1 - dot < 0.002;
+    });
+    if (duplicate) {
+        $("form-face-status").textContent = "Sampel terlalu mirip. Ubah sudut wajah dan ulangi.";
+        toast("Sampel terlalu mirip. Ubah sudut wajah dan ulangi.", "info");
         return false;
     }
-    state.faceSamples.push(values);
+    state.faceSamples.push({ sample_angle: angle, quality, embedding: values });
     state.faceSampleAngles.push(angle);
     state.faceCandidate = null;
     state.faceCandidateQuality = null;
@@ -3484,21 +3565,9 @@ async function processAttendanceFrame() {
             return;
         }
 
-        // Extract the descriptor only for the final server-side face match.
-        const descriptorDetections = await detectFaces(video, { withDescriptors: true });
+        // ArcFace runs only after the detector, quality gate, and guided liveness sequence.
+        const embedded = await state.faceEngine.embed(video, detection);
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
-        if (descriptorDetections.length !== 1 ||
-            !isFaceDetectionUsable(descriptorDetections[0], video)) {
-            const message = descriptorDetections.length > 1
-                ? tr("faceTooMany")
-                : descriptorDetections.length === 0
-                    ? tr("faceNotFound")
-                    : tr("faceQualityLow");
-            setAttendanceMessage(message);
-            if (requestUser.role === "guru") updateProgress(0, message);
-            return;
-        }
-        const descriptorDetection = descriptorDetections[0];
 
         let student;
         let confidence;
@@ -3511,7 +3580,8 @@ async function processAttendanceFrame() {
             nisn: requestUser.nisn,
             body: {
                 ...(requestUser.role === "siswa" ? { nisn: requestUser.nisn } : {}),
-                descriptor: Array.from(descriptorDetection.descriptor)
+                model_key: "auraface-glintr100-int8-v1",
+                embedding: embedded.embedding
             }
         });
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
@@ -3717,12 +3787,14 @@ async function processFormFrame() {
                 if (state.formStableFrames >= 3) {
                     let saved = false;
                     if (angle) {
-                        const sampleDetections = await detectFaces(video, { withDescriptors: true });
+                        const sampleDetections = await detectFaces(video);
                         if (state.formStream !== requestStream) return;
                         const sample = sampleDetections.length === 1 ? sampleDetections[0] : null;
                         if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample) === angle) {
                             const sampleQuality = sample.score * Math.min(1, sample.box.width / (sourceWidth * 0.22));
-                            saved = saveFaceSample(sample.descriptor, sampleQuality, angle);
+                            const embedded = await state.faceEngine.embed(video, sample);
+                            if (state.formStream !== requestStream) return;
+                            saved = saveFaceSample(embedded.embedding, sampleQuality, angle);
                         }
                     }
                     if (saved) toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
@@ -3768,7 +3840,7 @@ async function readUploadedFace(file) {
         const image = await faceapi.bufferToImage(file);
         const detections = await faceapi.detectAllFaces(
             image, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 })
-        ).withFaceLandmarks().withFaceDescriptors();
+        ).withFaceLandmarks();
 
         if (detections.length !== 1) {
             $("form-face-status").textContent = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
@@ -3791,7 +3863,8 @@ async function readUploadedFace(file) {
             toast(tr("duplicateImageFile"), "error");
             return;
         }
-        if (saveFaceSample(detection.descriptor, quality, angle)) {
+        const embedded = await state.faceEngine.embed(image, detection);
+        if (saveFaceSample(embedded.embedding, quality, angle)) {
             state.faceImageHashes.add(imageHash);
             toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
         }
@@ -4007,7 +4080,7 @@ async function registerStudent(event) {
         try {
             const result = await cloudRequest("/api/students", {
                 method: "PATCH", role: "guru",
-                body: { nisn: state.faceUpdateNisn, face_descriptors: state.faceSamples.map(sample => [...sample]) }
+                body: { nisn: state.faceUpdateNisn, model_key: "auraface-glintr100-int8-v1", face_embeddings: state.faceSamples }
             });
             state.students = state.students.map(student => student.nisn === state.faceUpdateNisn
                 ? normalizeCloudStudent(result.student) : student);
@@ -4058,7 +4131,8 @@ async function registerStudent(event) {
                 parent_whatsapp: parentWhatsApp ? parentWhatsApp.replace(/^08/, "628") : undefined,
                 email,
                 password,
-                face_descriptors: state.faceSamples.map(sample => [...sample])
+                model_key: "auraface-glintr100-int8-v1",
+                face_embeddings: state.faceSamples
             }
         });
         state.students = [
