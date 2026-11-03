@@ -236,21 +236,6 @@ export default async function handler(req, res) {
             }
             const { date, time } = jakartaDateTime();
 
-            // A teacher-approved sick request requires a doctor's letter before
-            // the student can use the attendance workflow again.
-            if (role === "siswa") {
-                const medicalEvidenceDue = await supabaseRequest(
-                    "absence_requests?select=id&student_id=eq." + encodeURIComponent(student.id) +
-                    "&absence_type=eq.sick&status=eq.approved&medical_evidence_path=is.null&limit=1"
-                );
-                if (medicalEvidenceDue.length) {
-                    return res.status(423).json({
-                        error: "MEDICAL_EVIDENCE_REQUIRED",
-                        message: "Upload the doctor's letter for your approved sick request before recording attendance."
-                    });
-                }
-            }
-
             const existing = await supabaseRequest(
                 `attendance?select=id,student_id,date,time,confidence,method,created_at,idempotency_key,students!inner(nisn,name,class_name)&student_id=eq.${encodeURIComponent(student.id)}&date=eq.${date}&limit=1`
             );
