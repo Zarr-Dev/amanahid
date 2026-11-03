@@ -437,7 +437,7 @@ test("student ArcFace matching is constrained to the authenticated student's row
         method: "POST",
         headers: { origin: "https://school.example", "x-session-token": studentToken },
         socket: { remoteAddress: "test-student-face-scope-v2" },
-        body: { model_key: "auraface-glintr100-int8-v1", embedding, nisn: "99999999" }
+        body: { model_key: "auraface-glintr100-int8-v1", embedding }
     }, res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.match, true);
