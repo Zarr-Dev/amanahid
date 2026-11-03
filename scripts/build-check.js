@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/_lib/test-tools.js", "api/auth/login.js",
-    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261102003205_lockdown_direct_public_api_grants.sql", "supabase/migrations/20261103100000_add_homeroom_dispensation_and_medical_evidence.sql", "supabase-demo-accounts.sql"
+    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261102003205_lockdown_direct_public_api_grants.sql", "supabase/migrations/20261103100000_add_homeroom_dispensation_and_medical_evidence.sql", "supabase/migrations/20261103120000_absence_evidence_before_submit_revoke_and_notifications.sql", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
