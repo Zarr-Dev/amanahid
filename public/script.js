@@ -676,6 +676,8 @@ const state = {
     modelLoadingPromise: null,
     faceDetectorReady: false,
     faceRecognitionReady: false,
+    faceDetectorFailed: false,
+    faceRecognitionFailed: false,
     faceDetectorLoadingPromise: null,
     faceRecognitionLoadingPromise: null,
     faceEngine: null,
@@ -2978,6 +2980,7 @@ function updateFaceModelProgress(progress) {
 
 function loadFaceDetector() {
     if (state.faceDetectorReady && window.faceapi) return Promise.resolve(true);
+    if (state.faceDetectorFailed) return Promise.resolve(false);
     if (state.faceDetectorLoadingPromise) return state.faceDetectorLoadingPromise;
     state.faceDetectorLoadingPromise = (async () => {
         try {
@@ -3023,6 +3026,7 @@ function loadFaceDetector() {
             $("model-error")?.classList.add("hidden");
             return true;
         } catch (error) {
+            state.faceDetectorFailed = true;
             displayModelError(error, "detector");
             return false;
         } finally {
@@ -3034,6 +3038,7 @@ function loadFaceDetector() {
 
 function loadFaceRecognition() {
     if (state.faceRecognitionReady && state.faceEngine) return Promise.resolve(true);
+    if (state.faceRecognitionFailed) return Promise.resolve(false);
     if (state.faceRecognitionLoadingPromise) return state.faceRecognitionLoadingPromise;
     state.faceRecognitionLoadingPromise = (async () => {
         try {
@@ -3050,6 +3055,7 @@ function loadFaceRecognition() {
             });
             state.faceEngine = engine;
             state.faceRecognitionReady = true;
+            state.faceRecognitionFailed = false;
             state.modelReady = state.faceDetectorReady && state.faceRecognitionReady;
             if ($("model-status")) {
                 $("model-status").className = "model-badge ready";
@@ -3058,6 +3064,7 @@ function loadFaceRecognition() {
             $("model-error")?.classList.add("hidden");
             return true;
         } catch (error) {
+            state.faceRecognitionFailed = true;
             displayModelError(error, "recognition");
             return false;
         } finally {
@@ -3426,6 +3433,7 @@ async function startAttendanceCamera() {
         }
         video.srcObject = stream;
         await video.play();
+        await waitForVideoReady(video);
         if (startToken !== state.attendanceStartToken || state.attendanceStream !== stream ||
             state.user !== requestUser || !attendanceViewActive() || document.hidden) {
             stopStream(stream);
@@ -3880,6 +3888,7 @@ async function startFormCamera() {
         });
         $("video-formulir").srcObject = stream;
         await $("video-formulir").play();
+        await waitForVideoReady($("video-formulir"));
         if (startToken !== state.formStartToken || state.formStream !== stream ||
             !$("view-formulir").classList.contains("active") || document.hidden) {
             stopStream(stream);
@@ -4786,6 +4795,12 @@ function setupEvents() {
         const button = $("model-retry");
         button.disabled = true;
         try {
+            state.faceDetectorFailed = false;
+            state.faceRecognitionFailed = false;
+            state.faceDetectorReady = false;
+            state.faceRecognitionReady = false;
+            state.modelReady = false;
+            state.faceEngine = null;
             const loaded = await loadModels();
             if (loaded) toast("Model ArcFace siap digunakan.", "success");
             else toast("Model belum berhasil dimuat. Periksa koneksi lalu coba lagi.", "error");
