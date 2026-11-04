@@ -2,7 +2,7 @@ name: Amanah.id CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/arcface-embedding-v2]
   push:
     branches: [main, fix/authentication-roles-demo-accounts, fix/resolve-admin-backend-deployment]
 
