@@ -13,7 +13,11 @@ let SCHOOL_LOCATION = {
     radius: 50,
     name: "Al Fityan School"
 };
-const MAX_GPS_ACCURACY_METERS = 35;
+function isGpsAccuracyAcceptable(accuracy, radius = SCHOOL_LOCATION.radius) {
+    const value = Number(accuracy);
+    const allowedRadius = Number(radius);
+    return Number.isFinite(value) && value > 0 && Number.isFinite(allowedRadius) && allowedRadius >= 10 && value <= allowedRadius;
+}
 const FACE_MATCH_THRESHOLD = 0.45;
 const MAX_FACE_SAMPLES = 5;
 
@@ -1155,7 +1159,7 @@ async function checkAdminMapDeviceLocation() {
     const button = $("admin-map-check-location");
     const status = $("admin-map-device-status");
     if (!status) return;
-    if (!navigator.geolocation?.getCurrentPosition) {
+    if (!navigator.geolocation?.getCurrentPosition && !navigator.geolocation?.watchPosition) {
         status.textContent = tr("gpsUnsupported");
         return;
     }
@@ -1172,11 +1176,7 @@ async function checkAdminMapDeviceLocation() {
     if (button) { button.disabled = true; button.textContent = tr("adminMapCheckingDeviceLocation"); }
     status.textContent = tr("adminMapCheckingDeviceLocation");
     try {
-        const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true, timeout: 15000, maximumAge: 0
-            });
-        });
+        const position = await getBestGpsPosition();
         const { latitude, longitude, accuracy } = position.coords || {};
         if (![latitude, longitude, accuracy].every(Number.isFinite) ||
             Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
@@ -1187,7 +1187,7 @@ async function checkAdminMapDeviceLocation() {
             timestamp: Number.isFinite(position.timestamp) ? position.timestamp : Date.now()
         };
         updateAdminMapDistanceSummary();
-        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+        if (!isGpsAccuracyAcceptable(accuracy, radius)) {
             status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
         } else if (status) {
             status.textContent += ` ${tr("adminMapLocationSuccess")}`;
@@ -1675,7 +1675,7 @@ async function loadAdminDashboard() {
         return;
     }
     try {
-        const stats = await cloudRequest("/api/admin/dashboard-stats");
+        const stats = await cloudRequest("/api/admin/audit?action=stats");
         $("admin-total-students").textContent = stats?.total_students ?? 0;
         $("admin-total-teachers").textContent = stats?.total_teachers ?? 0;
         $("admin-attendance-today").textContent = stats?.attendance_today ?? 0;
@@ -1775,7 +1775,7 @@ function applyRuntimeFeatureFlags(features = {}) {
     document.querySelectorAll(".language-row").forEach(element => {
         element.classList.toggle("hidden", features.language_switcher === false);
     });
-    const coreAttendanceOff = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"]
+    const coreAttendanceOff = ["camera_attendance", "face_recognition", "liveness_check", "attendance_recording"]
         .some(key => features[key] === false);
     if (coreAttendanceOff) {
         if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
@@ -1962,7 +1962,7 @@ async function startAdminTestCamera() {
     status.textContent = tr("testModelLoading");
     modelState.textContent = tr("testModelLoading");
     try {
-        if (!await loadModels()) throw new Error("model");
+        if (!state.faceDetectorReady && !(await loadFaceDetector())) throw new Error("model");
         modelState.textContent = tr("testModelReady");
         const stream = await getCameraStream();
         if (!$("admin-view-tests")?.classList.contains("active")) {
@@ -1983,9 +1983,8 @@ async function startAdminTestCamera() {
             if (adminTestBusy || !adminTestStream || video.readyState < 2) return;
             adminTestBusy = true;
             try {
-                const rawDetections = await detectFaces(video);
+                const detections = await detectUsableFaces(video);
                 if (!adminTestStream) return;
-                const detections = rawDetections.filter(detection => isFaceDetectionUsable(detection, video));
                 drawDetections(video, $("admin-test-overlay"), detections);
                 $("admin-test-face-count").textContent = String(detections.length);
                 status.textContent = detections.length === 0 ? tr("testCameraNoFace")
@@ -2094,9 +2093,7 @@ async function testAdminGps() {
         const settingsAvailable = await loadSchoolSettings({ preserveOnError: true });
         if (!settingsAvailable || !state.schoolSettingsLoaded) throw new Error("School GPS settings could not be loaded.");
         if (!navigator.geolocation) throw new Error("Geolocation API tidak tersedia.");
-        const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true, timeout: 12000, maximumAge: 0
-        }));
+        const position = await getBestGpsPosition();
         const { latitude, longitude, accuracy } = position.coords || {};
         if (![latitude, longitude, accuracy].every(Number.isFinite) ||
             Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
@@ -2110,7 +2107,7 @@ async function testAdminGps() {
         $("admin-test-gps-distance").textContent = Math.round(distance) + " m";
         const clearlyInside = distance + accuracy <= SCHOOL_LOCATION.radius;
         const clearlyOutside = Math.max(0, distance - accuracy) > SCHOOL_LOCATION.radius;
-        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+        if (!isGpsAccuracyAcceptable(accuracy)) {
             status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
         } else if (clearlyInside) {
             status.textContent = tr("testGpsInside");
@@ -2208,7 +2205,76 @@ async function loadAdminSettings() {
     }
 }
 
+function formatRoleActivityTime(value, fallback) {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "Tidak tersedia";
+    return date.toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID");
+}
+
+function roleActivityActionLabel(action) {
+    const labels = {
+        "attendance.create": "Mencatat presensi",
+        "student.face_update_v2": "Memperbarui sampel wajah",
+        "student.create": "Mendaftarkan siswa",
+        "siswa.create": "Membuat akun siswa",
+        "guru.create": "Membuat akun guru",
+        "settings.update": "Memperbarui lokasi/jadwal sekolah",
+        "system.features.update": "Mengubah sakelar sistem",
+        "absence.create": "Mengirim pengajuan ketidakhadiran",
+        "absence.review": "Meninjau pengajuan ketidakhadiran",
+        "student.update": "Memperbarui data siswa",
+        "teacher.update": "Memperbarui data guru"
+    };
+    return labels[action] || String(action || "Aktivitas tercatat").replaceAll(".", " · ");
+}
+
+function renderRoleActivityTable(targetId, users) {
+    const table = $(targetId);
+    if (!table) return;
+    if (!Array.isArray(users) || users.length === 0) {
+        table.innerHTML = '<tr><td colspan="3">Belum ada akun pada peran ini.</td></tr>';
+        return;
+    }
+    table.innerHTML = users.map(user => {
+        const account = '<strong>' + safeText(user.name || "—") + '</strong><br><small>' +
+            safeText(user.email || "Email tidak tersedia") + '</small><br><small>' +
+            safeText(user.is_active ? "Aktif" : "Nonaktif") + '</small>';
+        const login = safeText(formatRoleActivityTime(user.last_login_at, "Belum pernah login"));
+        const activity = user.last_activity_action
+            ? '<strong>' + safeText(roleActivityActionLabel(user.last_activity_action)) + '</strong><br><small>' +
+                safeText(formatRoleActivityTime(user.last_activity_at, "Waktu tidak tersedia")) + '</small>'
+            : "Belum ada aktivitas tercatat";
+        return '<tr><td>' + account + '</td><td>' + login + '</td><td>' + activity + '</td></tr>';
+    }).join("");
+}
+
+async function loadAdminRoleActivity() {
+    const status = $("admin-activity-status");
+    if (status) status.textContent = "Memuat riwayat login dan aktivitas per peran...";
+    try {
+        const response = await cloudRequest("/api/admin/audit?action=activity");
+        const groups = response?.activity || {};
+        renderRoleActivityTable("admin-activity-admin-tbody", groups.admin);
+        renderRoleActivityTable("admin-activity-teacher-tbody", groups.guru);
+        renderRoleActivityTable("admin-activity-student-tbody", groups.siswa);
+        if (status) {
+            const limit = Number(response?.audit_history_limit_per_role) || 1000;
+            status.textContent = "Login diambil dari catatan login akun. Aktivitas menunjukkan tindakan penting yang tercatat pada API, dengan pemeriksaan hingga " +
+                limit.toLocaleString() + " catatan audit terbaru per peran.";
+        }
+    } catch (error) {
+        console.error("Admin role activity could not load:", error);
+        for (const id of ["admin-activity-admin-tbody", "admin-activity-teacher-tbody", "admin-activity-student-tbody"]) {
+            const table = $(id);
+            if (table) table.innerHTML = '<tr><td colspan="3">Riwayat aktivitas gagal dimuat.</td></tr>';
+        }
+        if (status) status.textContent = "Riwayat aktivitas tidak dapat dimuat. Periksa koneksi dan akses Admin.";
+    }
+}
+
 async function loadAdminAudit() {
+    void loadAdminRoleActivity();
     try {
         const filters = new URLSearchParams();
         if ($("admin-audit-actor").value) filters.set("actor", $("admin-audit-actor").value);
@@ -2796,13 +2862,13 @@ async function getBestGpsPosition() {
         const timeoutId = window.setTimeout(() => {
             if (best) finish(best);
             else finish(null, { code: 3 });
-        }, 9000);
+        }, 15000);
 
         try {
             if (typeof geo.watchPosition === "function") {
                 watchId = geo.watchPosition(consider, onError, {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 16000,
                     maximumAge: 0
                 });
             } else if (typeof geo.getCurrentPosition === "function") {
@@ -2812,7 +2878,7 @@ async function getBestGpsPosition() {
                     else if (!settled) finish(null, { code: 2 });
                 }, onError, {
                     enableHighAccuracy: true,
-                    timeout: 9000,
+                    timeout: 15000,
                     maximumAge: 0
                 });
             } else {
@@ -2940,11 +3006,11 @@ function renderLocationBadge() {
         return;
     }
 
-    const accuracyAccepted = state.lastLocation.accuracy <= MAX_GPS_ACCURACY_METERS;
+    const accuracyAccepted = isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius);
     const badgeLabel = !accuracyAccepted
         ? `${tr("locationAccuracyBad")} · ±${Math.round(state.lastLocation.accuracy)} m`
         : `${tr(state.lastLocation.inside ? "locationInside" : "locationOutside")} · ${state.lastLocation.distance} m`;
-    const description = state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
+    const description = !isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius)
         ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
         : state.lastLocation.inside
             ? tr("insideMessage", {
@@ -3362,8 +3428,8 @@ function cameraErrorText(error) {
     return tr("cameraStartFailed");
 }
 
-async function loadRuntimeFeatures() {
- if (state.runtimeFeatures) return state.runtimeFeatures;
+async function loadRuntimeFeatures({ refresh = false } = {}) {
+ if (state.runtimeFeatures && !refresh) return state.runtimeFeatures;
  const response = await cloudRequest("/api?action=features");
  if (!response?.features || typeof response.features !== "object") throw new Error("Runtime feature configuration is unavailable");
  state.runtimeFeatures = response.features;
@@ -3373,30 +3439,27 @@ async function loadRuntimeFeatures() {
 async function startAttendanceCamera() {
     if (state.attendanceStream || state.attendanceStarting) return;
     if (!state.user) return;
-    if (!state.schoolSettingsLoaded) {
-        toast(tr("schoolSettingsFailed"), "error");
-        return;
-    }
     const requestUser = state.user;
     const cloudDataPromise = state.cloudDataPromise;
     state.attendanceStarting = true;
     const startToken = ++state.attendanceStartToken;
 
     try {
-        const runtimeFeatures = await loadRuntimeFeatures();
-        const requiredFeatures = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"];
+        const runtimeFeatures = await loadRuntimeFeatures({ refresh: true });
+        const gpsGeofencingEnabled = runtimeFeatures.gps_geofencing !== false;
+        const requiredFeatures = ["camera_attendance", "face_recognition", "liveness_check", "attendance_recording"];
         const disabledFeature = requiredFeatures.find(key => runtimeFeatures[key] === false);
         if (disabledFeature) {
             toast("Fitur presensi sedang dinonaktifkan oleh administrator.", "error");
             return;
         }
-        const settingsLoaded = await loadSchoolSettings();
+        const settingsLoaded = gpsGeofencingEnabled ? await loadSchoolSettings() : true;
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
             state.cloudDataPromise !== cloudDataPromise) return;
         if (!settingsLoaded) {
-            if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
-            if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
-            toast(tr("schoolSettingsFailed"), "error");
+            const message = tr("schoolSettingsFailed");
+            setAttendanceMessage(message);
+            toast(message, "error");
             return;
         }
         if (!attendanceViewActive() || document.hidden) return;
@@ -3410,36 +3473,46 @@ async function startAttendanceCamera() {
             return;
         }
 
-        state.lastLocation = { checking: true };
-        renderLocationBadge();
-        if (requestUser.role === "siswa") {
-            if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("checkingBeforeCamera");
-            if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStarting");
+        if (gpsGeofencingEnabled) {
+            state.lastLocation = { checking: true };
+            renderLocationBadge();
+            if (requestUser.role === "siswa") {
+                if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("checkingBeforeCamera");
+                if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStarting");
+            } else {
+                if ($("camera-status")) $("camera-status").textContent = tr("checkingBeforeCamera");
+                if ($("switch-hint")) $("switch-hint").textContent = tr("checkingBeforeCamera");
+                setSwitch(false);
+            }
+
+            const result = await checkGeofence();
+            if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+                !attendanceViewActive() || document.hidden) return;
+
+            if (result.error || !isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius) ||
+                result.boundaryUncertain || !result.inside) {
+                const message = result.error ||
+                    (!isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius)
+                        ? tr("accuracyWarning", { accuracy: Math.round(result.accuracy) })
+                        : result.boundaryUncertain
+                            ? tr("gpsBoundaryUncertain")
+                            : tr("outsideMessage", {
+                                distance: result.distance,
+                                radius: SCHOOL_LOCATION.radius
+                            }));
+                stopAttendanceCamera();
+                setAttendanceMessage(message);
+                toast(message, "error");
+                return;
+            }
         } else {
-            if ($("camera-status")) $("camera-status").textContent = tr("checkingBeforeCamera");
-            if ($("switch-hint")) $("switch-hint").textContent = tr("checkingBeforeCamera");
-            setSwitch(false);
-        }
-
-        const result = await checkGeofence();
-        if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
-            !attendanceViewActive() || document.hidden) return;
-
-        if (result.error || result.accuracy > MAX_GPS_ACCURACY_METERS ||
-            result.boundaryUncertain || !result.inside) {
-            const message = result.error ||
-                (result.accuracy > MAX_GPS_ACCURACY_METERS
-                    ? tr("accuracyWarning", { accuracy: Math.round(result.accuracy) })
-                    : result.boundaryUncertain
-                        ? tr("gpsBoundaryUncertain")
-                        : tr("outsideMessage", {
-                            distance: result.distance,
-                            radius: SCHOOL_LOCATION.radius
-                        }));
-            stopAttendanceCamera();
-            setAttendanceMessage(message);
-            toast(message, "error");
-            return;
+            const message = "GPS Geofencing sedang dinonaktifkan oleh Admin. Presensi tetap memakai verifikasi wajah.";
+            if (requestUser.role === "siswa") {
+                if ($("student-attendance-status")) $("student-attendance-status").textContent = message;
+            } else {
+                if ($("camera-status")) $("camera-status").textContent = message;
+                if ($("switch-hint")) $("switch-hint").textContent = message;
+            }
         }
 
         if (!state.faceDetectorReady && !(await loadFaceDetector())) {
@@ -3584,6 +3657,11 @@ function isFaceDetectionUsable(detection, video) {
         Number.isFinite(height) && height >= minimumHeight;
 }
 
+async function detectUsableFaces(video) {
+    const detections = await detectFaces(video);
+    return detections.filter(detection => isFaceDetectionUsable(detection, video));
+}
+
 function updateAttendanceLiveness(detection) {
     if (!state.livenessChallenge) {
         state.livenessChallenge = {
@@ -3656,7 +3734,7 @@ function saveFaceSample(embedding, quality = state.faceCandidateQuality, angle =
         toast("Embedding wajah belum ternormalisasi dengan benar. Ambil sampel ulang.", "error");
         return false;
     }
-    if (typeof quality !== "number" || !Number.isFinite(quality) || quality < 0.65) {
+    if (typeof quality !== "number" || !Number.isFinite(quality) || quality < 0.70) {
         $("form-face-status").textContent = "Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.";
         toast("Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.", "error");
         return false;
@@ -3718,7 +3796,7 @@ async function processAttendanceFrame() {
         await new Promise(resolve => window.requestAnimationFrame(resolve));
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         if (video.readyState < 2) return;
-        const detections = await detectFaces(video);
+        const detections = await detectUsableFaces(video);
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         drawDetections(video, attendanceCanvas(), detections);
 
@@ -3812,23 +3890,25 @@ async function processAttendanceFrame() {
         faceProofToken = result.proofToken;
         if (!student) return;
 
-        pipelineStage = "gps";
-        const location = await checkGeofence();
-        if (state.user !== requestUser || state.attendanceStream !== requestStream ||
-            !attendanceViewActive() || document.hidden) return;
-        if (location.error || !location.inside || location.accuracy > MAX_GPS_ACCURACY_METERS) {
-            const message = location.error || (location.boundaryUncertain
-                ? tr("gpsBoundaryUncertain")
-                : location.accuracy > MAX_GPS_ACCURACY_METERS
-                    ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
-                    : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
-            stopAttendanceCamera();
-            setAttendanceMessage(message);
-            if (requestUser.role === "guru") {
-                updateProgress(0, message);
+        let location = null;
+        if (state.runtimeFeatures?.gps_geofencing !== false) {
+            pipelineStage = "gps";
+            location = await checkGeofence();
+            if (state.user !== requestUser || state.attendanceStream !== requestStream ||
+                !attendanceViewActive() || document.hidden) return;
+            if (location.error || !location.inside ||
+                !isGpsAccuracyAcceptable(location.accuracy, SCHOOL_LOCATION.radius)) {
+                const message = location.error || (location.boundaryUncertain
+                    ? tr("gpsBoundaryUncertain")
+                    : !isGpsAccuracyAcceptable(location.accuracy, SCHOOL_LOCATION.radius)
+                        ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
+                        : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
+                stopAttendanceCamera();
+                setAttendanceMessage(message);
+                if (requestUser.role === "guru") updateProgress(0, message);
+                toast(message, "error");
+                return;
             }
-            toast(message, "error");
-            return;
         }
 
         const today = localDateKey();
@@ -3851,11 +3931,13 @@ async function processAttendanceFrame() {
             nisn: requestUser.nisn,
             body: {
                 nisn: student.nisn,
-                lat: location.lat,
-                lng: location.lng,
-                accuracy: location.accuracy,
-                gpsTimestamp: location.positionTimestamp,
-                speed: location.speed || 0,
+                ...(location ? {
+                    lat: location.lat,
+                    lng: location.lng,
+                    accuracy: location.accuracy,
+                    gpsTimestamp: location.positionTimestamp,
+                    speed: location.speed || 0
+                } : {}),
                 confidence
             },
             idempotencyKey: state.attendanceIdempotencyKey,
@@ -3906,7 +3988,7 @@ async function processAttendanceFrame() {
                 stopAttendanceCamera();
                 const message = error.type === "gps_accuracy"
                     ? tr("accuracyWarning", {
-                        accuracy: Math.ceil(error.gpsAccuracy?.actual || MAX_GPS_ACCURACY_METERS + 1)
+                        accuracy: Math.ceil(error.gpsAccuracy?.actual || Number(SCHOOL_LOCATION.radius) + 1)
                     })
                     : error.message || "Koneksi ke layanan presensi gagal. Periksa jaringan dan coba lagi.";
                 setAttendanceMessage(message);
@@ -3989,7 +4071,7 @@ async function processFormFrame() {
     let pipelineStage = "detection";
     try {
         const video = $("video-formulir");
-        const detections = await detectFaces(video);
+        const detections = await detectUsableFaces(video);
         if (state.formStream !== requestStream) return;
         drawDetections(video, $("overlay-formulir"), detections);
         if (detections.length === 1) {
@@ -4002,10 +4084,10 @@ async function processFormFrame() {
             state.faceCandidateQuality = quality;
             $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
             if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
-                quality < 0.65 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
+                quality < 0.70 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
                 state.formStableFrames = 0;
                 state.lastFormNose = null;
-                if (quality < 0.65) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
+                if (quality < 0.70) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
             } else {
                 if (state.lastFormNose) {
                     const delta = Math.hypot(nose.x - state.lastFormNose.x, nose.y - state.lastFormNose.y);
@@ -4016,7 +4098,7 @@ async function processFormFrame() {
                 if (state.formStableFrames >= 3) {
                     let saved = false;
                     if (angle) {
-                        const sampleDetections = await detectFaces(video);
+                        const sampleDetections = await detectUsableFaces(video);
                         if (state.formStream !== requestStream) return;
                         const sample = sampleDetections.length === 1 ? sampleDetections[0] : null;
                         if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample, true) === angle) {
@@ -4692,7 +4774,7 @@ function updateMapText() {
     if ($("map-subtitle")) $("map-subtitle").textContent = tr("mapDesc");
     const locationDetail = $("map-location-detail");
     if (locationDetail) locationDetail.textContent = state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking
-        ? state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
+        ? !isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius)
             ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
             : tr(state.lastLocation.inside ? "insideMessage" : "outsideMessage", {
                 distance: state.lastLocation.distance,
@@ -4728,7 +4810,7 @@ async function refreshMapLocation() {
         const result = await checkGeofence();
         if (result.error) {
             toast(result.error, "error");
-        } else if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
+        } else if (!isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius)) {
             toast(tr("accuracyWarning", { accuracy: Math.round(result.accuracy) }), "error");
         } else {
             toast(result.inside
