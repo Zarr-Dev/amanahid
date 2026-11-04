@@ -87,7 +87,7 @@ test("GPS fix at 97m accuracy cannot prove presence in a 50m radius", async () =
     assert.equal(result.boundaryUncertain, true);
     assert.equal(result.accuracy, 97);
     const isGpsAccuracyAcceptable = runInNewContext(
-        `${accuracyFunction}\\nisGpsAccuracyAcceptable`,
+        `${accuracyFunction}\nisGpsAccuracyAcceptable`,
         { SCHOOL_LOCATION: { radius: 50 } }
     );
     assert.equal(isGpsAccuracyAcceptable(result.accuracy, 50), false);
