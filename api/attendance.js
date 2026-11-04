@@ -15,7 +15,6 @@ import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
 import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
 
-const MAX_ACCURACY = 35;
 const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function distanceMeters(lat1, lng1, lat2, lng2) {
@@ -111,6 +110,14 @@ export default async function handler(req, res) {
         if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
         const body = req.body || {};
         const session = getSession(req);
+        let features;
+        try {
+            features = await getFeatureFlags();
+        } catch (error) {
+            console.error("Attendance feature configuration failed:", error);
+            return jsonError(res, 503, "Attendance policy could not be loaded");
+        }
+        const gpsGeofencingEnabled = features.gps_geofencing !== false;
         const faceProof = verifyToken(req.headers["x-face-proof"]);
         if (!faceProof || (role !== "siswa" && role !== "guru") ||
             faceProof.purpose !== "attendance_face" ||
@@ -124,28 +131,38 @@ export default async function handler(req, res) {
             faceProof.confidence > 1) {
             return jsonError(res, 403, "A valid recent server-verified face match is required");
         }
-        const bodyValidation = validateSchema({
+        const attendanceSchema = {
             nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
-            lat: { type: "number", required: true, min: -90, max: 90 },
-            lng: { type: "number", required: true, min: -180, max: 180 },
-            accuracy: { type: "number", required: true, min: 0.01, max: 1_000_000 },
-            gpsTimestamp: { type: "number", required: true, min: 1_600_000_000_000, max: 2_200_000_000_000 },
-            speed: { type: "number", required: true, min: 0, max: 55 },
             confidence: { type: "number", min: 0.3, max: 1 }
-        }, body);
+        };
+        if (gpsGeofencingEnabled) {
+            Object.assign(attendanceSchema, {
+                lat: { type: "number", required: true, min: -90, max: 90 },
+                lng: { type: "number", required: true, min: -180, max: 180 },
+                accuracy: { type: "number", required: true, min: 0.01, max: 1_000_000 },
+                gpsTimestamp: { type: "number", required: true, min: 1_600_000_000_000, max: 2_200_000_000_000 },
+                speed: { type: "number", required: true, min: 0, max: 55 }
+            });
+        }
+        const bodyValidation = validateSchema(attendanceSchema, body);
         if (!bodyValidation.valid) return jsonError(res, 400, bodyValidation.error);
         const { nisn, lat, lng, accuracy, gpsTimestamp, speed, confidence } = body;
         if (typeof nisn !== "string" || !/^\d{8,20}$/.test(nisn)) {
             return jsonError(res, 400, "Invalid NISN");
         }
-        if (![lat, lng, accuracy, gpsTimestamp, speed].every(value => typeof value === "number" && Number.isFinite(value)) ||
-            Math.abs(lat) > 90 || Math.abs(lng) > 180 || accuracy <= 0 || confidence < 0.3 || confidence > 1) {
-            return jsonError(res, 400, "Invalid location or confidence values");
+        if (gpsGeofencingEnabled && (
+            ![lat, lng, accuracy, gpsTimestamp, speed].every(value => typeof value === "number" && Number.isFinite(value)) ||
+            Math.abs(lat) > 90 || Math.abs(lng) > 180 || accuracy <= 0 || speed < 0 || speed > 55
+        )) {
+            return jsonError(res, 400, "Invalid location values");
         }
-        if (Math.abs(Date.now() - gpsTimestamp) > 30_000) {
+        if (confidence !== undefined && (typeof confidence !== "number" || !Number.isFinite(confidence) || confidence < 0.3 || confidence > 1)) {
+            return jsonError(res, 400, "Invalid face confidence value");
+        }
+        if (gpsGeofencingEnabled && Math.abs(Date.now() - gpsTimestamp) > 30_000) {
             return failedAttendance(req, res, role, 400, { error: "GPS_FIX_STALE", message: "Location data is stale. Check GPS again." });
         }
-        if (speed > 55) {
+        if (gpsGeofencingEnabled && speed > 55) {
             return failedAttendance(req, res, role, 400, { error: "GPS_SPEED_ANOMALY", message: "Location movement looks implausible." });
         }
         if (role === "siswa" && getSession(req)?.nisn !== nisn) {
@@ -161,11 +178,11 @@ export default async function handler(req, res) {
         }
 
         try {
-            const features = await getFeatureFlags();
             const requiredFeatures = [
-                "attendance_recording", "camera_attendance", "gps_geofencing",
-                "face_recognition", "liveness_check", "face_ambiguity_guard", "gps_boundary_guard"
+                "attendance_recording", "camera_attendance",
+                "face_recognition", "liveness_check", "face_ambiguity_guard"
             ];
+            if (gpsGeofencingEnabled) requiredFeatures.push("gps_geofencing", "gps_accuracy_guard", "gps_boundary_guard");
             const disabledFeature = requiredFeatures.find(key => features[key] === false);
             if (disabledFeature) return res.status(403).json({ error: "Attendance is disabled by the administrator", feature: disabledFeature });
             const repeated = await supabaseRequest(
@@ -180,48 +197,51 @@ export default async function handler(req, res) {
                     whatsapp: { sent: false, skipped: true }
                 });
             }
-            const settings = await supabaseRequest(
-                "school_settings?select=lat,lng,radius,entry_time,late_tolerance_min,timezone&id=eq.00000000-0000-0000-0000-000000000001&limit=1"
+            const settingsRows = await supabaseRequest(
+                `school_settings?select=${gpsGeofencingEnabled ? "lat,lng,radius," : ""}entry_time,late_tolerance_min,timezone&id=eq.00000000-0000-0000-0000-000000000001&limit=1`
             );
-            if (!settings.length) return jsonError(res, 503, "School location settings are not configured");
-            const school = {
-                lat: Number(settings[0].lat),
-                lng: Number(settings[0].lng),
-                radius: Number(settings[0].radius)
-            };
-            if (![school.lat, school.lng, school.radius].every(Number.isFinite) ||
-                school.lat < -90 || school.lat > 90 ||
-                school.lng < -180 || school.lng > 180 ||
-                school.radius < 10 || school.radius > 500) {
-                console.error("School location settings contain invalid values");
-                return jsonError(res, 503, "School location settings are invalid");
-            }
-            const distance = distanceMeters(school.lat, school.lng, lat, lng);
-            if (!Number.isFinite(distance)) {
-                return jsonError(res, 400, "GPS coordinates could not be validated");
-            }
-            if (features.gps_accuracy_guard && accuracy > MAX_ACCURACY) {
-                return failedAttendance(req, res, role, 400, {
-                    error: "GPS_ACCURACY_TOO_LOW",
-                    required: MAX_ACCURACY,
-                    actual: accuracy
-                });
-            }
-            if (features.gps_boundary_guard &&
-                distance - accuracy <= school.radius &&
-                distance + accuracy > school.radius) {
-                return failedAttendance(req, res, role, 400, {
-                    error: "GPS_BOUNDARY_UNCERTAIN",
-                    radius: school.radius,
-                    distance: Math.round(distance),
-                    accuracy: Math.round(accuracy),
-                    message: "The GPS uncertainty range overlaps the school geofence boundary. Refresh location from a clearer position."
-                });
-            }
-            if (distance > school.radius) {
-                return failedAttendance(req, res, role, 403, {
-                    error: `Attendance is outside the ${school.radius}-meter school geofence`
-                });
+            const settings = Array.isArray(settingsRows) ? settingsRows[0] : null;
+            if (!settings) return jsonError(res, 503, "School settings are not configured");
+            if (gpsGeofencingEnabled) {
+                const school = {
+                    lat: Number(settings.lat),
+                    lng: Number(settings.lng),
+                    radius: Number(settings.radius)
+                };
+                if (![school.lat, school.lng, school.radius].every(Number.isFinite) ||
+                    school.lat < -90 || school.lat > 90 ||
+                    school.lng < -180 || school.lng > 180 ||
+                    school.radius < 10 || school.radius > 500) {
+                    console.error("School location settings contain invalid values");
+                    return jsonError(res, 503, "School location settings are invalid");
+                }
+                const distance = distanceMeters(school.lat, school.lng, lat, lng);
+                if (!Number.isFinite(distance)) {
+                    return jsonError(res, 400, "GPS coordinates could not be validated");
+                }
+                if (features.gps_accuracy_guard && accuracy > school.radius) {
+                    return failedAttendance(req, res, role, 400, {
+                        error: "GPS_ACCURACY_TOO_LOW",
+                        required: school.radius,
+                        actual: accuracy
+                    });
+                }
+                if (features.gps_boundary_guard &&
+                    distance - accuracy <= school.radius &&
+                    distance + accuracy > school.radius) {
+                    return failedAttendance(req, res, role, 400, {
+                        error: "GPS_BOUNDARY_UNCERTAIN",
+                        radius: school.radius,
+                        distance: Math.round(distance),
+                        accuracy: Math.round(accuracy),
+                        message: "The GPS uncertainty range overlaps the school geofence boundary. Refresh location from a clearer position."
+                    });
+                }
+                if (distance > school.radius) {
+                    return failedAttendance(req, res, role, 403, {
+                        error: `Attendance is outside the ${school.radius}-meter school geofence`
+                    });
+                }
             }
 
             const students = await supabaseRequest(
@@ -248,7 +268,7 @@ export default async function handler(req, res) {
             if (existing.length) {
                 if (existing[0].idempotency_key === idempotencyKey) {
                     return res.status(200).json({
-                        attendance: normalizeAttendance(existing[0], settings[0], features),
+                        attendance: normalizeAttendance(existing[0], settings, features),
                         whatsapp: { sent: false, skipped: true }
                     });
                 }
@@ -257,6 +277,7 @@ export default async function handler(req, res) {
                 });
             }
 
+            const attendanceMethod = gpsGeofencingEnabled ? "face-gps" : "face";
             const inserted = await supabaseRequest(
                 "attendance?select=id,student_id,date,time,confidence,method,created_at",
                 {
@@ -267,13 +288,13 @@ export default async function handler(req, res) {
                         date,
                         time,
                         confidence: faceProof.confidence,
-                        method: "face-gps",
+                        method: attendanceMethod,
                         idempotency_key: idempotencyKey
                     })
                 }
-                );
+            );
             await writeAuditLog(getSession(req), "attendance.create", "attendance", inserted[0]?.id, {
-                student_id: student.id, date, method: "face-gps"
+                student_id: student.id, date, method: attendanceMethod
             });
 
             let whatsapp = { sent: false, skipped: !student.parent_whatsapp || !features.parent_notifications, reason: features.parent_notifications ? undefined : "disabled_by_admin" };
@@ -290,7 +311,7 @@ export default async function handler(req, res) {
             }
 
             return res.status(201).json({
-                attendance: normalizeAttendance({ ...inserted[0], students: student }, settings[0], features),
+                attendance: normalizeAttendance({ ...inserted[0], students: student }, settings, features),
                 whatsapp
             });
         } catch (error) {
