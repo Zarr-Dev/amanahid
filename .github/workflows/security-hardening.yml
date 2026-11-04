@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/arcface-embedding-v2
 
 permissions:
   contents: read
