@@ -65,12 +65,12 @@ async function runGeofence(position, { previousFix = null, radius = 50 } = {}) {
 const accuracyFunction = extract(
     frontend,
     "function isGpsAccuracyAcceptable(",
-    "\\nconst FACE_MATCH_THRESHOLD"
+    "\nconst FACE_MATCH_THRESHOLD"
 );
 
 test("GPS accuracy threshold follows the Admin-selected radius", () => {
     const isGpsAccuracyAcceptable = runInNewContext(
-        `${accuracyFunction}\\nisGpsAccuracyAcceptable`,
+        `${accuracyFunction}\nisGpsAccuracyAcceptable`,
         { SCHOOL_LOCATION: { radius: 50 } }
     );
     assert.equal(isGpsAccuracyAcceptable(97, 50), false);
