@@ -189,11 +189,17 @@ export default async function handler(req, res) {
                 lng: Number(settings[0].lng),
                 radius: Number(settings[0].radius)
             };
-            if (![school.lat, school.lng, school.radius].every(Number.isFinite)) {
+            if (![school.lat, school.lng, school.radius].every(Number.isFinite) ||
+                school.lat < -90 || school.lat > 90 ||
+                school.lng < -180 || school.lng > 180 ||
+                school.radius < 10 || school.radius > 500) {
                 console.error("School location settings contain invalid values");
                 return jsonError(res, 503, "School location settings are invalid");
             }
             const distance = distanceMeters(school.lat, school.lng, lat, lng);
+            if (!Number.isFinite(distance)) {
+                return jsonError(res, 400, "GPS coordinates could not be validated");
+            }
             if (features.gps_accuracy_guard && accuracy > MAX_ACCURACY) {
                 return failedAttendance(req, res, role, 400, {
                     error: "GPS_ACCURACY_TOO_LOW",
