@@ -1598,7 +1598,7 @@ async function showApp(user) {
     if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = !settingsLoaded;
     if ($("btn-student-attendance")) $("btn-student-attendance").disabled = !settingsLoaded;
     if (!settingsLoaded) toast(tr("schoolSettingsFailed"), "error");
-    loadModels();
+    void loadFaceDetector();
 }
 
 function restoreSession() {
@@ -3050,7 +3050,7 @@ function loadFaceRecognition() {
             });
             state.faceEngine = engine;
             state.faceRecognitionReady = true;
-            state.modelReady = state.faceDetectorReady;
+            state.modelReady = state.faceDetectorReady && state.faceRecognitionReady;
             if ($("model-status")) {
                 $("model-status").className = "model-badge ready";
                 $("model-status").textContent = "ArcFace 512D siap";
@@ -3097,9 +3097,11 @@ function updateCameraTexts() {
         ? tr("studentCameraStop")
         : state.attendanceStarting ? tr("studentCameraStarting") : tr("checkInNow");
     if ($("model-status")) {
-        $("model-status").textContent = state.modelReady
-            ? tr("modelReady")
-            : state.modelLoading ? tr("modelLoadingLong") : tr("modelFailed");
+        $("model-status").textContent = state.faceRecognitionReady
+            ? "ArcFace 512D siap"
+            : state.faceDetectorReady
+                ? "Deteksi wajah siap · menyiapkan ArcFace…"
+                : state.modelLoading ? tr("modelLoadingLong") : tr("modelFailed");
     }
 }
 
@@ -3212,24 +3214,83 @@ function stopAllCameras() {
 }
 
 async function getCameraStream() {
-    if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("unsupported");
-    }
-    try {
-        return await navigator.mediaDevices.getUserMedia({
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
+    const constraints = [
+        {
             audio: false,
             video: {
-                facingMode: "user",
-                width: { ideal: 480 },
-                height: { ideal: 360 },
+                facingMode: { ideal: "user" },
+                width: { ideal: 640 },
+                height: { ideal: 480 },
                 frameRate: { ideal: 24, max: 30 }
             }
-        });
-    } catch (error) {
-        if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") throw new Error("permission");
-        if (error?.name === "NotFoundError" || error?.name === "NotReadableError" || error?.name === "AbortError") throw new Error("unavailable");
-        throw new Error("failed");
+        },
+        {
+            audio: false,
+            video: {
+                facingMode: { ideal: "user" },
+                width: { ideal: 480 },
+                height: { ideal: 360 }
+            }
+        },
+        { audio: false, video: true }
+    ];
+    let lastError = null;
+    for (const constraint of constraints) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraint);
+            const track = stream.getVideoTracks()[0];
+            if (track) {
+                const settings = track.getSettings?.() || {};
+                console.info("Amanah camera started", {
+                    width: settings.width || null,
+                    height: settings.height || null,
+                    frameRate: settings.frameRate || null,
+                    facingMode: settings.facingMode || null
+                });
+            }
+            return stream;
+        } catch (error) {
+            lastError = error;
+            if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") {
+                throw new Error("permission");
+            }
+            if (error?.name === "NotFoundError" || error?.name === "NotReadableError" ||
+                error?.name === "AbortError") {
+                throw new Error("unavailable");
+            }
+            // A device may reject an ideal resolution; fall back to simpler constraints.
+        }
     }
+    console.error("Camera constraints failed:", lastError);
+    throw new Error("failed");
+}
+
+async function waitForVideoReady(video, timeoutMs = 7000) {
+    if (video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) return;
+    if (!video) throw new Error("Camera video element is missing");
+    await new Promise((resolve, reject) => {
+        let settled = false;
+        const finish = error => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeout);
+            video.removeEventListener("loadeddata", onReady);
+            video.removeEventListener("canplay", onReady);
+            video.removeEventListener("error", onError);
+            if (error) reject(error);
+            else resolve();
+        };
+        const onReady = () => {
+            if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) finish();
+        };
+        const onError = () => finish(new Error("Camera video could not provide frames"));
+        const timeout = window.setTimeout(() => finish(new Error("Camera did not produce a video frame in time")), timeoutMs);
+        video.addEventListener("loadeddata", onReady);
+        video.addEventListener("canplay", onReady);
+        video.addEventListener("error", onError);
+        onReady();
+    });
 }
 
 function cameraErrorText(error) {
@@ -3437,10 +3498,11 @@ function drawDetections(video, canvas, detections) {
 }
 
 async function detectFaces(video) {
-    if (!state.modelReady || !video?.videoWidth || video.readyState < 2) return [];
-    // The detector runs at a lightweight resolution; the separate ArcFace
-    // embedding model runs only after a single face passes quality and liveness checks.
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.50 });
+    if (!state.faceDetectorReady || !window.faceapi || !video?.videoWidth || video.readyState < 2) return [];
+    // Run detection at a light resolution; do not block it on the much larger
+    // ArcFace recognition model. A slightly lower score threshold improves recall;
+    // size/landmark/embedding checks still gate any identity decision.
+    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 });
     return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks();
 }
 
@@ -3451,9 +3513,9 @@ function isFaceDetectionUsable(detection, video) {
     const height = Number(box?.height);
     const sourceWidth = Number(video?.videoWidth) || 0;
     const sourceHeight = Number(video?.videoHeight) || 0;
-    const minimumWidth = Math.max(76, sourceWidth * 0.12);
-    const minimumHeight = Math.max(76, sourceHeight * 0.16);
-    return Number.isFinite(score) && score >= 0.54 &&
+    const minimumWidth = Math.max(64, sourceWidth * 0.10);
+    const minimumHeight = Math.max(64, sourceHeight * 0.12);
+    return Number.isFinite(score) && score >= 0.50 &&
         Number.isFinite(width) && width >= minimumWidth &&
         Number.isFinite(height) && height >= minimumHeight;
 }
@@ -3895,30 +3957,52 @@ async function processFormFrame() {
 
 async function decodeFaceUpload(file) {
     if (!(file instanceof Blob) || file.size === 0) throw new Error("empty-image");
-    // Browsers and mobile camera apps frequently omit or mislabel MIME types.
-    // Decode the bytes first; the decoder is the source of truth, not filename.
-    if (typeof createImageBitmap === "function") {
+    let bitmap = null;
+    try {
+        if (typeof createImageBitmap === "function") {
+            bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+        }
+    } catch (error) {
+        console.warn("createImageBitmap decode fallback:", error?.name || error);
+    }
+
+    let source = bitmap;
+    let sourceWidth = Number(bitmap?.width) || 0;
+    let sourceHeight = Number(bitmap?.height) || 0;
+    if (!source) {
+        const objectUrl = URL.createObjectURL(file);
         try {
-            const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-            if (bitmap.width > 0 && bitmap.height > 0) return bitmap;
-            bitmap.close?.();
-        } catch (error) {
-            console.warn("createImageBitmap decode fallback:", error?.name || error);
+            const image = new Image();
+            image.decoding = "async";
+            image.src = objectUrl;
+            await image.decode();
+            source = image;
+            sourceWidth = image.naturalWidth;
+            sourceHeight = image.naturalHeight;
+        } finally {
+            URL.revokeObjectURL(objectUrl);
         }
     }
-    const objectUrl = URL.createObjectURL(file);
+
     try {
-        const image = new Image();
-        image.decoding = "async";
-        image.src = objectUrl;
-        await image.decode();
-        if (!image.naturalWidth || !image.naturalHeight) throw new Error("invalid-image-dimensions");
-        return image;
+        if (!sourceWidth || !sourceHeight) throw new Error("invalid-image-dimensions");
+        const maxSide = 1600;
+        const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+        const width = Math.max(1, Math.round(sourceWidth * scale));
+        const height = Math.max(1, Math.round(sourceHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) throw new Error("image-canvas-unavailable");
+        context.drawImage(source, 0, 0, width, height);
+        // face-api.js accepts HTMLImageElement/HTMLCanvasElement/video/tensor,
+        // not ImageBitmap in all supported 0.22.2 code paths. Always return canvas.
+        return canvas;
     } finally {
-        URL.revokeObjectURL(objectUrl);
+        bitmap?.close?.();
     }
 }
-
 async function readUploadedFace(file) {
     if (!file) return;
     if (file.size > 15 * 1024 * 1024) {
