@@ -3425,19 +3425,17 @@ async function startAttendanceCamera() {
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
             !attendanceViewActive() || document.hidden) return;
 
-        if (!result.inside || result.error) {
-            const message = result.error || tr("outsideMessage", {
-                distance: result.distance,
-                radius: SCHOOL_LOCATION.radius
-            });
-            stopAttendanceCamera();
-            setAttendanceMessage(message);
-            toast(message, "error");
-            return;
-        }
-
-        if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
-            const message = tr("accuracyWarning", { accuracy: Math.round(result.accuracy) });
+        if (result.error || result.accuracy > MAX_GPS_ACCURACY_METERS ||
+            result.boundaryUncertain || !result.inside) {
+            const message = result.error ||
+                (result.accuracy > MAX_GPS_ACCURACY_METERS
+                    ? tr("accuracyWarning", { accuracy: Math.round(result.accuracy) })
+                    : result.boundaryUncertain
+                        ? tr("gpsBoundaryUncertain")
+                        : tr("outsideMessage", {
+                            distance: result.distance,
+                            radius: SCHOOL_LOCATION.radius
+                        }));
             stopAttendanceCamera();
             setAttendanceMessage(message);
             toast(message, "error");
