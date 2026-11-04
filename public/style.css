@@ -3280,6 +3280,32 @@ body.theme-dark .role-button {
     gap: 14px;
 }
 
+.admin-role-activity-grid {
+    align-items: start;
+}
+
+.admin-role-activity-grid .panel {
+    min-width: 0;
+}
+
+.admin-role-activity-grid .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.admin-role-activity-grid table {
+    min-width: 470px;
+}
+
+.admin-role-activity-grid td:first-child {
+    min-width: 160px;
+}
+
+.admin-role-activity-grid td small {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
 .admin-stat-grid .panel {
     display: grid;
     gap: 12px;
