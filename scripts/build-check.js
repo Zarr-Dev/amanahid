@@ -242,6 +242,10 @@ if (!js.includes('phase === "pending" ? "disabled"') ||
 
 const faceEngineSource = readFileSync(join(root, "public/face-engine.js"), "utf8");
 const faceMigration = readFileSync(join(root, "supabase/migrations/20261103180000_arcface_embedding_v2.sql"), "utf8");
+const geofenceClientSource = js.slice(
+    js.indexOf("async function checkGeofence"),
+    js.indexOf("\nfunction setLocationError")
+);
 if (!js.includes("AURAFACE") && !js.includes("createAmanahFaceEngine") ||
     !js.includes("faceEngine.embed(video, detection)") ||
     !js.includes("model_key: \"auraface-glintr100-int8-v1\"") ||
@@ -250,6 +254,20 @@ if (!js.includes("AURAFACE") && !js.includes("createAmanahFaceEngine") ||
     !faceEngineSource.includes("computeSimilarityTransform") ||
     !faceEngineSource.includes("FACE_MODEL_SHA256") ||
     !faceEngineSource.includes("SHA-256") ||
+    !faceEngineSource.includes("source.wasm") ||
+    !js.includes("function decodeFaceUpload") ||
+    !js.includes("createImageBitmap(file, { imageOrientation: \"from-image\" })") ||
+    !js.includes("context.drawImage(source, 0, 0, width, height)") ||
+    !js.includes("Face detector can start") && !js.includes("state.faceDetectorReady") ||
+    !js.includes("state.faceRecognitionReady") ||
+    !js.includes("async function waitForVideoReady") ||
+    !js.includes("await waitForVideoReady(video)") ||
+    !js.includes("await waitForVideoReady($(\"video-formulir\"))") ||
+    !js.includes("async function getBestGpsPosition") ||
+    !geofenceClientSource.includes("lat: latitude") ||
+    !geofenceClientSource.includes("lng: longitude") ||
+    !geofenceClientSource.includes("positionTimestamp: timestamp") ||
+    !geofenceClientSource.includes("speed: reportedSpeed") ||
     !allApiSource.includes("FACE_MODEL_KEY = \"auraface-glintr100-int8-v1\"") ||
     !allApiSource.includes("rpc/match_student_face_embeddings") ||
     !allApiSource.includes("rpc/replace_student_face_embeddings") ||
@@ -258,8 +276,9 @@ if (!js.includes("AURAFACE") && !js.includes("createAmanahFaceEngine") ||
     !faceMigration.includes("REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated") ||
     !js.includes("function updateAttendanceLiveness") || !js.includes("function isFaceDetectionUsable") ||
     !css.includes(".camera-stage canvas") || !css.includes("transform: scaleX(-1)") ||
+    !allApiSource.includes("School location settings are invalid") ||
     !allApiSource.includes("GPS_BOUNDARY_UNCERTAIN")) {
-    console.error("Build check failed: ArcFace 512D embedding pipeline, model integrity, private pgvector storage, or server-side face scope is missing.");
+    console.error("Build check failed: ArcFace detection/upload readiness, robust camera frames, GPS return payload, private pgvector storage, or server-side geofence guards are missing.");
     process.exit(1);
 }
 
