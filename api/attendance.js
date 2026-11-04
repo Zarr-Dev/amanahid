@@ -110,14 +110,6 @@ export default async function handler(req, res) {
         if (role !== "guru" && role !== "siswa") return jsonError(res, 403, "A valid user role is required");
         const body = req.body || {};
         const session = getSession(req);
-        let features;
-        try {
-            features = await getFeatureFlags();
-        } catch (error) {
-            console.error("Attendance feature configuration failed:", error);
-            return jsonError(res, 503, "Attendance policy could not be loaded");
-        }
-        const gpsGeofencingEnabled = features.gps_geofencing !== false;
         const faceProof = verifyToken(req.headers["x-face-proof"]);
         if (!faceProof || (role !== "siswa" && role !== "guru") ||
             faceProof.purpose !== "attendance_face" ||
@@ -131,6 +123,14 @@ export default async function handler(req, res) {
             faceProof.confidence > 1) {
             return jsonError(res, 403, "A valid recent server-verified face match is required");
         }
+        let features;
+        try {
+            features = await getFeatureFlags();
+        } catch (error) {
+            console.error("Attendance feature configuration failed:", error);
+            return jsonError(res, 503, "Attendance policy could not be loaded");
+        }
+        const gpsGeofencingEnabled = features.gps_geofencing !== false;
         const attendanceSchema = {
             nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
             confidence: { type: "number", min: 0.3, max: 1 }
