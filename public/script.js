@@ -674,6 +674,10 @@ const state = {
     modelReady: false,
     modelLoading: false,
     modelLoadingPromise: null,
+    faceDetectorReady: false,
+    faceRecognitionReady: false,
+    faceDetectorLoadingPromise: null,
+    faceRecognitionLoadingPromise: null,
     faceEngine: null,
     faceDetectorOptions: null,
     attendanceStream: null,
@@ -2898,33 +2902,48 @@ function renderLocationBadge() {
 }
 
 // Camera lifecycle and face recognition
-function displayModelError(error) {
-    console.error("Face recognition model error:", error);
-    state.modelReady = false;
+function displayModelError(error, stage = "recognition") {
+    console.error(stage === "detector" ? "Face detector error:" : "Face recognition model error:", error);
+    if (stage === "detector") state.faceDetectorReady = false;
+    else {
+        state.faceRecognitionReady = false;
+        state.faceEngine = null;
+    }
+    state.modelReady = state.faceDetectorReady && state.faceRecognitionReady;
     if ($("model-status")) {
         $("model-status").className = "model-badge error";
-        $("model-status").textContent = tr("modelFailed");
+        $("model-status").textContent = stage === "detector"
+            ? "Face detector gagal dimuat"
+            : "Model pengenalan gagal dimuat";
     }
     if ($("model-error-text")) {
         const detail = String(error?.message || "").slice(0, 180);
         $("model-error-text").textContent = detail
-            ? tr("modelFailed") + " (" + detail + ")"
+            ? (stage === "detector" ? "Detector: " : "ArcFace: ") + detail
             : tr("modelFailed");
     }
     $("model-error")?.classList.remove("hidden");
 }
 
-function loadExternalScript(url) {
+function loadExternalScript(url, timeoutMs = 20000) {
     return new Promise((resolve, reject) => {
         const script = document.createElement("script");
+        let settled = false;
+        const timeout = window.setTimeout(() => finish(new Error("Face detector library request timed out")), timeoutMs);
+        const finish = error => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeout);
+            if (error) {
+                script.remove();
+                reject(error);
+            } else resolve();
+        };
         script.src = url;
         script.async = true;
         script.crossOrigin = "anonymous";
-        script.onload = resolve;
-        script.onerror = () => {
-            script.remove();
-            reject(new Error("Face detector library could not be loaded"));
-        };
+        script.onload = () => finish();
+        script.onerror = () => finish(new Error("Face detector library could not be loaded"));
         document.head.appendChild(script);
     });
 }
@@ -2944,7 +2963,7 @@ async function ensureFaceApi() {
             lastError = error;
         }
     }
-    throw lastError || new Error("Face detector library unavailable");
+    throw lastError || new Error("Face detector library unavailable from supported CDN mirrors");
 }
 
 function updateFaceModelProgress(progress) {
@@ -2953,27 +2972,26 @@ function updateFaceModelProgress(progress) {
         $("model-status").className = "model-badge";
         $("model-status").textContent = label;
     }
-    if ($("model-error-text")) $("model-error-text").textContent = label;
-    $("model-error")?.classList.remove("hidden");
+    // Progress is not an error. Keep the error panel hidden while the model downloads.
+    $("model-error")?.classList.add("hidden");
 }
 
-function loadModels() {
-    if (state.modelReady && state.faceEngine) return Promise.resolve(true);
-    if (state.modelLoadingPromise) return state.modelLoadingPromise;
-    state.modelLoading = true;
-    if ($("model-status")) {
-        $("model-status").className = "model-badge";
-        $("model-status").textContent = tr("modelLoadingLong");
-    }
-
-    state.modelLoadingPromise = (async () => {
+function loadFaceDetector() {
+    if (state.faceDetectorReady && window.faceapi) return Promise.resolve(true);
+    if (state.faceDetectorLoadingPromise) return state.faceDetectorLoadingPromise;
+    state.faceDetectorLoadingPromise = (async () => {
         try {
+            if ($("model-status")) {
+                $("model-status").className = "model-badge";
+                $("model-status").textContent = "Menyiapkan deteksi wajah…";
+            }
             const faceapi = await ensureFaceApi();
             const detectorWeightSources = [
-                "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@v0.22.2/weights",
+                "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights",
                 "https://unpkg.com/face-api.js@0.22.2/weights"
             ];
             let detectorReady = false;
+            let lastError = null;
             for (const base of detectorWeightSources) {
                 try {
                     if (!faceapi.nets.tinyFaceDetector.isLoaded) {
@@ -2982,23 +3000,57 @@ function loadModels() {
                     if (!faceapi.nets.faceLandmark68Net.isLoaded) {
                         await faceapi.nets.faceLandmark68Net.loadFromUri(base);
                     }
-                    detectorReady = faceapi.nets.tinyFaceDetector.isLoaded &&
-                        faceapi.nets.faceLandmark68Net.isLoaded;
+                    detectorReady = Boolean(
+                        faceapi.nets.tinyFaceDetector.isLoaded &&
+                        faceapi.nets.faceLandmark68Net.isLoaded
+                    );
                     if (detectorReady) break;
+                    lastError = new Error("Face detector weights did not report ready");
                 } catch (error) {
+                    lastError = error;
                     console.warn("Face detector weights mirror failed:", base, error);
                 }
             }
-            if (!detectorReady) throw new Error("Face detector or landmark weights unavailable");
+            if (!detectorReady) throw lastError || new Error("Face detector or landmark weights unavailable");
 
-            // Recognition is handled by the separate 512D AuraFace/ArcFace engine.
-            // face-api.js is retained only for lightweight detection and 68-point landmarks.
+            state.faceDetectorReady = true;
+            if ($("model-status")) {
+                $("model-status").className = "model-badge ready";
+                $("model-status").textContent = state.faceRecognitionReady
+                    ? "ArcFace 512D siap"
+                    : "Deteksi wajah siap · menyiapkan ArcFace…";
+            }
+            $("model-error")?.classList.add("hidden");
+            return true;
+        } catch (error) {
+            displayModelError(error, "detector");
+            return false;
+        } finally {
+            state.faceDetectorLoadingPromise = null;
+        }
+    })();
+    return state.faceDetectorLoadingPromise;
+}
+
+function loadFaceRecognition() {
+    if (state.faceRecognitionReady && state.faceEngine) return Promise.resolve(true);
+    if (state.faceRecognitionLoadingPromise) return state.faceRecognitionLoadingPromise;
+    state.faceRecognitionLoadingPromise = (async () => {
+        try {
+            if (!state.faceDetectorReady && !(await loadFaceDetector())) {
+                throw new Error("Face detector is not ready");
+            }
+            if ($("model-status")) {
+                $("model-status").className = "model-badge";
+                $("model-status").textContent = "Menyiapkan model pengenalan ArcFace…";
+            }
             const engineModule = await import("./face-engine.js");
-            state.faceEngine = await engineModule.createAmanahFaceEngine({
+            const engine = await engineModule.createAmanahFaceEngine({
                 onProgress: updateFaceModelProgress
             });
-
-            state.modelReady = true;
+            state.faceEngine = engine;
+            state.faceRecognitionReady = true;
+            state.modelReady = state.faceDetectorReady;
             if ($("model-status")) {
                 $("model-status").className = "model-badge ready";
                 $("model-status").textContent = "ArcFace 512D siap";
@@ -3006,14 +3058,31 @@ function loadModels() {
             $("model-error")?.classList.add("hidden");
             return true;
         } catch (error) {
-            displayModelError(error);
+            displayModelError(error, "recognition");
             return false;
         } finally {
+            state.faceRecognitionLoadingPromise = null;
             state.modelLoading = false;
-            // A failed load is retryable: do not keep a permanently resolved-false promise.
-            if (!state.modelReady) state.modelLoadingPromise = null;
         }
     })();
+    state.modelLoading = true;
+    return state.faceRecognitionLoadingPromise;
+}
+
+function loadModels() {
+    if (state.faceDetectorReady && state.faceRecognitionReady && state.faceEngine) {
+        state.modelReady = true;
+        return Promise.resolve(true);
+    }
+    if (state.modelLoadingPromise) return state.modelLoadingPromise;
+    state.modelLoadingPromise = (async () => {
+        const detectorReady = await loadFaceDetector();
+        if (!detectorReady) return false;
+        return await loadFaceRecognition();
+    })().finally(() => {
+        state.modelLoadingPromise = null;
+        state.modelLoading = false;
+    });
     return state.modelLoadingPromise;
 }
 
