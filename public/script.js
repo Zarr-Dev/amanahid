@@ -1775,7 +1775,7 @@ function applyRuntimeFeatureFlags(features = {}) {
     document.querySelectorAll(".language-row").forEach(element => {
         element.classList.toggle("hidden", features.language_switcher === false);
     });
-    const coreAttendanceOff = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"]
+    const coreAttendanceOff = ["camera_attendance", "face_recognition", "liveness_check", "attendance_recording"]
         .some(key => features[key] === false);
     if (coreAttendanceOff) {
         if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
@@ -1962,7 +1962,7 @@ async function startAdminTestCamera() {
     status.textContent = tr("testModelLoading");
     modelState.textContent = tr("testModelLoading");
     try {
-        if (!await loadModels()) throw new Error("model");
+        if (!state.faceDetectorReady && !(await loadFaceDetector())) throw new Error("model");
         modelState.textContent = tr("testModelReady");
         const stream = await getCameraStream();
         if (!$("admin-view-tests")?.classList.contains("active")) {
@@ -1983,9 +1983,8 @@ async function startAdminTestCamera() {
             if (adminTestBusy || !adminTestStream || video.readyState < 2) return;
             adminTestBusy = true;
             try {
-                const rawDetections = await detectFaces(video);
+                const detections = await detectUsableFaces(video);
                 if (!adminTestStream) return;
-                const detections = rawDetections.filter(detection => isFaceDetectionUsable(detection, video));
                 drawDetections(video, $("admin-test-overlay"), detections);
                 $("admin-test-face-count").textContent = String(detections.length);
                 status.textContent = detections.length === 0 ? tr("testCameraNoFace")
@@ -2094,9 +2093,7 @@ async function testAdminGps() {
         const settingsAvailable = await loadSchoolSettings({ preserveOnError: true });
         if (!settingsAvailable || !state.schoolSettingsLoaded) throw new Error("School GPS settings could not be loaded.");
         if (!navigator.geolocation) throw new Error("Geolocation API tidak tersedia.");
-        const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true, timeout: 12000, maximumAge: 0
-        }));
+        const position = await getBestGpsPosition();
         const { latitude, longitude, accuracy } = position.coords || {};
         if (![latitude, longitude, accuracy].every(Number.isFinite) ||
             Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
@@ -3591,6 +3588,11 @@ function isFaceDetectionUsable(detection, video) {
         Number.isFinite(height) && height >= minimumHeight;
 }
 
+async function detectUsableFaces(video) {
+    const detections = await detectFaces(video);
+    return detections.filter(detection => isFaceDetectionUsable(detection, video));
+}
+
 function updateAttendanceLiveness(detection) {
     if (!state.livenessChallenge) {
         state.livenessChallenge = {
@@ -3663,7 +3665,7 @@ function saveFaceSample(embedding, quality = state.faceCandidateQuality, angle =
         toast("Embedding wajah belum ternormalisasi dengan benar. Ambil sampel ulang.", "error");
         return false;
     }
-    if (typeof quality !== "number" || !Number.isFinite(quality) || quality < 0.65) {
+    if (typeof quality !== "number" || !Number.isFinite(quality) || quality < 0.70) {
         $("form-face-status").textContent = "Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.";
         toast("Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.", "error");
         return false;
@@ -3725,7 +3727,7 @@ async function processAttendanceFrame() {
         await new Promise(resolve => window.requestAnimationFrame(resolve));
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         if (video.readyState < 2) return;
-        const detections = await detectFaces(video);
+        const detections = await detectUsableFaces(video);
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         drawDetections(video, attendanceCanvas(), detections);
 
@@ -3819,23 +3821,25 @@ async function processAttendanceFrame() {
         faceProofToken = result.proofToken;
         if (!student) return;
 
-        pipelineStage = "gps";
-        const location = await checkGeofence();
-        if (state.user !== requestUser || state.attendanceStream !== requestStream ||
-            !attendanceViewActive() || document.hidden) return;
-        if (location.error || !location.inside || location.accuracy > MAX_GPS_ACCURACY_METERS) {
-            const message = location.error || (location.boundaryUncertain
-                ? tr("gpsBoundaryUncertain")
-                : location.accuracy > MAX_GPS_ACCURACY_METERS
-                    ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
-                    : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
-            stopAttendanceCamera();
-            setAttendanceMessage(message);
-            if (requestUser.role === "guru") {
-                updateProgress(0, message);
+        let location = null;
+        if (state.runtimeFeatures?.gps_geofencing !== false) {
+            pipelineStage = "gps";
+            location = await checkGeofence();
+            if (state.user !== requestUser || state.attendanceStream !== requestStream ||
+                !attendanceViewActive() || document.hidden) return;
+            if (location.error || !location.inside ||
+                !isGpsAccuracyAcceptable(location.accuracy, SCHOOL_LOCATION.radius)) {
+                const message = location.error || (location.boundaryUncertain
+                    ? tr("gpsBoundaryUncertain")
+                    : !isGpsAccuracyAcceptable(location.accuracy, SCHOOL_LOCATION.radius)
+                        ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
+                        : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
+                stopAttendanceCamera();
+                setAttendanceMessage(message);
+                if (requestUser.role === "guru") updateProgress(0, message);
+                toast(message, "error");
+                return;
             }
-            toast(message, "error");
-            return;
         }
 
         const today = localDateKey();
@@ -3858,11 +3862,13 @@ async function processAttendanceFrame() {
             nisn: requestUser.nisn,
             body: {
                 nisn: student.nisn,
-                lat: location.lat,
-                lng: location.lng,
-                accuracy: location.accuracy,
-                gpsTimestamp: location.positionTimestamp,
-                speed: location.speed || 0,
+                ...(location ? {
+                    lat: location.lat,
+                    lng: location.lng,
+                    accuracy: location.accuracy,
+                    gpsTimestamp: location.positionTimestamp,
+                    speed: location.speed || 0
+                } : {}),
                 confidence
             },
             idempotencyKey: state.attendanceIdempotencyKey,
@@ -3913,7 +3919,7 @@ async function processAttendanceFrame() {
                 stopAttendanceCamera();
                 const message = error.type === "gps_accuracy"
                     ? tr("accuracyWarning", {
-                        accuracy: Math.ceil(error.gpsAccuracy?.actual || MAX_GPS_ACCURACY_METERS + 1)
+                        accuracy: Math.ceil(error.gpsAccuracy?.actual || Number(SCHOOL_LOCATION.radius) + 1)
                     })
                     : error.message || "Koneksi ke layanan presensi gagal. Periksa jaringan dan coba lagi.";
                 setAttendanceMessage(message);
@@ -3996,7 +4002,7 @@ async function processFormFrame() {
     let pipelineStage = "detection";
     try {
         const video = $("video-formulir");
-        const detections = await detectFaces(video);
+        const detections = await detectUsableFaces(video);
         if (state.formStream !== requestStream) return;
         drawDetections(video, $("overlay-formulir"), detections);
         if (detections.length === 1) {
@@ -4009,10 +4015,10 @@ async function processFormFrame() {
             state.faceCandidateQuality = quality;
             $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
             if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
-                quality < 0.65 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
+                quality < 0.70 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
                 state.formStableFrames = 0;
                 state.lastFormNose = null;
-                if (quality < 0.65) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
+                if (quality < 0.70) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
             } else {
                 if (state.lastFormNose) {
                     const delta = Math.hypot(nose.x - state.lastFormNose.x, nose.y - state.lastFormNose.y);
@@ -4023,7 +4029,7 @@ async function processFormFrame() {
                 if (state.formStableFrames >= 3) {
                     let saved = false;
                     if (angle) {
-                        const sampleDetections = await detectFaces(video);
+                        const sampleDetections = await detectUsableFaces(video);
                         if (state.formStream !== requestStream) return;
                         const sample = sampleDetections.length === 1 ? sampleDetections[0] : null;
                         if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample, true) === angle) {
