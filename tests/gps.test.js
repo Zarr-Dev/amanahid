@@ -62,6 +62,37 @@ async function runGeofence(position, { previousFix = null, radius = 50 } = {}) {
     return { result, state };
 }
 
+const accuracyFunction = extract(
+    frontend,
+    "function isGpsAccuracyAcceptable(",
+    "\\nconst FACE_MATCH_THRESHOLD"
+);
+
+test("GPS accuracy threshold follows the Admin-selected radius", () => {
+    const isGpsAccuracyAcceptable = runInNewContext(
+        `${accuracyFunction}\\nisGpsAccuracyAcceptable`,
+        { SCHOOL_LOCATION: { radius: 50 } }
+    );
+    assert.equal(isGpsAccuracyAcceptable(97, 50), false);
+    assert.equal(isGpsAccuracyAcceptable(50, 50), true);
+    assert.equal(isGpsAccuracyAcceptable(40, 50), true);
+    assert.equal(isGpsAccuracyAcceptable(51, 50), false);
+    assert.equal(isGpsAccuracyAcceptable(25, 30), true);
+});
+
+test("GPS fix at 97m accuracy cannot prove presence in a 50m radius", async () => {
+    const position = makePosition({ latitude: 0.00004, longitude: 0.00003, accuracy: 97, speed: 0 });
+    const { result } = await runGeofence(position, { radius: 50 });
+    assert.equal(result.inside, false);
+    assert.equal(result.boundaryUncertain, true);
+    assert.equal(result.accuracy, 97);
+    const isGpsAccuracyAcceptable = runInNewContext(
+        `${accuracyFunction}\\nisGpsAccuracyAcceptable`,
+        { SCHOOL_LOCATION: { radius: 50 } }
+    );
+    assert.equal(isGpsAccuracyAcceptable(result.accuracy, 50), false);
+});
+
 test("GPS geofence returns the complete fresh fix required by attendance API", async () => {
     const timestamp = Date.now();
     const position = makePosition({ timestamp });
@@ -152,7 +183,7 @@ test("GPS selector uses high-accuracy watch and keeps the best eligible fix", as
         },
         window: {
             setTimeout(_callback, delay) {
-                assert.equal(delay, 9000);
+                assert.equal(delay, 15000);
                 return 91;
             },
             clearTimeout(id) { clearedTimer = id; }
@@ -164,9 +195,19 @@ test("GPS selector uses high-accuracy watch and keeps the best eligible fix", as
     assert.equal(result.timestamp, best.timestamp);
     assert.equal(watchOptions.enableHighAccuracy, true);
     assert.equal(watchOptions.maximumAge, 0);
-    assert.equal(watchOptions.timeout, 10000);
+    assert.equal(watchOptions.timeout, 16000);
     assert.equal(clearedWatch, 73);
     assert.equal(clearedTimer, 91);
+});
+
+test("GPS Geofencing can be disabled without disabling face attendance", () => {
+    const flagsStart = frontend.indexOf("const coreAttendanceOff =");
+    assert.ok(flagsStart >= 0);
+    const flagCode = frontend.slice(flagsStart, flagsStart + 260);
+    assert.ok(!flagCode.includes('"gps_geofencing"'));
+    assert.ok(frontend.includes("const gpsGeofencingEnabled = runtimeFeatures.gps_geofencing !== false;"));
+    assert.ok(frontend.includes("if (state.runtimeFeatures?.gps_geofencing !== false)"));
+    assert.ok(frontend.includes("...(location ? {"));
 });
 
 test("GPS selector falls back to getCurrentPosition when watchPosition is unavailable", async () => {
