@@ -532,7 +532,7 @@ test("attendance returns machine-readable GPS errors and limits repeated failure
             socket: { remoteAddress: ip },
             body: {
                 nisn: "12345678", lat: -6.25, lng: 106.6,
-                accuracy: 36, gpsTimestamp: Date.now(), speed: 0, confidence: 0.9
+                accuracy: 51, gpsTimestamp: Date.now(), speed: 0, confidence: 0.9
             }
         };
         const res = responseMock();
@@ -542,8 +542,8 @@ test("attendance returns machine-readable GPS errors and limits repeated failure
             assert.equal(res.statusCode, 400);
             assert.deepEqual(res.body, {
                 error: "GPS_ACCURACY_TOO_LOW",
-                required: 35,
-                actual: 36
+                required: 50,
+                actual: 51
             });
         } else {
             assert.equal(res.statusCode, 429);
