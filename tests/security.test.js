@@ -592,6 +592,42 @@ test("attendance rejects GPS fixes whose uncertainty overlaps the geofence bound
     assert.ok(res.body.distance >= 40 && res.body.distance <= 50);
 });
 
+test("attendance rejects invalid school geofence configuration before accepting a GPS fix", async t => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async url => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("students?select=email,nisn,is_active")) {
+            return new Response(JSON.stringify([{ email: "student@example.com", nisn: "12345678", is_active: true }]), { status: 200 });
+        }
+        if (requestUrl.includes("school_settings?select=lat,lng,radius,entry_time")) {
+            return new Response(JSON.stringify([{ lat: -6.25, lng: 106.6, radius: 900 }]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+    const token = signToken({ email: "student@example.com", name: "Student", role: "siswa", nisn: "12345678" });
+    const res = responseMock();
+    await attendanceHandler({
+        method: "POST",
+        headers: {
+            origin: "https://school.example",
+            "x-session-token": token,
+            "x-face-proof": signToken({
+                email: "student@example.com", role: "siswa", nisn: "12345678",
+                purpose: "attendance_face", faceVerified: true, confidence: 0.9
+            }, 120_000),
+            "x-idempotency-key": "00000000-0000-4000-8000-000000000189"
+        },
+        socket: { remoteAddress: "198.18.44.3" },
+        body: {
+            nisn: "12345678", lat: -6.25, lng: 106.6,
+            accuracy: 10, gpsTimestamp: Date.now(), speed: 0, confidence: 0.9
+        }
+    }, res);
+    assert.equal(res.statusCode, 503);
+    assert.match(res.body.error, /School location settings are invalid/);
+});
+
 test("authentication endpoints clearly report missing production configuration before origin checks", async t => {
     const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SESSION_SECRET"];
     const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
