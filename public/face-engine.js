@@ -7,10 +7,15 @@ export const FACE_MODEL_VERSION = "1.0.0";
 
 const ORT_VERSION = "1.31.1";
 const ORT_SOURCES = [
-    "https://cdn.jsdelivr.net/npm/onnxruntime-web@" + ORT_VERSION + "/dist/ort.min.js",
-    "https://unpkg.com/onnxruntime-web@" + ORT_VERSION + "/dist/ort.min.js"
+    {
+        script: "https://cdn.jsdelivr.net/npm/onnxruntime-web@" + ORT_VERSION + "/dist/ort.min.js",
+        wasm: "https://cdn.jsdelivr.net/npm/onnxruntime-web@" + ORT_VERSION + "/dist/"
+    },
+    {
+        script: "https://unpkg.com/onnxruntime-web@" + ORT_VERSION + "/dist/ort.min.js",
+        wasm: "https://unpkg.com/onnxruntime-web@" + ORT_VERSION + "/dist/"
+    }
 ];
-const ORT_WASM_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@" + ORT_VERSION + "/dist/";
 const CACHE_NAME = "amanah-face-model-" + FACE_MODEL_VERSION;
 const INPUT_SIZE = 112;
 const DESTINATION = [
@@ -162,17 +167,25 @@ function makeTensorData(imageData) {
     return tensor;
 }
 
-function scriptLoad(source) {
+function scriptLoad(source, timeoutMs = 25_000) {
     return new Promise((resolve, reject) => {
         const script = document.createElement("script");
+        let settled = false;
+        const timeout = setTimeout(() => finish(new Error("ONNX Runtime script load timed out")), timeoutMs);
+        const finish = error => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            if (error) {
+                script.remove();
+                reject(error);
+            } else resolve();
+        };
         script.src = source;
         script.async = true;
         script.crossOrigin = "anonymous";
-        script.onload = () => resolve();
-        script.onerror = () => {
-            script.remove();
-            reject(new Error("ONNX Runtime script could not be loaded"));
-        };
+        script.onload = () => finish();
+        script.onerror = () => finish(new Error("ONNX Runtime script could not be loaded"));
         document.head.appendChild(script);
     });
 }
@@ -181,23 +194,29 @@ async function getOrt(onProgress) {
     if (typeof window === "undefined" || typeof document === "undefined") {
         throw new Error("ArcFace browser runtime is unavailable");
     }
-    if (!window.ort) {
-        let lastError = null;
-        for (const source of ORT_SOURCES) {
+    let lastError = null;
+    for (const source of ORT_SOURCES) {
+        if (!window.ort) {
             try {
                 onProgress({ stage: "runtime", percent: 3, message: "Loading ONNX Runtime…" });
-                await scriptLoad(source);
-                if (window.ort) break;
+                await scriptLoad(source.script);
             } catch (error) {
                 lastError = error;
+                continue;
             }
         }
-        if (!window.ort) throw lastError || new Error("ONNX Runtime is unavailable");
+        if (window.ort) {
+            // Keep the WASM binary on the same CDN as the JS bundle. A fallback
+            // JS bundle must not keep pointing its WASM fetch at a failed CDN.
+            window.ort.env.wasm.wasmPaths = source.wasm;
+            window.ort.env.wasm.numThreads = window.crossOriginIsolated
+                ? Math.max(1, Math.min(2, Number(navigator.hardwareConcurrency) || 1))
+                : 1;
+            window.ort.env.wasm.proxy = false;
+            return window.ort;
+        }
     }
-    window.ort.env.wasm.wasmPaths = ORT_WASM_BASE;
-    window.ort.env.wasm.numThreads = 1;
-    window.ort.env.wasm.proxy = false;
-    return window.ort;
+    throw lastError || new Error("ONNX Runtime is unavailable from supported CDN mirrors");
 }
 
 async function readModel(onProgress) {
@@ -224,7 +243,7 @@ async function readModel(onProgress) {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 180000);
+    const timeout = setTimeout(() => controller.abort(), 480000);
     try {
         const response = await fetch(FACE_MODEL_URL, {
             method: "GET",
