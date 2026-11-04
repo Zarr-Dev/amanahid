@@ -13,7 +13,11 @@ let SCHOOL_LOCATION = {
     radius: 50,
     name: "Al Fityan School"
 };
-const MAX_GPS_ACCURACY_METERS = 35;
+function isGpsAccuracyAcceptable(accuracy, radius = SCHOOL_LOCATION.radius) {
+    const value = Number(accuracy);
+    const allowedRadius = Number(radius);
+    return Number.isFinite(value) && value > 0 && Number.isFinite(allowedRadius) && allowedRadius >= 10 && value <= allowedRadius;
+}
 const FACE_MATCH_THRESHOLD = 0.45;
 const MAX_FACE_SAMPLES = 5;
 
@@ -1172,11 +1176,7 @@ async function checkAdminMapDeviceLocation() {
     if (button) { button.disabled = true; button.textContent = tr("adminMapCheckingDeviceLocation"); }
     status.textContent = tr("adminMapCheckingDeviceLocation");
     try {
-        const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true, timeout: 15000, maximumAge: 0
-            });
-        });
+        const position = await getBestGpsPosition();
         const { latitude, longitude, accuracy } = position.coords || {};
         if (![latitude, longitude, accuracy].every(Number.isFinite) ||
             Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
@@ -1187,7 +1187,7 @@ async function checkAdminMapDeviceLocation() {
             timestamp: Number.isFinite(position.timestamp) ? position.timestamp : Date.now()
         };
         updateAdminMapDistanceSummary();
-        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+        if (!isGpsAccuracyAcceptable(accuracy)) {
             status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
         } else if (status) {
             status.textContent += ` ${tr("adminMapLocationSuccess")}`;
@@ -2110,7 +2110,7 @@ async function testAdminGps() {
         $("admin-test-gps-distance").textContent = Math.round(distance) + " m";
         const clearlyInside = distance + accuracy <= SCHOOL_LOCATION.radius;
         const clearlyOutside = Math.max(0, distance - accuracy) > SCHOOL_LOCATION.radius;
-        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+        if (!isGpsAccuracyAcceptable(accuracy)) {
             status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
         } else if (clearlyInside) {
             status.textContent = tr("testGpsInside");
@@ -2796,13 +2796,13 @@ async function getBestGpsPosition() {
         const timeoutId = window.setTimeout(() => {
             if (best) finish(best);
             else finish(null, { code: 3 });
-        }, 9000);
+        }, 15000);
 
         try {
             if (typeof geo.watchPosition === "function") {
                 watchId = geo.watchPosition(consider, onError, {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 16000,
                     maximumAge: 0
                 });
             } else if (typeof geo.getCurrentPosition === "function") {
@@ -2812,7 +2812,7 @@ async function getBestGpsPosition() {
                     else if (!settled) finish(null, { code: 2 });
                 }, onError, {
                     enableHighAccuracy: true,
-                    timeout: 9000,
+                    timeout: 15000,
                     maximumAge: 0
                 });
             } else {
@@ -2940,11 +2940,11 @@ function renderLocationBadge() {
         return;
     }
 
-    const accuracyAccepted = state.lastLocation.accuracy <= MAX_GPS_ACCURACY_METERS;
+    const accuracyAccepted = isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius);
     const badgeLabel = !accuracyAccepted
         ? `${tr("locationAccuracyBad")} · ±${Math.round(state.lastLocation.accuracy)} m`
         : `${tr(state.lastLocation.inside ? "locationInside" : "locationOutside")} · ${state.lastLocation.distance} m`;
-    const description = state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
+    const description = !isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius)
         ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
         : state.lastLocation.inside
             ? tr("insideMessage", {
@@ -3362,8 +3362,8 @@ function cameraErrorText(error) {
     return tr("cameraStartFailed");
 }
 
-async function loadRuntimeFeatures() {
- if (state.runtimeFeatures) return state.runtimeFeatures;
+async function loadRuntimeFeatures({ refresh = false } = {}) {
+ if (state.runtimeFeatures && !refresh) return state.runtimeFeatures;
  const response = await cloudRequest("/api?action=features");
  if (!response?.features || typeof response.features !== "object") throw new Error("Runtime feature configuration is unavailable");
  state.runtimeFeatures = response.features;
@@ -3373,30 +3373,27 @@ async function loadRuntimeFeatures() {
 async function startAttendanceCamera() {
     if (state.attendanceStream || state.attendanceStarting) return;
     if (!state.user) return;
-    if (!state.schoolSettingsLoaded) {
-        toast(tr("schoolSettingsFailed"), "error");
-        return;
-    }
     const requestUser = state.user;
     const cloudDataPromise = state.cloudDataPromise;
     state.attendanceStarting = true;
     const startToken = ++state.attendanceStartToken;
 
     try {
-        const runtimeFeatures = await loadRuntimeFeatures();
-        const requiredFeatures = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"];
+        const runtimeFeatures = await loadRuntimeFeatures({ refresh: true });
+        const gpsGeofencingEnabled = runtimeFeatures.gps_geofencing !== false;
+        const requiredFeatures = ["camera_attendance", "face_recognition", "liveness_check", "attendance_recording"];
         const disabledFeature = requiredFeatures.find(key => runtimeFeatures[key] === false);
         if (disabledFeature) {
             toast("Fitur presensi sedang dinonaktifkan oleh administrator.", "error");
             return;
         }
-        const settingsLoaded = await loadSchoolSettings();
+        const settingsLoaded = gpsGeofencingEnabled ? await loadSchoolSettings() : true;
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
             state.cloudDataPromise !== cloudDataPromise) return;
         if (!settingsLoaded) {
-            if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
-            if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
-            toast(tr("schoolSettingsFailed"), "error");
+            const message = tr("schoolSettingsFailed");
+            setAttendanceMessage(message);
+            toast(message, "error");
             return;
         }
         if (!attendanceViewActive() || document.hidden) return;
@@ -3410,36 +3407,46 @@ async function startAttendanceCamera() {
             return;
         }
 
-        state.lastLocation = { checking: true };
-        renderLocationBadge();
-        if (requestUser.role === "siswa") {
-            if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("checkingBeforeCamera");
-            if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStarting");
+        if (gpsGeofencingEnabled) {
+            state.lastLocation = { checking: true };
+            renderLocationBadge();
+            if (requestUser.role === "siswa") {
+                if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("checkingBeforeCamera");
+                if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStarting");
+            } else {
+                if ($("camera-status")) $("camera-status").textContent = tr("checkingBeforeCamera");
+                if ($("switch-hint")) $("switch-hint").textContent = tr("checkingBeforeCamera");
+                setSwitch(false);
+            }
+
+            const result = await checkGeofence();
+            if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+                !attendanceViewActive() || document.hidden) return;
+
+            if (result.error || !isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius) ||
+                result.boundaryUncertain || !result.inside) {
+                const message = result.error ||
+                    (!isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius)
+                        ? tr("accuracyWarning", { accuracy: Math.round(result.accuracy) })
+                        : result.boundaryUncertain
+                            ? tr("gpsBoundaryUncertain")
+                            : tr("outsideMessage", {
+                                distance: result.distance,
+                                radius: SCHOOL_LOCATION.radius
+                            }));
+                stopAttendanceCamera();
+                setAttendanceMessage(message);
+                toast(message, "error");
+                return;
+            }
         } else {
-            if ($("camera-status")) $("camera-status").textContent = tr("checkingBeforeCamera");
-            if ($("switch-hint")) $("switch-hint").textContent = tr("checkingBeforeCamera");
-            setSwitch(false);
-        }
-
-        const result = await checkGeofence();
-        if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
-            !attendanceViewActive() || document.hidden) return;
-
-        if (result.error || result.accuracy > MAX_GPS_ACCURACY_METERS ||
-            result.boundaryUncertain || !result.inside) {
-            const message = result.error ||
-                (result.accuracy > MAX_GPS_ACCURACY_METERS
-                    ? tr("accuracyWarning", { accuracy: Math.round(result.accuracy) })
-                    : result.boundaryUncertain
-                        ? tr("gpsBoundaryUncertain")
-                        : tr("outsideMessage", {
-                            distance: result.distance,
-                            radius: SCHOOL_LOCATION.radius
-                        }));
-            stopAttendanceCamera();
-            setAttendanceMessage(message);
-            toast(message, "error");
-            return;
+            const message = "GPS Geofencing sedang dinonaktifkan oleh Admin. Presensi tetap memakai verifikasi wajah.";
+            if (requestUser.role === "siswa") {
+                if ($("student-attendance-status")) $("student-attendance-status").textContent = message;
+            } else {
+                if ($("camera-status")) $("camera-status").textContent = message;
+                if ($("switch-hint")) $("switch-hint").textContent = message;
+            }
         }
 
         if (!state.faceDetectorReady && !(await loadFaceDetector())) {
@@ -4692,7 +4699,7 @@ function updateMapText() {
     if ($("map-subtitle")) $("map-subtitle").textContent = tr("mapDesc");
     const locationDetail = $("map-location-detail");
     if (locationDetail) locationDetail.textContent = state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking
-        ? state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
+        ? !isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius)
             ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
             : tr(state.lastLocation.inside ? "insideMessage" : "outsideMessage", {
                 distance: state.lastLocation.distance,
@@ -4728,7 +4735,7 @@ async function refreshMapLocation() {
         const result = await checkGeofence();
         if (result.error) {
             toast(result.error, "error");
-        } else if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
+        } else if (!isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius)) {
             toast(tr("accuracyWarning", { accuracy: Math.round(result.accuracy) }), "error");
         } else {
             toast(result.inside
