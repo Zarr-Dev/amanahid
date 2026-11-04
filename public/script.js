@@ -1187,7 +1187,7 @@ async function checkAdminMapDeviceLocation() {
             timestamp: Number.isFinite(position.timestamp) ? position.timestamp : Date.now()
         };
         updateAdminMapDistanceSummary();
-        if (!isGpsAccuracyAcceptable(accuracy)) {
+        if (!isGpsAccuracyAcceptable(accuracy, radius)) {
             status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
         } else if (status) {
             status.textContent += ` ${tr("adminMapLocationSuccess")}`;
