@@ -1,5 +1,6 @@
 import { authorizeAdmin } from "../_lib/admin-api.js";
 import { jakartaDateTime, jsonError, jsonSupabaseError, supabaseCount, supabaseRequest } from "../_lib/supabase.js";
+import { lastActivityByEmail } from "../_lib/activity.js";
 
 function isDate(value) {
     if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -14,6 +15,30 @@ export default async function handler(req, res) {
     if (req.method !== "GET") {
         res.setHeader("Allow", "GET");
         return jsonError(res, 405, "Method not allowed");
+    }
+    if (req.query?.action === "activity") {
+        try {
+            const [admins, teachers, students, adminLogs, teacherLogs, studentLogs] = await Promise.all([
+                supabaseRequest("admin_users?select=id,email,name,is_active,last_login_at&order=name.asc&limit=500"),
+                supabaseRequest("teachers?select=id,email,name,is_active,last_login_at&order=name.asc&limit=500"),
+                supabaseRequest("students?select=id,email,name,is_active,last_login_at&order=name.asc&limit=2000"),
+                supabaseRequest("audit_log?select=actor_email,action,created_at&actor_role=eq.admin&order=created_at.desc&limit=1000"),
+                supabaseRequest("audit_log?select=actor_email,action,created_at&actor_role=eq.guru&order=created_at.desc&limit=1000"),
+                supabaseRequest("audit_log?select=actor_email,action,created_at&actor_role=eq.siswa&order=created_at.desc&limit=1000")
+            ]);
+            return res.status(200).json({
+                generated_at: new Date().toISOString(),
+                activity: {
+                    admin: lastActivityByEmail(admins, adminLogs),
+                    guru: lastActivityByEmail(teachers, teacherLogs),
+                    siswa: lastActivityByEmail(students, studentLogs)
+                },
+                audit_history_limit_per_role: 1000
+            });
+        } catch (error) {
+            console.error("Admin role activity query failed:", error);
+            return jsonSupabaseError(res, error, "Unable to load role activity");
+        }
     }
     if (req.query?.action === "stats") {
         if (req.method !== "GET") {
