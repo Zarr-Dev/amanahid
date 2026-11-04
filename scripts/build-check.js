@@ -264,6 +264,10 @@ if (!js.includes("AURAFACE") && !js.includes("createAmanahFaceEngine") ||
     !js.includes("await waitForVideoReady(video)") ||
     !js.includes("await waitForVideoReady($(\"video-formulir\"))") ||
     !js.includes("async function getBestGpsPosition") ||
+    !js.includes("function faceAngleBucket(detection, mirroredPreview = false)") ||
+    !js.includes("faceAngleBucket(detection, true)") ||
+    !js.includes("faceAngleBucket(sample, true) === angle") ||
+    !js.includes("Math.max(2, detection.box.width * 0.015)") ||
     !geofenceClientSource.includes("lat: latitude") ||
     !geofenceClientSource.includes("lng: longitude") ||
     !geofenceClientSource.includes("positionTimestamp: timestamp") ||
