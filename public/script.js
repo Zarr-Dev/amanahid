@@ -2754,96 +2754,151 @@ function geolocationErrorKey(error) {
     return "gpsFailed";
 }
 
-async function checkGeofence() {
-    if (!navigator.geolocation?.getCurrentPosition) {
-        return setLocationError("gpsUnsupported");
-    }
-
-    return new Promise(resolve => {
+async function getBestGpsPosition() {
+    if (!navigator.geolocation) throw { code: 2 };
+    return new Promise((resolve, reject) => {
+        let best = null;
+        let watchId = null;
         let settled = false;
-        const timeoutId = setTimeout(() => {
-            finishWithError("gpsTimeout");
-        }, 12000);
-        const finish = result => {
+        const geo = navigator.geolocation;
+        const finish = (position, error) => {
             if (settled) return;
             settled = true;
-            clearTimeout(timeoutId);
-            resolve(result);
-        };
-        const finishWithError = errorKey => {
-            const result = setLocationError(errorKey);
-            finish(result);
-        };
-        const onSuccess = position => {
-            if (settled) return;
-            try {
-                const { latitude, longitude, accuracy } = position.coords;
-                const distanceExact = calculateDistance(
-                    latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
-                );
-                const timestamp = Number.isFinite(position.timestamp) ? position.timestamp : Date.now();
-                const previousFix = state.lastGpsFix;
-                const elapsedSeconds = previousFix ? (timestamp - previousFix.timestamp) / 1000 : 0;
-                const estimatedSpeed = previousFix && elapsedSeconds > 0
-                    ? calculateDistance(previousFix.lat, previousFix.lng, latitude, longitude) / elapsedSeconds
-                    : 0;
-                const reportedSpeed = Number.isFinite(position.coords.speed) ? position.coords.speed : 0;
-                const fakeLocation = accuracy <= 0 || !Number.isFinite(accuracy) ||
-                    !Number.isFinite(distanceExact) || reportedSpeed > 55 ||
-                    (elapsedSeconds >= 1 && elapsedSeconds <= 600 && estimatedSpeed > 55);
-                state.lastGpsFix = { lat: latitude, lng: longitude, timestamp };
-                if (fakeLocation) {
-                    const error = tr("fakeLocation");
-                    state.lastLocation = { error, errorKey: "fakeLocation", fakeLocation: true, checkedAt: Date.now() };
-                    renderLocationBadge();
-                    updateMapText();
-                    finish({ inside: false, distance: NaN, accuracy, error, fakeLocation: true });
-                    return;
-                }
-                const roundedDistance = Math.round(distanceExact);
-                const roundedAccuracy = Math.round(accuracy);
-                const clearlyInside = distanceExact + accuracy <= SCHOOL_LOCATION.radius;
-                const clearlyOutside = Math.max(0, distanceExact - accuracy) > SCHOOL_LOCATION.radius;
-                const boundaryUncertain = !clearlyInside && !clearlyOutside;
-                const inside = clearlyInside;
-
-                state.lastLocation = {
-                    lat: latitude, lng: longitude, accuracy,
-                    distance: roundedDistance, inside, boundaryUncertain, checkedAt: Date.now(),
-                    positionTimestamp: timestamp, speed: reportedSpeed
-                };
-
-                renderLocationBadge();
-                updateMapUserMarker();
-
-                updateMapText();
-                finish({
-                    inside,
-                    boundaryUncertain,
-                    distance: roundedDistance,
-                    accuracy,
-                    error: null,
-                    fakeLocation: false
-                });
-            } catch (error) {
-                console.error("GPS location processing error:", error);
-                finishWithError("gpsFailed");
+            window.clearTimeout(timeoutId);
+            if (watchId !== null && typeof geo.clearWatch === "function") {
+                try { geo.clearWatch(watchId); } catch { /* best effort */ }
             }
+            if (position) resolve(position);
+            else reject(error || { code: 2 });
         };
+        const consider = position => {
+            const coords = position?.coords;
+            const latitude = Number(coords?.latitude);
+            const longitude = Number(coords?.longitude);
+            const accuracy = Number(coords?.accuracy);
+            const timestamp = Number(position?.timestamp);
+            const age = Date.now() - timestamp;
+            if (![latitude, longitude, accuracy, timestamp].every(Number.isFinite) ||
+                latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 ||
+                accuracy <= 0 || accuracy > 10000 || age < -5000 || age > 30000) {
+                return;
+            }
+            if (!best || accuracy < Number(best.coords.accuracy)) best = position;
+            // Finish early for a high-quality fix; otherwise keep watching briefly
+            // so indoor/phone GPS has a chance to improve from its first coarse fix.
+            if (accuracy <= 20) finish(best);
+        };
+        const onError = error => {
+            if (error?.code === 1) finish(null, error);
+            else if (best) finish(best);
+            else finish(null, error || { code: 2 });
+        };
+        const timeoutId = window.setTimeout(() => {
+            if (best) finish(best);
+            else finish(null, { code: 3 });
+        }, 9000);
+
         try {
-            navigator.geolocation.getCurrentPosition(onSuccess, error => {
-                if (settled) return;
-                finishWithError(geolocationErrorKey(error));
-            }, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
+            if (typeof geo.watchPosition === "function") {
+                watchId = geo.watchPosition(consider, onError, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else if (typeof geo.getCurrentPosition === "function") {
+                geo.getCurrentPosition(position => {
+                    consider(position);
+                    if (!settled && best) finish(best);
+                    else if (!settled) finish(null, { code: 2 });
+                }, onError, {
+                    enableHighAccuracy: true,
+                    timeout: 9000,
+                    maximumAge: 0
+                });
+            } else {
+                finish(null, { code: 2 });
+            }
         } catch (error) {
-            console.error("GPS request failed:", error);
-            finishWithError("gpsFailed");
+            finish(null, error);
         }
     });
+}
+
+async function checkGeofence() {
+    if (!navigator.geolocation?.getCurrentPosition && !navigator.geolocation?.watchPosition) {
+        return setLocationError("gpsUnsupported");
+    }
+    if (![SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng, SCHOOL_LOCATION.radius].every(Number.isFinite) ||
+        SCHOOL_LOCATION.lat < -90 || SCHOOL_LOCATION.lat > 90 ||
+        SCHOOL_LOCATION.lng < -180 || SCHOOL_LOCATION.lng > 180 ||
+        SCHOOL_LOCATION.radius < 10 || SCHOOL_LOCATION.radius > 500) {
+        return setLocationError("gpsFailed");
+    }
+
+    try {
+        const position = await getBestGpsPosition();
+        const { latitude, longitude, accuracy } = position.coords;
+        const timestamp = Number(position.timestamp);
+        const age = Date.now() - timestamp;
+        if (![latitude, longitude, accuracy, timestamp].every(Number.isFinite) ||
+            latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 ||
+            accuracy <= 0 || age < -5000 || age > 30000) {
+            return setLocationError("gpsUnavailable");
+        }
+
+        const distanceExact = calculateDistance(
+            latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
+        );
+        if (!Number.isFinite(distanceExact)) return setLocationError("gpsFailed");
+
+        const previousFix = state.lastGpsFix;
+        const elapsedSeconds = previousFix ? (timestamp - previousFix.timestamp) / 1000 : 0;
+        const estimatedSpeed = previousFix && elapsedSeconds > 0 && elapsedSeconds <= 600
+            ? calculateDistance(previousFix.lat, previousFix.lng, latitude, longitude) / elapsedSeconds
+            : 0;
+        const reportedSpeed = Number.isFinite(position.coords.speed) ? position.coords.speed : 0;
+        const fakeLocation = reportedSpeed > 55 ||
+            (elapsedSeconds >= 1 && elapsedSeconds <= 600 && estimatedSpeed > 55);
+        state.lastGpsFix = { lat: latitude, lng: longitude, timestamp };
+        if (fakeLocation) {
+            const error = tr("fakeLocation");
+            state.lastLocation = { error, errorKey: "fakeLocation", fakeLocation: true, checkedAt: Date.now() };
+            renderLocationBadge();
+            updateMapText();
+            return { inside: false, distance: NaN, accuracy, error, fakeLocation: true };
+        }
+
+        const roundedDistance = Math.round(distanceExact);
+        const clearlyInside = distanceExact + accuracy <= SCHOOL_LOCATION.radius;
+        const clearlyOutside = Math.max(0, distanceExact - accuracy) > SCHOOL_LOCATION.radius;
+        const boundaryUncertain = !clearlyInside && !clearlyOutside;
+        const inside = clearlyInside;
+
+        state.lastLocation = {
+            lat: latitude, lng: longitude, accuracy,
+            distance: roundedDistance, inside, boundaryUncertain, checkedAt: Date.now(),
+            positionTimestamp: timestamp, speed: reportedSpeed
+        };
+        renderLocationBadge();
+        updateMapUserMarker();
+        updateMapText();
+
+        return {
+            inside,
+            boundaryUncertain,
+            distance: roundedDistance,
+            accuracy,
+            lat: latitude,
+            lng: longitude,
+            positionTimestamp: timestamp,
+            speed: reportedSpeed,
+            error: null,
+            fakeLocation: false
+        };
+    } catch (error) {
+        console.error("GPS location processing error:", error);
+        return setLocationError(geolocationErrorKey(error));
+    }
 }
 
 function setLocationError(errorKey) {
