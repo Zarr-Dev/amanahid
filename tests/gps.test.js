@@ -134,7 +134,7 @@ test("GPS selector uses high-accuracy watch and keeps the best eligible fix", as
     const selector = extract(
         frontend,
         "async function getBestGpsPosition()",
-        "\\nasync function checkGeofence"
+        "\nasync function checkGeofence"
     );
     const context = {
         navigator: {
@@ -159,7 +159,7 @@ test("GPS selector uses high-accuracy watch and keeps the best eligible fix", as
         }
     };
 
-    const result = await runInNewContext(`${selector}\\ngetBestGpsPosition()`, context);
+    const result = await runInNewContext(`${selector}\ngetBestGpsPosition()`, context);
     assert.equal(result.coords.accuracy, best.coords.accuracy);
     assert.equal(result.timestamp, best.timestamp);
     assert.equal(watchOptions.enableHighAccuracy, true);
@@ -175,7 +175,7 @@ test("GPS selector falls back to getCurrentPosition when watchPosition is unavai
     const selector = extract(
         frontend,
         "async function getBestGpsPosition()",
-        "\\nasync function checkGeofence"
+        "\nasync function checkGeofence"
     );
     const context = {
         navigator: {
@@ -192,7 +192,7 @@ test("GPS selector falls back to getCurrentPosition when watchPosition is unavai
         }
     };
 
-    const result = await runInNewContext(`${selector}\\ngetBestGpsPosition()`, context);
+    const result = await runInNewContext(`${selector}\ngetBestGpsPosition()`, context);
     assert.equal(result.timestamp, position.timestamp);
     assert.equal(result.coords.accuracy, 18);
     assert.equal(options.enableHighAccuracy, true);
