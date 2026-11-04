@@ -3656,7 +3656,7 @@ function saveFaceSample(embedding, quality = state.faceCandidateQuality, angle =
         toast("Embedding wajah belum ternormalisasi dengan benar. Ambil sampel ulang.", "error");
         return false;
     }
-    if (typeof quality !== "number" || !Number.isFinite(quality) || quality < 0.7) {
+    if (typeof quality !== "number" || !Number.isFinite(quality) || quality < 0.65) {
         $("form-face-status").textContent = "Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.";
         toast("Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.", "error");
         return false;
@@ -3993,15 +3993,15 @@ async function processFormFrame() {
             const angle = faceAngleBucket(detection);
             const nose = detection.landmarks.getNose()?.[3];
             const sourceWidth = video.videoWidth || 480;
-            const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
+            const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.18));
             state.faceCandidate = null;
             state.faceCandidateQuality = quality;
             $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
             if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
-                quality < 0.7 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
+                quality < 0.65 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
                 state.formStableFrames = 0;
                 state.lastFormNose = null;
-                if (quality < 0.7) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
+                if (quality < 0.65) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
             } else {
                 if (state.lastFormNose) {
                     const delta = Math.hypot(nose.x - state.lastFormNose.x, nose.y - state.lastFormNose.y);
@@ -4015,7 +4015,7 @@ async function processFormFrame() {
                         if (state.formStream !== requestStream) return;
                         const sample = sampleDetections.length === 1 ? sampleDetections[0] : null;
                         if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample) === angle) {
-                            const sampleQuality = sample.score * Math.min(1, sample.box.width / (sourceWidth * 0.22));
+                            const sampleQuality = sample.score * Math.min(1, sample.box.width / (sourceWidth * 0.18));
                             if (!state.faceRecognitionReady || !state.faceEngine) {
                                 $("form-face-status").textContent = "Wajah terdeteksi. Menyiapkan model pengenalan wajah…";
                                 void loadFaceRecognition();
@@ -4142,10 +4142,10 @@ async function readUploadedFace(file) {
         }
 
         const detection = detections[0];
-        $("form-face-status").textContent = "Wajah terdeteksi. Menyiapkan pengenalan…";
-        if (!state.faceRecognitionReady && !(await loadFaceRecognition())) {
-            $("form-face-status").textContent = "Wajah terdeteksi, tetapi model pengenalan belum siap. Coba ulangi setelah model selesai dimuat.";
-            toast("Deteksi wajah berhasil, tetapi model pengenalan belum siap.", "error");
+        $("form-face-status").textContent = "Wajah terdeteksi. Memeriksa kualitas foto…";
+        if (!isFaceDetectionUsable(detection, { videoWidth: width, videoHeight: height })) {
+            $("form-face-status").textContent = "Wajah ditemukan, tetapi ukurannya terlalu kecil atau kurang jelas. Gunakan foto yang lebih dekat.";
+            toast("Wajah ditemukan, tetapi kualitas foto belum cukup.", "error");
             return;
         }
         const angle = faceAngleBucket(detection);
@@ -4161,6 +4161,12 @@ async function readUploadedFace(file) {
         const imageHash = Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, "0")).join("");
         if (state.faceImageHashes.has(imageHash)) {
             toast(tr("duplicateImageFile"), "error");
+            return;
+        }
+        $("form-face-status").textContent = "Wajah terdeteksi. Menyiapkan model pengenalan…";
+        if (!state.faceRecognitionReady && !(await loadFaceRecognition())) {
+            $("form-face-status").textContent = "Deteksi wajah berhasil, tetapi model pengenalan belum siap. Tekan coba lagi pada status model.";
+            toast("Deteksi wajah berhasil, tetapi model pengenalan belum siap.", "error");
             return;
         }
         const embedded = await state.faceEngine.embed(image, detection);
