@@ -3654,6 +3654,7 @@ async function processAttendanceFrame() {
     const requestUser = state.user;
     if (!requestUser) return;
     state.attendanceBusy = true;
+    let pipelineStage = "detection";
 
     try {
         const video = attendanceVideo();
@@ -3715,6 +3716,7 @@ async function processAttendanceFrame() {
             void loadFaceRecognition();
             return;
         }
+        pipelineStage = "recognition";
         const embedded = await state.faceEngine.embed(video, detection);
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
 
@@ -3723,6 +3725,7 @@ async function processAttendanceFrame() {
         let faceProofToken = null;
         if (Date.now() - state.lastFaceMatchAt < 2500) return;
         state.lastFaceMatchAt = Date.now();
+        pipelineStage = "face-match";
         const result = await cloudRequest("/api/face-match", {
             method: "POST",
             role: requestUser.role,
@@ -3752,6 +3755,7 @@ async function processAttendanceFrame() {
         faceProofToken = result.proofToken;
         if (!student) return;
 
+        pipelineStage = "gps";
         const location = await checkGeofence();
         if (state.user !== requestUser || state.attendanceStream !== requestStream ||
             !attendanceViewActive() || document.hidden) return;
@@ -3783,6 +3787,7 @@ async function processAttendanceFrame() {
             return;
         }
 
+        pipelineStage = "attendance";
         const saved = await cloudRequest("/api/attendance", {
             method: "POST",
             role: requestUser.role,
@@ -3822,23 +3827,37 @@ async function processAttendanceFrame() {
         if (saved.whatsapp?.error) toast(tr("attendanceWhatsappFailed"), "error");
     } catch (error) {
         if (state.attendanceStream === requestStream) {
-            stopAttendanceCamera();
-            if (error.status === 409) {
+            console.error("Attendance pipeline error (" + pipelineStage + "):", error);
+            if (pipelineStage === "recognition") {
+                state.faceRecognitionReady = false;
+                state.faceRecognitionFailed = true;
+                state.faceEngine = null;
+                state.modelReady = false;
+                displayModelError(error, "recognition");
+                const message = "Wajah terdeteksi, tetapi model pengenalan gagal berjalan. Gunakan tombol coba lagi pada status model.";
+                setAttendanceMessage(message);
+                if (requestUser.role === "guru") updateProgress(0, message);
+            } else if (pipelineStage === "detection") {
+                const message = "Kamera aktif, tetapi satu frame gagal diproses. Sistem akan mencoba frame berikutnya.";
+                setAttendanceMessage(message);
+                if (requestUser.role === "guru") updateProgress(0, message);
+            } else if (error.status === 409) {
+                stopAttendanceCamera();
                 setAttendanceMessage(error.message);
                 toast(error.message, "info");
-            } else if (error.name === "CloudApiError") {
-                console.error("Attendance submission failed:", error);
+            } else if (error.name === "CloudApiError" || ["face-match", "gps", "attendance"].includes(pipelineStage)) {
+                stopAttendanceCamera();
                 const message = error.type === "gps_accuracy"
                     ? tr("accuracyWarning", {
                         accuracy: Math.ceil(error.gpsAccuracy?.actual || MAX_GPS_ACCURACY_METERS + 1)
                     })
-                    : error.message;
+                    : error.message || "Koneksi ke layanan presensi gagal. Periksa jaringan dan coba lagi.";
                 setAttendanceMessage(message);
                 toast(message, "error");
             } else {
-                displayModelError(error);
-                setAttendanceMessage(tr("modelFailed"));
-                toast(tr("modelFailed"), "error");
+                const message = "Terjadi gangguan sementara pada kamera. Coba mulai kamera kembali.";
+                setAttendanceMessage(message);
+                toast(message, "error");
             }
         }
     } finally {
@@ -3910,6 +3929,7 @@ async function processFormFrame() {
     if (!state.formStream || state.formBusy) return;
     const requestStream = state.formStream;
     state.formBusy = true;
+    let pipelineStage = "detection";
     try {
         const video = $("video-formulir");
         const detections = await detectFaces(video);
@@ -3947,6 +3967,7 @@ async function processFormFrame() {
                                 $("form-face-status").textContent = "Wajah terdeteksi. Menyiapkan model pengenalan wajah…";
                                 void loadFaceRecognition();
                             } else {
+                                pipelineStage = "recognition";
                                 const embedded = await state.faceEngine.embed(video, sample);
                                 if (state.formStream !== requestStream) return;
                                 saved = saveFaceSample(embedded.embedding, sampleQuality, angle);
@@ -3973,9 +3994,17 @@ async function processFormFrame() {
         }
         updateFaceSampleCount();
     } catch (error) {
-        displayModelError(error);
-        stopFormCamera();
-        toast(tr("modelFailed"), "error");
+        console.error("Registration camera frame failed (" + pipelineStage + "):", error);
+        if (pipelineStage === "recognition") {
+            state.faceRecognitionReady = false;
+            state.faceRecognitionFailed = true;
+            state.faceEngine = null;
+            state.modelReady = false;
+            displayModelError(error, "recognition");
+            $("form-face-status").textContent = "Wajah sudah terdeteksi, tetapi model pengenalan gagal berjalan. Coba muat ulang model.";
+        } else {
+            $("form-face-status").textContent = "Kamera aktif. Frame belum dapat diproses; mencoba kembali…";
+        }
     } finally {
         state.formBusy = false;
     }
