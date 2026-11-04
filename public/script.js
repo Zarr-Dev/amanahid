@@ -3382,14 +3382,17 @@ async function startAttendanceCamera() {
             return;
         }
 
-        if (!state.modelReady && !(await loadModels())) {
+        if (!state.faceDetectorReady && !(await loadFaceDetector())) {
             if (startToken === state.attendanceStartToken) {
                 stopAttendanceCamera();
-                setAttendanceMessage(tr("modelFailed"));
-                toast(tr("modelFailed"), "error");
+                setAttendanceMessage("Deteksi wajah gagal dimuat. Periksa koneksi lalu coba lagi.");
+                toast("Deteksi wajah gagal dimuat. Periksa koneksi lalu coba lagi.", "error");
             }
             return;
         }
+        // The camera and live face detector can start while the 105 MB
+        // recognition model downloads in the background.
+        void loadFaceRecognition();
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
             !attendanceViewActive() || document.hidden) return;
 
@@ -3696,7 +3699,14 @@ async function processAttendanceFrame() {
             return;
         }
 
-        // ArcFace runs only after the detector, quality gate, and guided liveness sequence.
+        // Show face detection independently; wait for the recognition backbone
+        // without stopping the camera or resetting the completed liveness check.
+        if (!state.faceRecognitionReady || !state.faceEngine) {
+            setAttendanceMessage("Wajah terdeteksi. Menyiapkan model pengenalan wajah…");
+            if (requestUser.role === "guru") updateProgress(88, "Wajah terdeteksi · menyiapkan ArcFace…");
+            void loadFaceRecognition();
+            return;
+        }
         const embedded = await state.faceEngine.embed(video, detection);
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
 
@@ -3846,10 +3856,12 @@ async function startFormCamera() {
     if (state.formStream) return;
     const startToken = ++state.formStartToken;
     try {
-        if (!state.modelReady && !(await loadModels())) {
-            toast(tr("modelFailed"), "error");
+        if (!state.faceDetectorReady && !(await loadFaceDetector())) {
+            toast("Deteksi wajah gagal dimuat. Periksa koneksi lalu coba lagi.", "error");
             return;
         }
+        // Do not block the camera preview/face-detected feedback on ArcFace download.
+        void loadFaceRecognition();
         if (startToken !== state.formStartToken || !$("view-formulir").classList.contains("active") || document.hidden) return;
         const stream = await getCameraStream();
         if (startToken !== state.formStartToken ||
@@ -3922,9 +3934,14 @@ async function processFormFrame() {
                         const sample = sampleDetections.length === 1 ? sampleDetections[0] : null;
                         if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample) === angle) {
                             const sampleQuality = sample.score * Math.min(1, sample.box.width / (sourceWidth * 0.22));
-                            const embedded = await state.faceEngine.embed(video, sample);
-                            if (state.formStream !== requestStream) return;
-                            saved = saveFaceSample(embedded.embedding, sampleQuality, angle);
+                            if (!state.faceRecognitionReady || !state.faceEngine) {
+                                $("form-face-status").textContent = "Wajah terdeteksi. Menyiapkan model pengenalan wajah…";
+                                void loadFaceRecognition();
+                            } else {
+                                const embedded = await state.faceEngine.embed(video, sample);
+                                if (state.formStream !== requestStream) return;
+                                saved = saveFaceSample(embedded.embedding, sampleQuality, angle);
+                            }
                         }
                     }
                     if (saved) toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
@@ -4009,8 +4026,8 @@ async function readUploadedFace(file) {
         toast("Foto terlalu besar (maksimal 15 MB). Pilih foto yang lebih kecil.", "error");
         return;
     }
-    if (!state.modelReady && !(await loadModels())) {
-        toast(tr("modelFailed"), "error");
+    if (!state.faceDetectorReady && !(await loadFaceDetector())) {
+        toast("Deteksi wajah gagal dimuat. Periksa koneksi lalu coba lagi.", "error");
         return;
     }
 
@@ -4034,6 +4051,12 @@ async function readUploadedFace(file) {
         }
 
         const detection = detections[0];
+        $("form-face-status").textContent = "Wajah terdeteksi. Menyiapkan pengenalan…";
+        if (!state.faceRecognitionReady && !(await loadFaceRecognition())) {
+            $("form-face-status").textContent = "Wajah terdeteksi, tetapi model pengenalan belum siap. Coba ulangi setelah model selesai dimuat.";
+            toast("Deteksi wajah berhasil, tetapi model pengenalan belum siap.", "error");
+            return;
+        }
         const angle = faceAngleBucket(detection);
         const sourceWidth = width || 640;
         const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.18));
