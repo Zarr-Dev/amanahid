@@ -122,3 +122,79 @@ test("attendance request forwards all required GPS fields from the geofence resu
     assert.ok(request.includes("gpsTimestamp: location.positionTimestamp"));
     assert.ok(request.includes("speed: location.speed || 0"));
 });
+
+
+test("GPS selector uses high-accuracy watch and keeps the best eligible fix", async () => {
+    const first = makePosition({ latitude: 0.0001, accuracy: 28, speed: 0 });
+    const best = makePosition({ latitude: 0.0002, accuracy: 14, speed: 0 });
+    let watchOptions = null;
+    let clearedWatch = null;
+    let clearedTimer = null;
+
+    const selector = extract(
+        frontend,
+        "async function getBestGpsPosition()",
+        "\\nasync function checkGeofence"
+    );
+    const context = {
+        navigator: {
+            geolocation: {
+                watchPosition(onSuccess, _onError, options) {
+                    watchOptions = options;
+                    queueMicrotask(() => {
+                        onSuccess(first);
+                        onSuccess(best);
+                    });
+                    return 73;
+                },
+                clearWatch(id) { clearedWatch = id; }
+            }
+        },
+        window: {
+            setTimeout(_callback, delay) {
+                assert.equal(delay, 9000);
+                return 91;
+            },
+            clearTimeout(id) { clearedTimer = id; }
+        }
+    };
+
+    const result = await runInNewContext(`${selector}\\ngetBestGpsPosition()`, context);
+    assert.equal(result.coords.accuracy, best.coords.accuracy);
+    assert.equal(result.timestamp, best.timestamp);
+    assert.equal(watchOptions.enableHighAccuracy, true);
+    assert.equal(watchOptions.maximumAge, 0);
+    assert.equal(watchOptions.timeout, 10000);
+    assert.equal(clearedWatch, 73);
+    assert.equal(clearedTimer, 91);
+});
+
+test("GPS selector falls back to getCurrentPosition when watchPosition is unavailable", async () => {
+    const position = makePosition({ accuracy: 18, speed: 0 });
+    let options = null;
+    const selector = extract(
+        frontend,
+        "async function getBestGpsPosition()",
+        "\\nasync function checkGeofence"
+    );
+    const context = {
+        navigator: {
+            geolocation: {
+                getCurrentPosition(onSuccess, _onError, nextOptions) {
+                    options = nextOptions;
+                    queueMicrotask(() => onSuccess(position));
+                }
+            }
+        },
+        window: {
+            setTimeout() { return 92; },
+            clearTimeout() {}
+        }
+    };
+
+    const result = await runInNewContext(`${selector}\\ngetBestGpsPosition()`, context);
+    assert.equal(result.timestamp, position.timestamp);
+    assert.equal(result.coords.accuracy, 18);
+    assert.equal(options.enableHighAccuracy, true);
+    assert.equal(options.maximumAge, 0);
+});
