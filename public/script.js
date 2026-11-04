@@ -2205,6 +2205,30 @@ async function loadAdminSettings() {
     }
 }
 
+function formatRoleActivityTime(value, fallback) {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "Tidak tersedia";
+    return date.toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID");
+}
+
+function roleActivityActionLabel(action) {
+    const labels = {
+        "attendance.create": "Mencatat presensi",
+        "student.face_update_v2": "Memperbarui sampel wajah",
+        "student.create": "Mendaftarkan siswa",
+        "siswa.create": "Membuat akun siswa",
+        "guru.create": "Membuat akun guru",
+        "settings.update": "Memperbarui lokasi/jadwal sekolah",
+        "system.features.update": "Mengubah sakelar sistem",
+        "absence.create": "Mengirim pengajuan ketidakhadiran",
+        "absence.review": "Meninjau pengajuan ketidakhadiran",
+        "student.update": "Memperbarui data siswa",
+        "teacher.update": "Memperbarui data guru"
+    };
+    return labels[action] || String(action || "Aktivitas tercatat").replaceAll(".", " · ");
+}
+
 async function loadAdminAudit() {
     try {
         const filters = new URLSearchParams();
