@@ -3596,7 +3596,7 @@ function updateAttendanceLiveness(detection) {
     }
     const challenge = state.livenessChallenge;
     if (challenge.completed) return { completed: true, progress: 9 };
-    const angle = faceAngleBucket(detection);
+    const angle = faceAngleBucket(detection, true);
     const expected = challenge.stage === "turn" ? challenge.direction : "front";
     challenge.total += 1;
     if (angle === expected) challenge.frames += 1;
@@ -3627,7 +3627,7 @@ function updateFaceSampleCount() {
     }
 }
 
-function faceAngleBucket(detection) {
+function faceAngleBucket(detection, mirroredPreview = false) {
     const points = detection?.landmarks?.positions;
     const box = detection?.box;
     if (!Array.isArray(points) || points.length < 48 || !box?.width || !box?.height) return null;
@@ -3637,8 +3637,8 @@ function faceAngleBucket(detection) {
     const nose = points[30];
     const yaw = (nose.x - (leftEye.x + rightEye.x) / 2) / Math.max(1, Math.abs(rightEye.x - leftEye.x));
     const pitch = (nose.y - (leftEye.y + rightEye.y) / 2) / box.height;
-    if (yaw < -0.13) return 'left';
-    if (yaw > 0.13) return 'right';
+    if (yaw < -0.13) return mirroredPreview ? 'right' : 'left';
+    if (yaw > 0.13) return mirroredPreview ? 'left' : 'right';
     if (pitch < 0.19) return 'up';
     if (pitch > 0.31) return 'down';
     if (Math.abs(yaw) <= 0.13 && pitch >= 0.19 && pitch <= 0.31) return 'front';
@@ -3764,9 +3764,13 @@ async function processAttendanceFrame() {
         // Show face detection independently; wait for the recognition backbone
         // without stopping the camera or resetting the completed liveness check.
         if (!state.faceRecognitionReady || !state.faceEngine) {
-            setAttendanceMessage("Wajah terdeteksi. Menyiapkan model pengenalan wajah…");
-            if (requestUser.role === "guru") updateProgress(88, "Wajah terdeteksi · menyiapkan ArcFace…");
-            void loadFaceRecognition();
+            const recognitionFailed = state.faceRecognitionFailed;
+            const message = recognitionFailed
+                ? "Wajah terdeteksi, tetapi model ArcFace gagal dimuat. Gunakan tombol coba lagi pada status model."
+                : "Wajah terdeteksi. Menyiapkan model pengenalan wajah…";
+            setAttendanceMessage(message);
+            if (requestUser.role === "guru") updateProgress(88, message);
+            if (!recognitionFailed) void loadFaceRecognition();
             return;
         }
         pipelineStage = "recognition";
@@ -3990,7 +3994,7 @@ async function processFormFrame() {
         drawDetections(video, $("overlay-formulir"), detections);
         if (detections.length === 1) {
             const detection = detections[0];
-            const angle = faceAngleBucket(detection);
+            const angle = faceAngleBucket(detection, true);
             const nose = detection.landmarks.getNose()?.[3];
             const sourceWidth = video.videoWidth || 480;
             const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.18));
@@ -4005,7 +4009,8 @@ async function processFormFrame() {
             } else {
                 if (state.lastFormNose) {
                     const delta = Math.hypot(nose.x - state.lastFormNose.x, nose.y - state.lastFormNose.y);
-                    state.formStableFrames = delta < 0.5 ? state.formStableFrames + 1 : 0;
+                    state.formStableFrames = delta < Math.max(2, detection.box.width * 0.015)
+                        ? state.formStableFrames + 1 : 0;
                 }
                 state.lastFormNose = { x: nose.x, y: nose.y };
                 if (state.formStableFrames >= 3) {
@@ -4014,11 +4019,13 @@ async function processFormFrame() {
                         const sampleDetections = await detectFaces(video);
                         if (state.formStream !== requestStream) return;
                         const sample = sampleDetections.length === 1 ? sampleDetections[0] : null;
-                        if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample) === angle) {
+                        if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample, true) === angle) {
                             const sampleQuality = sample.score * Math.min(1, sample.box.width / (sourceWidth * 0.18));
                             if (!state.faceRecognitionReady || !state.faceEngine) {
-                                $("form-face-status").textContent = "Wajah terdeteksi. Menyiapkan model pengenalan wajah…";
-                                void loadFaceRecognition();
+                                $("form-face-status").textContent = state.faceRecognitionFailed
+                                    ? "Wajah terdeteksi, tetapi model pengenalan gagal dimuat. Gunakan tombol coba lagi pada status model."
+                                    : "Wajah terdeteksi. Menyiapkan model pengenalan wajah…";
+                                if (!state.faceRecognitionFailed) void loadFaceRecognition();
                             } else {
                                 pipelineStage = "recognition";
                                 const embedded = await state.faceEngine.embed(video, sample);
