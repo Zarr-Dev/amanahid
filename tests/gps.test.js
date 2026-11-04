@@ -116,9 +116,9 @@ test("attendance request forwards all required GPS fields from the geofence resu
     assert.ok(requestStart >= 0, "Attendance API request is missing");
     const request = frontend.slice(requestStart, requestStart + 900);
 
-    assert.match(request, /lat:\\s*location\\.lat/);
-    assert.match(request, /lng:\\s*location\\.lng/);
-    assert.match(request, /accuracy:\\s*location\\.accuracy/);
-    assert.match(request, /gpsTimestamp:\\s*location\\.positionTimestamp/);
-    assert.match(request, /speed:\\s*location\\.speed/);
+    assert.ok(request.includes("lat: location.lat"));
+    assert.ok(request.includes("lng: location.lng"));
+    assert.ok(request.includes("accuracy: location.accuracy"));
+    assert.ok(request.includes("gpsTimestamp: location.positionTimestamp"));
+    assert.ok(request.includes("speed: location.speed || 0"));
 });
