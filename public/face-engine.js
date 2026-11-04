@@ -310,12 +310,27 @@ export async function createAmanahFaceEngine(options = {}) {
     const model = await readModel(onProgress);
     onProgress({ stage: "initialize", percent: 98, message: "Preparing face recognition…" });
 
-    const session = await ort.InferenceSession.create(model, {
-        executionProviders: ["wasm"],
-        graphOptimizationLevel: "all",
-        enableCpuMemArena: true,
-        enableMemPattern: true
-    });
+    let session = null;
+    let lastSessionError = null;
+    for (const source of ORT_SOURCES) {
+        try {
+            ort.env.wasm.wasmPaths = source.wasm;
+            session = await ort.InferenceSession.create(model, {
+                executionProviders: ["wasm"],
+                graphOptimizationLevel: "all",
+                enableCpuMemArena: true,
+                enableMemPattern: true
+            });
+            break;
+        } catch (error) {
+            lastSessionError = error;
+            console.warn("ONNX Runtime WASM mirror failed:", source.wasm, error);
+        }
+    }
+    if (!session) {
+        throw new Error("Face recognition runtime could not initialize from either WASM mirror: " +
+            String(lastSessionError?.message || lastSessionError || "unknown runtime error").slice(0, 160));
+    }
     const inputName = session.inputNames && session.inputNames[0] ? session.inputNames[0] : "data";
     const outputName = session.outputNames && session.outputNames[0] ? session.outputNames[0] : "1333";
 
