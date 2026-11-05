@@ -23,10 +23,10 @@ export async function handleAdminTestTools(req, res, admin) {
     if (req.method === "GET") {
         return res.status(200).json({
             provider: "Fonnte",
-            environment: process.env.VERCEL_ENV || "unknown",
-            fonnte_configured: fonnteConfigured(),
             environment: typeof process.env.VERCEL_ENV === "string" ? process.env.VERCEL_ENV : "unknown",
+            fonnte_configured: fonnteConfigured(),
             test_send_enabled: true,
+            requires_consent: true,
             recipient_allowlist_required: false,
             template: DEFAULT_TEMPLATE
         });
@@ -73,9 +73,13 @@ export async function handleAdminTestTools(req, res, admin) {
         return res.status(200).json({
             ok: true,
             accepted: true,
+            queued: true,
+            delivered: false,
             provider: "Fonnte",
             provider_status: providerResult?.status === true || providerResult?.status === "true" ? "accepted" : "unknown",
-            message: "Fonnte menerima permintaan pesan uji. Periksa perangkat WhatsApp tujuan untuk memastikan pesan diterima."
+            process: providerResult?.process || "pending",
+            request_id: providerResult?.requestid ?? null,
+            message: "Fonnte menerima permintaan dan memasukkan pesan ke antrean. Periksa perangkat tujuan untuk memastikan pesan benar-benar diterima."
         });
     } catch (error) {
         console.error("Admin Fonnte test failed:", error);
