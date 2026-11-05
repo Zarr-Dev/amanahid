@@ -85,7 +85,7 @@ export default async function handler(req, res) {
                 health: {
                     supabase: "ok",
                     vercel: typeof process.env.VERCEL === "string" ? "ok" : "unknown",
-                    fonnte: typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length >= 10 ? "configured" : "not_configured"
+                    fonnte: typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length > 0 ? "configured" : "not_configured"
                 }
             });
         } catch (error) {
