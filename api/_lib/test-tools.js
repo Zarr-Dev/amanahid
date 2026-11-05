@@ -13,7 +13,7 @@ function normalizeTarget(value) {
 
 function fonnteConfigured() {
     return typeof process.env.FONNTE_TOKEN === "string" &&
-        process.env.FONNTE_TOKEN.trim().length >= 10;
+        process.env.FONNTE_TOKEN.trim().length > 0;
 }
 
 export async function handleAdminTestTools(req, res, admin) {
