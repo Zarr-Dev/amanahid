@@ -1937,7 +1937,9 @@ function applyAdminFeatureFlags(features = {}) {
     }
     const deactivateDisabled = features.account_deactivation === false;
     $("admin-users-tbody")?.querySelectorAll("[data-admin-set-active]").forEach(button => {
-        button.disabled = deactivateDisabled;
+        // Deactivation may be disabled by policy, but Admin must always be able
+        // to restore an account previously disabled by a teacher or Admin.
+        button.disabled = deactivateDisabled && button.dataset.active === "true";
     });
     const radius = $("admin-setting-radius");
     if (radius) radius.disabled = features.geofence_radius_edit === false;
