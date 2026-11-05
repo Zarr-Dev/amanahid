@@ -1711,9 +1711,14 @@ function renderAdminAnalytics(stats = {}) {
 async function loadAdminOperations() {
     const status = (id, value) => { const el = $(id); if (el) el.textContent = value; };
     const defaults = [
-        "admin-ops-vercel-state", "admin-ops-supabase-state", "admin-ops-github-state"
+        "admin-ops-vercel-state", "admin-ops-supabase-state", "admin-ops-github-state",
+        "admin-ops-fonnte-state"
     ];
     defaults.forEach(id => status(id, "Memeriksa…"));
+
+    // Liveness and readiness are separate: a running Vercel Function must not
+    // be labelled broken just because its database dependency is unavailable.
+    const healthPromise = cloudRequest("/api/settings?action=health");
     const readyPromise = cloudRequest("/api/ready");
     const featuresPromise = cloudRequest("/api/admin/settings?action=features");
     const fonntePromise = cloudRequest("/api/admin/settings?action=test-tools");
@@ -1735,30 +1740,53 @@ async function loadAdminOperations() {
             window.clearTimeout(timer);
         }
     })();
-    const [readyResult, featuresResult, githubResult, fonnteResult] = await Promise.allSettled([
-        readyPromise, featuresPromise, githubPromise, fonntePromise
+
+    const [healthResult, readyResult, featuresResult, githubResult, fonnteResult] = await Promise.allSettled([
+        healthPromise, readyPromise, featuresPromise, githubPromise, fonntePromise
     ]);
-    if (readyResult.status === "fulfilled") {
-        const ready = readyResult.value;
-        const deployment = ready?.deployment || {};
-        const apiOk = ready?.ok === true && ready?.checks?.api === "ok";
-        const dbOk = ready?.checks?.database === "ok";
-        status("admin-ops-vercel-state", apiOk ? "API aktif" : "API bermasalah");
-        status("admin-ops-vercel-env", String(ready?.environment || "unknown"));
+
+    if (healthResult.status === "fulfilled") {
+        const health = healthResult.value;
+        const deployment = health?.deployment || {};
+        const apiOk = health?.checks?.api === "ok";
+        const configOk = health?.checks?.configuration === "ok";
+        status("admin-ops-vercel-state", apiOk
+            ? (configOk ? "API aktif" : "API aktif · konfigurasi perlu dicek")
+            : "API bermasalah");
+        status("admin-ops-vercel-env", String(health?.environment || "unknown"));
         status("admin-ops-vercel-commit", deployment.commit || "Tidak tersedia");
         status("admin-ops-vercel-branch", deployment.branch || "Tidak tersedia");
-        status("admin-ops-supabase-state", dbOk ? "Terhubung" : "Tidak terhubung");
-        status("admin-ops-supabase-db", String(ready?.checks?.database || "unknown"));
     } else {
         status("admin-ops-vercel-state", "Gagal diperiksa");
-        status("admin-ops-supabase-state", "Tidak tersedia");
-        status("admin-ops-supabase-db", "Tidak tersedia");
+        status("admin-ops-vercel-env", "—");
+        status("admin-ops-vercel-commit", "—");
+        status("admin-ops-vercel-branch", "—");
     }
+
+    if (readyResult.status === "fulfilled") {
+        const ready = readyResult.value;
+        const dbOk = ready?.checks?.database === "ok";
+        status("admin-ops-supabase-state", dbOk ? "Terhubung" : "Tidak terhubung");
+        status("admin-ops-supabase-db", String(ready?.checks?.database || "unknown"));
+        // The readiness endpoint carries deployment metadata when DB is ready.
+        // Use it only as a fallback if liveness metadata is not available.
+        if (healthResult.status !== "fulfilled") {
+            const deployment = ready?.deployment || {};
+            status("admin-ops-vercel-env", String(ready?.environment || "unknown"));
+            status("admin-ops-vercel-commit", deployment.commit || "Tidak tersedia");
+            status("admin-ops-vercel-branch", deployment.branch || "Tidak tersedia");
+        }
+    } else {
+        status("admin-ops-supabase-state", "Tidak tersedia");
+        status("admin-ops-supabase-db", "Gagal melakukan database round-trip");
+    }
+
     if (featuresResult.status === "fulfilled") {
         status("admin-ops-supabase-flags", featuresResult.value?.features ? "Tersedia" : "Tidak tersedia");
     } else {
         status("admin-ops-supabase-flags", "Gagal dimuat");
     }
+
     if (fonnteResult.status === "fulfilled") {
         const configured = fonnteResult.value?.fonnte_configured === true;
         status("admin-ops-fonnte-state", configured ? "Token tersedia" : "Token kosong");
@@ -1769,6 +1797,7 @@ async function loadAdminOperations() {
         status("admin-ops-fonnte-env", "—");
         status("admin-ops-fonnte-send", "Tidak dapat diuji");
     }
+
     if (githubResult.status === "fulfilled") {
         const latest = githubResult.value.commit;
         const run = githubResult.value.workflow?.workflow_runs?.[0] || null;
@@ -1784,6 +1813,7 @@ async function loadAdminOperations() {
         status("admin-ops-github-ci", "Gagal diperiksa");
     }
     return {
+        health: healthResult.status === "fulfilled" ? healthResult.value : null,
         ready: readyResult.status === "fulfilled" ? readyResult.value : null,
         features: featuresResult.status === "fulfilled" ? featuresResult.value : null,
         github: githubResult.status === "fulfilled" ? githubResult.value : null,
