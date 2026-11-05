@@ -67,9 +67,13 @@ async function handleAdminAttendanceWhatsApp(req, res, admin) {
             });
             const updated = Array.isArray(rows) ? rows[0] : null;
             if (!updated) return jsonError(res, 404, "Pengaturan sekolah belum tersedia.");
-            await writeAuditLog(admin, "admin.attendance_whatsapp_template.update", "school_settings", SETTINGS_ID, {
-                enabled: body.enabled, template_length: template.length, placeholders
-            });
+            try {
+                await writeAuditLog(admin, "admin.attendance_whatsapp_template.update", "school_settings", SETTINGS_ID, {
+                    enabled: body.enabled, template_length: template.length, placeholders
+                });
+            } catch (auditError) {
+                console.error("WhatsApp template audit failed after settings were saved:", auditError);
+            }
             return res.status(200).json({ enabled: updated.attendance_whatsapp_enabled, template: updated.attendance_whatsapp_template, saved: true });
         } catch (error) {
             console.error("Admin attendance WhatsApp template update failed:", error);
@@ -108,20 +112,48 @@ async function handleAdminAttendanceWhatsApp(req, res, admin) {
             );
             try {
                 const providerResult = await sendWhatsApp(target, message);
-                await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}`, {
-                    method: "PATCH", headers: { Prefer: "return=minimal" },
-                    body: JSON.stringify({
-                        parent_whatsapp_status: "queued",
-                        parent_whatsapp_request_id: providerResult?.requestid ? String(providerResult.requestid) : null,
-                        parent_whatsapp_message_ids: Array.isArray(providerResult?.id) ? providerResult.id : [],
-                        parent_whatsapp_error: null,
-                        parent_whatsapp_updated_at: new Date().toISOString()
-                    })
-                });
-                await writeAuditLog(admin, "admin.attendance_whatsapp.retry", "attendance", id, {
-                    recipient_suffix: target.slice(-4), result: "queued"
-                });
-                return res.status(200).json({ ok: true, status: "queued", process: providerResult?.process || "pending" });
+                const providerIds = Array.isArray(providerResult?.id) ? providerResult.id : [];
+                const requestId = providerResult?.requestid ? String(providerResult.requestid) : null;
+                try {
+                    await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}`, {
+                        method: "PATCH", headers: { Prefer: "return=minimal" },
+                        body: JSON.stringify({
+                            parent_whatsapp_status: "queued",
+                            parent_whatsapp_request_id: requestId,
+                            parent_whatsapp_message_ids: providerIds,
+                            parent_whatsapp_error: null,
+                            parent_whatsapp_updated_at: new Date().toISOString()
+                        })
+                    });
+                } catch (statusError) {
+                    console.error("Fonnte accepted a retry, but its status could not be saved:", statusError);
+                    try {
+                        await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}`, {
+                            method: "PATCH", headers: { Prefer: "return=minimal" },
+                            body: JSON.stringify({
+                                parent_whatsapp_status: "unknown",
+                                parent_whatsapp_request_id: requestId,
+                                parent_whatsapp_message_ids: providerIds,
+                                parent_whatsapp_error: "Provider accepted the message; local status needs review",
+                                parent_whatsapp_updated_at: new Date().toISOString()
+                            })
+                        });
+                    } catch (unknownStatusError) {
+                        console.error("WhatsApp retry status remains unresolved:", unknownStatusError);
+                    }
+                    return res.status(202).json({
+                        ok: true, status: "unknown", accepted: true,
+                        process: providerResult?.process || "pending"
+                    });
+                }
+                try {
+                    await writeAuditLog(admin, "admin.attendance_whatsapp.retry", "attendance", id, {
+                        recipient_suffix: target.slice(-4), result: "queued"
+                    });
+                } catch (auditError) {
+                    console.error("WhatsApp retry audit failed after provider acceptance:", auditError);
+                }
+                return res.status(200).json({ ok: true, status: "queued", accepted: true, process: providerResult?.process || "pending" });
             } catch (error) {
                 const uncertain = ["FONNTE_TIMEOUT", "FONNTE_NETWORK_ERROR", "FONNTE_UNCERTAIN_RESPONSE"].includes(error?.code);
                 const status = uncertain ? "unknown" : "failed";
