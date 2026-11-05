@@ -6,9 +6,9 @@ const DEFAULT_TEMPLATE = "Amanah ID: ini adalah pesan uji notifikasi WhatsApp. T
 
 function normalizeTarget(value) {
     if (typeof value !== "string") return "";
-    const digits = value.replace(/\\D/g, "");
-    if (/^08\\d{8,13}$/.test(digits)) return digits.replace(/^08/, "628");
-    return /^628\\d{8,13}$/.test(digits) ? digits : "";
+    const digits = value.replace(/\D/g, "");
+    if (/^08\d{8,13}$/.test(digits)) return digits.replace(/^08/, "628");
+    return /^628\d{8,13}$/.test(digits) ? digits : "";
 }
 
 function fonnteConfigured() {
@@ -47,7 +47,7 @@ export async function handleAdminTestTools(req, res, admin) {
     if (!target) {
         return res.status(400).json({ code: "FONNTE_RECIPIENT_INVALID", error: "Nomor tujuan harus menggunakan format 08 atau 628 yang valid." });
     }
-    if (message.length < 10 || message.length > 300 || /[\\u0000-\\u001F\\u007F]/.test(message)) {
+    if (message.length < 10 || message.length > 300 || /[\u0000-\u001F\u007F]/.test(message)) {
         return res.status(400).json({ code: "FONNTE_MESSAGE_INVALID", error: "Pesan uji harus terdiri dari 10–300 karakter yang dapat dicetak." });
     }
     if (!fonnteConfigured()) {
