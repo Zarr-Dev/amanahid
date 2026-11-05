@@ -519,6 +519,9 @@
                 <button class="nav-link" type="button" data-admin-target="admin-view-tests">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><span data-i18n="adminTestTools">Pengujian sistem</span>
                 </button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-ops">
+                    <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M8 12h5M8 16h8M17 12l2 2 3-4"/></svg></span><span>Pusat operasional</span>
+                </button>
                 <button class="nav-link" type="button" data-admin-target="admin-view-audit">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h3"/></svg></span><span data-i18n="adminAudit">Audit aktivitas</span>
                 </button>
@@ -571,6 +574,7 @@
                     <article class="panel stat-card"><span data-i18n="totalActiveTeachers">Total guru
                             aktif</span><strong id="admin-total-teachers">0</strong><small
                             data-i18n="teacherAccounts">Akun pengajar</small></article>
+                    <article class="panel stat-card"><span>Admin aktif</span><strong id="admin-total-admins">0</strong><small>Akun administrator</small></article>
                     <article class="panel stat-card"><span data-i18n="attendanceToday">Presensi hari ini</span><strong
                             id="admin-attendance-today">0</strong><small data-i18n="todayRecords">Catatan hari
                             ini</small></article>
@@ -581,6 +585,16 @@
                             id="admin-active-week">0</strong><small data-i18n="loginsLast7Days">Login 7 hari
                             terakhir</small></article>
                 </div>
+                <section class="admin-analytics-grid" aria-label="Analisis visual presensi dan akun">
+                    <article class="panel admin-analytics-card">
+                        <div class="panel-heading"><div><span class="section-kicker">ATTENDANCE TREND</span><h3>Tren presensi 7 hari</h3><p class="muted">Jumlah catatan presensi harian dari database.</p></div></div>
+                        <div id="admin-attendance-trend-chart" class="admin-chart-bars" aria-live="polite"><p class="muted">Memuat data tren…</p></div>
+                    </article>
+                    <article class="panel admin-analytics-card">
+                        <div class="panel-heading"><div><span class="section-kicker">ACTIVE ACCOUNTS</span><h3>Aktivitas berdasarkan peran</h3><p class="muted">Akun yang login dalam 7 hari terakhir.</p></div></div>
+                        <div id="admin-role-activity-chart" class="admin-role-chart" aria-live="polite"><p class="muted">Memuat aktivitas…</p></div>
+                    </article>
+                </section>
                 <div id="admin-service-health-panel" class="panel">
                     <div class="panel-heading">
                         <div>
@@ -795,6 +809,42 @@
                         <div id="admin-test-services-results" class="admin-test-service-results" role="status" aria-live="polite"></div>
                     </section>
                 </div>
+            </section>
+
+            <section id="admin-view-ops" class="admin-view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">OPERATIONS CENTER</span>
+                        <h2>Pusat operasional & integrasi</h2>
+                        <p class="muted">Satu tempat untuk memantau deployment Vercel, koneksi database Supabase, repositori GitHub, dan antrean presensi offline. Panel ini bersifat diagnostik dan tidak menyimpan token layanan.</p>
+                    </div>
+                    <button id="admin-ops-refresh" class="button secondary" type="button">Periksa semua layanan</button>
+                </div>
+                <div class="admin-ops-grid">
+                    <article class="panel admin-ops-card">
+                        <div class="admin-ops-brand"><strong>Vercel</strong><span id="admin-ops-vercel-state">Belum diperiksa</span></div>
+                        <p class="muted">Status API, environment, dan metadata deployment aktif.</p>
+                        <dl><div><dt>Environment</dt><dd id="admin-ops-vercel-env">—</dd></div><div><dt>Commit</dt><dd id="admin-ops-vercel-commit">—</dd></div><div><dt>Branch</dt><dd id="admin-ops-vercel-branch">—</dd></div></dl>
+                    </article>
+                    <article class="panel admin-ops-card">
+                        <div class="admin-ops-brand"><strong>Supabase</strong><span id="admin-ops-supabase-state">Belum diperiksa</span></div>
+                        <p class="muted">Koneksi aktual ke database dan kesiapan tabel pengaturan sekolah.</p>
+                        <dl><div><dt>Database round-trip</dt><dd id="admin-ops-supabase-db">—</dd></div><div><dt>Feature flags</dt><dd id="admin-ops-supabase-flags">—</dd></div></dl>
+                    </article>
+                    <article class="panel admin-ops-card">
+                        <div class="admin-ops-brand"><strong>GitHub</strong><span id="admin-ops-github-state">Belum diperiksa</span></div>
+                        <p class="muted">Commit dan hasil workflow CI terbaru dari repositori Amanah ID.</p>
+                        <dl><div><dt>Branch utama</dt><dd id="admin-ops-github-branch">—</dd></div><div><dt>Workflow CI</dt><dd id="admin-ops-github-ci">—</dd></div><div><dt>Commit terbaru</dt><dd id="admin-ops-github-commit">—</dd></div></dl>
+                    </article>
+                </div>
+                <section class="panel admin-offline-review-panel">
+                    <div class="panel-heading">
+                        <div><span class="section-kicker">OFFLINE ATTENDANCE</span><h3>Presensi offline menunggu pemeriksaan</h3><p class="muted">Permintaan dari perangkat siswa akan tetap berstatus menunggu sampai Admin/Guru meninjaunya. Tidak otomatis menjadi presensi resmi.</p></div>
+                        <button id="admin-offline-refresh" class="button subtle" type="button">Segarkan antrean</button>
+                    </div>
+                    <p id="admin-offline-status" class="helper-text" role="status" aria-live="polite">Memuat antrean presensi offline…</p>
+                    <div class="table-wrap"><table><thead><tr><th>Siswa</th><th>Kelas</th><th>Waktu perangkat</th><th>Lokasi</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="admin-offline-pending-tbody"></tbody></table></div>
+                    <div id="admin-offline-empty" class="empty-state hidden"><strong>Tidak ada presensi offline menunggu.</strong><p>Antrean akan muncul setelah perangkat siswa tersambung kembali.</p></div>
+                </section>
             </section>
 
             <section id="admin-view-audit" class="admin-view hidden">
