@@ -4265,6 +4265,31 @@ async function processAttendanceFrame() {
     } catch (error) {
         if (state.attendanceStream === requestStream) {
             console.error("Attendance pipeline error (" + pipelineStage + "):", error);
+            if (requestUser.role === "siswa" && pipelineStage === "face-match" &&
+                error?.type === "network" && navigator.onLine === false) {
+                try {
+                    const offlineLocation = await checkGeofence();
+                    if (!offlineLocation.error && offlineLocation.inside &&
+                        !offlineLocation.boundaryUncertain &&
+                        isGpsAccuracyAcceptable(offlineLocation.accuracy, SCHOOL_LOCATION.radius)) {
+                        const queued = await saveOfflineAttendanceIntent(offlineLocation);
+                        state.attendanceRecorded = true;
+                        stopAttendanceCamera();
+                        const message = "Permintaan presensi tersimpan di perangkat (" +
+                            queued.eventId.slice(0, 8) + "). Menunggu koneksi dan pemeriksaan Admin/Guru; belum resmi.";
+                        $("student-attendance-status").textContent = message;
+                        toast(message, "warning");
+                        return;
+                    }
+                    throw new Error(offlineLocation.error || "GPS tidak cukup akurat untuk permintaan offline.");
+                } catch (offlineError) {
+                    const message = offlineError?.message ||
+                        "Permintaan offline tidak dapat disimpan. Periksa GPS dan ruang penyimpanan browser.";
+                    setAttendanceMessage(message);
+                    toast(message, "error");
+                    return;
+                }
+            }
             if (pipelineStage === "recognition") {
                 state.faceRecognitionReady = false;
                 state.faceRecognitionFailed = true;
