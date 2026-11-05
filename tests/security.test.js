@@ -629,7 +629,7 @@ test("attendance rejects invalid school geofence configuration before accepting 
 });
 
 test("authentication endpoints clearly report missing production configuration before origin checks", async t => {
-    const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SESSION_SECRET"];
+    const keys = ["APP_ORIGIN", "SUPABASE_URL", "SUPABASE_SECRET_KEY", "SESSION_SECRET", "FONNTE_TOKEN"];
     const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
     t.after(() => {
         for (const key of keys) {
@@ -706,6 +706,7 @@ test("API readiness separates downstream readiness from API liveness", async t =
     process.env.SUPABASE_URL = "https://supabase.example";
     process.env.SUPABASE_SECRET_KEY = "test-service-secret";
     process.env.SESSION_SECRET = "test-session-secret-with-more-than-32-characters";
+    process.env.FONNTE_TOKEN = "";
 
     globalThis.fetch = async () => new Response(JSON.stringify([{ id: "school-settings" }]), { status: 200 });
     const readyResponse = responseMock();
