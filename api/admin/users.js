@@ -65,7 +65,8 @@ async function permanentlyDeleteAccount(res, admin, body) {
         ? await Promise.all([
             supabaseRequest("attendance?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
             supabaseRequest("absence_requests?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
-            supabaseRequest("notifications?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1")
+            supabaseRequest("notifications?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
+            supabaseRequest("offline_attendance_events?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1")
         ])
         : await Promise.all([
             supabaseRequest("students?select=id&homeroom_teacher_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
