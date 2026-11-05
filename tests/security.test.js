@@ -161,7 +161,7 @@ test("session-backed APIs reject missing sessions instead of treating promises a
         [studentsHandler, "DELETE", 403],
         [teachersHandler, "GET", 403],
         [settingsHandler, "GET", 403],
-        [settingsHandler, "HEAD", 403],
+        [settingsHandler, "HEAD", 401],
         [settingsHandler, "PUT", 403],
         [faceMatchHandler, "POST", 403],
         [sendWhatsAppHandler, "POST", 401]
@@ -173,6 +173,13 @@ test("session-backed APIs reject missing sessions instead of treating promises a
         await handler(req, res);
         assert.equal(res.statusCode, expectedStatus, `${method} should reject a missing session`);
     }
+
+    const wrongOrigin = requestMock("HEAD", null, "test-heartbeat-wrong-origin");
+    wrongOrigin.headers.origin = "https://untrusted.example";
+    const originResponse = responseMock();
+    await settingsHandler(wrongOrigin, originResponse);
+    assert.equal(originResponse.statusCode, 403,
+        "origin policy failures remain 403 and must not be confused with revoked sessions");
 });
 
 test("database-backed role checks reject deactivated accounts and surface lookup outages", async t => {
