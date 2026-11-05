@@ -2176,8 +2176,10 @@ async function loadAdminUsers() {
             <td>${safeText(user.role === "guru" ? tr("roleTeacher") : user.role === "siswa" ? tr("roleStudent") : tr("adminRole"))}</td>
             <td>${safeText(user.role === "siswa" ? user.homeroom_teacher?.name || "Belum ditetapkan" : user.homeroom_class || "—")}</td>
             <td>${safeText(user.is_active ? tr("activeStatus") : tr("inactiveStatus"))}</td>
-            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}" data-current-homeroom="${safeText(user.homeroom_teacher_id ?? "")}" data-class-name="${safeText(user.class_name ?? "")}">${safeText(tr("editAccount"))}</button>
-            <button class="button subtle" type="button" data-admin-disable="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" ${user.is_active ? "" : "disabled"}>${safeText(tr("deactivateAccount"))}</button></td>
+            <td class="admin-account-actions">
+            <button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}" data-current-homeroom="${safeText(user.homeroom_teacher_id ?? "")}" data-class-name="${safeText(user.class_name ?? "")}">${safeText(tr("editAccount"))}</button>
+            <button class="button ${user.is_active ? "subtle" : "secondary"}" type="button" data-admin-set-active="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-active="${user.is_active ? "true" : "false"}">${user.is_active ? "Nonaktifkan" : "Aktifkan kembali"}</button>
+            <button class="button danger" type="button" data-admin-permanent-delete="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-email="${safeText(user.email ?? "")}">Hapus permanen</button></td>
         </tr>`).join("");
         $("admin-users-empty").classList.toggle("hidden", users.length > 0);
     } catch (error) {
