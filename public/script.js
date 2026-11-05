@@ -2766,7 +2766,8 @@ function renderStudentList() {
       <td>${safeText(s.className)}</td>
       <td>${safeText(s.parentWhatsApp || "—")}</td>
       <td>${safeText(s.registeredDate)}</td>
-      <td><button class="row-action" type="button" data-edit-student-face="${safeText(s.nisn)}">${safeText(tr("replaceFace"))}</button></td>
+      <td><button class="row-action" type="button" data-edit-student-face="${safeText(s.nisn)}">${safeText(tr("replaceFace"))}</button>
+      ${state.user?.role === "guru" ? '<button class="row-action danger-outline" type="button" data-deactivate-student="' + safeText(s.nisn) + '">Nonaktifkan akun</button>' : ""}</td>
     </tr>`).join("");
     $("students-empty").classList.toggle("hidden", state.students.length > 0);
     $("student-count-badge").textContent = state.students.length;
@@ -5394,13 +5395,33 @@ function setupEvents() {
         toast(tr("attendanceDeleted"), "success");
     });
 
-    $("students-tbody").addEventListener("click", event => {
-        const editFace = event.target.closest("[data-edit-student-face]");
-        if (editFace) {
-            beginFaceUpdate(editFace.dataset.editStudentFace);
+    $("students-tbody").addEventListener("click", async event => {
+        const deactivate = event.target.closest("[data-deactivate-student]");
+        if (deactivate) {
+            if (state.user?.role !== "guru") return;
+            const nisn = deactivate.dataset.deactivateStudent;
+            const confirmed = await openAppDialog({
+                title: "Nonaktifkan akun siswa?",
+                description: "Siswa tidak dapat login sampai Admin mengaktifkannya kembali. Riwayat presensi tetap disimpan.",
+                confirmLabel: "Nonaktifkan", cancelLabel: "Batal", danger: true, icon: "!"
+            });
+            if (confirmed === null) return;
+            deactivate.disabled = true;
+            try {
+                await cloudRequest("/api/students", { method: "PATCH", body: { action: "deactivate", nisn } });
+                state.students = state.students.filter(student => student.nisn !== nisn);
+                renderStudentList();
+                toast("Akun siswa dinonaktifkan. Admin tetap dapat mengaktifkannya kembali.", "success");
+            } catch (error) {
+                toastAdminError(error);
+            } finally {
+                deactivate.disabled = false;
+            }
             return;
         }
-        });
+        const editFace = event.target.closest("[data-edit-student-face]");
+        if (editFace) beginFaceUpdate(editFace.dataset.editStudentFace);
+    });
 
     $("btn-map").addEventListener("click", openMap);
     $("close-map").addEventListener("click", () => {
