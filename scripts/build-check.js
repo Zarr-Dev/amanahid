@@ -324,8 +324,8 @@ const serviceWorker = readFileSync(join(root, "public/sw.js"), "utf8");
 if (!html.includes('rel="manifest" href="/manifest.webmanifest"') ||
     !js.includes('navigator.serviceWorker.register("/sw.js"') ||
     !offlineMigration.includes("pending_review") ||
-    !offlineApi.includes('body.action === "offline-pending"') ||
-    !offlineApi.includes('body.action === "offline-review"') ||
+    !offlineApi.includes('req.body?.action === "offline-pending"') ||
+    !offlineApi.includes('req.body?.action === "offline-review"') ||
     !serviceWorker.includes('url.pathname.startsWith("/api/")')) {
     console.error("Build check failed: offline attendance queue or PWA app-shell wiring is incomplete.");
     process.exit(1);
