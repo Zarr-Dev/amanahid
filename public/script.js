@@ -4398,8 +4398,9 @@ async function processAttendanceFrame() {
     } catch (error) {
         if (state.attendanceStream === requestStream) {
             console.error("Attendance pipeline error (" + pipelineStage + "):", error);
-            if (requestUser.role === "siswa" && pipelineStage === "face-match" &&
-                error?.type === "network" && navigator.onLine === false) {
+            if (requestUser.role === "siswa" &&
+                (pipelineStage === "face-match" || pipelineStage === "attendance") &&
+                error?.type === "network") {
                 try {
                     const offlineLocation = await checkGeofence();
                     if (!offlineLocation.error && offlineLocation.inside &&
