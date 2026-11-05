@@ -2536,7 +2536,7 @@ function startNetworkHeartbeat() {
     void checkNetworkHeartbeat();
     state.networkHeartbeatTimer = window.setInterval(() => {
         if (state.user) void checkNetworkHeartbeat();
-    }, 30_000);
+    }, 15_000);
 }
 
 function stopNetworkHeartbeat() {
