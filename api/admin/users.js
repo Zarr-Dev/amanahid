@@ -4,6 +4,7 @@ import { writeAuditLog } from "../_lib/audit.js";
 import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
 import { getFeatureFlags, featureDisabled } from "../_lib/features.js";
+import { normalizeWhatsAppNumber } from "../_lib/whatsapp.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
                 name: { type: "string", required: true, max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
                 password: { type: "string", required: true, max: 128 },
                 nisn: { type: "string", max: 20, pattern: /^\d{8,20}$/ },
-                parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
+                parent_whatsapp: { type: "string", max: 24, pattern: /^[+()\d\s.-]+$/ },
                 class_name: { type: "string", max: 40, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
                 homeroom_teacher_id: { type: "string", max: 36, pattern: UUID }
             };
@@ -119,7 +120,7 @@ export default async function handler(req, res) {
                     name,
                     class_name: body.class_name.trim(),
                     homeroom_teacher_id: homeroomTeacher?.id || null,
-                    parent_whatsapp: body.parent_whatsapp ? body.parent_whatsapp.replace(/^08/, "628") : null,
+                    parent_whatsapp: body.parent_whatsapp ? normalizeWhatsAppNumber(body.parent_whatsapp) : null,
                     face_descriptors: [],
                     email,
                     password_hash,
@@ -141,7 +142,7 @@ export default async function handler(req, res) {
             const schema = {
                 id: { type: "string", required: true, max: 36, pattern: UUID },
                 table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
-                parent_whatsapp: { type: "string", max: 15, pattern: /^(?:|08\d{8,13}|628\d{8,13})$/ },
+                parent_whatsapp: { type: "string", max: 24, pattern: /^(?:|[+()\d\s.-]+)$/ },
                 email: { type: "string", max: 254, pattern: EMAIL },
                 name: { type: "string", max: 120, min: 1, pattern: /^[^\u0000-\u001F\u007F]+$/ },
                 password: { type: "string", max: 128 },
@@ -172,8 +173,10 @@ export default async function handler(req, res) {
             if (body.name) values.name = body.name.trim();
             if (body.password) values.password_hash = await hashPassword(body.password);
             if (body.parent_whatsapp !== undefined) {
-                if (body.table !== "students") return jsonError(res, 400, "WhatsApp wali hanya berlaku untuk akun siswa");
-                values.parent_whatsapp = body.parent_whatsapp ? body.parent_whatsapp.replace(/^08/, "628") : null;
+                if (body.table !== "students") return jsonError(res, 400, "Nomor WhatsApp orang tua hanya berlaku untuk akun siswa");
+                const normalizedParentWhatsApp = body.parent_whatsapp ? normalizeWhatsAppNumber(body.parent_whatsapp) : null;
+                if (body.parent_whatsapp && !normalizedParentWhatsApp) return jsonError(res, 400, "Nomor WhatsApp orang tua tidak valid. Gunakan format Indonesia seperti 08..., 628..., atau +62...");
+                values.parent_whatsapp = normalizedParentWhatsApp;
             }
             if (body.homeroom_teacher_id !== undefined) {
                 if (body.table !== "students") return jsonError(res, 400, "Wali kelas hanya dapat diubah pada akun siswa");
