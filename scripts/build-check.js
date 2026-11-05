@@ -139,7 +139,7 @@ const htmlChecks = [
     ["Admin account activity chart", /id="admin-role-activity-chart"/],
     ["student offline attendance status", /id="student-offline-status"/],
     ["teacher offline review queue", /id="teacher-offline-pending-tbody"/],
-    ["PWA manifest link", /rel="manifest" href="\\/manifest[.]webmanifest"/],
+    ["PWA manifest link", /rel="manifest" href="\/manifest[.]webmanifest"/],
     ["admin camera diagnostics", /id="admin-test-camera-start"/],
     ["admin WhatsApp test preview", /id="admin-test-whatsapp-preview"/],
     ["admin GPS diagnostics", /id="admin-test-gps-run"/],
