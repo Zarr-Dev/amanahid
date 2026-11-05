@@ -1359,6 +1359,16 @@ test("Fonnte test status does not require a test-recipient allowlist", async t =
     assert.equal(res.body.environment, process.env.VERCEL_ENV || "unknown");
     assert.equal(res.body.test_send_enabled, true);
     assert.equal(res.body.recipient_allowlist_required, false);
+
+    process.env.FONNTE_TOKEN = "x";
+    const shortTokenResponse = responseMock();
+    await adminSettingsHandler({
+        ...req,
+        socket: { remoteAddress: "test-fonnte-short-nonempty-token" }
+    }, shortTokenResponse);
+    assert.equal(shortTokenResponse.statusCode, 200);
+    assert.equal(shortTokenResponse.body.fonnte_configured, true,
+        "token presence is tested without an arbitrary minimum length");
 });
 
 test("Fonnte test accepts a valid number after explicit consent and reports empty token", async t => {
