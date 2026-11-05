@@ -4368,3 +4368,126 @@ video { object-fit:cover; }
   .camera-screen canvas, .attendance-camera canvas, #attendance-camera-screen canvas { max-width:100%; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+
+
+/* Admin analytics and unified read-only operations center */
+.admin-analytics-grid,
+.admin-ops-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 18px 0;
+}
+.admin-analytics-card,
+.admin-ops-card,
+.admin-offline-review-panel {
+    min-width: 0;
+    padding: 20px;
+}
+.admin-ops-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.admin-ops-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 18px;
+    font-weight: 700;
+}
+.admin-ops-brand span {
+    border-radius: 999px;
+    background: var(--surface-soft, #f3f6fb);
+    padding: 5px 9px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+.admin-ops-card dl { display: grid; gap: 8px; margin: 16px 0 0; }
+.admin-ops-card dl > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+}
+.admin-ops-card dt { color: var(--muted); }
+.admin-ops-card dd {
+    margin: 0;
+    max-width: 62%;
+    overflow-wrap: anywhere;
+    text-align: right;
+    font-weight: 700;
+}
+.admin-chart-bars {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 9px;
+    align-items: end;
+    min-height: 190px;
+    padding: 10px 2px 0;
+}
+.admin-chart-day {
+    display: grid;
+    grid-template-rows: 24px minmax(70px, 1fr) 22px;
+    justify-items: center;
+    align-items: end;
+    gap: 6px;
+    min-width: 0;
+}
+.admin-chart-day strong { font-size: 11px; }
+.admin-chart-bar-track {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    width: min(100%, 34px);
+    height: 100%;
+    overflow: hidden;
+    border-radius: 9px 9px 4px 4px;
+    background: var(--surface-soft, #f3f6fb);
+}
+.admin-chart-bar {
+    width: 100%;
+    min-height: 3px;
+    border-radius: 8px 8px 3px 3px;
+    background: linear-gradient(180deg, var(--blue, #3978f6), #77a0fa);
+}
+.admin-chart-day small { color: var(--muted); font-size: 10px; }
+.admin-role-chart { display: grid; gap: 16px; margin-top: 18px; }
+.admin-role-row { display: grid; gap: 6px; }
+.admin-role-meta { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+.admin-role-track {
+    width: 100%;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: var(--surface-soft, #f3f6fb);
+}
+.admin-role-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--blue, #3978f6);
+}
+.admin-account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 220px;
+}
+.admin-account-actions .button { min-height: 32px; padding: 7px 9px; font-size: 11px; }
+.admin-account-actions .button.danger { background: var(--red, #bd2634); }
+.admin-offline-review-panel { margin-top: 18px; }
+.admin-offline-review-panel .table-wrap { margin-top: 10px; }
+.admin-offline-review-panel td { vertical-align: middle; }
+.admin-offline-review-panel [data-offline-review] { min-height: 32px; padding: 6px 9px; font-size: 11px; }
+.admin-service-health-list,
+.admin-test-service-results { display: grid; gap: 8px; }
+@media (max-width: 980px) {
+    .admin-ops-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+    .admin-analytics-grid { grid-template-columns: 1fr; }
+    .admin-analytics-card, .admin-ops-card, .admin-offline-review-panel { padding: 15px; }
+    .admin-account-actions { min-width: 180px; }
+}
