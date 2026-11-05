@@ -304,6 +304,15 @@ if (!css.includes("left: 50%;") || !css.includes("transform: translate(-50%, 0);
 }
 
 
+const adminTestToolsSource = readFileSync(join(root, "api/_lib/test-tools.js"), "utf8");
+if (adminTestToolsSource.includes("FONNTE_TEST_RECIPIENTS") ||
+    adminTestToolsSource.includes("configuredRecipients") ||
+    html.includes('id="admin-test-whatsapp-allowlist"') ||
+    js.includes("adminAllowedWhatsappRecipients")) {
+    console.error("Build check failed: one-time WhatsApp tests must use the Admin-entered destination, explicit consent, and server-side rate limiting.");
+    process.exit(1);
+}
+
 const captchaApi = readFileSync(join(root, "api/_lib/login-captcha.js"), "utf8");
 const sharedLoginApi = readFileSync(join(root, "api/auth/login.js"), "utf8");
 if (!html.includes('id="login-captcha-answer"') ||
