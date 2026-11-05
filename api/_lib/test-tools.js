@@ -24,6 +24,7 @@ export async function handleAdminTestTools(req, res, admin) {
         return res.status(200).json({
             provider: "Fonnte",
             fonnte_configured: fonnteConfigured(),
+            environment: typeof process.env.VERCEL_ENV === "string" ? process.env.VERCEL_ENV : "unknown",
             test_send_enabled: true,
             recipient_allowlist_required: false,
             template: DEFAULT_TEMPLATE
