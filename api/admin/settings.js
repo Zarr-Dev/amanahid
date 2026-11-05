@@ -1,15 +1,185 @@
 import { authorizeAdmin } from "../_lib/admin-api.js";
 import { hashPassword, isValidAdminPassword, verifyPassword } from "../_lib/admin-auth.js";
 import { writeAuditLog } from "../_lib/audit.js";
-import { jsonError, jsonSupabaseError, supabaseRequest } from "../_lib/supabase.js";
+import { jsonError, jsonSupabaseError, rateLimit, supabaseRequest } from "../_lib/supabase.js";
 import { validateSchema } from "../_lib/validate.js";
 import { handleAdminTestTools } from "../_lib/test-tools.js";
+import { DEFAULT_ATTENDANCE_WHATSAPP_TEMPLATE, normalizeWhatsAppNumber, renderAttendanceWhatsAppMessage, sendWhatsApp } from "../_lib/whatsapp.js";
 import { FEATURE_DEFAULTS, LOCKED_FEATURE_FLAGS, getFeatureFlags, featureDisabled } from "../_lib/features.js";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 const FEATURES_ID = "00000000-0000-0000-0000-000000000002";
 const DEFAULTS = { lat: -6.253590517740096, lng: 106.60299502682263, radius: 50 };
 
+
+
+async function handleAdminAttendanceWhatsApp(req, res, admin) {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
+    if (req.method === "GET") {
+        try {
+            const [settingsRows, pendingRows] = await Promise.all([
+                supabaseRequest(`school_settings?select=attendance_whatsapp_enabled,attendance_whatsapp_template&id=eq.${SETTINGS_ID}&limit=1`),
+                supabaseRequest("attendance?select=id,date,time,parent_whatsapp_status,students!inner(name,nisn,class_name,parent_whatsapp)&parent_whatsapp_status=in.(failed,unknown,sending,pending)&order=date.desc,time.desc&limit=20")
+            ]);
+            const row = Array.isArray(settingsRows) ? settingsRows[0] : null;
+            return res.status(200).json({
+                configured: Boolean(process.env.FONNTE_TOKEN),
+                enabled: row?.attendance_whatsapp_enabled !== false,
+                template: row?.attendance_whatsapp_template || DEFAULT_ATTENDANCE_WHATSAPP_TEMPLATE,
+                notifications: (Array.isArray(pendingRows) ? pendingRows : []).map(item => ({
+                    id: item.id, date: item.date, time: item.time, status: item.parent_whatsapp_status,
+                    name: item.students?.name || "", nisn: item.students?.nisn || "",
+                    class_name: item.students?.class_name || "",
+                    phone_suffix: normalizeWhatsAppNumber(item.students?.parent_whatsapp)?.slice(-4) || null
+                }))
+            });
+        } catch (error) {
+            console.error("Admin attendance WhatsApp settings failed to load:", error);
+            return jsonSupabaseError(res, error, "Pengaturan notifikasi WhatsApp gagal dimuat");
+        }
+    }
+    if (req.method === "PUT") {
+        const body = req.body || {};
+        const validation = validateSchema({
+            enabled: { type: "boolean", required: true },
+            template: { type: "string", required: true, min: 10, max: 450 }
+        }, body);
+        if (!validation.valid) return jsonError(res, 400, "Isi template pesan dengan benar (10 sampai 450 karakter).");
+        const template = body.template.trim();
+        if (!template || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(template)) {
+            return jsonError(res, 400, "Template pesan berisi karakter yang tidak dapat digunakan.");
+        }
+        const allowed = new Set(["name", "nisn", "class", "date", "time", "school"]);
+        const placeholders = [...template.matchAll(/\{([^{}]+)\}/g)].map(match => match[1]);
+        const residual = template.replace(/\{(name|nisn|class|date|time|school)\}/g, "");
+        if (placeholders.some(name => !allowed.has(name)) || /\{[^{}]*\}/.test(residual)) {
+            return jsonError(res, 400, "Gunakan penanda yang tersedia: {name}, {nisn}, {class}, {date}, {time}, dan {school}.");
+        }
+        try {
+            const rows = await supabaseRequest(`school_settings?id=eq.${SETTINGS_ID}&select=attendance_whatsapp_enabled,attendance_whatsapp_template`, {
+                method: "PATCH", headers: { Prefer: "return=representation" },
+                body: JSON.stringify({
+                    attendance_whatsapp_enabled: body.enabled,
+                    attendance_whatsapp_template: template,
+                    updated_by: admin.email,
+                    updated_at: new Date().toISOString()
+                })
+            });
+            const updated = Array.isArray(rows) ? rows[0] : null;
+            if (!updated) return jsonError(res, 404, "Pengaturan sekolah belum tersedia.");
+            try {
+                await writeAuditLog(admin, "admin.attendance_whatsapp_template.update", "school_settings", SETTINGS_ID, {
+                    enabled: body.enabled, template_length: template.length, placeholders
+                });
+            } catch (auditError) {
+                console.error("WhatsApp template audit failed after settings were saved:", auditError);
+            }
+            return res.status(200).json({ enabled: updated.attendance_whatsapp_enabled, template: updated.attendance_whatsapp_template, saved: true });
+        } catch (error) {
+            console.error("Admin attendance WhatsApp template update failed:", error);
+            return jsonSupabaseError(res, error, "Template notifikasi WhatsApp gagal disimpan");
+        }
+    }
+    if (req.method === "POST") {
+        if (!rateLimit(req, "admin:attendance-whatsapp-retry", 5, 60_000, res)) {
+            return jsonError(res, 429, "Terlalu banyak percobaan kirim ulang. Coba lagi sebentar.");
+        }
+        const id = typeof req.body?.attendance_id === "string" ? req.body.attendance_id : "";
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+            return jsonError(res, 400, "Catatan presensi yang dipilih tidak valid.");
+        }
+        try {
+            const features = await getFeatureFlags();
+            if (!features.parent_notifications) return featureDisabled(res, "parent_notifications", "Notifikasi WhatsApp sedang dinonaktifkan oleh Admin.");
+            const [attendanceRows, settingsRows] = await Promise.all([
+                supabaseRequest(`attendance?select=id,date,time,parent_whatsapp_status,students!inner(name,nisn,class_name,parent_whatsapp)&id=eq.${encodeURIComponent(id)}&limit=1`),
+                supabaseRequest(`school_settings?select=attendance_whatsapp_enabled,attendance_whatsapp_template&id=eq.${SETTINGS_ID}&limit=1`)
+            ]);
+            const item = attendanceRows?.[0], school = settingsRows?.[0];
+            if (!item) return jsonError(res, 404, "Catatan presensi tidak ditemukan.");
+            if (item.parent_whatsapp_status !== "failed") return jsonError(res, 409, "Pesan ini belum aman untuk dikirim ulang. Periksa riwayat Fonnte terlebih dahulu agar tidak terjadi pesan ganda.");
+            if (school?.attendance_whatsapp_enabled === false) return jsonError(res, 409, "Notifikasi WhatsApp sedang dinonaktifkan pada pengaturan sekolah.");
+            const target = normalizeWhatsAppNumber(item.students?.parent_whatsapp);
+            if (!target) return jsonError(res, 409, "Nomor WhatsApp orang tua belum tersedia atau tidak valid.");
+            const lock = await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}&parent_whatsapp_status=eq.failed&select=id`, {
+                method: "PATCH", headers: { Prefer: "return=representation" },
+                body: JSON.stringify({ parent_whatsapp_status: "sending", parent_whatsapp_error: null, parent_whatsapp_updated_at: new Date().toISOString() })
+            });
+            if (!Array.isArray(lock) || lock.length !== 1) return jsonError(res, 409, "Pesan sedang diproses atau sudah diperbarui. Muat ulang daftar notifikasi.");
+            const message = renderAttendanceWhatsAppMessage(
+                school?.attendance_whatsapp_template || DEFAULT_ATTENDANCE_WHATSAPP_TEMPLATE,
+                item.students, item.date, String(item.time || "").slice(0, 5)
+            );
+            try {
+                const providerResult = await sendWhatsApp(target, message);
+                const providerIds = Array.isArray(providerResult?.id) ? providerResult.id : [];
+                const requestId = providerResult?.requestid ? String(providerResult.requestid) : null;
+                try {
+                    await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}`, {
+                        method: "PATCH", headers: { Prefer: "return=minimal" },
+                        body: JSON.stringify({
+                            parent_whatsapp_status: "queued",
+                            parent_whatsapp_request_id: requestId,
+                            parent_whatsapp_message_ids: providerIds,
+                            parent_whatsapp_error: null,
+                            parent_whatsapp_updated_at: new Date().toISOString()
+                        })
+                    });
+                } catch (statusError) {
+                    console.error("Fonnte accepted a retry, but its status could not be saved:", statusError);
+                    try {
+                        await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}`, {
+                            method: "PATCH", headers: { Prefer: "return=minimal" },
+                            body: JSON.stringify({
+                                parent_whatsapp_status: "unknown",
+                                parent_whatsapp_request_id: requestId,
+                                parent_whatsapp_message_ids: providerIds,
+                                parent_whatsapp_error: "Provider accepted the message; local status needs review",
+                                parent_whatsapp_updated_at: new Date().toISOString()
+                            })
+                        });
+                    } catch (unknownStatusError) {
+                        console.error("WhatsApp retry status remains unresolved:", unknownStatusError);
+                    }
+                    return res.status(202).json({
+                        ok: true, status: "unknown", accepted: true,
+                        process: providerResult?.process || "pending"
+                    });
+                }
+                try {
+                    await writeAuditLog(admin, "admin.attendance_whatsapp.retry", "attendance", id, {
+                        recipient_suffix: target.slice(-4), result: "queued"
+                    });
+                } catch (auditError) {
+                    console.error("WhatsApp retry audit failed after provider acceptance:", auditError);
+                }
+                return res.status(200).json({ ok: true, status: "queued", accepted: true, process: providerResult?.process || "pending" });
+            } catch (error) {
+                const uncertain = ["FONNTE_TIMEOUT", "FONNTE_NETWORK_ERROR", "FONNTE_UNCERTAIN_RESPONSE"].includes(error?.code);
+                const status = uncertain ? "unknown" : "failed";
+                try {
+                    await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}`, {
+                        method: "PATCH", headers: { Prefer: "return=minimal" },
+                        body: JSON.stringify({
+                            parent_whatsapp_status: status,
+                            parent_whatsapp_error: uncertain ? "Delivery could not be confirmed" : "Provider rejected the message",
+                            parent_whatsapp_updated_at: new Date().toISOString()
+                        })
+                    });
+                } catch (updateError) { console.error("Attendance WhatsApp retry status update failed:", updateError); }
+                console.error("Attendance WhatsApp retry failed:", error);
+                return jsonError(res, 502, uncertain
+                    ? "Status pengiriman belum dapat dipastikan. Periksa riwayat Fonnte sebelum mencoba lagi."
+                    : "Pesan belum diterima Fonnte. Periksa koneksi WhatsApp lalu coba lagi.");
+            }
+        } catch (error) {
+            console.error("Admin attendance WhatsApp retry failed:", error);
+            return jsonSupabaseError(res, error, "Pesan WhatsApp gagal dikirim ulang");
+        }
+    }
+    res.setHeader("Allow", "GET, PUT, POST");
+    return jsonError(res, 405, "Metode permintaan tidak diizinkan.");
+}
 
 async function updateAdminPassword(req, res, admin) {
     const body = req.body || {};
@@ -48,6 +218,7 @@ export default async function handler(req, res) {
     const admin = await authorizeAdmin(req, res, action === "test-tools" ? "test-tools" : "settings");
     if (!admin) return;
     if (action === "test-tools") return handleAdminTestTools(req, res, admin);
+    if (action === "whatsapp") return handleAdminAttendanceWhatsApp(req, res, admin);
     if (action === "profile") {
         if (req.method !== "PUT") {
             res.setHeader("Allow", "PUT");

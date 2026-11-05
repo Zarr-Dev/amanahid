@@ -10,7 +10,7 @@ import {
     verifyTeacherSession
 } from "./_lib/supabase.js";
 import { verifyToken } from "./_lib/admin-auth.js";
-import { sendWhatsApp } from "./_lib/whatsapp.js";
+import { DEFAULT_ATTENDANCE_WHATSAPP_TEMPLATE, normalizeWhatsAppNumber, renderAttendanceWhatsAppMessage, sendWhatsApp } from "./_lib/whatsapp.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
 import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
@@ -42,8 +42,28 @@ function normalizeAttendance(row, schedule = null, features = {}) {
         status: features.late_detection && features.school_schedule_rules && schedule
             ? (isLate(row.time, schedule) ? "late" : "present") : null,
         method: row.method,
-        created_at: row.created_at
+        created_at: row.created_at,
+        parentWhatsappStatus: row.parent_whatsapp_status || "not_applicable"
     };
+}
+
+function attendanceWhatsAppResult(row) {
+    const status = row?.parent_whatsapp_status || "not_applicable";
+    return { status, queued: status === "queued", delivered: false, skipped: ["not_applicable", "disabled", "no_parent_number"].includes(status) };
+}
+
+async function updateAttendanceWhatsAppStatus(attendanceId, fields) {
+    if (!attendanceId) return false;
+    try {
+        await supabaseRequest(`attendance?id=eq.${encodeURIComponent(attendanceId)}`, {
+            method: "PATCH", headers: { Prefer: "return=minimal" },
+            body: JSON.stringify({ ...fields, parent_whatsapp_updated_at: new Date().toISOString() })
+        });
+        return true;
+    } catch (error) {
+        console.error("Attendance WhatsApp status could not be saved:", error);
+        return false;
+    }
 }
 
 function isLate(time, schedule) {
@@ -79,7 +99,7 @@ export default async function handler(req, res) {
             if (!features.attendance_history) return featureDisabled(res, "attendance_history", "Riwayat presensi sedang dinonaktifkan");
             const settingsRows = await supabaseRequest("school_settings?select=entry_time,late_tolerance_min&limit=1");
             const schedule = Array.isArray(settingsRows) ? settingsRows[0] : null;
-            let query = "attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name,homeroom_teacher_id)&order=date.desc,time.desc";
+            let query = "attendance?select=id,student_id,date,time,confidence,method,created_at,parent_whatsapp_status,students!inner(nisn,name,class_name,homeroom_teacher_id)&order=date.desc,time.desc";
             if (role === "guru") {
                 const teacherRows = await supabaseRequest(
                     "teachers?select=id&email=eq." + encodeURIComponent(getSession(req)?.email || "") + "&is_active=eq.true&limit=1"
@@ -169,7 +189,7 @@ export default async function handler(req, res) {
             const disabledFeature = requiredFeatures.find(key => features[key] === false);
             if (disabledFeature) return res.status(403).json({ error: "Attendance is disabled by the administrator", feature: disabledFeature });
             const repeated = await supabaseRequest(
-                `attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name)&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`
+                `attendance?select=id,student_id,date,time,confidence,method,created_at,parent_whatsapp_status,students!inner(nisn,name,class_name)&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`
             );
             if (repeated.length) {
                 if (repeated[0].students?.nisn !== nisn) {
@@ -177,11 +197,11 @@ export default async function handler(req, res) {
                 }
                 return res.status(200).json({
                     attendance: normalizeAttendance(repeated[0]),
-                    whatsapp: { sent: false, skipped: true }
+                    whatsapp: attendanceWhatsAppResult(repeated[0])
                 });
             }
             const settings = await supabaseRequest(
-                "school_settings?select=lat,lng,radius,entry_time,late_tolerance_min,timezone&id=eq.00000000-0000-0000-0000-000000000001&limit=1"
+                "school_settings?select=lat,lng,radius,entry_time,late_tolerance_min,timezone,attendance_whatsapp_enabled,attendance_whatsapp_template&id=eq.00000000-0000-0000-0000-000000000001&limit=1"
             );
             if (!settings.length) return jsonError(res, 503, "School location settings are not configured");
             const school = {
@@ -237,13 +257,13 @@ export default async function handler(req, res) {
             const { date, time } = jakartaDateTime();
 
             const existing = await supabaseRequest(
-                `attendance?select=id,student_id,date,time,confidence,method,created_at,idempotency_key,students!inner(nisn,name,class_name)&student_id=eq.${encodeURIComponent(student.id)}&date=eq.${date}&limit=1`
+                `attendance?select=id,student_id,date,time,confidence,method,created_at,idempotency_key,parent_whatsapp_status,students!inner(nisn,name,class_name)&student_id=eq.${encodeURIComponent(student.id)}&date=eq.${date}&limit=1`
             );
             if (existing.length) {
                 if (existing[0].idempotency_key === idempotencyKey) {
                     return res.status(200).json({
                         attendance: normalizeAttendance(existing[0], settings[0], features),
-                        whatsapp: { sent: false, skipped: true }
+                        whatsapp: attendanceWhatsAppResult(existing[0])
                     });
                 }
                 return failedAttendance(req, res, role, 409, {
@@ -252,7 +272,7 @@ export default async function handler(req, res) {
             }
 
             const inserted = await supabaseRequest(
-                "attendance?select=id,student_id,date,time,confidence,method,created_at",
+                "attendance?select=id,student_id,date,time,confidence,method,created_at,parent_whatsapp_status,parent_whatsapp_request_id,parent_whatsapp_message_ids",
                 {
                     method: "POST",
                     headers: { Prefer: "return=representation" },
@@ -262,24 +282,70 @@ export default async function handler(req, res) {
                         time,
                         confidence: faceProof.confidence,
                         method: "face-gps",
-                        idempotency_key: idempotencyKey
+                        idempotency_key: idempotencyKey,
+                        parent_whatsapp_status: "pending"
                     })
                 }
                 );
-            await writeAuditLog(getSession(req), "attendance.create", "attendance", inserted[0]?.id, {
-                student_id: student.id, date, method: "face-gps"
-            });
+            try {
+                await writeAuditLog(getSession(req), "attendance.create", "attendance", inserted[0]?.id, {
+                    student_id: student.id, date, method: "face-gps"
+                });
+            } catch (auditError) {
+                console.error("Attendance audit could not be saved after the attendance record was created:", auditError);
+            }
 
-            let whatsapp = { sent: false, skipped: !student.parent_whatsapp || !features.parent_notifications, reason: features.parent_notifications ? undefined : "disabled_by_admin" };
-            if (student.parent_whatsapp && features.parent_notifications) {
-                const target = student.parent_whatsapp.replace(/\D/g, "").replace(/^08/, "628");
-                const message = `Presensi ${student.name} (${student.nisn}) berhasil tercatat pada ${date} pukul ${time} di Al-Fityan School.`;
+            let whatsapp = { status: "not_applicable", queued: false, delivered: false, skipped: true };
+            const attendanceId = inserted[0]?.id;
+            const notificationEnabled = features.parent_notifications && settings[0].attendance_whatsapp_enabled !== false;
+            const target = normalizeWhatsAppNumber(student.parent_whatsapp);
+            if (!student.parent_whatsapp) {
+                await updateAttendanceWhatsAppStatus(attendanceId, { parent_whatsapp_status: "no_parent_number" });
+                whatsapp = { status: "no_parent_number", queued: false, delivered: false, skipped: true };
+            } else if (!notificationEnabled) {
+                await updateAttendanceWhatsAppStatus(attendanceId, { parent_whatsapp_status: "disabled" });
+                whatsapp = { status: "disabled", queued: false, delivered: false, skipped: true };
+            } else if (!target) {
+                await updateAttendanceWhatsAppStatus(attendanceId, { parent_whatsapp_status: "failed", parent_whatsapp_error: "Invalid parent WhatsApp number" });
+                whatsapp = { status: "failed", queued: false, delivered: false, skipped: false };
+            } else {
+                const message = renderAttendanceWhatsAppMessage(
+                    settings[0].attendance_whatsapp_template || DEFAULT_ATTENDANCE_WHATSAPP_TEMPLATE,
+                    student, date, time
+                );
+                await updateAttendanceWhatsAppStatus(attendanceId, { parent_whatsapp_status: "sending", parent_whatsapp_error: null });
                 try {
-                    await sendWhatsApp(target, message);
-                    whatsapp = { sent: true, skipped: false };
+                    const providerResult = await sendWhatsApp(target, message);
+                    const queueSaved = await updateAttendanceWhatsAppStatus(attendanceId, {
+                        parent_whatsapp_status: "queued",
+                        parent_whatsapp_request_id: providerResult?.requestid ? String(providerResult.requestid) : null,
+                        parent_whatsapp_message_ids: Array.isArray(providerResult?.id) ? providerResult.id : [],
+                        parent_whatsapp_error: null
+                    });
+                    if (!queueSaved) {
+                        await updateAttendanceWhatsAppStatus(attendanceId, {
+                            parent_whatsapp_status: "unknown",
+                            parent_whatsapp_request_id: providerResult?.requestid ? String(providerResult.requestid) : null,
+                            parent_whatsapp_message_ids: Array.isArray(providerResult?.id) ? providerResult.id : [],
+                            parent_whatsapp_error: "Provider accepted the message; local status needs review"
+                        });
+                        whatsapp = { status: "unknown", queued: false, delivered: false, skipped: false };
+                    } else {
+                        whatsapp = {
+                            status: "queued", queued: true, delivered: false,
+                            request_id: providerResult?.requestid ?? null,
+                            process: providerResult?.process || "pending"
+                        };
+                    }
                 } catch (error) {
+                    const uncertain = ["FONNTE_TIMEOUT", "FONNTE_NETWORK_ERROR", "FONNTE_UNCERTAIN_RESPONSE"].includes(error?.code);
+                    const status = uncertain ? "unknown" : "failed";
                     console.error("Attendance WhatsApp notification failed:", error);
-                    whatsapp = { sent: false, skipped: false, error: "WhatsApp notification failed" };
+                    await updateAttendanceWhatsAppStatus(attendanceId, {
+                        parent_whatsapp_status: status,
+                        parent_whatsapp_error: uncertain ? "Delivery could not be confirmed" : "Provider rejected the message"
+                    });
+                    whatsapp = { status, queued: false, delivered: false, skipped: false };
                 }
             }
 
@@ -291,12 +357,12 @@ export default async function handler(req, res) {
             if (error.code === "23505") {
                 try {
                     const repeated = await supabaseRequest(
-                        `attendance?select=id,student_id,date,time,confidence,method,created_at,students!inner(nisn,name,class_name)&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`
+                        `attendance?select=id,student_id,date,time,confidence,method,created_at,parent_whatsapp_status,students!inner(nisn,name,class_name)&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`
                     );
                     if (repeated.length && repeated[0].students?.nisn === nisn) {
                         return res.status(200).json({
                             attendance: normalizeAttendance(repeated[0]),
-                            whatsapp: { sent: false, skipped: true }
+                            whatsapp: attendanceWhatsAppResult(repeated[0])
                         });
                     }
                 } catch (lookupError) {

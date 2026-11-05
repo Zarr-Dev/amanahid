@@ -12,6 +12,7 @@ import { hashPassword, validatePassword } from "./_lib/admin-auth.js";
 import { writeAuditLog } from "./_lib/audit.js";
 import { validateSchema } from "./_lib/validate.js";
 import { getFeatureFlags, featureDisabled } from "./_lib/features.js";
+import { normalizeWhatsAppNumber } from "./_lib/whatsapp.js";
 
 const STUDENT_COLUMNS = "id,nisn,name,class_name,parent_whatsapp,created_at,homeroom_teacher_id,homeroom_teacher:teachers!students_homeroom_teacher_id_fkey(name,email)";
 
@@ -146,7 +147,7 @@ export default async function handler(req, res) {
             nisn: { type: "string", required: true, max: 20, pattern: /^\d{8,20}$/ },
             name: { type: "string", required: true, max: 120, min: 1 },
             class_name: { type: "string", required: true, max: 40, min: 1 },
-            parent_whatsapp: { type: "string", max: 15, pattern: /^(08|628)\d{8,13}$/ },
+            parent_whatsapp: { type: "string", max: 24, pattern: /^[+()\d\s.-]+$/ },
             email: { type: "string", required: true, max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
             password: { type: "string", required: true, max: 128 },
             face_descriptors: {
@@ -171,8 +172,9 @@ export default async function handler(req, res) {
             /[\u0000-\u001F\u007F]/.test(class_name)) {
             return jsonError(res, 400, "Class name is required");
         }
-        if (parent_whatsapp === "") {
-            return jsonError(res, 400, "Invalid parent WhatsApp number");
+        const normalizedParentWhatsApp = parent_whatsapp ? normalizeWhatsAppNumber(parent_whatsapp) : null;
+        if (parent_whatsapp && !normalizedParentWhatsApp) {
+            return jsonError(res, 400, "Nomor WhatsApp orang tua tidak valid. Gunakan format Indonesia seperti 08..., 628..., atau +62...");
         }
         if (!isValidDescriptors(face_descriptors)) {
             return jsonError(res, 400, "Face descriptors must contain 1 to 5 arrays of 128 finite numbers");
@@ -222,7 +224,7 @@ export default async function handler(req, res) {
                 name: name.trim(),
                 class_name: class_name.trim(),
                 homeroom_teacher_id: assignedTeacher.id,
-                parent_whatsapp: parent_whatsapp || null,
+                parent_whatsapp: normalizedParentWhatsApp,
                 email: email.trim().toLowerCase(),
                 password_hash: await hashPassword(password),
                 face_descriptors: Array.isArray(face_descriptors[0])

@@ -444,8 +444,8 @@
                             maxlength="40" data-i18n-placeholder="classExample" placeholder="Contoh: XI IPA 1">
                         <label for="input-parent-wa" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
                         <input id="input-parent-wa" type="tel" inputmode="tel" autocomplete="tel"
-                            data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
-                            pattern="(?:08|628)[0-9]{8,13}">
+                            data-i18n-placeholder="whatsappPlaceholder" placeholder="08..., 628..., atau +62..."
+                            pattern="[+()0-9\s.-]{10,24}">
                         <label for="input-student-email" data-i18n="email">Email akun siswa</label>
                         <input id="input-student-email" type="email" autocomplete="email" required maxlength="254"
                             data-i18n-placeholder="emailPlaceholder" placeholder="nama@siswa.sch.id">
@@ -516,6 +516,7 @@
                 <button class="nav-link" type="button" data-admin-target="admin-view-settings">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a7.7 7.7 0 0 1-1.8 1l-.3 1.8h-2.8l-.3-1.8a7.7 7.7 0 0 1-1.8-1l-1.7.6-1.4-2.4 1.4-1.1a7.6 7.6 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a7.7 7.7 0 0 1 1.8-1l.3-1.8h2.8l.3 1.8a7.7 7.7 0 0 1 1.8 1l1.7-.6 1.4 2.4-1.4 1.1a7.6 7.6 0 0 1 0 2Z"/></svg></span><span data-i18n="adminSchoolSettings">Pengaturan sekolah</span>
                 </button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-whatsapp"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-6.5A2.5 2.5 0 0 1 4 11.5z"/><path d="M8 8h8M8 12h5"/></svg></span><span data-i18n="adminWhatsappNotifications">Notifikasi orang tua</span></button>
                 <button class="nav-link" type="button" data-admin-target="admin-view-tests">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><span data-i18n="adminTestTools">Pengujian sistem</span>
                 </button>
@@ -648,8 +649,8 @@
 
                             <label for="admin-user-parent-whatsapp" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
                             <input id="admin-user-parent-whatsapp" type="tel" inputmode="tel" autocomplete="tel"
-                                maxlength="15" pattern="(?:08|628)[0-9]{8,13}"
-                                data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx">
+                                maxlength="24" pattern="[+()0-9\s.-]{10,24}"
+                                data-i18n-placeholder="whatsappPlaceholder" placeholder="08..., 628..., atau +62...">
                             <p class="helper-text" data-i18n="studentAccountNote">Siswa dapat login setelah dibuat;
                                 presensi wajah aktif setelah Guru mendaftarkan sampel.</p>
                         </div>
@@ -743,6 +744,49 @@
                 </div>
             </section>
 
+            <section id="admin-view-whatsapp" class="admin-view hidden">
+                <div class="page-intro"><div>
+                    <span class="section-kicker" data-i18n="adminWhatsappNotifications">NOTIFIKASI ORANG TUA</span>
+                    <h2 data-i18n="adminWhatsappTemplateTitle">Pesan otomatis untuk orang tua</h2>
+                    <p class="muted" data-i18n="adminWhatsappTemplateDesc">Pesan ini dikirim setiap kali presensi siswa berhasil dicatat. Pengaturan berlaku terus sampai Admin mengubahnya.</p>
+                </div></div>
+                <div class="admin-test-grid">
+                    <section class="panel admin-test-card">
+                        <div class="panel-heading"><div><h3 data-i18n="adminWhatsappTemplateTitle">Pesan otomatis untuk orang tua</h3>
+                            <p class="muted" data-i18n="adminWhatsappTemplateDesc">Pesan ini dikirim setiap kali presensi siswa berhasil dicatat.</p></div></div>
+                        <p class="helper-text"><span data-i18n="adminWhatsappProvider">Koneksi Fonnte</span>: <strong id="admin-whatsapp-provider-state">Memeriksa...</strong></p>
+                        <form id="admin-whatsapp-template-form" class="form-stack">
+                            <label class="admin-test-consent"><input id="admin-whatsapp-enabled" type="checkbox" checked><span data-i18n="adminWhatsappEnabled">Kirim pemberitahuan otomatis setelah presensi siswa berhasil dicatat</span></label>
+                            <label for="admin-whatsapp-template" data-i18n="adminWhatsappTemplateLabel">Isi pesan</label>
+                            <textarea id="admin-whatsapp-template" rows="6" maxlength="450" required></textarea>
+                            <p class="helper-text" data-i18n="adminWhatsappTemplateHelp">Penanda yang tersedia: {name}, {nisn}, {class}, {date}, {time}, dan {school}.</p>
+                            <div><label for="admin-whatsapp-template-preview" data-i18n="adminWhatsappPreviewTitle">Contoh pesan</label>
+                                <pre id="admin-whatsapp-template-preview" class="admin-test-message-preview"></pre>
+                                <small id="admin-whatsapp-template-count" class="helper-text">0/450</small>
+                            </div>
+                            <button class="button primary" type="submit" data-i18n="adminWhatsappSave">Simpan pengaturan</button>
+                            <p id="admin-whatsapp-settings-status" class="helper-text" role="status" aria-live="polite"></p>
+                        </form>
+                    </section>
+                    <section class="panel admin-test-card">
+                        <div class="panel-heading"><div><h3 data-i18n="adminWhatsappFailuresTitle">Pesan yang perlu diperiksa</h3>
+                            <p class="muted" data-i18n="adminWhatsappFailuresDesc">Pesan yang ditolak Fonnte dapat dicoba kembali.</p></div>
+                            <button id="admin-whatsapp-refresh" class="button subtle" type="button" data-i18n="refreshData">Segarkan data</button>
+                        </div>
+                        <div class="table-wrap"><table>
+                            <thead><tr><th data-i18n="adminWhatsappStudent">Siswa</th>
+                                <th data-i18n="adminWhatsappDestination">Nomor tujuan</th>
+                                <th data-i18n="adminWhatsappWhen">Waktu presensi</th>
+                                <th data-i18n="adminWhatsappStatus">Status pesan</th>
+                                <th data-i18n="action">Tindakan</th></tr></thead>
+                            <tbody id="admin-whatsapp-failures-tbody"></tbody>
+                        </table></div>
+                        <p id="admin-whatsapp-failures-empty" class="empty-state" data-i18n="adminWhatsappFailuresEmpty">Tidak ada pesan yang perlu ditindaklanjuti.</p>
+                        <p class="helper-text" data-i18n="adminWhatsappTemplateOneTime">Template pada menu Pengujian hanya berlaku untuk satu pesan percobaan.</p>
+                    </section>
+                </div>
+            </section>
+
             <section id="admin-view-tests" class="admin-view hidden">
                 <div class="page-intro">
                     <div><span class="section-kicker" data-i18n="adminTestTools">PENGUJIAN SISTEM</span>
@@ -771,8 +815,8 @@
                             <p class="muted" data-i18n="testWhatsappDesc">Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.</p></div></div>
                         <p class="helper-text">Fonnte <strong id="admin-test-fonnte-state">Memeriksa konfigurasi…</strong></p>
                         <label for="admin-test-whatsapp-number" data-i18n="testWhatsappNumber">Nomor uji WhatsApp</label>
-                        <input id="admin-test-whatsapp-number" type="tel" inputmode="numeric" autocomplete="off" placeholder="628xxxxxxxxxx" maxlength="15">
-                        <p class="helper-text"><span data-i18n="testFonnteList">Nomor uji yang diizinkan:</span> <span id="admin-test-whatsapp-allowlist">Memuat daftar…</span></p>
+                        <input id="admin-test-whatsapp-number" type="tel" inputmode="tel" autocomplete="off" placeholder="08..., 628..., atau +62..." maxlength="24">
+                        <p class="helper-text" data-i18n="testWhatsappDirectTarget">Pesan percobaan hanya dikirim ke nomor yang kamu masukkan setelah menyetujui pengiriman.</p>
                         <label for="admin-test-whatsapp-template" data-i18n="testWhatsappTemplate">Template pesan</label>
                         <textarea id="admin-test-whatsapp-template" rows="4" maxlength="300">Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.</textarea>
                         <label for="admin-test-whatsapp-preview" data-i18n="testWhatsappPreview">Pratinjau pesan</label>

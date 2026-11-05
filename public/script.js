@@ -29,8 +29,8 @@ const ROLE_T = {
         studentHistoryDesc: "Hanya catatan presensi akun Anda yang ditampilkan.",
         studentHistoryEmpty: "Riwayat presensi Anda akan tampil di sini.",
         parentWhatsApp: "WhatsApp orang tua",
-        whatsappPlaceholder: "08xxxxxxxxxx atau 628xxxxxxxxxx",
-        invalidWhatsApp: "Nomor WhatsApp orang tua harus dimulai dengan 08 atau 628 dan berisi nomor yang valid.",
+        whatsappPlaceholder: "08..., 628..., atau +62...",
+        invalidWhatsApp: "Masukkan nomor WhatsApp orang tua yang valid, misalnya 08..., 628..., atau +62....",
         whatsappSuccess: "Notifikasi WhatsApp berhasil dikirim ke orang tua.",
         whatsappFailed: "Presensi tercatat, tetapi notifikasi WhatsApp gagal dikirim.",
         roleTeacherMismatch: "Akun ini bukan akun guru. Silakan pilih peran Siswa.",
@@ -40,6 +40,8 @@ const ROLE_T = {
         studentMatched: "Data wajah Anda sudah terhubung.",
         studentAlreadyPresent: "Presensi hari ini sudah tercatat untuk Anda.",
         studentAttendanceSuccess: "Presensi berhasil dicatat.",
+        whatsappQueued: "Pemberitahuan untuk orang tua sudah masuk antrean pengiriman.", whatsappUnknown: "Presensi tercatat, tetapi status WhatsApp belum dapat dipastikan. Admin perlu memeriksa riwayat Fonnte.", whatsappNoParent: "Nomor WhatsApp orang tua belum terdaftar. Hubungi Admin sekolah.",
+        gpsFixStale: "Lokasi sudah terlalu lama. Periksa GPS kembali lalu coba lagi.", gpsSpeedAnomaly: "Perubahan lokasi tidak wajar. Periksa GPS dan coba lagi.", gpsBoundaryUncertain: "Posisi terlalu dekat dengan batas area sekolah untuk dipastikan. Periksa lokasi kembali.",
         gpsAccuracyStatus: "Akurasi GPS ±{accuracy} m",
         studentMissingWa: "Nomor WhatsApp orang tua belum tersedia pada data siswa.",
         parentAttendanceMessage: "Assalamu'alaikum, presensi {name} ({nisn}) tercatat pada {date} pukul {time} di Al Fityan School."
@@ -55,8 +57,8 @@ const ROLE_T = {
         studentHistoryDesc: "Only attendance records belonging to your account are shown.",
         studentHistoryEmpty: "Your attendance history will appear here.",
         parentWhatsApp: "Parent's WhatsApp",
-        whatsappPlaceholder: "08xxxxxxxxxx or 628xxxxxxxxxx",
-        invalidWhatsApp: "The parent's WhatsApp number must start with 08 or 628 and be a valid number.",
+        whatsappPlaceholder: "08..., 628..., or +62...",
+        invalidWhatsApp: "Enter a valid parent WhatsApp number, such as 08..., 628..., or +62....",
         whatsappSuccess: "WhatsApp notification sent to the parent.",
         whatsappFailed: "Attendance was recorded, but the WhatsApp notification could not be sent.",
         roleTeacherMismatch: "This is not a teacher account. Please select Student.",
@@ -66,6 +68,8 @@ const ROLE_T = {
         studentMatched: "Your face record is linked.",
         studentAlreadyPresent: "Your attendance has already been recorded today.",
         studentAttendanceSuccess: "Attendance recorded successfully.",
+        whatsappQueued: "The parent notification has been added to the sending queue.", whatsappUnknown: "Attendance was recorded, but the WhatsApp status could not be confirmed. An Admin should check Fonnte history.", whatsappNoParent: "A parent WhatsApp number is not registered. Please contact the school Admin.",
+        gpsFixStale: "The location reading is too old. Refresh GPS and try again.", gpsSpeedAnomaly: "The location change looks unusual. Check GPS and try again.", gpsBoundaryUncertain: "Your location is too close to the school boundary to confirm. Refresh the location.",
         gpsAccuracyStatus: "GPS accuracy ±{accuracy} m",
         studentMissingWa: "The student record does not have a parent's WhatsApp number.",
         parentAttendanceMessage: "Attendance for {name} ({nisn}) was recorded on {date} at {time} at Al Fityan School."
@@ -81,8 +85,8 @@ const ROLE_T = {
         studentHistoryDesc: "تظهر هنا سجلات الحضور الخاصة بحسابك فقط.",
         studentHistoryEmpty: "سيظهر سجل حضورك هنا.",
         parentWhatsApp: "واتساب ولي الأمر",
-        whatsappPlaceholder: "08xxxxxxxxxx أو 628xxxxxxxxxx",
-        invalidWhatsApp: "يجب أن يبدأ رقم واتساب ولي الأمر بـ 08 أو 628 وأن يكون صالحاً.",
+        whatsappPlaceholder: "08... أو 628... أو +62...",
+        invalidWhatsApp: "أدخل رقم واتساب صالحًا لولي الأمر، مثل 08... أو 628... أو +62....",
         whatsappSuccess: "تم إرسال إشعار واتساب إلى ولي الأمر.",
         whatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب.",
         roleTeacherMismatch: "هذا ليس حساب معلّم. يرجى اختيار الطالب.",
@@ -92,6 +96,8 @@ const ROLE_T = {
         studentMatched: "تم ربط بيانات وجهك.",
         studentAlreadyPresent: "تم تسجيل حضورك اليوم بالفعل.",
         studentAttendanceSuccess: "تم تسجيل الحضور بنجاح.",
+        whatsappQueued: "تمت إضافة إشعار ولي الأمر إلى قائمة الإرسال.", whatsappUnknown: "تم تسجيل الحضور، لكن تعذر تأكيد حالة واتساب. يجب على المسؤول مراجعة سجل Fonnte.", whatsappNoParent: "لم يتم تسجيل رقم واتساب لولي الأمر. يرجى التواصل مع إدارة المدرسة.",
+        gpsFixStale: "قراءة الموقع قديمة. حدّث GPS ثم حاول مرة أخرى.", gpsSpeedAnomaly: "تغير الموقع غير طبيعي. تحقق من GPS ثم حاول مرة أخرى.", gpsBoundaryUncertain: "موقعك قريب جدًا من حدود المدرسة ولا يمكن تأكيده. حدّث الموقع.",
         gpsAccuracyStatus: "دقة GPS ±{accuracy} م",
         studentMissingWa: "لا يوجد رقم واتساب لولي الأمر في سجل الطالب.",
         parentAttendanceMessage: "تم تسجيل حضور {name} ({nisn}) بتاريخ {date} الساعة {time} في مدرسة الفتيان."
@@ -139,13 +145,15 @@ const EXTRA_T = {
         locationAccuracyBad: "Akurasi rendah",
         fakeLocation: "Lokasi GPS menunjukkan anomali. Aktifkan lokasi perangkat yang sebenarnya lalu coba lagi.",
         cloudLoadFailed: "Data cloud gagal dimuat. Periksa koneksi lalu coba lagi.",
+        cloudRequestFailed: "Permintaan tidak dapat diproses. Periksa koneksi, lalu coba lagi atau hubungi Admin.",
+        accessDenied: "Akses belum diizinkan. Periksa akun atau hubungi Admin sekolah.", recordNotFound: "Data yang diminta tidak ditemukan.", duplicateRecord: "Data ini sudah tercatat. Tidak perlu mengirim ulang.",
         cloudSaveFailed: "Data gagal disimpan ke cloud. Periksa koneksi lalu coba lagi.",
         cloudDeleteFailed: "Data gagal dihapus dari cloud. Periksa koneksi lalu coba lagi.",
         attendanceNetworkFailed: "Presensi tidak berhasil dikirim. Periksa koneksi lalu coba lagi.",
         rateLimitWait: "Terlalu banyak percobaan, harap tunggu 1 menit.",
         serverBusyReconnect: "Server sedang sibuk, mencoba menghubungkan ulang...",
         networkReconnecting: "Menghubungkan ulang...",
-        attendanceWhatsappFailed: "Presensi tercatat, tetapi notifikasi WhatsApp gagal dikirim.",
+        attendanceWhatsappFailed: "Presensi sudah tercatat, tetapi pemberitahuan ke orang tua gagal. Admin dapat mencoba mengirim ulang.",
         absenceFormNav: "Formulir izin",
         absenceFormKicker: "KETIDAKHADIRAN",
         absenceFormTitle: "Formulir ketidakhadiran",
@@ -195,7 +203,7 @@ const EXTRA_T = {
         faceUpdateFailed: "Data wajah siswa gagal diperbarui.",
         adminTestTools: "Pengujian sistem",
         adminTestToolsTitle: "Laboratorium pengujian",
-        adminTestToolsDesc: "Uji kamera, konfigurasi lokasi, dan template notifikasi tanpa mengubah data presensi.",
+        adminTestToolsDesc: "Uji kamera, GPS, dan kirim satu pesan percobaan tanpa mengubah pengaturan notifikasi presensi.",
         testCameraTitle: "Uji deteksi wajah",
         testCameraDesc: "Hanya mendeteksi wajah dari kamera. Tidak mendaftarkan sampel atau menyimpan gambar.",
         testCameraStart: "Mulai tes kamera",
@@ -208,7 +216,7 @@ const EXTRA_T = {
         testModelReady: "Model deteksi wajah siap.",
         testModelFailed: "Model AI gagal dimuat.",
         testWhatsappTitle: "Uji notifikasi WhatsApp",
-        testWhatsappDesc: "Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.",
+        testWhatsappDesc: "Masukkan nomor tujuan, periksa pesan, lalu setujui sebelum mengirim satu pesan percobaan. Pengaturan presensi otomatis tidak berubah.",
         testWhatsappNumber: "Nomor uji WhatsApp",
         testWhatsappTemplate: "Template pesan",
         testWhatsappDefaultTemplate: "Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.",
@@ -216,7 +224,7 @@ const EXTRA_T = {
         testWhatsappConfirm: "Saya menyetujui pengiriman satu pesan uji ke nomor yang ditampilkan.",
         testWhatsappSend: "Kirim satu pesan uji",
         testWhatsappSending: "Mengirim pesan uji...",
-        testWhatsappSent: "Permintaan pesan uji diterima penyedia WhatsApp.",
+        testWhatsappSent: "Permintaan uji diterima Fonnte dan sedang diproses. Periksa WhatsApp tujuan untuk memastikan pesan masuk.",
         testWhatsappFailed: "Pesan uji gagal dikirim.",
         testWhatsappBlocked: "Nomor tidak ada dalam daftar nomor uji yang diizinkan.",
         testGpsTitle: "Uji GPS dan geofence",
@@ -232,10 +240,10 @@ const EXTRA_T = {
         testOtherFail: "Layanan tidak merespons.",
         testPhoneInvalid: "Masukkan nomor uji yang valid dalam format 628xxxxxxxxxx.",
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
-        testFonnteConfigured: "Token Fonnte tersedia",
-        testFonnteMissing: "Token Fonnte belum dikonfigurasi",
-        testAllowlistEmpty: "Belum ada nomor uji yang disetujui Admin",
-        testAllowlistLoadFailed: "Gagal memuat daftar nomor uji",
+        testFonnteConfigured: "Konfigurasi WhatsApp tersedia",
+        testFonnteMissing: "Layanan WhatsApp belum dikonfigurasi",
+        testAllowlistEmpty: "Nomor uji diisi langsung pada kolom tujuan",
+        testAllowlistLoadFailed: "Nomor tujuan uji belum dapat diperiksa",
         testGpsChecking: "Memeriksa lokasi perangkat...",
         testGpsInside: "Lokasi berada dalam radius sekolah dan akurasi memenuhi batas.",
         testGpsOutside: "Lokasi di luar radius atau akurasi tidak memenuhi batas.",
@@ -252,9 +260,9 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Akurasi",
         testMetricDistance: "Jarak sekolah",
-        testFonnteList: "Nomor uji yang diizinkan:",
-        testAllowlistEmpty: "Belum ada nomor uji yang diizinkan Admin.",
-        testFonnteConfigHint: "Konfigurasikan FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS pada environment Production untuk mengaktifkan pengujian.",
+        testFonnteList: "Nomor tujuan uji:",
+        testAllowlistEmpty: "Nomor tujuan uji diisi langsung oleh Admin.",
+        testFonnteConfigHint: "Layanan WhatsApp belum siap. Hubungi Admin teknis sekolah untuk memeriksa pengaturannya.",
         testFonnteStatusUnavailable: "Status konfigurasi WhatsApp tidak dapat diperiksa.",
         faceMatchAmbiguous: "Dua atau lebih profil wajah terlalu mirip untuk diputuskan dengan aman. Minta guru mengulang pemindaian dalam pencahayaan yang lebih baik.",
         faceQualityLow: "Wajah belum cukup jelas. Hadapkan wajah ke kamera, dekatkan secukupnya, dan perbaiki pencahayaan.",
@@ -327,13 +335,15 @@ const EXTRA_T = {
         locationAccuracyBad: "Low accuracy",
         fakeLocation: "GPS location appears anomalous. Enable the device's actual location and try again.",
         cloudLoadFailed: "Cloud data could not be loaded. Check your connection and try again.",
+        cloudRequestFailed: "The request could not be completed. Check your connection, try again, or contact an Admin.",
+         accessDenied: "You do not have permission to do this. Check your account or contact the school Admin.", recordNotFound: "The requested information could not be found.", duplicateRecord: "This record already exists. There is no need to submit it again.",
         cloudSaveFailed: "Data could not be saved to the cloud. Check your connection and try again.",
         cloudDeleteFailed: "Cloud data could not be deleted. Check your connection and try again.",
         attendanceNetworkFailed: "Attendance could not be submitted. Check your connection and try again.",
         rateLimitWait: "Too many attempts. Please wait 1 minute.",
         serverBusyReconnect: "The server is busy. Reconnecting...",
         networkReconnecting: "Reconnecting...",
-        attendanceWhatsappFailed: "Attendance was recorded, but the WhatsApp notification failed.",
+        attendanceWhatsappFailed: "Attendance was recorded, but the parent notification failed. An Admin can retry it.",
         absenceFormNav: "Absence form",
         absenceFormKicker: "ABSENCE REQUEST",
         absenceFormTitle: "Absence request form",
@@ -383,7 +393,7 @@ const EXTRA_T = {
         faceUpdateFailed: "Student face data could not be updated.",
         adminTestTools: "System tests",
         adminTestToolsTitle: "Testing lab",
-        adminTestToolsDesc: "Test the camera, location settings, and notification templates without changing attendance records.",
+        adminTestToolsDesc: "Test the camera and GPS, and send one trial message without changing the automatic attendance settings.",
         testCameraTitle: "Face detection test",
         testCameraDesc: "Detects faces from the camera only. It does not enroll samples or save images.",
         testCameraStart: "Start camera test",
@@ -396,7 +406,7 @@ const EXTRA_T = {
         testModelReady: "Face detection model is ready.",
         testModelFailed: "The AI model could not be loaded.",
         testWhatsappTitle: "WhatsApp notification test",
-        testWhatsappDesc: "Preview the message and test only approved numbers.",
+        testWhatsappDesc: "Enter a destination, review the message, and approve one test send. Automatic attendance notifications will not change.",
         testWhatsappNumber: "Test WhatsApp number",
         testWhatsappTemplate: "Message template",
         testWhatsappDefaultTemplate: "Amanah ID: this is a WhatsApp notification test. No attendance or student data has been changed.",
@@ -404,7 +414,7 @@ const EXTRA_T = {
         testWhatsappConfirm: "I approve sending one test message to the displayed number.",
         testWhatsappSend: "Send one test message",
         testWhatsappSending: "Sending test message...",
-        testWhatsappSent: "The WhatsApp provider accepted the test message request.",
+        testWhatsappSent: "Fonnte accepted the test request and is processing it. Check the destination WhatsApp to confirm receipt.",
         testWhatsappFailed: "The test message could not be sent.",
         testWhatsappBlocked: "This number is not on the approved test-recipient list.",
         testGpsTitle: "GPS and geofence test",
@@ -420,10 +430,10 @@ const EXTRA_T = {
         testOtherFail: "Service did not respond.",
         testPhoneInvalid: "Enter a valid test number in 628xxxxxxxxxx format.",
         testWhatsappNoConsent: "Confirm consent before sending the test message.",
-        testFonnteConfigured: "Fonnte token is configured",
-        testFonnteMissing: "Fonnte token is not configured",
-        testAllowlistEmpty: "No approved test numbers configured",
-        testAllowlistLoadFailed: "Could not load the test-number list",
+        testFonnteConfigured: "WhatsApp configuration is available",
+        testFonnteMissing: "WhatsApp service is not configured",
+        testAllowlistEmpty: "Enter the destination number above",
+        testAllowlistLoadFailed: "The test destination could not be checked",
         testGpsChecking: "Checking device location...",
         testGpsInside: "Location is within the school radius and accuracy meets the limit.",
         testGpsOutside: "Location is outside the radius or accuracy is insufficient.",
@@ -440,9 +450,9 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Accuracy",
         testMetricDistance: "Distance to school",
-        testFonnteList: "Approved test numbers:",
-        testAllowlistEmpty: "No Admin-approved test numbers are configured.",
-        testFonnteConfigHint: "Set FONNTE_TOKEN and FONNTE_TEST_RECIPIENTS in the Production environment to enable testing.",
+        testFonnteList: "Test destination number:",
+        testAllowlistEmpty: "The Admin enters the destination number above.",
+        testFonnteConfigHint: "The WhatsApp service is not ready. Ask the technical Admin to check its configuration.",
         testFonnteStatusUnavailable: "WhatsApp configuration status could not be checked.",
         faceMatchAmbiguous: "Two or more face profiles are too similar to distinguish safely. Ask a teacher to repeat the scan in better lighting.",
         faceQualityLow: "The face is not clear enough. Face the camera, move a little closer, and improve the lighting.",
@@ -515,13 +525,15 @@ const EXTRA_T = {
         locationAccuracyBad: "دقة منخفضة",
         fakeLocation: "يبدو أن موقع GPS غير طبيعي. فعّل الموقع الحقيقي للجهاز ثم أعد المحاولة.",
         cloudLoadFailed: "تعذر تحميل بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
+        cloudRequestFailed: "تعذر إكمال الطلب. تحقق من الاتصال وحاول مرة أخرى أو تواصل مع المسؤول.",
+         accessDenied: "ليست لديك صلاحية لتنفيذ هذا الإجراء. تحقق من حسابك أو تواصل مع إدارة المدرسة.", recordNotFound: "تعذر العثور على البيانات المطلوبة.", duplicateRecord: "هذا السجل موجود بالفعل. لا حاجة لإرساله مرة أخرى.",
         cloudSaveFailed: "تعذر حفظ البيانات في السحابة. تحقق من الاتصال وحاول مرة أخرى.",
         cloudDeleteFailed: "تعذر حذف بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
         attendanceNetworkFailed: "تعذر إرسال الحضور. تحقق من الاتصال وحاول مرة أخرى.",
         rateLimitWait: "محاولات كثيرة جدًا. يرجى الانتظار دقيقة واحدة.",
         serverBusyReconnect: "الخادم مشغول. جارٍ إعادة الاتصال...",
         networkReconnecting: "جارٍ إعادة الاتصال...",
-        attendanceWhatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب.",
+        attendanceWhatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار ولي الأمر. يمكن للمسؤول محاولة الإرسال مرة أخرى.",
         absenceFormNav: "نموذج الغياب",
         absenceFormKicker: "طلب غياب",
         absenceFormTitle: "نموذج طلب الغياب",
@@ -571,7 +583,7 @@ const EXTRA_T = {
         faceUpdateFailed: "تعذر تحديث بيانات وجه الطالب.",
         adminTestTools: "اختبارات النظام",
         adminTestToolsTitle: "مختبر الاختبار",
-        adminTestToolsDesc: "اختبر الكاميرا وإعدادات الموقع وقوالب الإشعارات دون تغيير سجلات الحضور.",
+        adminTestToolsDesc: "اختبر الكاميرا وGPS وأرسل رسالة تجريبية واحدة دون تغيير إعدادات إشعارات الحضور التلقائية.",
         testCameraTitle: "اختبار اكتشاف الوجه",
         testCameraDesc: "يكتشف الوجوه من الكاميرا فقط، ولا يسجل عينات أو يحفظ الصور.",
         testCameraStart: "بدء اختبار الكاميرا",
@@ -584,7 +596,7 @@ const EXTRA_T = {
         testModelReady: "نموذج اكتشاف الوجه جاهز.",
         testModelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي.",
         testWhatsappTitle: "اختبار إشعارات واتساب",
-        testWhatsappDesc: "عاين الرسالة واختبر الأرقام المعتمدة فقط.",
+        testWhatsappDesc: "أدخل رقم الوجهة وراجع الرسالة ووافق على إرسال رسالة تجريبية واحدة. لن تتغير إشعارات الحضور التلقائية.",
         testWhatsappNumber: "رقم واتساب للاختبار",
         testWhatsappTemplate: "قالب الرسالة",
         testWhatsappDefaultTemplate: "أمانة ID: هذه رسالة اختبار لإشعارات واتساب. لم يتم تغيير أي سجل حضور أو بيانات طالب.",
@@ -592,7 +604,7 @@ const EXTRA_T = {
         testWhatsappConfirm: "أوافق على إرسال رسالة اختبار واحدة إلى الرقم المعروض.",
         testWhatsappSend: "إرسال رسالة اختبار واحدة",
         testWhatsappSending: "جارٍ إرسال رسالة الاختبار...",
-        testWhatsappSent: "قبل مزود واتساب طلب إرسال رسالة الاختبار.",
+        testWhatsappSent: "قبلت Fonnte طلب الاختبار وتجري معالجته. تحقق من وصول الرسالة إلى واتساب الوجهة.",
         testWhatsappFailed: "تعذر إرسال رسالة الاختبار.",
         testWhatsappBlocked: "هذا الرقم غير موجود في قائمة أرقام الاختبار المعتمدة.",
         testGpsTitle: "اختبار GPS والنطاق الجغرافي",
@@ -608,10 +620,10 @@ const EXTRA_T = {
         testOtherFail: "لم تستجب الخدمة.",
         testPhoneInvalid: "أدخل رقم اختبار صالحًا بالتنسيق 628xxxxxxxxxx.",
         testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار.",
-        testFonnteConfigured: "رمز Fonnte مُعدّ",
-        testFonnteMissing: "لم يتم إعداد رمز Fonnte",
-        testAllowlistEmpty: "لم تُضف أرقام اختبار معتمدة",
-        testAllowlistLoadFailed: "تعذر تحميل قائمة أرقام الاختبار",
+        testFonnteConfigured: "إعداد WhatsApp متاح",
+        testFonnteMissing: "لم يتم إعداد خدمة WhatsApp",
+        testAllowlistEmpty: "أدخل رقم الوجهة أعلاه",
+        testAllowlistLoadFailed: "تعذر التحقق من رقم الوجهة",
         testGpsChecking: "جارٍ التحقق من موقع الجهاز...",
         testGpsInside: "الموقع داخل نطاق المدرسة والدقة ضمن الحد المسموح.",
         testGpsOutside: "الموقع خارج النطاق أو الدقة غير كافية.",
@@ -628,9 +640,9 @@ const EXTRA_T = {
         testMetricLongitude: "خط الطول",
         testMetricAccuracy: "الدقة",
         testMetricDistance: "المسافة إلى المدرسة",
-        testFonnteList: "أرقام الاختبار المعتمدة:",
-        testAllowlistEmpty: "لم يتم إعداد أرقام اختبار معتمدة من المسؤول.",
-        testFonnteConfigHint: "اضبط FONNTE_TOKEN وFONNTE_TEST_RECIPIENTS في بيئة Production لتفعيل الاختبار.",
+        testFonnteList: "رقم وجهة الاختبار:",
+        testAllowlistEmpty: "يدخل المسؤول رقم الوجهة أعلاه.",
+        testFonnteConfigHint: "خدمة WhatsApp غير جاهزة. اطلب من المسؤول التقني التحقق من الإعدادات.",
         testFonnteStatusUnavailable: "تعذر التحقق من حالة إعداد WhatsApp.",
         faceMatchAmbiguous: "ملفان أو أكثر للوجه متشابهان جدًا ولا يمكن الاختيار بأمان. اطلب من المعلم إعادة المسح في إضاءة أفضل.",
         faceQualityLow: "الوجه غير واضح بما يكفي. واجه الكاميرا واقترب قليلًا وحسّن الإضاءة.",
@@ -709,7 +721,6 @@ const state = {
     adminSettingsDeviceMarker: null,
     adminSettingsAccuracyCircle: null,
     livenessChallenge: null,
-    adminAllowedWhatsappRecipients: [],
     adminFonnteConfigured: false,
     lastNose: null,
     movementFrames: 0,
@@ -736,13 +747,13 @@ let heroTitleFrame = 0;
 // Three-language dictionary
 const T = {
     id: {
-        authEyebrow: "PRESENSI TERINTEGRASI · AL FITYAN SCHOOL", welcomeTitle: "Presensi yang lebih aman.", welcomeDesc: "Masuk untuk mengelola presensi dan data siswa.", login: "Masuk", signup: "Daftar", email: "Email", password: "Kata sandi", demoAccount: "Akun demo", fullName: "Nama lengkap", confirmPassword: "Konfirmasi kata sandi", terms: "Saya menyetujui ketentuan penggunaan demo.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Formulir", geofenceEnabled: "GPS geofencing aktif", viewProfile: "Lihat profil", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "PRESENSI HARIAN", cameraTitle: "Kamera presensi", cameraDesc: "Periksa lokasi sekolah, lalu verifikasi wajah untuk mencatat kehadiran.", viewMap: "Lihat peta", secureCamera: "Kamera presensi", modelLoading: "Memuat AI...", cameraOff: "Kamera belum aktif", cameraOffDesc: "Aktifkan sakelar setelah lokasi terverifikasi.", cameraReady: "Kamera siap", fullscreen: "Layar penuh", locationVerification: "Verifikasi lokasi", locationNotChecked: "Lokasi belum diperiksa", locationPending: "Belum diperiksa", attendanceSwitch: "Sakelar presensi", switchOffHint: "Kamera mati. Lokasi akan diperiksa saat diaktifkan.", off: "MATI", on: "AKTIF", waitingFace: "Menunggu kamera", livenessWaiting: "Verifikasi wajah dan gerakan dimulai setelah lokasi lolos.", recordsCenter: "PUSAT DATA", attendanceDatabase: "Database presensi", databaseDesc: "Cari, saring, dan ekspor riwayat kehadiran serta data siswa.", exportCsv: "Ekspor CSV", registeredStudents: "Siswa terdaftar", registeredStudentsHint: "Data wajah dalam sesi ini", todayAttendance: "Presensi hari ini", todayAttendanceHint: "Catatan kehadiran hari ini", totalRecords: "Total catatan", totalRecordsHint: "Semua catatan dalam sesi ini", attendanceHistory: "Riwayat presensi", historyDesc: "Data demo tersimpan selama halaman ini terbuka.", deleteAll: "Hapus semua data", searchPlaceholder: "Cari nama, NISN, atau kelas...", fromDate: "Dari", toDate: "Sampai", number: "No.", nisn: "NISN", name: "Nama", class: "Kelas", status: "Status", date: "Tanggal", time: "Waktu", method: "Metode", confidence: "Keyakinan", action: "Aksi", noRecords: "Belum ada catatan", noRecordsDesc: "Riwayat presensi muncul di sini setelah verifikasi berhasil.", studentRegistry: "Data siswa", studentRegistryDesc: "Daftar siswa dengan sampel wajah terdaftar.", registeredAt: "Waktu daftar", noStudents: "Belum ada siswa terdaftar", registerFromForm: "Tambahkan siswa melalui menu Formulir.", studentManagement: "MANAJEMEN SISWA", studentRegistration: "Formulir pendaftaran siswa", formDesc: "Daftarkan identitas dan sampel wajah untuk pengenalan presensi.", studentIdentity: "Identitas siswa", studentIdentityDesc: "Isi data dengan benar sebelum menyimpan.", faceSample: "Sampel wajah", faceSampleDesc: "Gunakan kamera atau unggah foto dengan satu wajah yang terlihat jelas.", openCamera: "Buka kamera", closeCamera: "Tutup kamera", uploadPhoto: "Unggah foto wajah", noFaceSample: "Belum ada sampel wajah.", saveStudent: "Simpan siswa", clearFace: "Wajah harus jelas", clearFaceDesc: "Pastikan hanya satu wajah terlihat, pencahayaan cukup, dan wajah tidak tertutup.", privacyFirst: "Data bersifat sementara", privacyDesc: "Demo menyimpan descriptor wajah di memori browser. Data hilang setelah halaman dimuat ulang.", accountSettings: "PENGATURAN AKUN", myProfile: "Profil saya", appearance: "Tampilan", lightTheme: "Terang", darkTheme: "Gelap", language: "Bahasa", saveSettings: "Simpan pengaturan", logout: "Keluar", locationSecurity: "KEAMANAN LOKASI", schoolMap: "Peta area sekolah", mapDesc: "Titik sekolah dan posisi perangkat Anda.", schoolPoint: "Titik sekolah", yourLocation: "Lokasi Anda", allowedRadius: "Radius diizinkan: 50 m", mapLocationPending: "Periksa lokasi untuk menampilkan posisi perangkat.", refreshLocation: "Periksa lokasi lagi", confirmDeleteTitle: "Hapus semua data?", confirmDeleteDesc: "Semua catatan presensi dan siswa dalam sesi ini akan dihapus.", cancel: "Batal", locationChecking: "Memeriksa lokasi...", locationInside: "Di dalam area sekolah", locationOutside: "Di luar area sekolah", locationError: "Lokasi gagal diperiksa", gpsDenied: "Izin lokasi ditolak. Aktifkan izin lokasi/GPS pada browser lalu coba lagi.", gpsUnavailable: "Posisi tidak tersedia. Aktifkan GPS dan pastikan perangkat mendapat sinyal lokasi.", gpsTimeout: "Waktu pemeriksaan lokasi habis. Coba lagi di area dengan sinyal GPS yang lebih baik.", gpsUnsupported: "Browser ini tidak mendukung geolocation. Gunakan browser modern dengan izin lokasi.", gpsFailed: "Lokasi gagal diperiksa. Periksa pengaturan lokasi perangkat lalu coba lagi.", outsideMessage: "Presensi ditolak. Jarak Anda dari sekolah {distance} m, sedangkan radius maksimum yang diizinkan {radius} m.", insideMessage: "Lokasi lolos: {distance} m dari sekolah, akurasi GPS ±{accuracy} m.", accuracyWarning: "Lokasi berada di dalam radius, tetapi akurasi GPS terlalu rendah ({accuracy} m). Coba lagi di area terbuka.", checkingBeforeCamera: "Memeriksa GPS sebelum kamera dinyalakan...", cameraPermission: "Izin kamera ditolak. Izinkan akses kamera di pengaturan browser.", cameraUnavailable: "Kamera tidak tersedia atau sedang digunakan aplikasi lain.", cameraUnsupported: "Browser tidak mendukung akses kamera.", modelFailed: "Model AI gagal dimuat. Periksa koneksi internet lalu tekan muat ulang halaman.", retryModel: "Muat ulang halaman untuk mencoba kembali.", faceNoMatch: "Wajah belum cocok dengan siswa terdaftar.", faceTooMany: "Terdeteksi lebih dari satu wajah. Pastikan hanya satu orang di depan kamera.", faceNotFound: "Wajah tidak terdeteksi. Posisikan wajah di dalam bingkai.", livenessMove: "Gerakkan kepala sedikit agar pemeriksaan keaktifan selesai.", attendanceSuccess: "Presensi berhasil dicatat untuk {name}.", alreadyPresent: "Presensi hari ini sudah tercatat untuk siswa ini.", cameraStopped: "Kamera dimatikan.", locationRequired: "Lokasi belum terverifikasi. Kamera tetap mati.", fullscreenError: "Mode layar penuh tidak tersedia pada perangkat ini.", mapFailed: "Peta gagal dimuat. Periksa koneksi internet.", mapLocationFailed: "Posisi Anda belum tersedia. Periksa lokasi terlebih dahulu.", studentExists: "NISN sudah terdaftar.", invalidNisn: "NISN harus diisi dengan benar.", needFace: "Ambil atau unggah sampel wajah terlebih dahulu.", studentSaved: "Data siswa berhasil didaftarkan.", studentDeleted: "Data siswa berhasil dihapus.", attendanceDeleted: "Catatan presensi berhasil dihapus.", allDeleted: "Semua data presensi dan siswa berhasil dihapus.", settingsSaved: "Pengaturan berhasil disimpan.", loginFailed: "Email atau kata sandi tidak sesuai.", signupSuccess: "Akun demo dibuat. Silakan masuk.", passwordMismatch: "Konfirmasi kata sandi tidak cocok.", termsRequired: "Setujui ketentuan sebelum mendaftar.", emailExists: "Email sudah terdaftar.", loggedOut: "Anda telah keluar.", emptyCsv: "Tidak ada data untuk diekspor.", csvSaved: "File CSV berhasil disiapkan.", cameraFormReady: "Kamera formulir aktif.", cameraFormOff: "Kamera formulir dimatikan.", faceSampleReady: "Sampel wajah siap digunakan.", modelReady: "AI siap", modelLoadingLong: "Menyiapkan model AI...", faceDetected: "Wajah terdeteksi", faceRegistered: "Wajah terdaftar", faceNotRegistered: "Wajah belum terdaftar", attendanceInProgress: "Memverifikasi wajah...", attendanceWaiting: "Menunggu wajah terdaftar...", attendanceReady: "Lokasi terverifikasi. Kamera siap.", methodFaceGps: "Wajah + GPS", delete: "Hapus", recordsCount: "{count} catatan", studentsCount: "{count} siswa", unknownClass: "Belum diisi", mapSchoolPopup: "Al Fityan School · Radius 50 m", mapUserPopup: "Posisi perangkat Anda", mapDistance: "Jarak dari sekolah: {distance} m", mapAccuracy: "Akurasi GPS: ±{accuracy} m", registeredAlready: "NISN tersebut sudah terdaftar.", locationMapReady: "Peta siap. Posisi perangkat akan muncul setelah GPS berhasil diperiksa.", noLocationForMap: "Periksa lokasi terlebih dahulu untuk menampilkan titik perangkat.", faceUploadError: "Foto tidak dapat diproses. Gunakan JPG, PNG, atau WebP yang valid.", faceSampleCapture: "Wajah terdeteksi. Sampel dapat digunakan.", cameraStartFailed: "Kamera gagal dimulai. Periksa izin browser dan koneksi aman HTTPS.", cameraStarting: "Memulai kamera...", locationVerified: "Lokasi terverifikasi.", confidenceLabel: "Keyakinan", student: "Siswa", attendance: "Hadir"
+        authEyebrow: "PRESENSI TERINTEGRASI · AL FITYAN SCHOOL", welcomeTitle: "Presensi yang lebih aman.", welcomeDesc: "Masuk untuk mengelola presensi dan data siswa.", login: "Masuk", signup: "Daftar", email: "Email", password: "Kata sandi", demoAccount: "Akun demo", fullName: "Nama lengkap", confirmPassword: "Konfirmasi kata sandi", terms: "Saya menyetujui ketentuan penggunaan demo.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Formulir", geofenceEnabled: "GPS geofencing aktif", viewProfile: "Lihat profil", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "PRESENSI HARIAN", cameraTitle: "Kamera presensi", cameraDesc: "Periksa lokasi sekolah, lalu verifikasi wajah untuk mencatat kehadiran.", viewMap: "Lihat peta", secureCamera: "Kamera presensi", modelLoading: "Memuat AI...", cameraOff: "Kamera belum aktif", cameraOffDesc: "Aktifkan sakelar setelah lokasi terverifikasi.", cameraReady: "Kamera siap", fullscreen: "Layar penuh", locationVerification: "Verifikasi lokasi", locationNotChecked: "Lokasi belum diperiksa", locationPending: "Belum diperiksa", attendanceSwitch: "Sakelar presensi", switchOffHint: "Kamera mati. Lokasi akan diperiksa saat diaktifkan.", off: "MATI", on: "AKTIF", waitingFace: "Menunggu kamera", livenessWaiting: "Verifikasi wajah dan gerakan dimulai setelah lokasi lolos.", recordsCenter: "PUSAT DATA", attendanceDatabase: "Database presensi", databaseDesc: "Cari, saring, dan ekspor riwayat kehadiran serta data siswa.", exportCsv: "Ekspor CSV", registeredStudents: "Siswa terdaftar", registeredStudentsHint: "Data wajah dalam sesi ini", todayAttendance: "Presensi hari ini", todayAttendanceHint: "Catatan kehadiran hari ini", totalRecords: "Total catatan", totalRecordsHint: "Semua catatan dalam sesi ini", attendanceHistory: "Riwayat presensi", historyDesc: "Data demo tersimpan selama halaman ini terbuka.", deleteAll: "Hapus semua data", searchPlaceholder: "Cari nama, NISN, atau kelas...", fromDate: "Dari", toDate: "Sampai", number: "No.", nisn: "NISN", name: "Nama", class: "Kelas", status: "Status", date: "Tanggal", time: "Waktu", method: "Metode", confidence: "Keyakinan", action: "Aksi", noRecords: "Belum ada catatan", noRecordsDesc: "Riwayat presensi muncul di sini setelah verifikasi berhasil.", studentRegistry: "Data siswa", studentRegistryDesc: "Daftar siswa dengan sampel wajah terdaftar.", registeredAt: "Waktu daftar", noStudents: "Belum ada siswa terdaftar", registerFromForm: "Tambahkan siswa melalui menu Formulir.", studentManagement: "MANAJEMEN SISWA", studentRegistration: "Formulir pendaftaran siswa", formDesc: "Daftarkan identitas dan sampel wajah untuk pengenalan presensi.", studentIdentity: "Identitas siswa", studentIdentityDesc: "Isi data dengan benar sebelum menyimpan.", faceSample: "Sampel wajah", faceSampleDesc: "Gunakan kamera atau unggah foto dengan satu wajah yang terlihat jelas.", openCamera: "Buka kamera", closeCamera: "Tutup kamera", uploadPhoto: "Unggah foto wajah", noFaceSample: "Belum ada sampel wajah.", saveStudent: "Simpan siswa", clearFace: "Wajah harus jelas", clearFaceDesc: "Pastikan hanya satu wajah terlihat, pencahayaan cukup, dan wajah tidak tertutup.", privacyFirst: "Data bersifat sementara", privacyDesc: "Demo menyimpan descriptor wajah di memori browser. Data hilang setelah halaman dimuat ulang.", accountSettings: "PENGATURAN AKUN", myProfile: "Profil saya", appearance: "Tampilan", lightTheme: "Terang", darkTheme: "Gelap", language: "Bahasa", saveSettings: "Simpan pengaturan", logout: "Keluar", locationSecurity: "KEAMANAN LOKASI", schoolMap: "Peta area sekolah", mapDesc: "Titik sekolah dan posisi perangkat Anda.", schoolPoint: "Titik sekolah", yourLocation: "Lokasi Anda", allowedRadius: "Radius diizinkan: 50 m", mapLocationPending: "Periksa lokasi untuk menampilkan posisi perangkat.", refreshLocation: "Periksa lokasi lagi", confirmDeleteTitle: "Hapus semua data?", confirmDeleteDesc: "Semua catatan presensi dan siswa dalam sesi ini akan dihapus.", cancel: "Batal", locationChecking: "Memeriksa lokasi...", locationInside: "Di dalam area sekolah", locationOutside: "Di luar area sekolah", locationError: "Lokasi gagal diperiksa", gpsDenied: "Izin lokasi ditolak. Aktifkan izin lokasi/GPS pada browser lalu coba lagi.", gpsUnavailable: "Posisi tidak tersedia. Aktifkan GPS dan pastikan perangkat mendapat sinyal lokasi.", gpsTimeout: "Waktu pemeriksaan lokasi habis. Coba lagi di area dengan sinyal GPS yang lebih baik.", gpsUnsupported: "Browser ini tidak mendukung geolocation. Gunakan browser modern dengan izin lokasi.", gpsFailed: "Lokasi gagal diperiksa. Periksa pengaturan lokasi perangkat lalu coba lagi.", outsideMessage: "Presensi ditolak. Jarak Anda dari sekolah {distance} m, sedangkan radius maksimum yang diizinkan {radius} m.", insideMessage: "Lokasi lolos: {distance} m dari sekolah, akurasi GPS ±{accuracy} m.", accuracyWarning: "Lokasi berada di dalam radius, tetapi akurasi GPS terlalu rendah ({accuracy} m). Coba lagi di area terbuka.", checkingBeforeCamera: "Memeriksa GPS sebelum kamera dinyalakan...", cameraPermission: "Izin kamera ditolak. Izinkan akses kamera di pengaturan browser.", cameraUnavailable: "Kamera tidak tersedia atau sedang digunakan aplikasi lain.", cameraUnsupported: "Browser tidak mendukung akses kamera.", modelFailed: "Model AI gagal dimuat. Periksa koneksi internet lalu tekan muat ulang halaman.", retryModel: "Muat ulang halaman untuk mencoba kembali.", faceNoMatch: "Wajah belum cocok dengan siswa terdaftar.", faceTooMany: "Terdeteksi lebih dari satu wajah. Pastikan hanya satu orang di depan kamera.", faceNotFound: "Wajah tidak terdeteksi. Posisikan wajah di dalam bingkai.", livenessMove: "Gerakkan kepala sedikit agar pemeriksaan keaktifan selesai.", attendanceSuccess: "Presensi berhasil dicatat untuk {name}.", alreadyPresent: "Presensi hari ini sudah tercatat untuk siswa ini.", cameraStopped: "Kamera dimatikan.", locationRequired: "Lokasi belum terverifikasi. Kamera tetap mati.", fullscreenError: "Mode layar penuh tidak tersedia pada perangkat ini.", mapFailed: "Peta gagal dimuat. Periksa koneksi internet.", mapLocationFailed: "Posisi Anda belum tersedia. Periksa lokasi terlebih dahulu.", studentExists: "NISN sudah terdaftar.", invalidNisn: "NISN harus diisi dengan benar.", needFace: "Ambil atau unggah sampel wajah terlebih dahulu.", studentSaved: "Data siswa berhasil didaftarkan.", studentDeleted: "Data siswa berhasil dihapus.", attendanceDeleted: "Catatan presensi berhasil dihapus.", allDeleted: "Semua data presensi dan siswa berhasil dihapus.", settingsSaved: "Pengaturan berhasil disimpan.", loginFailed: "Email atau kata sandi tidak sesuai.", sessionExpired: "Sesi Anda sudah berakhir. Silakan masuk kembali.", signupSuccess: "Akun demo dibuat. Silakan masuk.", passwordMismatch: "Konfirmasi kata sandi tidak cocok.", termsRequired: "Setujui ketentuan sebelum mendaftar.", emailExists: "Email sudah terdaftar.", loggedOut: "Anda telah keluar.", emptyCsv: "Tidak ada data untuk diekspor.", csvSaved: "File CSV berhasil disiapkan.", cameraFormReady: "Kamera formulir aktif.", cameraFormOff: "Kamera formulir dimatikan.", faceSampleReady: "Sampel wajah siap digunakan.", modelReady: "AI siap", modelLoadingLong: "Menyiapkan model AI...", faceDetected: "Wajah terdeteksi", faceRegistered: "Wajah terdaftar", faceNotRegistered: "Wajah belum terdaftar", attendanceInProgress: "Memverifikasi wajah...", attendanceWaiting: "Menunggu wajah terdaftar...", attendanceReady: "Lokasi terverifikasi. Kamera siap.", methodFaceGps: "Wajah + GPS", delete: "Hapus", recordsCount: "{count} catatan", studentsCount: "{count} siswa", unknownClass: "Belum diisi", mapSchoolPopup: "Al Fityan School · Radius 50 m", mapUserPopup: "Posisi perangkat Anda", mapDistance: "Jarak dari sekolah: {distance} m", mapAccuracy: "Akurasi GPS: ±{accuracy} m", registeredAlready: "NISN tersebut sudah terdaftar.", locationMapReady: "Peta siap. Posisi perangkat akan muncul setelah GPS berhasil diperiksa.", noLocationForMap: "Periksa lokasi terlebih dahulu untuk menampilkan titik perangkat.", faceUploadError: "Foto tidak dapat diproses. Gunakan JPG, PNG, atau WebP yang valid.", faceSampleCapture: "Wajah terdeteksi. Sampel dapat digunakan.", cameraStartFailed: "Kamera gagal dimulai. Periksa izin browser dan koneksi aman HTTPS.", cameraStarting: "Memulai kamera...", locationVerified: "Lokasi terverifikasi.", confidenceLabel: "Keyakinan", student: "Siswa", attendance: "Hadir"
     },
     en: {
-        authEyebrow: "CONNECTED ATTENDANCE · AL FITYAN SCHOOL", welcomeTitle: "Attendance, made safer.", welcomeDesc: "Sign in to manage attendance and student records.", login: "Log in", signup: "Sign up", email: "Email", password: "Password", demoAccount: "Demo account", fullName: "Full name", confirmPassword: "Confirm password", terms: "I agree to the demo terms of use.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Registration", geofenceEnabled: "GPS geofencing active", viewProfile: "View profile", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "DAILY ATTENDANCE", cameraTitle: "Attendance camera", cameraDesc: "Verify your school location, then verify your face to record attendance.", viewMap: "View map", secureCamera: "Attendance camera", modelLoading: "Loading AI...", cameraOff: "Camera is off", cameraOffDesc: "Enable the switch after your location is verified.", cameraReady: "Camera ready", fullscreen: "Fullscreen", locationVerification: "Location verification", locationNotChecked: "Location not checked", locationPending: "Not checked", attendanceSwitch: "Attendance switch", switchOffHint: "Camera is off. Your location will be checked when enabled.", off: "OFF", on: "ON", waitingFace: "Waiting for camera", livenessWaiting: "Face and movement checks begin after location verification.", recordsCenter: "RECORDS CENTER", attendanceDatabase: "Attendance database", databaseDesc: "Search, filter, and export attendance history and student records.", exportCsv: "Export CSV", registeredStudents: "Registered students", registeredStudentsHint: "Face data in this session", todayAttendance: "Today's attendance", todayAttendanceHint: "Attendance records today", totalRecords: "Total records", totalRecordsHint: "All records in this session", attendanceHistory: "Attendance history", historyDesc: "Demo data stays while this page is open.", deleteAll: "Delete all data", searchPlaceholder: "Search name, NISN, or class...", fromDate: "From", toDate: "To", number: "No.", nisn: "NISN", name: "Name", class: "Class", status: "Status", date: "Date", time: "Time", method: "Method", confidence: "Confidence", action: "Action", noRecords: "No records yet", noRecordsDesc: "Attendance history appears here after successful verification.", studentRegistry: "Student registry", studentRegistryDesc: "Students with registered face samples.", registeredAt: "Registered at", noStudents: "No registered students yet", registerFromForm: "Add students from the Registration menu.", studentManagement: "STUDENT MANAGEMENT", studentRegistration: "Student registration form", formDesc: "Register student details and a face sample for attendance recognition.", studentIdentity: "Student identity", studentIdentityDesc: "Enter the correct information before saving.", faceSample: "Face sample", faceSampleDesc: "Use the camera or upload a photo with one clearly visible face.", openCamera: "Open camera", closeCamera: "Close camera", uploadPhoto: "Upload face photo", noFaceSample: "No face sample yet.", saveStudent: "Save student", clearFace: "Face must be clear", clearFaceDesc: "Ensure only one face is visible, lighting is sufficient, and the face is unobstructed.", privacyFirst: "Temporary data", privacyDesc: "This demo stores face descriptors only in browser memory. Data disappears after reload.", accountSettings: "ACCOUNT SETTINGS", myProfile: "My profile", appearance: "Appearance", lightTheme: "Light", darkTheme: "Dark", language: "Language", saveSettings: "Save settings", logout: "Log out", locationSecurity: "LOCATION SECURITY", schoolMap: "School area map", mapDesc: "School point and your device location.", schoolPoint: "School location", yourLocation: "Your location", allowedRadius: "Allowed radius: 50 m", mapLocationPending: "Check your location to show your device position.", refreshLocation: "Check location again", confirmDeleteTitle: "Delete all data?", confirmDeleteDesc: "All attendance records and registered students in this session will be deleted.", cancel: "Cancel", locationChecking: "Checking location...", locationInside: "Inside school area", locationOutside: "Outside school area", locationError: "Location check failed", gpsDenied: "Location permission was denied. Enable location/GPS permissions in your browser and try again.", gpsUnavailable: "Position unavailable. Enable GPS and ensure your device can receive location signals.", gpsTimeout: "Location check timed out. Try again where GPS reception is better.", gpsUnsupported: "This browser does not support geolocation. Use a modern browser with location permission.", gpsFailed: "Could not check location. Review your device location settings and try again.", outsideMessage: "Attendance denied. You are {distance} m from school; the maximum allowed radius is {radius} m.", insideMessage: "Location accepted: {distance} m from school, GPS accuracy ±{accuracy} m.", accuracyWarning: "You are inside the radius, but GPS accuracy is too low ({accuracy} m). Try again in an open area.", checkingBeforeCamera: "Checking GPS before enabling the camera...", cameraPermission: "Camera permission denied. Allow camera access in your browser settings.", cameraUnavailable: "Camera unavailable or already in use by another app.", cameraUnsupported: "This browser does not support camera access.", modelFailed: "AI model failed to load. Check your internet connection and reload the page.", retryModel: "Reload the page to try again.", faceNoMatch: "Face does not match a registered student.", faceTooMany: "More than one face detected. Ensure only one person is in front of the camera.", faceNotFound: "No face detected. Position your face inside the frame.", livenessMove: "Move your head slightly to complete the liveness check.", attendanceSuccess: "Attendance recorded for {name}.", alreadyPresent: "Attendance is already recorded for this student today.", cameraStopped: "Camera turned off.", locationRequired: "Location is not verified. The camera will remain off.", fullscreenError: "Fullscreen mode is unavailable on this device.", mapFailed: "Map failed to load. Check your internet connection.", mapLocationFailed: "Your position is unavailable. Check your location first.", studentExists: "This NISN is already registered.", invalidNisn: "Enter a valid NISN.", needFace: "Capture or upload a face sample first.", studentSaved: "Student registered successfully.", studentDeleted: "Student deleted successfully.", attendanceDeleted: "Attendance record deleted.", allDeleted: "All attendance and student data deleted.", settingsSaved: "Settings saved.", loginFailed: "Email or password is incorrect.", signupSuccess: "Demo account created. You can now log in.", passwordMismatch: "Password confirmation does not match.", termsRequired: "Accept the terms before signing up.", emailExists: "Email is already registered.", loggedOut: "You have logged out.", emptyCsv: "There is no data to export.", csvSaved: "CSV file prepared successfully.", cameraFormReady: "Registration camera is active.", cameraFormOff: "Registration camera turned off.", faceSampleReady: "Face sample is ready.", modelReady: "AI ready", modelLoadingLong: "Preparing AI models...", faceDetected: "Face detected", faceRegistered: "Face registered", faceNotRegistered: "Face not registered", attendanceInProgress: "Verifying face...", attendanceWaiting: "Waiting for a registered face...", attendanceReady: "Location verified. Camera ready.", methodFaceGps: "Face + GPS", delete: "Delete", recordsCount: "{count} records", studentsCount: "{count} students", unknownClass: "Not provided", mapSchoolPopup: "Al Fityan School · 50 m radius", mapUserPopup: "Your device location", mapDistance: "Distance from school: {distance} m", mapAccuracy: "GPS accuracy: ±{accuracy} m", registeredAlready: "This NISN is already registered.", locationMapReady: "Map ready. Your device position will appear after GPS verification.", noLocationForMap: "Check your location first to display your device marker.", faceUploadError: "Unable to process photo. Use a valid JPG, PNG, or WebP image.", faceSampleCapture: "Face detected. Sample can be used.", cameraStartFailed: "Could not start camera. Check browser permissions and secure HTTPS connection.", cameraStarting: "Starting camera...", locationVerified: "Location verified.", confidenceLabel: "Confidence", student: "Student", attendance: "Present"
+        authEyebrow: "CONNECTED ATTENDANCE · AL FITYAN SCHOOL", welcomeTitle: "Attendance, made safer.", welcomeDesc: "Sign in to manage attendance and student records.", login: "Log in", signup: "Sign up", email: "Email", password: "Password", demoAccount: "Demo account", fullName: "Full name", confirmPassword: "Confirm password", terms: "I agree to the demo terms of use.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Registration", geofenceEnabled: "GPS geofencing active", viewProfile: "View profile", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "DAILY ATTENDANCE", cameraTitle: "Attendance camera", cameraDesc: "Verify your school location, then verify your face to record attendance.", viewMap: "View map", secureCamera: "Attendance camera", modelLoading: "Loading AI...", cameraOff: "Camera is off", cameraOffDesc: "Enable the switch after your location is verified.", cameraReady: "Camera ready", fullscreen: "Fullscreen", locationVerification: "Location verification", locationNotChecked: "Location not checked", locationPending: "Not checked", attendanceSwitch: "Attendance switch", switchOffHint: "Camera is off. Your location will be checked when enabled.", off: "OFF", on: "ON", waitingFace: "Waiting for camera", livenessWaiting: "Face and movement checks begin after location verification.", recordsCenter: "RECORDS CENTER", attendanceDatabase: "Attendance database", databaseDesc: "Search, filter, and export attendance history and student records.", exportCsv: "Export CSV", registeredStudents: "Registered students", registeredStudentsHint: "Face data in this session", todayAttendance: "Today's attendance", todayAttendanceHint: "Attendance records today", totalRecords: "Total records", totalRecordsHint: "All records in this session", attendanceHistory: "Attendance history", historyDesc: "Demo data stays while this page is open.", deleteAll: "Delete all data", searchPlaceholder: "Search name, NISN, or class...", fromDate: "From", toDate: "To", number: "No.", nisn: "NISN", name: "Name", class: "Class", status: "Status", date: "Date", time: "Time", method: "Method", confidence: "Confidence", action: "Action", noRecords: "No records yet", noRecordsDesc: "Attendance history appears here after successful verification.", studentRegistry: "Student registry", studentRegistryDesc: "Students with registered face samples.", registeredAt: "Registered at", noStudents: "No registered students yet", registerFromForm: "Add students from the Registration menu.", studentManagement: "STUDENT MANAGEMENT", studentRegistration: "Student registration form", formDesc: "Register student details and a face sample for attendance recognition.", studentIdentity: "Student identity", studentIdentityDesc: "Enter the correct information before saving.", faceSample: "Face sample", faceSampleDesc: "Use the camera or upload a photo with one clearly visible face.", openCamera: "Open camera", closeCamera: "Close camera", uploadPhoto: "Upload face photo", noFaceSample: "No face sample yet.", saveStudent: "Save student", clearFace: "Face must be clear", clearFaceDesc: "Ensure only one face is visible, lighting is sufficient, and the face is unobstructed.", privacyFirst: "Temporary data", privacyDesc: "This demo stores face descriptors only in browser memory. Data disappears after reload.", accountSettings: "ACCOUNT SETTINGS", myProfile: "My profile", appearance: "Appearance", lightTheme: "Light", darkTheme: "Dark", language: "Language", saveSettings: "Save settings", logout: "Log out", locationSecurity: "LOCATION SECURITY", schoolMap: "School area map", mapDesc: "School point and your device location.", schoolPoint: "School location", yourLocation: "Your location", allowedRadius: "Allowed radius: 50 m", mapLocationPending: "Check your location to show your device position.", refreshLocation: "Check location again", confirmDeleteTitle: "Delete all data?", confirmDeleteDesc: "All attendance records and registered students in this session will be deleted.", cancel: "Cancel", locationChecking: "Checking location...", locationInside: "Inside school area", locationOutside: "Outside school area", locationError: "Location check failed", gpsDenied: "Location permission was denied. Enable location/GPS permissions in your browser and try again.", gpsUnavailable: "Position unavailable. Enable GPS and ensure your device can receive location signals.", gpsTimeout: "Location check timed out. Try again where GPS reception is better.", gpsUnsupported: "This browser does not support geolocation. Use a modern browser with location permission.", gpsFailed: "Could not check location. Review your device location settings and try again.", outsideMessage: "Attendance denied. You are {distance} m from school; the maximum allowed radius is {radius} m.", insideMessage: "Location accepted: {distance} m from school, GPS accuracy ±{accuracy} m.", accuracyWarning: "You are inside the radius, but GPS accuracy is too low ({accuracy} m). Try again in an open area.", checkingBeforeCamera: "Checking GPS before enabling the camera...", cameraPermission: "Camera permission denied. Allow camera access in your browser settings.", cameraUnavailable: "Camera unavailable or already in use by another app.", cameraUnsupported: "This browser does not support camera access.", modelFailed: "AI model failed to load. Check your internet connection and reload the page.", retryModel: "Reload the page to try again.", faceNoMatch: "Face does not match a registered student.", faceTooMany: "More than one face detected. Ensure only one person is in front of the camera.", faceNotFound: "No face detected. Position your face inside the frame.", livenessMove: "Move your head slightly to complete the liveness check.", attendanceSuccess: "Attendance recorded for {name}.", alreadyPresent: "Attendance is already recorded for this student today.", cameraStopped: "Camera turned off.", locationRequired: "Location is not verified. The camera will remain off.", fullscreenError: "Fullscreen mode is unavailable on this device.", mapFailed: "Map failed to load. Check your internet connection.", mapLocationFailed: "Your position is unavailable. Check your location first.", studentExists: "This NISN is already registered.", invalidNisn: "Enter a valid NISN.", needFace: "Capture or upload a face sample first.", studentSaved: "Student registered successfully.", studentDeleted: "Student deleted successfully.", attendanceDeleted: "Attendance record deleted.", allDeleted: "All attendance and student data deleted.", settingsSaved: "Settings saved.", loginFailed: "Email or password is incorrect.", sessionExpired: "Your session has expired. Please sign in again.", signupSuccess: "Demo account created. You can now log in.", passwordMismatch: "Password confirmation does not match.", termsRequired: "Accept the terms before signing up.", emailExists: "Email is already registered.", loggedOut: "You have logged out.", emptyCsv: "There is no data to export.", csvSaved: "CSV file prepared successfully.", cameraFormReady: "Registration camera is active.", cameraFormOff: "Registration camera turned off.", faceSampleReady: "Face sample is ready.", modelReady: "AI ready", modelLoadingLong: "Preparing AI models...", faceDetected: "Face detected", faceRegistered: "Face registered", faceNotRegistered: "Face not registered", attendanceInProgress: "Verifying face...", attendanceWaiting: "Waiting for a registered face...", attendanceReady: "Location verified. Camera ready.", methodFaceGps: "Face + GPS", delete: "Delete", recordsCount: "{count} records", studentsCount: "{count} students", unknownClass: "Not provided", mapSchoolPopup: "Al Fityan School · 50 m radius", mapUserPopup: "Your device location", mapDistance: "Distance from school: {distance} m", mapAccuracy: "GPS accuracy: ±{accuracy} m", registeredAlready: "This NISN is already registered.", locationMapReady: "Map ready. Your device position will appear after GPS verification.", noLocationForMap: "Check your location first to display your device marker.", faceUploadError: "Unable to process photo. Use a valid JPG, PNG, or WebP image.", faceSampleCapture: "Face detected. Sample can be used.", cameraStartFailed: "Could not start camera. Check browser permissions and secure HTTPS connection.", cameraStarting: "Starting camera...", locationVerified: "Location verified.", confidenceLabel: "Confidence", student: "Student", attendance: "Present"
     },
     ar: {
-        authEyebrow: "حضور متكامل · مدرسة الفتيان", welcomeTitle: "حضور أكثر أمانًا.", welcomeDesc: "سجّل الدخول لإدارة الحضور وبيانات الطلاب.", login: "تسجيل الدخول", signup: "إنشاء حساب", email: "البريد الإلكتروني", password: "كلمة المرور", demoAccount: "حساب تجريبي", fullName: "الاسم الكامل", confirmPassword: "تأكيد كلمة المرور", terms: "أوافق على شروط استخدام النسخة التجريبية.", workspace: "مساحة العمل", dashboard: "الرئيسية", database: "قاعدة البيانات", formulir: "التسجيل", geofenceEnabled: "تحديد الموقع مفعّل", viewProfile: "عرض الملف الشخصي", schoolWorkspace: "مدرسة الفتيان", dailyAttendance: "الحضور اليومي", cameraTitle: "كاميرا الحضور", cameraDesc: "تحقق من وجودك داخل المدرسة ثم تحقق من الوجه لتسجيل الحضور.", viewMap: "عرض الخريطة", secureCamera: "كاميرا الحضور", modelLoading: "جارٍ تحميل الذكاء الاصطناعي...", cameraOff: "الكاميرا متوقفة", cameraOffDesc: "فعّل المفتاح بعد التحقق من الموقع.", cameraReady: "الكاميرا جاهزة", fullscreen: "ملء الشاشة", locationVerification: "التحقق من الموقع", locationNotChecked: "لم يتم التحقق من الموقع", locationPending: "لم يتم التحقق", attendanceSwitch: "مفتاح الحضور", switchOffHint: "الكاميرا متوقفة. سيتم التحقق من موقعك عند التفعيل.", off: "إيقاف", on: "تشغيل", waitingFace: "بانتظار الكاميرا", livenessWaiting: "يبدأ التحقق من الوجه والحركة بعد التحقق من الموقع.", recordsCenter: "مركز السجلات", attendanceDatabase: "قاعدة بيانات الحضور", databaseDesc: "ابحث عن سجل الحضور وبيانات الطلاب وصفِّها وصدرها.", exportCsv: "تصدير CSV", registeredStudents: "الطلاب المسجلون", registeredStudentsHint: "بيانات الوجه في هذه الجلسة", todayAttendance: "حضور اليوم", todayAttendanceHint: "سجلات الحضور اليوم", totalRecords: "إجمالي السجلات", totalRecordsHint: "جميع سجلات هذه الجلسة", attendanceHistory: "سجل الحضور", historyDesc: "تظل البيانات التجريبية متاحة أثناء فتح الصفحة.", deleteAll: "حذف جميع البيانات", searchPlaceholder: "ابحث بالاسم أو رقم الطالب أو الفصل...", fromDate: "من", toDate: "إلى", number: "رقم", nisn: "رقم الطالب", name: "الاسم", class: "الفصل", status: "الحالة", date: "التاريخ", time: "الوقت", method: "الطريقة", confidence: "نسبة الثقة", action: "الإجراء", noRecords: "لا توجد سجلات بعد", noRecordsDesc: "سيظهر سجل الحضور هنا بعد نجاح التحقق.", studentRegistry: "سجل الطلاب", studentRegistryDesc: "الطلاب الذين لديهم عينات وجه مسجلة.", registeredAt: "تاريخ التسجيل", noStudents: "لا يوجد طلاب مسجلون بعد", registerFromForm: "أضف الطلاب من قائمة التسجيل.", studentManagement: "إدارة الطلاب", studentRegistration: "نموذج تسجيل الطلاب", formDesc: "سجّل بيانات الطالب وعينة الوجه للتعرف على الحضور.", studentIdentity: "بيانات الطالب", studentIdentityDesc: "أدخل المعلومات الصحيحة قبل الحفظ.", faceSample: "عينة الوجه", faceSampleDesc: "استخدم الكاميرا أو ارفع صورة يظهر فيها وجه واحد بوضوح.", openCamera: "فتح الكاميرا", closeCamera: "إغلاق الكاميرا", uploadPhoto: "رفع صورة الوجه", noFaceSample: "لا توجد عينة وجه بعد.", saveStudent: "حفظ الطالب", clearFace: "يجب أن يكون الوجه واضحًا", clearFaceDesc: "تأكد من ظهور وجه واحد فقط ومن الإضاءة الجيدة وعدم تغطية الوجه.", privacyFirst: "بيانات مؤقتة", privacyDesc: "تحفظ هذه النسخة التجريبية بيانات الوجه في ذاكرة المتصفح فقط، وتختفي عند إعادة تحميل الصفحة.", accountSettings: "إعدادات الحساب", myProfile: "ملفي الشخصي", appearance: "المظهر", lightTheme: "فاتح", darkTheme: "داكن", language: "اللغة", saveSettings: "حفظ الإعدادات", logout: "تسجيل الخروج", locationSecurity: "أمان الموقع", schoolMap: "خريطة منطقة المدرسة", mapDesc: "موقع المدرسة وموقع جهازك.", schoolPoint: "موقع المدرسة", yourLocation: "موقعك", allowedRadius: "نطاق السماح: 50 مترًا", mapLocationPending: "تحقق من موقعك لإظهار موقع الجهاز.", refreshLocation: "التحقق من الموقع مجددًا", confirmDeleteTitle: "حذف جميع البيانات؟", confirmDeleteDesc: "سيتم حذف سجلات الحضور والطلاب المسجلين في هذه الجلسة.", cancel: "إلغاء", locationChecking: "جارٍ التحقق من الموقع...", locationInside: "داخل نطاق المدرسة", locationOutside: "خارج نطاق المدرسة", locationError: "فشل التحقق من الموقع", gpsDenied: "تم رفض إذن الموقع. فعّل إذن الموقع أو GPS في المتصفح ثم حاول مجددًا.", gpsUnavailable: "الموقع غير متاح. فعّل GPS وتأكد من استقبال الجهاز لإشارة الموقع.", gpsTimeout: "انتهت مهلة التحقق من الموقع. حاول مجددًا في مكان تكون فيه إشارة GPS أفضل.", gpsUnsupported: "هذا المتصفح لا يدعم تحديد الموقع. استخدم متصفحًا حديثًا مع السماح بالوصول إلى الموقع.", gpsFailed: "تعذر التحقق من الموقع. راجع إعدادات الموقع في جهازك ثم حاول مجددًا.", outsideMessage: "تم رفض الحضور. تبعد عن المدرسة {distance} مترًا، بينما النطاق الأقصى المسموح هو {radius} مترًا.", insideMessage: "تم قبول الموقع: البعد {distance} مترًا، ودقة GPS نحو ±{accuracy} متر.", accuracyWarning: "أنت داخل النطاق لكن دقة GPS منخفضة ({accuracy} متر). حاول مجددًا في مكان مفتوح.", checkingBeforeCamera: "جارٍ التحقق من GPS قبل تشغيل الكاميرا...", cameraPermission: "تم رفض إذن الكاميرا. اسمح للمتصفح باستخدام الكاميرا.", cameraUnavailable: "الكاميرا غير متاحة أو تستخدمها تطبيقات أخرى.", cameraUnsupported: "هذا المتصفح لا يدعم الوصول إلى الكاميرا.", modelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وأعد تحميل الصفحة.", retryModel: "أعد تحميل الصفحة للمحاولة مجددًا.", faceNoMatch: "الوجه لا يطابق أي طالب مسجل.", faceTooMany: "تم اكتشاف أكثر من وجه. تأكد من وجود شخص واحد أمام الكاميرا.", faceNotFound: "لم يتم اكتشاف وجه. ضع وجهك داخل الإطار.", livenessMove: "حرّك رأسك قليلًا لإكمال التحقق من الحيوية.", attendanceSuccess: "تم تسجيل الحضور للطالب {name}.", alreadyPresent: "تم تسجيل حضور هذا الطالب اليوم بالفعل.", cameraStopped: "تم إيقاف الكاميرا.", locationRequired: "لم يتم التحقق من الموقع. ستظل الكاميرا متوقفة.", fullscreenError: "وضع ملء الشاشة غير متاح على هذا الجهاز.", mapFailed: "تعذر تحميل الخريطة. تحقق من اتصال الإنترنت.", mapLocationFailed: "موقعك غير متاح. تحقق من الموقع أولًا.", studentExists: "رقم الطالب مسجل بالفعل.", invalidNisn: "أدخل رقم طالب صحيحًا.", needFace: "التقط عينة وجه أو ارفعها أولًا.", studentSaved: "تم تسجيل الطالب بنجاح.", studentDeleted: "تم حذف الطالب بنجاح.", attendanceDeleted: "تم حذف سجل الحضور.", allDeleted: "تم حذف جميع بيانات الحضور والطلاب.", settingsSaved: "تم حفظ الإعدادات.", loginFailed: "البريد الإلكتروني أو كلمة المرور غير صحيحة.", signupSuccess: "تم إنشاء الحساب التجريبي. يمكنك تسجيل الدخول الآن.", passwordMismatch: "تأكيد كلمة المرور غير مطابق.", termsRequired: "وافق على الشروط قبل التسجيل.", emailExists: "البريد الإلكتروني مسجل بالفعل.", loggedOut: "تم تسجيل الخروج.", emptyCsv: "لا توجد بيانات لتصديرها.", csvSaved: "تم تجهيز ملف CSV.", cameraFormReady: "كاميرا التسجيل تعمل.", cameraFormOff: "تم إيقاف كاميرا التسجيل.", faceSampleReady: "عينة الوجه جاهزة.", modelReady: "الذكاء الاصطناعي جاهز", modelLoadingLong: "جارٍ تجهيز نماذج الذكاء الاصطناعي...", faceDetected: "تم اكتشاف الوجه", faceRegistered: "الوجه مسجل", faceNotRegistered: "الوجه غير مسجل", attendanceInProgress: "جارٍ التحقق من الوجه...", attendanceWaiting: "بانتظار وجه مسجل...", attendanceReady: "تم التحقق من الموقع. الكاميرا جاهزة.", methodFaceGps: "الوجه + GPS", delete: "حذف", recordsCount: "{count} سجل", studentsCount: "{count} طالب", unknownClass: "غير محدد", mapSchoolPopup: "مدرسة الفتيان · نطاق 50 مترًا", mapUserPopup: "موقع جهازك", mapDistance: "المسافة من المدرسة: {distance} متر", mapAccuracy: "دقة GPS: ±{accuracy} متر", registeredAlready: "رقم الطالب مسجل بالفعل.", locationMapReady: "الخريطة جاهزة. سيظهر موقع جهازك بعد التحقق من GPS.", noLocationForMap: "تحقق من موقعك أولًا لإظهار علامة الجهاز.", faceUploadError: "تعذرت معالجة الصورة. استخدم صورة JPG أو PNG أو WebP صالحة.", faceSampleCapture: "تم اكتشاف الوجه. يمكن استخدام العينة.", cameraStartFailed: "تعذر تشغيل الكاميرا. تحقق من أذونات المتصفح واتصال HTTPS الآمن.", cameraStarting: "جارٍ تشغيل الكاميرا...", locationVerified: "تم التحقق من الموقع.", confidenceLabel: "الثقة", student: "الطالب", attendance: "حاضر"
+        authEyebrow: "حضور متكامل · مدرسة الفتيان", welcomeTitle: "حضور أكثر أمانًا.", welcomeDesc: "سجّل الدخول لإدارة الحضور وبيانات الطلاب.", login: "تسجيل الدخول", signup: "إنشاء حساب", email: "البريد الإلكتروني", password: "كلمة المرور", demoAccount: "حساب تجريبي", fullName: "الاسم الكامل", confirmPassword: "تأكيد كلمة المرور", terms: "أوافق على شروط استخدام النسخة التجريبية.", workspace: "مساحة العمل", dashboard: "الرئيسية", database: "قاعدة البيانات", formulir: "التسجيل", geofenceEnabled: "تحديد الموقع مفعّل", viewProfile: "عرض الملف الشخصي", schoolWorkspace: "مدرسة الفتيان", dailyAttendance: "الحضور اليومي", cameraTitle: "كاميرا الحضور", cameraDesc: "تحقق من وجودك داخل المدرسة ثم تحقق من الوجه لتسجيل الحضور.", viewMap: "عرض الخريطة", secureCamera: "كاميرا الحضور", modelLoading: "جارٍ تحميل الذكاء الاصطناعي...", cameraOff: "الكاميرا متوقفة", cameraOffDesc: "فعّل المفتاح بعد التحقق من الموقع.", cameraReady: "الكاميرا جاهزة", fullscreen: "ملء الشاشة", locationVerification: "التحقق من الموقع", locationNotChecked: "لم يتم التحقق من الموقع", locationPending: "لم يتم التحقق", attendanceSwitch: "مفتاح الحضور", switchOffHint: "الكاميرا متوقفة. سيتم التحقق من موقعك عند التفعيل.", off: "إيقاف", on: "تشغيل", waitingFace: "بانتظار الكاميرا", livenessWaiting: "يبدأ التحقق من الوجه والحركة بعد التحقق من الموقع.", recordsCenter: "مركز السجلات", attendanceDatabase: "قاعدة بيانات الحضور", databaseDesc: "ابحث عن سجل الحضور وبيانات الطلاب وصفِّها وصدرها.", exportCsv: "تصدير CSV", registeredStudents: "الطلاب المسجلون", registeredStudentsHint: "بيانات الوجه في هذه الجلسة", todayAttendance: "حضور اليوم", todayAttendanceHint: "سجلات الحضور اليوم", totalRecords: "إجمالي السجلات", totalRecordsHint: "جميع سجلات هذه الجلسة", attendanceHistory: "سجل الحضور", historyDesc: "تظل البيانات التجريبية متاحة أثناء فتح الصفحة.", deleteAll: "حذف جميع البيانات", searchPlaceholder: "ابحث بالاسم أو رقم الطالب أو الفصل...", fromDate: "من", toDate: "إلى", number: "رقم", nisn: "رقم الطالب", name: "الاسم", class: "الفصل", status: "الحالة", date: "التاريخ", time: "الوقت", method: "الطريقة", confidence: "نسبة الثقة", action: "الإجراء", noRecords: "لا توجد سجلات بعد", noRecordsDesc: "سيظهر سجل الحضور هنا بعد نجاح التحقق.", studentRegistry: "سجل الطلاب", studentRegistryDesc: "الطلاب الذين لديهم عينات وجه مسجلة.", registeredAt: "تاريخ التسجيل", noStudents: "لا يوجد طلاب مسجلون بعد", registerFromForm: "أضف الطلاب من قائمة التسجيل.", studentManagement: "إدارة الطلاب", studentRegistration: "نموذج تسجيل الطلاب", formDesc: "سجّل بيانات الطالب وعينة الوجه للتعرف على الحضور.", studentIdentity: "بيانات الطالب", studentIdentityDesc: "أدخل المعلومات الصحيحة قبل الحفظ.", faceSample: "عينة الوجه", faceSampleDesc: "استخدم الكاميرا أو ارفع صورة يظهر فيها وجه واحد بوضوح.", openCamera: "فتح الكاميرا", closeCamera: "إغلاق الكاميرا", uploadPhoto: "رفع صورة الوجه", noFaceSample: "لا توجد عينة وجه بعد.", saveStudent: "حفظ الطالب", clearFace: "يجب أن يكون الوجه واضحًا", clearFaceDesc: "تأكد من ظهور وجه واحد فقط ومن الإضاءة الجيدة وعدم تغطية الوجه.", privacyFirst: "بيانات مؤقتة", privacyDesc: "تحفظ هذه النسخة التجريبية بيانات الوجه في ذاكرة المتصفح فقط، وتختفي عند إعادة تحميل الصفحة.", accountSettings: "إعدادات الحساب", myProfile: "ملفي الشخصي", appearance: "المظهر", lightTheme: "فاتح", darkTheme: "داكن", language: "اللغة", saveSettings: "حفظ الإعدادات", logout: "تسجيل الخروج", locationSecurity: "أمان الموقع", schoolMap: "خريطة منطقة المدرسة", mapDesc: "موقع المدرسة وموقع جهازك.", schoolPoint: "موقع المدرسة", yourLocation: "موقعك", allowedRadius: "نطاق السماح: 50 مترًا", mapLocationPending: "تحقق من موقعك لإظهار موقع الجهاز.", refreshLocation: "التحقق من الموقع مجددًا", confirmDeleteTitle: "حذف جميع البيانات؟", confirmDeleteDesc: "سيتم حذف سجلات الحضور والطلاب المسجلين في هذه الجلسة.", cancel: "إلغاء", locationChecking: "جارٍ التحقق من الموقع...", locationInside: "داخل نطاق المدرسة", locationOutside: "خارج نطاق المدرسة", locationError: "فشل التحقق من الموقع", gpsDenied: "تم رفض إذن الموقع. فعّل إذن الموقع أو GPS في المتصفح ثم حاول مجددًا.", gpsUnavailable: "الموقع غير متاح. فعّل GPS وتأكد من استقبال الجهاز لإشارة الموقع.", gpsTimeout: "انتهت مهلة التحقق من الموقع. حاول مجددًا في مكان تكون فيه إشارة GPS أفضل.", gpsUnsupported: "هذا المتصفح لا يدعم تحديد الموقع. استخدم متصفحًا حديثًا مع السماح بالوصول إلى الموقع.", gpsFailed: "تعذر التحقق من الموقع. راجع إعدادات الموقع في جهازك ثم حاول مجددًا.", outsideMessage: "تم رفض الحضور. تبعد عن المدرسة {distance} مترًا، بينما النطاق الأقصى المسموح هو {radius} مترًا.", insideMessage: "تم قبول الموقع: البعد {distance} مترًا، ودقة GPS نحو ±{accuracy} متر.", accuracyWarning: "أنت داخل النطاق لكن دقة GPS منخفضة ({accuracy} متر). حاول مجددًا في مكان مفتوح.", checkingBeforeCamera: "جارٍ التحقق من GPS قبل تشغيل الكاميرا...", cameraPermission: "تم رفض إذن الكاميرا. اسمح للمتصفح باستخدام الكاميرا.", cameraUnavailable: "الكاميرا غير متاحة أو تستخدمها تطبيقات أخرى.", cameraUnsupported: "هذا المتصفح لا يدعم الوصول إلى الكاميرا.", modelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وأعد تحميل الصفحة.", retryModel: "أعد تحميل الصفحة للمحاولة مجددًا.", faceNoMatch: "الوجه لا يطابق أي طالب مسجل.", faceTooMany: "تم اكتشاف أكثر من وجه. تأكد من وجود شخص واحد أمام الكاميرا.", faceNotFound: "لم يتم اكتشاف وجه. ضع وجهك داخل الإطار.", livenessMove: "حرّك رأسك قليلًا لإكمال التحقق من الحيوية.", attendanceSuccess: "تم تسجيل الحضور للطالب {name}.", alreadyPresent: "تم تسجيل حضور هذا الطالب اليوم بالفعل.", cameraStopped: "تم إيقاف الكاميرا.", locationRequired: "لم يتم التحقق من الموقع. ستظل الكاميرا متوقفة.", fullscreenError: "وضع ملء الشاشة غير متاح على هذا الجهاز.", mapFailed: "تعذر تحميل الخريطة. تحقق من اتصال الإنترنت.", mapLocationFailed: "موقعك غير متاح. تحقق من الموقع أولًا.", studentExists: "رقم الطالب مسجل بالفعل.", invalidNisn: "أدخل رقم طالب صحيحًا.", needFace: "التقط عينة وجه أو ارفعها أولًا.", studentSaved: "تم تسجيل الطالب بنجاح.", studentDeleted: "تم حذف الطالب بنجاح.", attendanceDeleted: "تم حذف سجل الحضور.", allDeleted: "تم حذف جميع بيانات الحضور والطلاب.", settingsSaved: "تم حفظ الإعدادات.", loginFailed: "البريد الإلكتروني أو كلمة المرور غير صحيحة.", sessionExpired: "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.", signupSuccess: "تم إنشاء الحساب التجريبي. يمكنك تسجيل الدخول الآن.", passwordMismatch: "تأكيد كلمة المرور غير مطابق.", termsRequired: "وافق على الشروط قبل التسجيل.", emailExists: "البريد الإلكتروني مسجل بالفعل.", loggedOut: "تم تسجيل الخروج.", emptyCsv: "لا توجد بيانات لتصديرها.", csvSaved: "تم تجهيز ملف CSV.", cameraFormReady: "كاميرا التسجيل تعمل.", cameraFormOff: "تم إيقاف كاميرا التسجيل.", faceSampleReady: "عينة الوجه جاهزة.", modelReady: "الذكاء الاصطناعي جاهز", modelLoadingLong: "جارٍ تجهيز نماذج الذكاء الاصطناعي...", faceDetected: "تم اكتشاف الوجه", faceRegistered: "الوجه مسجل", faceNotRegistered: "الوجه غير مسجل", attendanceInProgress: "جارٍ التحقق من الوجه...", attendanceWaiting: "بانتظار وجه مسجل...", attendanceReady: "تم التحقق من الموقع. الكاميرا جاهزة.", methodFaceGps: "الوجه + GPS", delete: "حذف", recordsCount: "{count} سجل", studentsCount: "{count} طالب", unknownClass: "غير محدد", mapSchoolPopup: "مدرسة الفتيان · نطاق 50 مترًا", mapUserPopup: "موقع جهازك", mapDistance: "المسافة من المدرسة: {distance} متر", mapAccuracy: "دقة GPS: ±{accuracy} متر", registeredAlready: "رقم الطالب مسجل بالفعل.", locationMapReady: "الخريطة جاهزة. سيظهر موقع جهازك بعد التحقق من GPS.", noLocationForMap: "تحقق من موقعك أولًا لإظهار علامة الجهاز.", faceUploadError: "تعذرت معالجة الصورة. استخدم صورة JPG أو PNG أو WebP صالحة.", faceSampleCapture: "تم اكتشاف الوجه. يمكن استخدام العينة.", cameraStartFailed: "تعذر تشغيل الكاميرا. تحقق من أذونات المتصفح واتصال HTTPS الآمن.", cameraStarting: "جارٍ تشغيل الكاميرا...", locationVerified: "تم التحقق من الموقع.", confidenceLabel: "الثقة", student: "الطالب", attendance: "حاضر"
     }
 };
 
@@ -847,7 +858,7 @@ Object.keys(LANDING_T).forEach(lang => Object.assign(T[lang], LANDING_T[lang]));
 const ADMIN_T = {
     id: {
         adminWorkspace: "ADMINISTRATOR", adminNavigation: "Navigasi Admin", faceSampleProgress: "Progres sampel wajah", administratorRole: "Administrator", confirmDeactivateAccount: "Nonaktifkan akun ini?", promptNewEmail: "Email baru (kosongkan jika tidak berubah):", promptNewName: "Nama baru (kosongkan jika tidak berubah):", promptNewPassword: "Kata sandi baru (kosongkan jika tidak berubah):", adminOverview: "Ringkasan", adminAccounts: "Kelola akun",
-        adminSchoolSettings: "Pengaturan sekolah", adminAudit: "Audit aktivitas", adminSecurity: "Keamanan akun",
+        adminSchoolSettings: "Pengaturan sekolah", adminWhatsappNotifications: "Notifikasi orang tua", adminWhatsappTemplateTitle: "Pesan otomatis untuk orang tua", adminWhatsappTemplateDesc: "Pesan ini dikirim setiap kali presensi siswa berhasil dicatat. Pengaturan berlaku terus sampai Admin mengubahnya.", adminWhatsappEnabled: "Kirim pemberitahuan otomatis setelah presensi siswa berhasil dicatat", adminWhatsappTemplateLabel: "Isi pesan", adminWhatsappTemplateHelp: "Penanda yang tersedia: {name} untuk nama siswa, {nisn} untuk NISN, {class} untuk kelas, {date} untuk tanggal, {time} untuk waktu, dan {school} untuk nama sekolah.", adminWhatsappPreviewTitle: "Contoh pesan", adminWhatsappSave: "Simpan pengaturan", adminWhatsappSaving: "Menyimpan...", adminWhatsappSaved: "Pengaturan pemberitahuan berhasil disimpan.", adminWhatsappLoadFailed: "Pengaturan pemberitahuan gagal dimuat.", adminWhatsappLoading: "Memuat pengaturan...", adminWhatsappTemplateInvalid: "Pesan harus berisi 10 sampai 450 karakter. Periksa kembali penanda informasi yang digunakan.", adminWhatsappRetryUncertain: "Permintaan sudah diterima atau statusnya belum dapat dipastikan. Periksa riwayat Fonnte sebelum mencoba lagi.", adminWhatsappStatusPending: "Menunggu pemeriksaan", testWhatsappDirectTarget: "Pesan percobaan hanya dikirim ke nomor yang kamu masukkan setelah menyetujui pengiriman.", adminWhatsappProvider: "Koneksi Fonnte", adminWhatsappFailuresTitle: "Pesan yang perlu diperiksa", adminWhatsappFailuresDesc: "Pesan yang ditolak Fonnte dapat dicoba kembali. Jika status belum pasti, periksa riwayat Fonnte terlebih dahulu agar tidak terkirim dua kali.", adminWhatsappFailuresEmpty: "Tidak ada pesan yang perlu ditindaklanjuti.", adminWhatsappStudent: "Siswa", adminWhatsappDestination: "Nomor tujuan", adminWhatsappWhen: "Waktu presensi", adminWhatsappStatus: "Status pesan", adminWhatsappStatusFailed: "Gagal diterima Fonnte", adminWhatsappStatusUnknown: "Belum dapat dipastikan", adminWhatsappStatusSending: "Sedang diproses", adminWhatsappRetry: "Kirim ulang", adminWhatsappRetrying: "Mengirim ulang...", adminWhatsappRetryQueued: "Permintaan kirim ulang sudah masuk antrean Fonnte.", adminWhatsappReviewFirst: "Periksa riwayat Fonnte sebelum mencoba lagi.", adminWhatsappTemplateOneTime: "Template pada menu Pengujian hanya berlaku untuk satu pesan percobaan. Template tersebut tidak mengubah pesan otomatis presensi.", adminAudit: "Audit aktivitas", adminSecurity: "Keamanan akun",
         adminOverviewTitle: "Ringkasan sistem", refreshData: "Segarkan data", adminOverviewKicker: "RINGKASAN",
         adminAttendanceOverview: "Ikhtisar presensi", adminOverviewDescription: "Pantau akun, aktivitas presensi, dan kesehatan layanan dari satu tempat.",
         totalActiveStudents: "Total siswa aktif", supabaseData: "Data pada Supabase", totalActiveTeachers: "Total guru aktif",
@@ -875,7 +886,7 @@ const ADMIN_T = {
     },
     en: {
         adminWorkspace: "ADMINISTRATOR", adminNavigation: "Admin navigation", faceSampleProgress: "Face sample progress", administratorRole: "Administrator", confirmDeactivateAccount: "Deactivate this account?", promptNewEmail: "New email (leave blank to keep it unchanged):", promptNewName: "New name (leave blank to keep it unchanged):", promptNewPassword: "New password (leave blank to keep it unchanged):", adminOverview: "Overview", adminAccounts: "Manage accounts",
-        adminSchoolSettings: "School settings", adminAudit: "Activity audit", adminSecurity: "Account security",
+        adminSchoolSettings: "School settings", adminWhatsappNotifications: "Parent notifications", adminWhatsappTemplateTitle: "Automatic message for parents", adminWhatsappTemplateDesc: "This message is sent whenever student attendance is recorded. These settings remain in effect until an Admin changes them.", adminWhatsappEnabled: "Automatically notify parents after a student's attendance is recorded", adminWhatsappTemplateLabel: "Message text", adminWhatsappTemplateHelp: "Available placeholders: {name} for student name, {nisn} for NISN, {class} for class, {date} for date, {time} for time, and {school} for school name.", adminWhatsappPreviewTitle: "Message preview", adminWhatsappSave: "Save settings", adminWhatsappSaving: "Saving...", adminWhatsappSaved: "Parent notification settings were saved.", adminWhatsappLoadFailed: "Parent notification settings could not be loaded.", adminWhatsappLoading: "Loading settings...", adminWhatsappTemplateInvalid: "The message must contain 10 to 450 characters. Check the information placeholders.", adminWhatsappRetryUncertain: "The request may have been accepted, but its status is uncertain. Check Fonnte history before trying again.", adminWhatsappStatusPending: "Waiting for review", testWhatsappDirectTarget: "The test message is sent only to the number entered above after you approve it.", adminWhatsappProvider: "Fonnte connection", adminWhatsappFailuresTitle: "Messages that need attention", adminWhatsappFailuresDesc: "Messages rejected by Fonnte can be retried. If the status is uncertain, check Fonnte history first to avoid sending duplicates.", adminWhatsappFailuresEmpty: "No messages need follow-up.", adminWhatsappStudent: "Student", adminWhatsappDestination: "Destination", adminWhatsappWhen: "Attendance time", adminWhatsappStatus: "Message status", adminWhatsappStatusFailed: "Not accepted by Fonnte", adminWhatsappStatusUnknown: "Could not be confirmed", adminWhatsappStatusSending: "In progress", adminWhatsappRetry: "Retry", adminWhatsappRetrying: "Retrying...", adminWhatsappRetryQueued: "The retry request was added to the Fonnte queue.", adminWhatsappReviewFirst: "Check Fonnte history before trying again.", adminWhatsappTemplateOneTime: "The template in the Testing menu is used for one test message only. It does not change the automatic attendance message.", adminAudit: "Activity audit", adminSecurity: "Account security",
         adminOverviewTitle: "System overview", refreshData: "Refresh data", adminOverviewKicker: "OVERVIEW",
         adminAttendanceOverview: "Attendance overview", adminOverviewDescription: "Monitor accounts, attendance activity, and service health in one place.",
         totalActiveStudents: "Active students", supabaseData: "Supabase records", totalActiveTeachers: "Active teachers",
@@ -903,7 +914,7 @@ const ADMIN_T = {
     },
     ar: {
         adminWorkspace: "مساحة المسؤول", adminNavigation: "تنقل المسؤول", faceSampleProgress: "تقدم عينات الوجه", administratorRole: "المسؤول", confirmDeactivateAccount: "هل تريد تعطيل هذا الحساب؟", promptNewEmail: "البريد الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewName: "الاسم الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewPassword: "كلمة المرور الجديدة (اتركها فارغة لإبقائها كما هي):", adminOverview: "نظرة عامة", adminAccounts: "إدارة الحسابات",
-        adminSchoolSettings: "إعدادات المدرسة", adminAudit: "سجل النشاط", adminSecurity: "أمان الحساب",
+        adminSchoolSettings: "إعدادات المدرسة", adminWhatsappNotifications: "إشعارات أولياء الأمور", adminWhatsappTemplateTitle: "رسالة تلقائية لأولياء الأمور", adminWhatsappTemplateDesc: "تُرسل هذه الرسالة عند تسجيل حضور الطالب. تظل هذه الإعدادات فعالة حتى يغيّرها المسؤول.", adminWhatsappEnabled: "إرسال إشعار تلقائي لولي الأمر بعد تسجيل حضور الطالب", adminWhatsappTemplateLabel: "نص الرسالة", adminWhatsappTemplateHelp: "الرموز المتاحة: {name} لاسم الطالب، و{nisn} لرقم NISN، و{class} للصف، و{date} للتاريخ، و{time} للوقت، و{school} لاسم المدرسة.", adminWhatsappPreviewTitle: "معاينة الرسالة", adminWhatsappSave: "حفظ الإعدادات", adminWhatsappSaving: "جارٍ الحفظ...", adminWhatsappSaved: "تم حفظ إعدادات إشعار ولي الأمر.", adminWhatsappLoadFailed: "تعذر تحميل إعدادات إشعار ولي الأمر.", adminWhatsappLoading: "جارٍ تحميل الإعدادات...", adminWhatsappTemplateInvalid: "يجب أن تحتوي الرسالة على 10 إلى 450 حرفًا. تحقق من الرموز المستخدمة.", adminWhatsappRetryUncertain: "قد يكون الطلب قد قُبل، لكن حالته غير مؤكدة. راجع سجل Fonnte قبل المحاولة مرة أخرى.", adminWhatsappStatusPending: "بانتظار المراجعة", testWhatsappDirectTarget: "تُرسل الرسالة التجريبية إلى الرقم المدخل أعلاه فقط بعد الموافقة.", adminWhatsappProvider: "اتصال Fonnte", adminWhatsappFailuresTitle: "رسائل تحتاج إلى متابعة", adminWhatsappFailuresDesc: "يمكن إعادة محاولة الرسائل التي رفضتها Fonnte. إذا كانت الحالة غير مؤكدة، راجع سجل Fonnte أولاً لتجنب تكرار الرسالة.", adminWhatsappFailuresEmpty: "لا توجد رسائل تحتاج إلى متابعة.", adminWhatsappStudent: "الطالب", adminWhatsappDestination: "رقم الوجهة", adminWhatsappWhen: "وقت الحضور", adminWhatsappStatus: "حالة الرسالة", adminWhatsappStatusFailed: "لم تقبلها Fonnte", adminWhatsappStatusUnknown: "تعذر التأكيد", adminWhatsappStatusSending: "قيد المعالجة", adminWhatsappRetry: "إعادة الإرسال", adminWhatsappRetrying: "جارٍ إعادة الإرسال...", adminWhatsappRetryQueued: "تمت إضافة طلب إعادة الإرسال إلى قائمة Fonnte.", adminWhatsappReviewFirst: "راجع سجل Fonnte قبل المحاولة مرة أخرى.", adminWhatsappTemplateOneTime: "يُستخدم القالب الموجود في قائمة الاختبار لرسالة تجريبية واحدة فقط، ولا يغيّر رسالة الحضور التلقائية.", adminAudit: "سجل النشاط", adminSecurity: "أمان الحساب",
         adminOverviewTitle: "نظرة عامة على النظام", refreshData: "تحديث البيانات", adminOverviewKicker: "نظرة عامة",
         adminAttendanceOverview: "ملخص الحضور", adminOverviewDescription: "تابع الحسابات ونشاط الحضور وحالة الخدمات من مكان واحد.",
         totalActiveStudents: "إجمالي الطلاب النشطين", supabaseData: "سجلات Supabase", totalActiveTeachers: "إجمالي المعلمين النشطين",
@@ -1624,6 +1635,7 @@ const ADMIN_VIEW_TITLES = {
     "admin-view-dashboard": "adminOverviewTitle",
     "admin-view-users": "schoolUsers",
     "admin-view-settings": "adminSchoolSettings",
+    "admin-view-whatsapp": "adminWhatsappNotifications",
     "admin-view-tests": "adminTestToolsTitle",
     "admin-view-audit": "adminAudit",
     "admin-view-profile": "changeAdminPassword"
@@ -1655,6 +1667,7 @@ function showAdminView(viewId) {
     updateAdminPageTitle();
     if (viewId === "admin-view-users") void loadAdminUsers();
     if (viewId === "admin-view-settings") void loadAdminSettings();
+    if (viewId === "admin-view-whatsapp") void loadAdminWhatsAppSettings();
     if (viewId === "admin-view-audit") void loadAdminAudit();
     if (viewId === "admin-view-dashboard") void loadAdminFeatures();
     if (viewId === "admin-view-tests") void loadAdminTestTools();
@@ -2004,14 +2017,12 @@ async function startAdminTestCamera() {
 }
 
 function updateAdminWhatsAppTestControls() {
-    const allowed = Array.isArray(state.adminAllowedWhatsappRecipients)
-        ? state.adminAllowedWhatsappRecipients : [];
-    const target = $("admin-test-whatsapp-number")?.value.replace(/\D/g, "") || "";
+    const target = normalizeWhatsAppNumberInput($("admin-test-whatsapp-number")?.value || "");
     const message = $("admin-test-whatsapp-template")?.value.trim() || "";
     const consent = Boolean($("admin-test-whatsapp-consent")?.checked);
     const printable = message.length >= 10 && message.length <= 300 &&
         !/[\u0000-\u001F\u007F]/.test(message);
-    const permitted = state.adminFonnteConfigured && allowed.includes(target);
+    const permitted = state.adminFonnteConfigured && Boolean(target);
     const button = $("admin-test-whatsapp-send");
     if (button) button.disabled = !(permitted && printable && consent);
 }
@@ -2020,24 +2031,16 @@ async function loadAdminTestTools() {
     try {
         const result = await cloudRequest("/api/admin/test-tools");
         state.adminFonnteConfigured = result.fonnte_configured === true;
-        state.adminAllowedWhatsappRecipients = Array.isArray(result.allowed_recipients)
-            ? result.allowed_recipients.filter(value => /^628\d{8,13}$/.test(String(value))) : [];
         $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
-        $("admin-test-whatsapp-allowlist").textContent = state.adminAllowedWhatsappRecipients.length
-            ? state.adminAllowedWhatsappRecipients.join(", ") : tr("testAllowlistEmpty");
         const templateInput = $("admin-test-whatsapp-template");
         if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
         updateAdminWhatsAppPreview();
         updateAdminWhatsAppTestControls();
-        if (!state.adminFonnteConfigured || !state.adminAllowedWhatsappRecipients.length) {
-            $("admin-test-whatsapp-status").textContent = tr("testFonnteConfigHint");
-        }
+        $("admin-test-whatsapp-status").textContent = state.adminFonnteConfigured ? "" : tr("testFonnteConfigHint");
     } catch (error) {
         state.adminFonnteConfigured = false;
-        state.adminAllowedWhatsappRecipients = [];
         $("admin-test-fonnte-state").textContent = tr("testFonnteStatusUnavailable");
-        $("admin-test-whatsapp-allowlist").textContent = tr("testAllowlistLoadFailed");
-        $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
+        $("admin-test-whatsapp-status").textContent = tr("testFonnteStatusUnavailable");
         updateAdminWhatsAppTestControls();
     }
 }
@@ -2049,7 +2052,7 @@ function updateAdminWhatsAppPreview() {
 }
 
 async function sendAdminWhatsAppTest() {
-    const target = $("admin-test-whatsapp-number").value.replace(/\D/g, "");
+    const target = normalizeWhatsAppNumberInput($("admin-test-whatsapp-number").value);
     const message = $("admin-test-whatsapp-template").value.trim();
     const status = $("admin-test-whatsapp-status");
     if (!/^628\d{8,13}$/.test(target)) {
@@ -2201,6 +2204,96 @@ async function loadAdminSettings() {
     }
 }
 
+
+function updateAdminWhatsAppTemplatePreview() {
+    const input = $("admin-whatsapp-template"), preview = $("admin-whatsapp-template-preview");
+    if (!input || !preview) return;
+    preview.textContent = input.value.replaceAll("{name}", "Alya Pratama")
+        .replaceAll("{nisn}", "1234567890").replaceAll("{class}", "XI IPA 1")
+        .replaceAll("{date}", "05 November 2026").replaceAll("{time}", "07.15")
+        .replaceAll("{school}", "Al-Fityan School");
+    const count = $("admin-whatsapp-template-count");
+    if (count) count.textContent = input.value.length + "/450";
+}
+async function loadAdminWhatsAppSettings() {
+    const status = $("admin-whatsapp-settings-status");
+    if (status) status.textContent = tr("adminWhatsappLoading");
+    try {
+        const result = await cloudRequest("/api/admin/settings?action=whatsapp");
+        $("admin-whatsapp-enabled").checked = result.enabled !== false;
+        $("admin-whatsapp-template").value = result.template || "";
+        const provider = $("admin-whatsapp-provider-state");
+        if (provider) provider.textContent = result.configured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
+        updateAdminWhatsAppTemplatePreview();
+        renderAdminWhatsAppFailures(result.notifications || []);
+        if (status) status.textContent = tr("adminWhatsappSaved");
+    } catch (error) {
+        console.error("Admin WhatsApp settings could not load:", error);
+        if (status) status.textContent = tr("adminWhatsappLoadFailed");
+        toastAdminError(error);
+    }
+}
+function renderAdminWhatsAppFailures(items) {
+    const tbody = $("admin-whatsapp-failures-tbody");
+    if (!tbody) return;
+    const rows = Array.isArray(items) ? items : [];
+    tbody.innerHTML = rows.map(item => {
+        const label = item.status === "failed" ? tr("adminWhatsappStatusFailed")
+            : item.status === "sending" ? tr("adminWhatsappStatusSending")
+                : item.status === "pending" ? tr("adminWhatsappStatusPending") : tr("adminWhatsappStatusUnknown");
+        const action = item.status === "failed"
+            ? '<button class="button subtle" type="button" data-whatsapp-retry="' + safeText(item.id) + '">' + safeText(tr("adminWhatsappRetry")) + '</button>'
+            : '<span class="helper-text">' + safeText(tr("adminWhatsappReviewFirst")) + '</span>';
+        const recipient = item.phone_suffix ? "•••• " + safeText(item.phone_suffix) : "Belum terdaftar";
+        return '<tr><td>' + safeText(item.name) + '<small class="table-secondary">' + safeText(item.nisn) + ' · ' + safeText(item.class_name) + '</small></td>' +
+            '<td>' + recipient + '</td><td>' + safeText(formatDate(item.date)) + ' ' + safeText(String(item.time || "").slice(0, 5)) + '</td>' +
+            '<td><span class="status-pill">' + safeText(label) + '</span></td><td>' + action + '</td></tr>';
+    }).join("");
+    $("admin-whatsapp-failures-empty")?.classList.toggle("hidden", rows.length > 0);
+}
+async function saveAdminWhatsAppSettings(event) {
+    event.preventDefault();
+    const button = $("admin-whatsapp-template-form")?.querySelector('button[type="submit"]');
+    const status = $("admin-whatsapp-settings-status");
+    const template = $("admin-whatsapp-template").value.trim();
+    if (template.length < 10 || template.length > 450) {
+        toast(tr("adminWhatsappTemplateInvalid"), "error");
+        $("admin-whatsapp-template").focus();
+        return;
+    }
+    const original = button?.textContent || tr("adminWhatsappSave");
+    if (button) { button.disabled = true; button.textContent = tr("adminWhatsappSaving"); }
+    if (status) status.textContent = tr("adminWhatsappSaving");
+    try {
+        await cloudRequest("/api/admin/settings?action=whatsapp", {
+            method: "PUT", body: { enabled: $("admin-whatsapp-enabled").checked, template }
+        });
+        if (status) status.textContent = tr("adminWhatsappSaved");
+        toast(tr("adminWhatsappSaved"), "success");
+    } catch (error) {
+        console.error("Admin WhatsApp template could not be saved:", error);
+        if (status) status.textContent = tr("adminWhatsappLoadFailed");
+        toastAdminError(error);
+    } finally {
+        if (button) { button.disabled = false; button.textContent = original; }
+    }
+    await loadAdminWhatsAppSettings();
+}
+async function retryAdminAttendanceWhatsApp(id, button) {
+    if (!id || button?.disabled) return;
+    button.disabled = true;
+    const original = button.textContent;
+    button.textContent = tr("adminWhatsappRetrying");
+    try {
+        const result = await cloudRequest("/api/admin/settings?action=whatsapp", { method: "POST", body: { attendance_id: id } });
+        if (result?.status === "queued") toast(tr("adminWhatsappRetryQueued"), "success");
+        else toast(tr("adminWhatsappRetryUncertain"), "warning");
+    } catch (error) {
+        console.error("Parent WhatsApp retry failed:", error);
+        toastAdminError(error);
+    }
+    await loadAdminWhatsAppSettings();
+}
 async function loadAdminAudit() {
     try {
         const filters = new URLSearchParams();
@@ -2254,6 +2347,13 @@ function formatDate(dateString) {
     return date.toLocaleDateString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID", {
         day: "2-digit", month: "short", year: "numeric"
     });
+}
+
+function normalizeWhatsAppNumberInput(value) {
+    let digits = String(value || "").trim().replace(/\D/g, "");
+    if (digits.startsWith("0")) digits = "62" + digits.slice(1);
+    else if (digits.startsWith("8")) digits = "62" + digits;
+    return /^628\d{8,13}$/.test(digits) ? digits : "";
 }
 
 function safeText(value) {
@@ -2310,39 +2410,49 @@ async function cloudRequest(path, {
                 } catch {
                     payload = null;
                 }
-                let message = response.status === 405
-                    ? `HTTP 405 (${payload?.error ?? "metode tidak diizinkan"}). Pastikan Root Directory Vercel menunjuk ke folder proyek yang berisi api/, package.json, dan vercel.json, bukan folder public/. Periksa juga endpoint dan metode request.`
-                    : (payload?.error || `Request failed (${response.status})`);
+                let message = payload?.error || tr("cloudRequestFailed");
                 const error = new Error(message);
                 error.name = "CloudApiError";
                 error.status = response.status;
                 error.originalMessage = message;
-                if (response.status === 400 && /gps/i.test(String(payload?.error || ""))) {
-                    error.type = "gps_accuracy";
-                    error.gpsAccuracy = payload;
-                    message = "Akurasi GPS terlalu rendah.";
+                const rawError = String(payload?.error || "");
+                const gpsErrorMessages = {
+                    GPS_FIX_STALE: tr("gpsFixStale"), GPS_SPEED_ANOMALY: tr("gpsSpeedAnomaly"),
+                    GPS_ACCURACY_TOO_LOW: tr("accuracyWarning", { accuracy: Math.ceil(Number(payload?.actual) || MAX_GPS_ACCURACY_METERS + 1) }),
+                    GPS_BOUNDARY_UNCERTAIN: tr("gpsBoundaryUncertain")
+                };
+                if (gpsErrorMessages[rawError]) {
+                    message = gpsErrorMessages[rawError];
+                    if (rawError === "GPS_ACCURACY_TOO_LOW") { error.type = "gps_accuracy"; error.gpsAccuracy = payload; }
+                } else if (/^[A-Z][A-Z0-9_]{3,}$/.test(rawError) ||
+                    /\b(?:FONNTE_[A-Z0-9_]+|PGRST\d+|SQLSTATE|HTTP\s?\d{3})\b/i.test(rawError)) {
+                    message = tr("cloudRequestFailed");
+                } else if (/Attendance has already been recorded today/i.test(rawError)) {
+                    message = tr("studentAlreadyPresent");
                 } else if (response.status === 401) {
                     if (state.user) {
-                        message = "Sesi habis, silakan login ulang";
+                        message = tr("sessionExpired");
                         showAuth();
                         state.user = null;
-                        toast("Sesi habis, silakan login ulang", "info");
+                        toast(tr("sessionExpired"), "info");
                     } else if (path === "/api/auth/login") {
                         message = tr("loginFailed");
                     }
 
                 } else if (response.status === 403) {
-                    message = "Akses ditolak. Periksa APP_ORIGIN di Vercel atau hubungi Admin.";
+                    message = tr("accessDenied");
                 } else if (response.status === 404) {
-                    message = "Data tidak ditemukan.";
+                    message = tr("recordNotFound");
                 } else if (response.status === 409) {
-                    message = "Sudah ada data serupa hari ini.";
+                    message = /Attendance has already been recorded today/i.test(rawError)
+                        ? tr("studentAlreadyPresent")
+                        : tr("duplicateRecord");
                 } else if (response.status === 429) {
                     const retryAfter = Number(response.headers.get("Retry-After"));
                     error.retryAfter = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 60;
-                    message = `Tunggu ${error.retryAfter} detik.`;
+                    message = tr("rateLimitWait");
                 } else if ([500, 502, 503, 504].includes(response.status)) {
-                    message = "Server sibuk, mencoba menghubungkan ulang...";
+                    message = tr("serverBusyReconnect");
                 }
                 error.message = message;
                 error.retryAfter = error.retryAfter || response.headers.get("Retry-After");
@@ -2391,9 +2501,16 @@ async function cloudRequest(path, {
 }
 
 function toastAdminError(error) {
-    const status = Number.isInteger(error?.status) ? `HTTP ${error.status}` : "Network error";
-    const message = error?.originalMessage ?? error?.message ?? "Permintaan Admin gagal.";
-    toast(`${status}: ${message}`, "error");
+    const status = error?.status;
+    const message = status === 401 ? tr("sessionExpired")
+        : status === 403 ? tr("accessDenied")
+        : status === 404 ? tr("recordNotFound")
+        : status === 409 ? tr("duplicateRecord")
+        : status === 429 ? tr("rateLimitWait")
+        : tr("cloudRequestFailed");
+    console.error("Admin request failed:", error);
+    toast(message, "error");
+
 }
 
 function setAuthFormBusy(form, busy) {
@@ -3601,7 +3718,24 @@ async function processAttendanceFrame() {
             stopAttendanceCamera();
             $("student-attendance-status").textContent = successMessage;
         }
-        if (saved.whatsapp?.error) toast(tr("attendanceWhatsappFailed"), "error");
+        if (saved.whatsapp?.status === "queued") {
+            const notice = tr("whatsappQueued");
+            if (requestUser.role === "siswa") $("student-attendance-status").textContent = successMessage + " " + notice;
+            else $("liveness-status").textContent = notice;
+            toast(notice, "info");
+        } else if (saved.whatsapp?.status === "failed") {
+            const notice = tr("attendanceWhatsappFailed");
+            if (requestUser.role === "siswa") $("student-attendance-status").textContent = successMessage + " " + notice;
+            toast(notice, "warning");
+        } else if (saved.whatsapp?.status === "unknown") {
+            const notice = tr("whatsappUnknown");
+            if (requestUser.role === "siswa") $("student-attendance-status").textContent = successMessage + " " + notice;
+            toast(notice, "warning");
+        } else if (saved.whatsapp?.status === "no_parent_number") {
+            const notice = tr("whatsappNoParent");
+            if (requestUser.role === "siswa") $("student-attendance-status").textContent = successMessage + " " + notice;
+            toast(notice, "warning");
+        }
     } catch (error) {
         if (state.attendanceStream === requestStream) {
             stopAttendanceCamera();
@@ -4037,7 +4171,7 @@ async function registerStudent(event) {
         $("input-student-password").focus();
         return;
     }
-    if (parentWhatsApp && !/^(08|628)\d{8,13}$/.test(parentWhatsApp)) {
+    if (parentWhatsApp && !normalizeWhatsAppNumberInput(parentWhatsApp)) {
         toast(tr("invalidWhatsApp"), "error");
         return;
     }
@@ -4055,7 +4189,7 @@ async function registerStudent(event) {
                 nisn,
                 name,
                 class_name: className,
-                parent_whatsapp: parentWhatsApp ? parentWhatsApp.replace(/^08/, "628") : undefined,
+                parent_whatsapp: parentWhatsApp ? normalizeWhatsAppNumberInput(parentWhatsApp) : undefined,
                 email,
                 password,
                 face_descriptors: state.faceSamples.map(sample => [...sample])
@@ -4570,12 +4704,12 @@ function setupEvents() {
             body.class_name = $("admin-user-class").value.trim();
 
             const parentWhatsApp = $("admin-user-parent-whatsapp").value.trim();
-            if (parentWhatsApp && !/^(08|628)\d{8,13}$/.test(parentWhatsApp)) {
+            if (parentWhatsApp && !normalizeWhatsAppNumberInput(parentWhatsApp)) {
                 toast(tr("invalidWhatsApp"), "error");
                 $("admin-user-parent-whatsapp").focus();
                 return;
             }
-            if (parentWhatsApp) body.parent_whatsapp = parentWhatsApp.replace(/^08/, "628");
+            if (parentWhatsApp) body.parent_whatsapp = normalizeWhatsAppNumberInput(parentWhatsApp);
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
             toast("Masukkan email akun yang valid.", "error");
@@ -4632,8 +4766,8 @@ function setupEvents() {
             if (table === "students") {
                 fields.push({
                     name: "parent_whatsapp", label: "WhatsApp orang tua", type: "tel",
-                    placeholder: "08xxxxxxxxxx atau 628xxxxxxxxxx",
-                    value: button.dataset.parentWhatsapp || "", pattern: "(08|628)[0-9]{8,13}"
+                    placeholder: "08..., 628..., atau +62...",
+                    value: button.dataset.parentWhatsapp || "", pattern: "[+()0-9\\s.-]{10,24}"
                 });
                 const currentClass = (button.dataset.className || "").trim();
                 const walasOptions = [
@@ -4707,6 +4841,13 @@ function setupEvents() {
             if (submitButton) { submitButton.disabled = false; submitButton.textContent = originalLabel; }
         }
     });
+    $("admin-whatsapp-template-form")?.addEventListener("submit", saveAdminWhatsAppSettings);
+    $("admin-whatsapp-template")?.addEventListener("input", updateAdminWhatsAppTemplatePreview);
+    $("admin-whatsapp-failures-tbody")?.addEventListener("click", event => {
+        const button = event.target.closest("[data-whatsapp-retry]");
+        if (button) void retryAdminAttendanceWhatsApp(button.dataset.whatsappRetry, button);
+    });
+    $("admin-whatsapp-refresh")?.addEventListener("click", () => void loadAdminWhatsAppSettings());
     $("admin-audit-filter").addEventListener("click", () => void loadAdminAudit());
     $("admin-export-users").addEventListener("click", () => exportTableCsv("admin-users-tbody", "amanah-id-daftar-akun.csv"));
     $("admin-export-audit").addEventListener("click", () => exportTableCsv("admin-audit-tbody", "amanah-id-audit-aktivitas.csv"));
