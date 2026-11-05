@@ -1,3 +1,31 @@
+export const DEFAULT_ATTENDANCE_WHATSAPP_TEMPLATE =
+    "Assalamu'alaikum, Bapak/Ibu. Kami informasikan bahwa {name} telah tercatat hadir di Al-Fityan School pada {date} pukul {time}. Terima kasih.";
+
+export function normalizeWhatsAppNumber(value) {
+    if (typeof value !== "string") return null;
+    let digits = value.trim().replace(/\D/g, "");
+    if (!digits) return null;
+    if (digits.startsWith("0")) digits = "62" + digits.slice(1);
+    else if (digits.startsWith("8")) digits = "62" + digits;
+    return /^628\d{8,13}$/.test(digits) ? digits : null;
+}
+
+export function renderAttendanceWhatsAppMessage(template, student, date, time) {
+    const values = {
+        name: String(student?.name || "").trim(),
+        nisn: String(student?.nisn || "").trim(),
+        class: String(student?.class_name || "").trim(),
+        date: String(date || "").trim(),
+        time: String(time || "").trim(),
+        school: "Al-Fityan School"
+    };
+    return String(template || DEFAULT_ATTENDANCE_WHATSAPP_TEMPLATE)
+        .replace(/\{([a-z_]+)\}/gi, (match, key) =>
+            Object.prototype.hasOwnProperty.call(values, key) ? values[key] : "")
+        .replace(/[ \t]{2,}/g, " ")
+        .trim();
+}
+
 export async function sendWhatsApp(target, message) {
     if (typeof target !== "string" || !/^628\d{8,13}$/.test(target)) {
         throw new Error("Invalid WhatsApp recipient");
