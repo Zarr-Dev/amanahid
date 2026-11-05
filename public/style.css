@@ -4491,3 +4491,18 @@ video { object-fit:cover; }
     .admin-analytics-card, .admin-ops-card, .admin-offline-review-panel { padding: 15px; }
     .admin-account-actions { min-width: 180px; }
 }
+
+
+.student-offline-panel {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-soft, #f6f8fc);
+    text-align: left;
+}
+.student-offline-panel strong { font-size: 13px; }
+.student-offline-panel p { margin: 5px 0 0; font-size: 12px; line-height: 1.55; }
+.student-offline-panel small { color: var(--muted); font-size: 11px; line-height: 1.5; }
