@@ -2618,6 +2618,177 @@ function createIdempotencyKey() {
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+const OFFLINE_ATTENDANCE_DB = "amanah-id-offline-v1";
+let offlineAttendanceDbPromise = null;
+
+function openOfflineAttendanceDb() {
+    if (!("indexedDB" in window)) return Promise.reject(new Error("IndexedDB is not available"));
+    if (offlineAttendanceDbPromise) return offlineAttendanceDbPromise;
+    offlineAttendanceDbPromise = new Promise((resolve, reject) => {
+        const request = indexedDB.open(OFFLINE_ATTENDANCE_DB, 1);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains("events")) {
+                const store = db.createObjectStore("events", { keyPath: "eventId" });
+                store.createIndex("ownerKey", "ownerKey", { unique: false });
+                store.createIndex("capturedAt", "capturedAt", { unique: false });
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Offline storage could not be opened"));
+        request.onblocked = () => reject(new Error("Offline storage upgrade is blocked by another tab"));
+    }).catch(error => {
+        offlineAttendanceDbPromise = null;
+        throw error;
+    });
+    return offlineAttendanceDbPromise;
+}
+
+async function getOfflineOwnerKey() {
+    const email = String(state.user?.email || "").trim().toLowerCase();
+    if (!email || !window.crypto?.subtle) throw new Error("Secure offline account key is unavailable");
+    const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode("amanah-id-offline:" + email));
+    return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
+}
+
+async function getOfflineAttendanceEvents() {
+    const db = await openOfflineAttendanceDb();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction("events", "readonly");
+        const request = tx.objectStore("events").getAll();
+        request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+        request.onerror = () => reject(request.error || new Error("Offline attendance queue could not be read"));
+    });
+}
+
+async function saveOfflineAttendanceIntent(location) {
+    if (state.user?.role !== "siswa" || !location || location.error ||
+        !Number.isFinite(location.lat) || !Number.isFinite(location.lng) ||
+        !Number.isFinite(location.accuracy) || !Number.isFinite(location.positionTimestamp)) {
+        throw new Error("A verified student session and a valid GPS fix are required for an offline request");
+    }
+    const ownerKey = await getOfflineOwnerKey();
+    const existing = (await getOfflineAttendanceEvents()).filter(item => item.ownerKey === ownerKey);
+    if (existing.length >= 3) throw new Error("Maksimum tiga permintaan offline boleh menunggu sinkronisasi.");
+    const event = {
+        eventId: createIdempotencyKey(),
+        ownerKey,
+        capturedAt: Date.now(),
+        gps: {
+            lat: location.lat,
+            lng: location.lng,
+            accuracy: location.accuracy,
+            timestamp: location.positionTimestamp,
+            speed: Number.isFinite(location.speed) ? location.speed : 0
+        },
+        faceLivenessCompleted: true,
+        faceModelKey: "auraface-glintr100-int8-v1",
+        localStatus: "waiting_for_sync"
+    };
+    const db = await openOfflineAttendanceDb();
+    await new Promise((resolve, reject) => {
+        const tx = db.transaction("events", "readwrite");
+        tx.objectStore("events").add(event);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error("Offline attendance request could not be saved"));
+        tx.onabort = () => reject(tx.error || new Error("Offline attendance save was cancelled"));
+    });
+    await updateOfflineAttendanceStatus();
+    return event;
+}
+
+async function deleteOfflineAttendanceEvent(eventId) {
+    const db = await openOfflineAttendanceDb();
+    await new Promise((resolve, reject) => {
+        const tx = db.transaction("events", "readwrite");
+        tx.objectStore("events").delete(eventId);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error("Offline event could not be removed"));
+    });
+}
+
+async function updateOfflineAttendanceStatus() {
+    const status = $("student-offline-status");
+    if (!status) return;
+    try {
+        const ownerKey = state.user?.role === "siswa" ? await getOfflineOwnerKey() : "";
+        const events = ownerKey
+            ? (await getOfflineAttendanceEvents()).filter(item => item.ownerKey === ownerKey)
+            : [];
+        const count = events.length;
+        status.textContent = count
+            ? count + " permintaan tersimpan di perangkat dan menunggu sinkronisasi. Belum menjadi presensi resmi."
+            : navigator.onLine
+                ? "Mode online aktif. Presensi offline hanya digunakan saat koneksi terputus."
+                : "Mode offline aktif. Koneksi akan diperiksa kembali saat tersedia.";
+    } catch (error) {
+        status.textContent = "Penyimpanan offline belum tersedia pada browser ini.";
+        console.warn("Offline attendance status could not be read:", error);
+    }
+}
+
+async function syncOfflineAttendanceQueue() {
+    if (state.offlineSyncBusy || state.user?.role !== "siswa" || !navigator.onLine) return;
+    state.offlineSyncBusy = true;
+    try {
+        const ownerKey = await getOfflineOwnerKey();
+        const events = (await getOfflineAttendanceEvents())
+            .filter(item => item.ownerKey === ownerKey)
+            .sort((a, b) => Number(a.capturedAt) - Number(b.capturedAt));
+        let synced = 0;
+        for (const item of events) {
+            if (!navigator.onLine || state.user?.role !== "siswa") break;
+            try {
+                await cloudRequest("/api/attendance", {
+                    method: "POST",
+                    body: {
+                        action: "offline-pending",
+                        event_id: item.eventId,
+                        claimed_at: item.capturedAt,
+                        lat: item.gps.lat,
+                        lng: item.gps.lng,
+                        accuracy: item.gps.accuracy,
+                        gps_timestamp: item.gps.timestamp,
+                        speed: item.gps.speed,
+                        face_liveness_completed: item.faceLivenessCompleted,
+                        face_model_key: item.faceModelKey
+                    }
+                });
+                await deleteOfflineAttendanceEvent(item.eventId);
+                synced++;
+            } catch (error) {
+                console.warn("Offline attendance request remains queued:", error);
+                if ([400, 403, 409].includes(error?.status)) {
+                    await deleteOfflineAttendanceEvent(item.eventId);
+                    toast("Satu permintaan offline tidak dapat diterima: " +
+                        (error.originalMessage || error.message) + ". Tidak ada presensi resmi yang dibuat.", "warning");
+                    continue;
+                }
+                break;
+            }
+        }
+        await updateOfflineAttendanceStatus();
+        if (synced) {
+            toast(synced + " permintaan offline terkirim dan menunggu pemeriksaan Admin/Guru. Presensi belum resmi.", "success");
+        }
+    } catch (error) {
+        console.warn("Offline attendance synchronization is unavailable:", error);
+    } finally {
+        state.offlineSyncBusy = false;
+    }
+}
+
+function updateOfflineConnectionState() {
+    const banner = $("network-banner");
+    if (!navigator.onLine && banner) {
+        banner.textContent = "Koneksi internet terputus. Amanah ID menyimpan permintaan offline secara lokal jika verifikasi kamera dan GPS selesai; permintaan tetap menunggu pemeriksaan.";
+        banner.classList.remove("hidden");
+    } else if (banner && state.networkHeartbeatFailures < 3) {
+        banner.textContent = "Koneksi ke layanan terputus. Periksa jaringan dan konfigurasi API.";
+    }
+    void updateOfflineAttendanceStatus();
+}
+
 async function checkNetworkHeartbeat() {
     const requestUser = state.user;
     if (!requestUser || state.networkHeartbeatBusy) return;
