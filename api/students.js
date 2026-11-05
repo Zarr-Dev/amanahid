@@ -107,6 +107,47 @@ export default async function handler(req, res) {
     if (req.method === "PATCH") {
         try {
             if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
+        const body = req.body || {};
+        if (body.action === "deactivate") {
+            if (!rateLimit(req, "students:PATCH:deactivate", 12, 60_000, res)) {
+                return jsonError(res, 429, "Terlalu banyak perubahan status akun. Coba lagi sebentar.");
+            }
+            const features = await getFeatureFlags();
+            if (!features.account_deactivation) {
+                return featureDisabled(res, "account_deactivation", "Penonaktifan akun sedang dinonaktifkan");
+            }
+            if (!parseNisn(body.nisn)) return jsonError(res, 400, "NISN siswa tidak valid");
+            try {
+                const teacherRows = await supabaseRequest(
+                    "teachers?select=id,email&email=eq." + encodeURIComponent(getSession(req)?.email || "") + "&is_active=eq.true&limit=1"
+                );
+                const teacher = teacherRows?.[0];
+                if (!teacher) return jsonError(res, 403, "Akun Guru aktif diperlukan");
+                const students = await supabaseRequest(
+                    "students?select=id,nisn,email,is_active,homeroom_teacher_id&nisn=eq." +
+                    encodeURIComponent(body.nisn) + "&is_active=eq.true&limit=1"
+                );
+                const student = students?.[0];
+                if (!student || student.homeroom_teacher_id !== teacher.id) {
+                    return jsonError(res, 404, "Siswa tidak ditemukan pada kelas binaan Guru ini");
+                }
+                const updated = await supabaseRequest(
+                    "students?id=eq." + encodeURIComponent(student.id) + "&select=id,nisn,email,is_active",
+                    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ is_active: false }) }
+                );
+                const result = Array.isArray(updated) ? updated[0] : null;
+                if (!result) return jsonError(res, 409, "Status siswa tidak berhasil diubah");
+                await writeAuditLog(getSession(req), "student.deactivate_by_homeroom_teacher", "students", student.id, {
+                    nisn: student.nisn,
+                    account_email: student.email,
+                    is_active: false
+                });
+                return res.status(200).json({ ok: true, is_active: false, nisn: student.nisn });
+            } catch (error) {
+                console.error("Teacher student deactivation failed:", error);
+                return jsonSupabaseError(res, error, "Tidak dapat menonaktifkan akun siswa");
+            }
+        }
         } catch (error) {
             console.error("Student face update authorization failed:", error);
             return jsonSupabaseError(res, error, "Unable to validate teacher session");
