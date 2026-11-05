@@ -2800,6 +2800,10 @@ async function checkNetworkHeartbeat() {
         $("network-banner")?.classList.add("hidden");
         $("network-status-teacher")?.classList.add("hidden");
         $("network-status-student")?.classList.add("hidden");
+        if (requestUser.role === "siswa") {
+            void updateOfflineAttendanceStatus();
+            void syncOfflineAttendanceQueue();
+        }
     } catch (error) {
         if (state.user !== requestUser) return;
         if (error?.status === 401 || error?.status === 403) {
@@ -5785,6 +5789,12 @@ function setupEvents() {
 
     document.addEventListener("visibilitychange", () => {
         if (document.hidden) stopAllCameras();
+    });
+    window.addEventListener("offline", updateOfflineConnectionState);
+    window.addEventListener("online", () => {
+        updateOfflineConnectionState();
+        void checkNetworkHeartbeat();
+        void syncOfflineAttendanceQueue();
     });
     window.addEventListener("pagehide", stopAllCameras);
     window.addEventListener("beforeunload", stopAllCameras);
