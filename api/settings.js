@@ -36,6 +36,13 @@ export default async function handler(req, res) {
         const payload = {
             ok: true,
             service: "Amanah.id API",
+            environment: process.env.VERCEL_ENV || "self-hosted",
+            deployment: {
+                url: process.env.VERCEL_URL || null,
+                branch: process.env.VERCEL_GIT_COMMIT_REF || null,
+                commit: typeof process.env.VERCEL_GIT_COMMIT_SHA === "string"
+                    ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 12) : null
+            },
             checks: {
                 api: "ok",
                 configuration: missing.length ? "missing" : "ok",
