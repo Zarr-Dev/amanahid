@@ -444,8 +444,8 @@
                             maxlength="40" data-i18n-placeholder="classExample" placeholder="Contoh: XI IPA 1">
                         <label for="input-parent-wa" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
                         <input id="input-parent-wa" type="tel" inputmode="tel" autocomplete="tel"
-                            data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
-                            pattern="(?:08|628)[0-9]{8,13}">
+                            data-i18n-placeholder="whatsappPlaceholder" placeholder="08..., 628..., atau +62..."
+                            pattern="[+()0-9\\s.-]{10,24}">
                         <label for="input-student-email" data-i18n="email">Email akun siswa</label>
                         <input id="input-student-email" type="email" autocomplete="email" required maxlength="254"
                             data-i18n-placeholder="emailPlaceholder" placeholder="nama@siswa.sch.id">
@@ -649,8 +649,8 @@
 
                             <label for="admin-user-parent-whatsapp" data-i18n="parentWhatsApp">WhatsApp orang tua</label>
                             <input id="admin-user-parent-whatsapp" type="tel" inputmode="tel" autocomplete="tel"
-                                maxlength="15" pattern="(?:08|628)[0-9]{8,13}"
-                                data-i18n-placeholder="whatsappPlaceholder" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx">
+                                maxlength="24" pattern="[+()0-9\\s.-]{10,24}"
+                                data-i18n-placeholder="whatsappPlaceholder" placeholder="08..., 628..., atau +62...">
                             <p class="helper-text" data-i18n="studentAccountNote">Siswa dapat login setelah dibuat;
                                 presensi wajah aktif setelah Guru mendaftarkan sampel.</p>
                         </div>
@@ -741,6 +741,49 @@
                             <p id="admin-map-device-status" class="helper-text" role="status" aria-live="polite" data-i18n="adminMapNeverChecked">Lokasi perangkat belum diperiksa. Pemeriksaan hanya dilakukan setelah tombol ditekan.</p>
                         </div>
                     </aside>
+                </div>
+            </section>
+
+            <section id="admin-view-whatsapp" class="admin-view hidden">
+                <div class="page-intro"><div>
+                    <span class="section-kicker" data-i18n="adminWhatsappNotifications">NOTIFIKASI ORANG TUA</span>
+                    <h2 data-i18n="adminWhatsappTemplateTitle">Pesan otomatis untuk orang tua</h2>
+                    <p class="muted" data-i18n="adminWhatsappTemplateDesc">Pesan ini dikirim setiap kali presensi siswa berhasil dicatat. Pengaturan berlaku terus sampai Admin mengubahnya.</p>
+                </div></div>
+                <div class="admin-test-grid">
+                    <section class="panel admin-test-card">
+                        <div class="panel-heading"><div><h3 data-i18n="adminWhatsappTemplateTitle">Pesan otomatis untuk orang tua</h3>
+                            <p class="muted" data-i18n="adminWhatsappTemplateDesc">Pesan ini dikirim setiap kali presensi siswa berhasil dicatat.</p></div></div>
+                        <p class="helper-text"><span data-i18n="adminWhatsappProvider">Koneksi Fonnte</span>: <strong id="admin-whatsapp-provider-state">Memeriksa...</strong></p>
+                        <form id="admin-whatsapp-template-form" class="form-stack">
+                            <label class="admin-test-consent"><input id="admin-whatsapp-enabled" type="checkbox" checked><span data-i18n="adminWhatsappEnabled">Kirim pemberitahuan otomatis setelah presensi siswa berhasil dicatat</span></label>
+                            <label for="admin-whatsapp-template" data-i18n="adminWhatsappTemplateLabel">Isi pesan</label>
+                            <textarea id="admin-whatsapp-template" rows="6" maxlength="450" required></textarea>
+                            <p class="helper-text" data-i18n="adminWhatsappTemplateHelp">Penanda yang tersedia: {name}, {nisn}, {class}, {date}, {time}, dan {school}.</p>
+                            <div><label for="admin-whatsapp-template-preview" data-i18n="adminWhatsappPreviewTitle">Contoh pesan</label>
+                                <pre id="admin-whatsapp-template-preview" class="admin-test-message-preview"></pre>
+                                <small id="admin-whatsapp-template-count" class="helper-text">0/450</small>
+                            </div>
+                            <button class="button primary" type="submit" data-i18n="adminWhatsappSave">Simpan pengaturan</button>
+                            <p id="admin-whatsapp-settings-status" class="helper-text" role="status" aria-live="polite"></p>
+                        </form>
+                    </section>
+                    <section class="panel admin-test-card">
+                        <div class="panel-heading"><div><h3 data-i18n="adminWhatsappFailuresTitle">Pesan yang perlu diperiksa</h3>
+                            <p class="muted" data-i18n="adminWhatsappFailuresDesc">Pesan yang ditolak Fonnte dapat dicoba kembali.</p></div>
+                            <button id="admin-whatsapp-refresh" class="button subtle" type="button" data-i18n="refreshData">Segarkan data</button>
+                        </div>
+                        <div class="table-wrap"><table>
+                            <thead><tr><th data-i18n="adminWhatsappStudent">Siswa</th>
+                                <th data-i18n="adminWhatsappDestination">Nomor tujuan</th>
+                                <th data-i18n="adminWhatsappWhen">Waktu presensi</th>
+                                <th data-i18n="adminWhatsappStatus">Status pesan</th>
+                                <th data-i18n="action">Tindakan</th></tr></thead>
+                            <tbody id="admin-whatsapp-failures-tbody"></tbody>
+                        </table></div>
+                        <p id="admin-whatsapp-failures-empty" class="empty-state" data-i18n="adminWhatsappFailuresEmpty">Tidak ada pesan yang perlu ditindaklanjuti.</p>
+                        <p class="helper-text" data-i18n="adminWhatsappTemplateOneTime">Template pada menu Pengujian hanya berlaku untuk satu pesan percobaan.</p>
+                    </section>
                 </div>
             </section>
 
