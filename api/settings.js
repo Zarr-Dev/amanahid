@@ -72,8 +72,15 @@ export default async function handler(req, res) {
             if (!Array.isArray(rows) || !rows.length) throw new Error("School settings are not initialized");
             const payload = {
                 ok: true,
-                service: "Amanah.id API",
-                    checks: { api: "ok", configuration: "ok", database: "ok", whatsapp }
+                service: "Amanah ID API",
+                environment: process.env.VERCEL_ENV || "self-hosted",
+                deployment: {
+                    url: process.env.VERCEL_URL || null,
+                    branch: process.env.VERCEL_GIT_COMMIT_REF || null,
+                    commit: typeof process.env.VERCEL_GIT_COMMIT_SHA === "string"
+                        ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 12) : null
+                },
+                checks: { api: "ok", configuration: "ok", database: "ok", whatsapp }
             };
             return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
         } catch (error) {
