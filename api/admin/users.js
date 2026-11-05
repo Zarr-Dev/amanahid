@@ -72,6 +72,12 @@ export default async function handler(req, res) {
                 return jsonError(res, 409, "User email already exists");
             }
 
+            const normalizedParentWhatsApp = body.role === "siswa" && body.parent_whatsapp
+                ? normalizeWhatsAppNumber(body.parent_whatsapp)
+                : null;
+            if (body.role === "siswa" && body.parent_whatsapp && !normalizedParentWhatsApp) {
+                return jsonError(res, 400, "Nomor WhatsApp orang tua tidak valid. Gunakan format Indonesia seperti 08..., 628..., atau +62...");
+            }
             const password_hash = await hashPassword(body.password);
             if (body.role === "guru") {
                 const rows = await supabaseRequest("teachers?select=id,email,name,created_at", {
@@ -120,7 +126,7 @@ export default async function handler(req, res) {
                     name,
                     class_name: body.class_name.trim(),
                     homeroom_teacher_id: homeroomTeacher?.id || null,
-                    parent_whatsapp: body.parent_whatsapp ? normalizeWhatsAppNumber(body.parent_whatsapp) : null,
+                    parent_whatsapp: normalizedParentWhatsApp,
                     face_descriptors: [],
                     email,
                     password_hash,
