@@ -321,6 +321,7 @@ if (!js.includes("phase === \"pending\" ? \"disabled\"") || !js.includes("featur
 const offlineMigration = readFileSync(join(root, "supabase/migrations/20261105090000_create_offline_attendance_events.sql"), "utf8");
 const offlineApi = readFileSync(join(root, "api/attendance.js"), "utf8");
 const serviceWorker = readFileSync(join(root, "public/sw.js"), "utf8");
+const vercelConfig = readFileSync(join(root, "vercel.json"), "utf8");
 if (!html.includes('rel="manifest" href="/manifest.webmanifest"') ||
     !js.includes('navigator.serviceWorker.register("/sw.js"') ||
     !offlineMigration.includes("pending_review") ||
@@ -329,6 +330,8 @@ if (!html.includes('rel="manifest" href="/manifest.webmanifest"') ||
     !serviceWorker.includes('url.pathname.startsWith("/api/")') ||
     !serviceWorker.includes('amanah-face-runtime-v1') ||
     !serviceWorker.includes('onnxruntime-web@1.31.1/dist/') ||
+    !vercelConfig.includes("https://huggingface.co") ||
+    !vercelConfig.includes("https://cas-bridge.xethub.hf.co") ||
     !faceEngineSource.includes('await navigator.storage?.persist?.()') ||
     !js.includes("navigator.storage?.persist?.()") ||
     !js.includes("attendanceConnectionFailure") ||
