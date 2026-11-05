@@ -146,13 +146,14 @@ const EXTRA_T = {
         fakeLocation: "Lokasi GPS menunjukkan anomali. Aktifkan lokasi perangkat yang sebenarnya lalu coba lagi.",
         cloudLoadFailed: "Data cloud gagal dimuat. Periksa koneksi lalu coba lagi.",
         cloudRequestFailed: "Permintaan tidak dapat diproses. Periksa koneksi, lalu coba lagi atau hubungi Admin.",
+        accessDenied: "Akses belum diizinkan. Periksa akun atau hubungi Admin sekolah.", recordNotFound: "Data yang diminta tidak ditemukan.", duplicateRecord: "Data ini sudah tercatat. Tidak perlu mengirim ulang.",
         cloudSaveFailed: "Data gagal disimpan ke cloud. Periksa koneksi lalu coba lagi.",
         cloudDeleteFailed: "Data gagal dihapus dari cloud. Periksa koneksi lalu coba lagi.",
         attendanceNetworkFailed: "Presensi tidak berhasil dikirim. Periksa koneksi lalu coba lagi.",
         rateLimitWait: "Terlalu banyak percobaan, harap tunggu 1 menit.",
         serverBusyReconnect: "Server sedang sibuk, mencoba menghubungkan ulang...",
         networkReconnecting: "Menghubungkan ulang...",
-        attendanceWhatsappFailed: "Presensi tercatat, tetapi notifikasi WhatsApp gagal dikirim.",
+        attendanceWhatsappFailed: "Presensi sudah tercatat, tetapi pemberitahuan ke orang tua gagal. Admin dapat mencoba mengirim ulang.",
         absenceFormNav: "Formulir izin",
         absenceFormKicker: "KETIDAKHADIRAN",
         absenceFormTitle: "Formulir ketidakhadiran",
@@ -335,13 +336,14 @@ const EXTRA_T = {
         fakeLocation: "GPS location appears anomalous. Enable the device's actual location and try again.",
         cloudLoadFailed: "Cloud data could not be loaded. Check your connection and try again.",
         cloudRequestFailed: "The request could not be completed. Check your connection, try again, or contact an Admin.",
+         accessDenied: "You do not have permission to do this. Check your account or contact the school Admin.", recordNotFound: "The requested information could not be found.", duplicateRecord: "This record already exists. There is no need to submit it again.",
         cloudSaveFailed: "Data could not be saved to the cloud. Check your connection and try again.",
         cloudDeleteFailed: "Cloud data could not be deleted. Check your connection and try again.",
         attendanceNetworkFailed: "Attendance could not be submitted. Check your connection and try again.",
         rateLimitWait: "Too many attempts. Please wait 1 minute.",
         serverBusyReconnect: "The server is busy. Reconnecting...",
         networkReconnecting: "Reconnecting...",
-        attendanceWhatsappFailed: "Attendance was recorded, but the WhatsApp notification failed.",
+        attendanceWhatsappFailed: "Attendance was recorded, but the parent notification failed. An Admin can retry it.",
         absenceFormNav: "Absence form",
         absenceFormKicker: "ABSENCE REQUEST",
         absenceFormTitle: "Absence request form",
@@ -524,13 +526,14 @@ const EXTRA_T = {
         fakeLocation: "يبدو أن موقع GPS غير طبيعي. فعّل الموقع الحقيقي للجهاز ثم أعد المحاولة.",
         cloudLoadFailed: "تعذر تحميل بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
         cloudRequestFailed: "تعذر إكمال الطلب. تحقق من الاتصال وحاول مرة أخرى أو تواصل مع المسؤول.",
+         accessDenied: "ليست لديك صلاحية لتنفيذ هذا الإجراء. تحقق من حسابك أو تواصل مع إدارة المدرسة.", recordNotFound: "تعذر العثور على البيانات المطلوبة.", duplicateRecord: "هذا السجل موجود بالفعل. لا حاجة لإرساله مرة أخرى.",
         cloudSaveFailed: "تعذر حفظ البيانات في السحابة. تحقق من الاتصال وحاول مرة أخرى.",
         cloudDeleteFailed: "تعذر حذف بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
         attendanceNetworkFailed: "تعذر إرسال الحضور. تحقق من الاتصال وحاول مرة أخرى.",
         rateLimitWait: "محاولات كثيرة جدًا. يرجى الانتظار دقيقة واحدة.",
         serverBusyReconnect: "الخادم مشغول. جارٍ إعادة الاتصال...",
         networkReconnecting: "جارٍ إعادة الاتصال...",
-        attendanceWhatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب.",
+        attendanceWhatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار ولي الأمر. يمكن للمسؤول محاولة الإرسال مرة أخرى.",
         absenceFormNav: "نموذج الغياب",
         absenceFormKicker: "طلب غياب",
         absenceFormTitle: "نموذج طلب الغياب",
@@ -2447,11 +2450,13 @@ async function cloudRequest(path, {
                     }
 
                 } else if (response.status === 403) {
-                    message = "Akses ditolak. Periksa APP_ORIGIN di Vercel atau hubungi Admin.";
+                    message = tr("accessDenied");
                 } else if (response.status === 404) {
-                    message = "Data tidak ditemukan.";
+                    message = tr("recordNotFound");
                 } else if (response.status === 409) {
-                    message = "Sudah ada data serupa hari ini.";
+                    message = /Attendance has already been recorded today/i.test(rawError)
+                        ? tr("studentAlreadyPresent")
+                        : tr("duplicateRecord");
                 } else if (response.status === 429) {
                     const retryAfter = Number(response.headers.get("Retry-After"));
                     error.retryAfter = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 60;
@@ -2506,9 +2511,16 @@ async function cloudRequest(path, {
 }
 
 function toastAdminError(error) {
-    const status = Number.isInteger(error?.status) ? `HTTP ${error.status}` : "Network error";
-    const message = error?.originalMessage ?? error?.message ?? "Permintaan Admin gagal.";
-    toast(`${status}: ${message}`, "error");
+    const status = error?.status;
+    const message = status === 401 ? tr("sessionExpired")
+        : status === 403 ? tr("accessDenied")
+        : status === 404 ? tr("recordNotFound")
+        : status === 409 ? tr("duplicateRecord")
+        : status === 429 ? tr("rateLimitWait")
+        : tr("cloudRequestFailed");
+    console.error("Admin request failed:", error);
+    toast(message, "error");
+
 }
 
 function setAuthFormBusy(form, busy) {
