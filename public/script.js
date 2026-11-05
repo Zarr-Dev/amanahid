@@ -2510,46 +2510,75 @@ function roleActivityActionLabel(action) {
     return labels[action] || String(action || "Aktivitas tercatat").replaceAll(".", " · ");
 }
 
-function renderRoleActivityTable(targetId, users) {
+function formatAdminActivityCompactTime(value, fallback) {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return fallback;
+    const locale = state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID";
+    return new Intl.DateTimeFormat(locale, {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+    }).format(date);
+}
+
+function renderRoleActivityTable(targetId, groups) {
     const table = $(targetId);
     if (!table) return;
-    if (!Array.isArray(users) || users.length === 0) {
-        table.innerHTML = '<tr><td colspan="3">Belum ada akun pada peran ini.</td></tr>';
+    const roles = [
+        { key: "admin", label: "Admin", className: "admin" },
+        { key: "guru", label: "Guru", className: "teacher" },
+        { key: "siswa", label: "Siswa", className: "student" }
+    ];
+    const rows = roles.flatMap(role => (Array.isArray(groups?.[role.key]) ? groups[role.key] : [])
+        .map(user => ({ ...user, activityRole: role })));
+    if (!rows.length) {
+        table.innerHTML = '<tr><td colspan="5">Belum ada akun untuk ditampilkan.</td></tr>';
         return;
     }
-    table.innerHTML = users.map(user => {
-        const account = '<strong>' + safeText(user.name || "—") + '</strong><br><small>' +
-            safeText(user.email || "Email tidak tersedia") + '</small><br><small>' +
-            safeText(user.is_active ? "Aktif" : "Nonaktif") + '</small>';
-        const login = safeText(formatRoleActivityTime(user.last_login_at, "Belum pernah login"));
-        const activity = user.last_activity_action
-            ? '<strong>' + safeText(roleActivityActionLabel(user.last_activity_action)) + '</strong><br><small>' +
-                safeText(formatRoleActivityTime(user.last_activity_at, "Waktu tidak tersedia")) + '</small>'
+    table.innerHTML = rows.map(user => {
+        const role = user.activityRole;
+        const name = safeText(user.name || "—");
+        const email = safeText(user.email || "Email tidak tersedia");
+        const active = user.is_active === true;
+        const loginText = formatAdminActivityCompactTime(user.last_login_at, "Belum pernah login");
+        const action = user.last_activity_action
+            ? safeText(roleActivityActionLabel(user.last_activity_action))
             : "Belum ada aktivitas tercatat";
-        return '<tr><td>' + account + '</td><td>' + login + '</td><td>' + activity + '</td></tr>';
+        const activityTime = user.last_activity_at
+            ? formatAdminActivityCompactTime(user.last_activity_at, "Waktu tidak tersedia")
+            : "";
+        return '<tr>' +
+            '<td><span class="admin-audit-role-chip is-' + role.className + '">' + safeText(role.label) + '</span></td>' +
+            '<td class="admin-audit-account"><strong>' + name + '</strong><small>' + email + '</small></td>' +
+            '<td><span class="admin-audit-status ' + (active ? "is-active" : "is-inactive") + '">' +
+                (active ? "Aktif" : "Nonaktif") + '</span></td>' +
+            '<td class="admin-audit-time">' + safeText(loginText) + '</td>' +
+            '<td class="admin-audit-activity"><strong>' + action + '</strong>' +
+                (activityTime ? '<small>' + safeText(activityTime) + '</small>' : '') + '</td>' +
+            '</tr>';
     }).join("");
 }
 
 async function loadAdminRoleActivity() {
     const status = $("admin-activity-status");
-    if (status) status.textContent = "Memuat riwayat login dan aktivitas per peran...";
+    const table = $("admin-activity-tbody");
+    if (status) status.textContent = "Memuat riwayat login dan aktivitas per peran…";
+    if (table) table.innerHTML = '<tr><td colspan="5">Memuat aktivitas…</td></tr>';
     try {
         const response = await cloudRequest("/api/admin/audit?action=activity");
         const groups = response?.activity || {};
-        renderRoleActivityTable("admin-activity-admin-tbody", groups.admin);
-        renderRoleActivityTable("admin-activity-teacher-tbody", groups.guru);
-        renderRoleActivityTable("admin-activity-student-tbody", groups.siswa);
+        renderRoleActivityTable("admin-activity-tbody", groups);
         if (status) {
+            const total = ["admin", "guru", "siswa"].reduce((sum, role) =>
+                sum + (Array.isArray(groups[role]) ? groups[role].length : 0), 0);
             const limit = Number(response?.audit_history_limit_per_role) || 1000;
-            status.textContent = "Login diambil dari catatan login akun. Aktivitas menunjukkan tindakan penting yang tercatat pada API, dengan pemeriksaan hingga " +
+            status.textContent = total.toLocaleString() +
+                " akun ditampilkan. Aktivitas adalah tindakan penting yang tercatat oleh API; pencarian riwayat memeriksa hingga " +
                 limit.toLocaleString() + " catatan audit terbaru per peran.";
         }
     } catch (error) {
         console.error("Admin role activity could not load:", error);
-        for (const id of ["admin-activity-admin-tbody", "admin-activity-teacher-tbody", "admin-activity-student-tbody"]) {
-            const table = $(id);
-            if (table) table.innerHTML = '<tr><td colspan="3">Riwayat aktivitas gagal dimuat.</td></tr>';
-        }
+        if (table) table.innerHTML = '<tr><td colspan="5">Riwayat aktivitas gagal dimuat.</td></tr>';
         if (status) status.textContent = "Riwayat aktivitas tidak dapat dimuat. Periksa koneksi dan akses Admin.";
     }
 }
