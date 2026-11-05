@@ -1,0 +1,24 @@
+{
+  "name": "Amanah ID — Presensi Digital",
+  "short_name": "Amanah ID",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f8ff",
+  "theme_color": "#f5f8ff",
+  "description": "Sistem presensi sekolah dengan verifikasi wajah dan GPS geofencing.",
+  "icons": [
+    {
+      "src": "/assets/amanah-favicon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/amanah-favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
