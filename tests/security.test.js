@@ -1356,6 +1356,7 @@ test("Fonnte test status does not require a test-recipient allowlist", async t =
     await adminSettingsHandler(req, res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.fonnte_configured, false);
+    assert.equal(res.body.environment, process.env.VERCEL_ENV || "unknown");
     assert.equal(res.body.test_send_enabled, true);
     assert.equal(res.body.recipient_allowlist_required, false);
 });
