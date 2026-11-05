@@ -123,7 +123,7 @@ async function handleAdminAttendanceWhatsApp(req, res, admin) {
                 });
                 return res.status(200).json({ ok: true, status: "queued", process: providerResult?.process || "pending" });
             } catch (error) {
-                const uncertain = ["FONNTE_TIMEOUT", "FONNTE_NETWORK_ERROR"].includes(error?.code);
+                const uncertain = ["FONNTE_TIMEOUT", "FONNTE_NETWORK_ERROR", "FONNTE_UNCERTAIN_RESPONSE"].includes(error?.code);
                 const status = uncertain ? "unknown" : "failed";
                 try {
                     await supabaseRequest(`attendance?id=eq.${encodeURIComponent(id)}`, {
