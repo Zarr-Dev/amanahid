@@ -5595,7 +5595,17 @@ function setupEvents() {
     window.addEventListener("hashchange", handleHashRoute);
 }
 
+function registerOfflineAppShell() {
+    if (!("serviceWorker" in navigator) || !window.isSecureContext) return;
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(error => {
+            console.warn("Amanah ID offline shell could not be registered:", error);
+        });
+    }, { once: true });
+}
+
 function initialize() {
+    registerOfflineAppShell();
     // Bind controls before optional rendering/localization so one startup error
     // cannot leave the entire interface looking interactive but inert.
     try {
