@@ -290,6 +290,13 @@ async function readModel(onProgress) {
         if (hex !== FACE_MODEL_SHA256) throw new Error("Face model integrity check failed");
         if (cache) {
             try {
+                // Ask the browser to protect the large verified model cache from routine eviction.
+                // Browsers may decline this request; recognition remains usable for the current session.
+                try {
+                    await navigator.storage?.persist?.();
+                } catch {
+                    // Persistent storage is a best-effort browser capability.
+                }
                 await cache.put(cacheKey, new Response(buffer.slice(0), {
                     headers: { "Content-Type": "application/octet-stream" }
                 }));
