@@ -2356,10 +2356,10 @@ function formatDate(dateString) {
 }
 
 function normalizeWhatsAppNumberInput(value) {
-    let digits = String(value || "").trim().replace(/\\D/g, "");
+    let digits = String(value || "").trim().replace(/\D/g, "");
     if (digits.startsWith("0")) digits = "62" + digits.slice(1);
     else if (digits.startsWith("8")) digits = "62" + digits;
-    return /^628\\d{8,13}$/.test(digits) ? digits : "";
+    return /^628\d{8,13}$/.test(digits) ? digits : "";
 }
 
 function safeText(value) {
