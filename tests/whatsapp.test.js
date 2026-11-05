@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sendWhatsApp } from "../api/_lib/whatsapp.js";
+import { normalizeWhatsAppNumber, renderAttendanceWhatsAppMessage, sendWhatsApp } from "../api/_lib/whatsapp.js";
 
 test("Fonnte accepts offline-device messages into its queue without claiming delivery", async t => {
     const previousToken = process.env.FONNTE_TOKEN;
@@ -68,4 +68,28 @@ test("Fonnte recipient and message validation runs before network requests", asy
     });
     await assert.rejects(() => sendWhatsApp("081234567890", "Valid enough message."), /Invalid WhatsApp recipient/);
     await assert.rejects(() => sendWhatsApp("6281234567890", "tiny"), /Invalid WhatsApp message/);
+});
+
+
+test("Indonesian parent phone inputs are normalized to Fonnte international format", () => {
+    assert.equal(normalizeWhatsAppNumber("0812-3456-7890"), "6281234567890");
+    assert.equal(normalizeWhatsAppNumber("6281234567890"), "6281234567890");
+    assert.equal(normalizeWhatsAppNumber("+62 812 3456 7890"), "6281234567890");
+    assert.equal(normalizeWhatsAppNumber("812 3456 7890"), "6281234567890");
+    assert.equal(normalizeWhatsAppNumber("081234"), null);
+    assert.equal(normalizeWhatsAppNumber("not a phone number"), null);
+    assert.equal(normalizeWhatsAppNumber(""), null);
+});
+
+test("Attendance WhatsApp template replaces only supported student and schedule details", () => {
+    const message = renderAttendanceWhatsAppMessage(
+        "Halo {name}, presensi {nisn} kelas {class} tercatat {date} pukul {time} di {school}.",
+        { name: "Alya Pratama", nisn: "1234567890", class_name: "XI IPA 1" },
+        "2026-11-05",
+        "07:15"
+    );
+    assert.equal(
+        message,
+        "Halo Alya Pratama, presensi 1234567890 kelas XI IPA 1 tercatat 2026-11-05 pukul 07:15 di Al-Fityan School."
+    );
 });
