@@ -201,6 +201,7 @@
                 <button class="nav-link active" type="button" data-target="view-presensi"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span><span data-i18n="dashboard">Dashboard</span></button>
                 <button class="nav-link" type="button" data-target="view-database"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16M15 4v16"/></svg></span><span data-i18n="database">Database</span></button>
                 <button class="nav-link" type="button" data-target="view-formulir"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3h8l4 4v14H4V3h4Z"/><path d="M8 3v5h8V3M12 12v6M9 15h6"/></svg></span><span data-i18n="formulir">Formulir</span></button>
+                <button class="nav-link" type="button" data-target="view-offline-review"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M7 3l-2 2M17 3l2 2"/></svg></span><span>Review presensi offline</span></button>
             </nav>
             <div class="sidebar-bottom">
                 <div class="school-mini"><span class="school-dot"></span>
@@ -494,6 +495,20 @@
                                 tidak bertahan setelah halaman dimuat ulang.</p>
                         </div>
                     </aside>
+                </div>
+            </section>
+            <section id="view-offline-review" class="view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">OFFLINE ATTENDANCE REVIEW</span>
+                        <h2>Review presensi offline</h2>
+                        <p class="muted">Periksa permintaan dari siswa pada kelas binaan Anda. Menyetujui permintaan akan membuat catatan presensi resmi dengan metode offline-reviewed dan alasan review tersimpan dalam audit.</p>
+                    </div>
+                    <button id="teacher-offline-refresh" class="button secondary" type="button">Segarkan antrean</button>
+                </div>
+                <div class="panel admin-offline-review-panel">
+                    <p id="teacher-offline-status" class="helper-text" role="status" aria-live="polite">Memuat antrean presensi offline…</p>
+                    <div class="table-wrap"><table><thead><tr><th>Siswa</th><th>Kelas</th><th>Waktu perangkat</th><th>Lokasi</th><th>Aksi</th></tr></thead><tbody id="teacher-offline-pending-tbody"></tbody></table></div>
+                    <div id="teacher-offline-empty" class="empty-state hidden"><strong>Tidak ada permintaan offline.</strong><p>Antrean siswa pada kelas binaan Anda akan tampil di sini.</p></div>
                 </div>
             </section>
         </section>
