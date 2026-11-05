@@ -19,7 +19,7 @@ async function handleAdminAttendanceWhatsApp(req, res, admin) {
         try {
             const [settingsRows, pendingRows] = await Promise.all([
                 supabaseRequest(`school_settings?select=attendance_whatsapp_enabled,attendance_whatsapp_template&id=eq.${SETTINGS_ID}&limit=1`),
-                supabaseRequest("attendance?select=id,date,time,parent_whatsapp_status,students!inner(name,nisn,class_name,parent_whatsapp)&parent_whatsapp_status=in.(failed,unknown,sending)&order=date.desc,time.desc&limit=20")
+                supabaseRequest("attendance?select=id,date,time,parent_whatsapp_status,students!inner(name,nisn,class_name,parent_whatsapp)&parent_whatsapp_status=in.(failed,unknown,sending,pending)&order=date.desc,time.desc&limit=20")
             ]);
             const row = Array.isArray(settingsRows) ? settingsRows[0] : null;
             return res.status(200).json({
