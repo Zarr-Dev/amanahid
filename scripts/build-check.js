@@ -137,8 +137,6 @@ const htmlChecks = [
     ["teacher absence request table", /id="absence-requests-tbody"/],
     ["admin test lab", /id="admin-view-tests"/],
     ["permanent WhatsApp settings", /id="admin-view-whatsapp"/],
-    ["attendance WhatsApp queue status", /parent_whatsapp_status: "queued"/],
-    ["parent phone international normalization", /normalizeWhatsAppNumberInput\(value\)/],
     ["admin camera diagnostics", /id="admin-test-camera-start"/],
     ["admin WhatsApp test preview", /id="admin-test-whatsapp-preview"/],
     ["admin GPS diagnostics", /id="admin-test-gps-run"/],
@@ -228,7 +226,8 @@ if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||
     !/stats\?\.total_students\s*\?\?\s*0/.test(js) ||
     !js.includes("normalizeWhatsAppNumberInput(parentWhatsApp)") ||
     !/normalizeWhatsAppNumber\(body\.parent_whatsapp\)/.test(adminUserApi) ||
-    !allApiSource.includes("sendWhatsApp(target, message)")) {
+    !allApiSource.includes("sendWhatsApp(target, message)") ||
+    !allApiSource.includes('parent_whatsapp_status: "queued"')) {
     console.error("Build check failed: admin token injection, null-safe statistics, or parent WhatsApp delivery wiring is missing.");
     process.exit(1);
 }
