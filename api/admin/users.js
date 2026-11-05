@@ -32,6 +32,21 @@ async function allUsers() {
     ];
 }
 
+async function setAccountActive(res, admin, body) {
+    if (!validBody(res, {
+        action: { type: "string", required: true, pattern: /^set_active$/ },
+        id: { type: "string", required: true, max: 36, pattern: UUID },
+        table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
+        is_active: { type: "boolean", required: true }
+    }, body)) return;
+    const path = body.table + "?id=eq." + encodeURIComponent(body.id) + "&select=id,email,is_active";
+    const rows = await supabaseRequest(path, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ is_active: body.is_active }) });
+    const updated = Array.isArray(rows) ? rows[0] : null;
+    if (!updated) return jsonError(res, 404, "Account not found");
+    await writeAuditLog(admin, (body.table === "students" ? "student" : "teacher") + (body.is_active ? ".activate" : ".deactivate"), body.table, body.id, { email: updated.email, is_active: body.is_active });
+    return res.status(200).json({ ok: true, is_active: body.is_active });
+}
+
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store, max-age=0");
     const admin = await authorizeAdmin(req, res, "users");
