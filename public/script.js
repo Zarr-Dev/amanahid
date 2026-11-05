@@ -1915,7 +1915,7 @@ function applyAdminFeatureFlags(features = {}) {
     const hide = (id, hidden) => $(id)?.classList.toggle("hidden", Boolean(hidden));
     hide("admin-export-users", features.admin_account_export === false);
     hide("admin-service-health-panel", features.service_health_panel === false);
-    hide("admin-test-whatsapp-card", features.parent_notifications === false);
+    // Fonnte diagnostics remain available even when parent attendance notifications are disabled.
 
     const profileForm = $("admin-profile-form");
     if (profileForm) {
@@ -2222,7 +2222,7 @@ async function loadAdminTestTools() {
     updateAdminWhatsAppPreview();
     updateAdminWhatsAppTestControls();
     try {
-        const result = await cloudRequest("/api/admin/test-tools");
+        const result = await cloudRequest("/api/admin/settings?action=test-tools");
         state.adminFonnteConfigured = result.fonnte_configured === true;
         const environment = String(result.environment || "environment aktif");
         $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured
@@ -2260,7 +2260,7 @@ async function sendAdminWhatsAppTest() {
     button.disabled = true;
     status.textContent = tr("testWhatsappSending");
     try {
-        const result = await cloudRequest("/api/admin/test-tools", {
+        const result = await cloudRequest("/api/admin/settings?action=test-tools", {
             method: "POST",
             body: { target, message, confirm: true }
         });
@@ -2317,46 +2317,84 @@ async function testAdminGps() {
 async function runAdminServiceChecks() {
     const root = $("admin-test-services-results");
     if (!root) return;
-    root.textContent = tr("testServiceChecking");
+    root.textContent = "Memeriksa layanan…";
+
+    const add = (name, state, detail = "") => results.push({ name, state, detail });
     const results = [];
-    const [operations, toolsResult, featureResult] = await Promise.allSettled([
-        loadAdminOperations(),
-        cloudRequest("/api/admin/test-tools"),
-        cloudRequest("/api/admin/settings?action=features")
-    ]);
-    const ready = operations.status === "fulfilled" ? operations.value?.ready : null;
-    const features = featureResult.status === "fulfilled" ? featureResult.value?.features : null;
-    const tools = toolsResult.status === "fulfilled" ? toolsResult.value : null;
-    const push = (name, state, detail) => results.push({ name, state, detail });
-    push("Vercel Serverless API", ready?.checks?.api === "ok" ? "ready" : "error",
-        ready?.environment || "Environment tidak terbaca");
-    push("Supabase PostgreSQL", ready?.checks?.database === "ok" ? "ready" : "error",
-        ready?.checks?.database || "Tidak dapat melakukan round-trip");
-    push("Environment autentikasi", ready?.checks?.configuration === "ok" ? "ready" : "error",
-        ready?.checks?.configuration || "Konfigurasi tidak tersedia");
-    push("Fonnte WhatsApp token", tools?.fonnte_configured === true ? "ready" : "not_configured",
-        tools?.fonnte_configured === true ? "Token terdeteksi; pengiriman tetap perlu tes nyata" : "Token belum berisi nilai pada environment aktif");
-    push("Supabase feature flags", features && typeof features === "object" ? "ready" : "error",
-        features ? "Konfigurasi kebijakan berhasil dibaca" : "Tidak dapat membaca konfigurasi");
-    push("Kamera perangkat", window.isSecureContext && Boolean(navigator.mediaDevices?.getUserMedia) ? "ready" : "not_configured",
-        window.isSecureContext ? "Browser menyediakan getUserMedia" : "Perlu HTTPS atau browser yang mendukung kamera");
-    push("Geolocation perangkat", Boolean(navigator.geolocation?.getCurrentPosition) ? "ready" : "not_configured",
-        navigator.geolocation ? "API tersedia; akurasi diuji terpisah" : "Browser tidak menyediakan geolocation");
-    push("ArcFace AI runtime", state.faceRecognitionReady && state.faceEngine ? "ready" : "not_configured",
-        state.faceRecognitionReady ? "Model telah dimuat pada sesi ini" : "Model belum dimuat; jalankan tes kamera untuk memvalidasi");
-    push("Penyimpanan offline", Boolean(window.indexedDB && navigator.serviceWorker) ? "ready" : "not_configured",
-        "IndexedDB dan Service Worker " + (window.indexedDB && navigator.serviceWorker ? "tersedia" : "tidak lengkap"));
-    push("GitHub Actions CI", operations.status === "fulfilled" && operations.value?.github?.workflow?.workflow_runs?.[0]?.conclusion === "success"
-        ? "ready" : operations.status === "fulfilled" && operations.value?.github?.workflow?.workflow_runs?.[0]?.status
-            ? "not_configured" : "error",
-        operations.status === "fulfilled"
-            ? (operations.value?.github?.workflow?.workflow_runs?.[0]?.conclusion || operations.value?.github?.workflow?.workflow_runs?.[0]?.status || "Status CI tidak tersedia")
-            : "GitHub API tidak dapat dijangkau");
+    const normalizeState = ok => ok ? "ready" : "error";
+
+    // API liveness and database readiness are intentionally separate checks.
+    try {
+        const health = await cloudRequest("/api/settings?action=health");
+        add("Vercel Function · Liveness", health?.checks?.api === "ok" ? "ready" : "error",
+            health?.environment || "API memberi respons");
+    } catch (error) {
+        add("Vercel Function · Liveness", "error", error.message);
+    }
+    try {
+        const ready = await cloudRequest("/api/ready");
+        add("Supabase · Database round-trip",
+            ready?.ok === true && ready?.checks?.database === "ok" ? "ready" : "error",
+            ready?.checks?.database || "Tidak ada respons database");
+    } catch (error) {
+        add("Supabase · Database round-trip", "error", error.message);
+    }
+    try {
+        const tools = await cloudRequest("/api/admin/settings?action=test-tools");
+        add("Fonnte · Token server", tools?.fonnte_configured === true ? "ready" : "not_configured",
+            tools?.environment || "Environment aktif");
+    } catch (error) {
+        add("Fonnte · Token server", "error", error.message);
+    }
+    try {
+        const flags = await cloudRequest("/api/admin/settings?action=features");
+        const validFlags = flags?.features && typeof flags.features === "object" &&
+            !Array.isArray(flags.features);
+        add("Supabase · Feature flags", normalizeState(validFlags),
+            validFlags ? Object.keys(flags.features).length + " kebijakan" : "Konfigurasi tidak tersedia");
+    } catch (error) {
+        add("Supabase · Feature flags", "error", error.message);
+    }
+    try {
+        const response = await fetch("/face-engine.js", { method: "HEAD", cache: "no-store" });
+        add("Face AI · Engine asset", normalizeState(response.ok),
+            response.ok ? "File model client tersedia; inferensi tetap perlu diuji kamera" : "Asset tidak tersedia");
+    } catch (error) {
+        add("Face AI · Engine asset", "error", error.message);
+    }
+    const gpsAvailable = Boolean(window.isSecureContext && navigator.geolocation);
+    add("GPS · Browser geolocation", gpsAvailable ? "ready" : "error",
+        gpsAvailable ? "API tersedia; lokasi aktual memerlukan izin pengguna" : "Perlu HTTPS dan dukungan geolocation");
+    try {
+        const db = await openOfflineAttendanceDb();
+        const offlineReady = Boolean(db && window.crypto?.subtle && window.indexedDB);
+        add("Offline · IndexedDB + Crypto", normalizeState(offlineReady),
+            offlineReady ? "Penyimpanan antrean lokal tersedia" : "Browser tidak mendukung semua fitur");
+    } catch (error) {
+        add("Offline · IndexedDB + Crypto", "error", error.message || "Penyimpanan offline tidak tersedia");
+    }
+    try {
+        const response = await fetch("https://api.github.com/repos/Zarr-Dev/amanahid/commits/main", {
+            cache: "no-store", credentials: "omit", headers: { Accept: "application/vnd.github+json" }
+        });
+        add("GitHub · Repository API", normalizeState(response.ok),
+            response.ok ? "Repositori dapat dibaca" : "GitHub API memberi respons " + response.status);
+    } catch (error) {
+        add("GitHub · Repository API", "error", error.message);
+    }
+    try {
+        const registration = await navigator.serviceWorker?.getRegistration();
+        add("PWA · Service worker", normalizeState(Boolean(registration)),
+            registration ? "Terdaftar pada browser ini" : "Belum terdaftar pada browser ini");
+    } catch (error) {
+        add("PWA · Service worker", "error", error.message);
+    }
+
     root.innerHTML = results.map(item => {
         const css = item.state === "ready" ? "is-ok"
             : item.state === "not_configured" ? "is-not-configured" : "is-error";
         const message = item.state === "ready" ? "Siap"
-            : item.state === "not_configured" ? "Perlu perhatian" : "Gagal";
+            : item.state === "not_configured" ? "Belum dikonfigurasi" : "Perlu diperiksa";
         return '<div class="admin-test-service-row"><span><strong>' + safeText(item.name) +
             '</strong><small>' + safeText(item.detail || "") + '</small></span><strong class="' +
             css + '">' + safeText(message) + '</strong></div>';
