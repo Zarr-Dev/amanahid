@@ -160,8 +160,8 @@ async function handleOfflinePendingRequest(req, res, session) {
             ),
             supabaseRequest(
                 "offline_attendance_events?select=id,event_id&student_id=eq." +
-                encodeURIComponent(student.id) + "&status=eq.pending_review&claimed_at=gte." +
-                encodeURIComponent(dayStart) + "&claimed_at=lt." + encodeURIComponent(nextDay) + "&limit=1"
+                encodeURIComponent(student.id) + "&status=eq.pending_review&school_date=eq." +
+                claimedTime.date + "&limit=1"
             )
         ]);
         if (Array.isArray(sameDayAttendance) && sameDayAttendance.length) {
