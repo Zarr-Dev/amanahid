@@ -815,8 +815,8 @@
                             <p class="muted" data-i18n="testWhatsappDesc">Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.</p></div></div>
                         <p class="helper-text">Fonnte <strong id="admin-test-fonnte-state">Memeriksa konfigurasi…</strong></p>
                         <label for="admin-test-whatsapp-number" data-i18n="testWhatsappNumber">Nomor uji WhatsApp</label>
-                        <input id="admin-test-whatsapp-number" type="tel" inputmode="numeric" autocomplete="off" placeholder="628xxxxxxxxxx" maxlength="15">
-                        <p class="helper-text"><span data-i18n="testFonnteList">Nomor uji yang diizinkan:</span> <span id="admin-test-whatsapp-allowlist">Memuat daftar…</span></p>
+                        <input id="admin-test-whatsapp-number" type="tel" inputmode="tel" autocomplete="off" placeholder="08..., 628..., atau +62..." maxlength="24">
+                        <p class="helper-text" data-i18n="testWhatsappDirectTarget">Pesan percobaan hanya dikirim ke nomor yang kamu masukkan setelah menyetujui pengiriman.</p>
                         <label for="admin-test-whatsapp-template" data-i18n="testWhatsappTemplate">Template pesan</label>
                         <textarea id="admin-test-whatsapp-template" rows="4" maxlength="300">Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.</textarea>
                         <label for="admin-test-whatsapp-preview" data-i18n="testWhatsappPreview">Pratinjau pesan</label>
