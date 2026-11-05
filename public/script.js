@@ -2224,9 +2224,10 @@ async function loadAdminTestTools() {
     try {
         const result = await cloudRequest("/api/admin/test-tools");
         state.adminFonnteConfigured = result.fonnte_configured === true;
+        const environment = String(result.environment || "environment aktif");
         $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured
-            ? "Token Fonnte terdeteksi"
-            : "Token Fonnte belum berisi nilai pada Production";
+            ? "Token Fonnte terdeteksi pada " + environment
+            : "Token Fonnte belum berisi nilai pada " + environment;
     } catch (error) {
         state.adminFonnteConfigured = false;
         $("admin-test-fonnte-state").textContent = "Status token belum dapat diperiksa";
