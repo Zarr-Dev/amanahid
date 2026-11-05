@@ -1320,3 +1320,357 @@ test("teachers cannot modify school geofence settings through the legacy setting
     assert.equal(res.statusCode, 403);
     assert.match(res.body.error, /Administrator role/);
 });
+
+
+test("Fonnte test status does not require a test-recipient allowlist", async t => {
+    const originalFetch = globalThis.fetch;
+    const previousToken = process.env.FONNTE_TOKEN;
+    const previousAllowlist = process.env.FONNTE_TEST_RECIPIENTS;
+    delete process.env.FONNTE_TOKEN;
+    delete process.env.FONNTE_TEST_RECIPIENTS;
+    const adminToken = signToken({ email: "admin@example.com", role: "admin" });
+    globalThis.fetch = async url => {
+        if (String(url).includes("admin_users?select=email,name,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "admin@example.com", name: "Admin", is_active: true }
+            ]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+        if (previousToken === undefined) delete process.env.FONNTE_TOKEN;
+        else process.env.FONNTE_TOKEN = previousToken;
+        if (previousAllowlist === undefined) delete process.env.FONNTE_TEST_RECIPIENTS;
+        else process.env.FONNTE_TEST_RECIPIENTS = previousAllowlist;
+    });
+
+    const req = {
+        method: "GET",
+        query: { action: "test-tools" },
+        headers: { origin: "https://school.example", "x-admin-token": adminToken },
+        socket: { remoteAddress: "test-fonnte-get-without-allowlist" }
+    };
+    const res = responseMock();
+    await adminSettingsHandler(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.fonnte_configured, false);
+    assert.equal(res.body.test_send_enabled, true);
+    assert.equal(res.body.recipient_allowlist_required, false);
+});
+
+test("Fonnte test accepts a valid number after explicit consent and reports empty token", async t => {
+    const originalFetch = globalThis.fetch;
+    const previousToken = process.env.FONNTE_TOKEN;
+    const previousAllowlist = process.env.FONNTE_TEST_RECIPIENTS;
+    delete process.env.FONNTE_TOKEN;
+    delete process.env.FONNTE_TEST_RECIPIENTS;
+    const adminToken = signToken({ email: "admin@example.com", role: "admin" });
+    const providerCalls = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        if (requestUrl.includes("admin_users?select=email,name,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "admin@example.com", name: "Admin", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl === "https://api.fonnte.com/send") {
+            providerCalls.push({ init, target: init.body?.get("target") });
+            return new Response(JSON.stringify({ status: true }), { status: 200 });
+        }
+        if (requestUrl.includes("audit_log")) return new Response("[]", { status: 201 });
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+        if (previousToken === undefined) delete process.env.FONNTE_TOKEN;
+        else process.env.FONNTE_TOKEN = previousToken;
+        if (previousAllowlist === undefined) delete process.env.FONNTE_TEST_RECIPIENTS;
+        else process.env.FONNTE_TEST_RECIPIENTS = previousAllowlist;
+    });
+
+    const request = (ip, body) => ({
+        method: "POST",
+        query: { action: "test-tools" },
+        headers: { origin: "https://school.example", "x-admin-token": adminToken },
+        socket: { remoteAddress: ip },
+        body
+    });
+    const missingTokenResponse = responseMock();
+    await adminSettingsHandler(request("test-fonnte-token-empty", {
+        target: "081234567890",
+        message: "Amanah ID: pesan uji pengiriman.",
+        confirm: true
+    }), missingTokenResponse);
+    assert.equal(missingTokenResponse.statusCode, 503);
+    assert.equal(missingTokenResponse.body.code, "FONNTE_TOKEN_MISSING");
+    assert.equal(providerCalls.length, 0);
+
+    process.env.FONNTE_TOKEN = "  fonnte-test-token  ";
+    const sentResponse = responseMock();
+    await adminSettingsHandler(request("test-fonnte-send-no-allowlist", {
+        target: "081234567890",
+        message: "Amanah ID: pesan uji pengiriman.",
+        confirm: true
+    }), sentResponse);
+    assert.equal(sentResponse.statusCode, 200);
+    assert.equal(sentResponse.body.accepted, true);
+    assert.equal(providerCalls.length, 1);
+    assert.equal(providerCalls[0].target, "6281234567890");
+    assert.equal(providerCalls[0].init.headers.Authorization, "fonnte-test-token");
+});
+
+test("Admin can reactivate a teacher through the audited account-control API", async t => {
+    const originalFetch = globalThis.fetch;
+    const adminToken = signToken({ email: "admin@example.com", role: "admin" });
+    const teacherId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const calls = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        calls.push({ url: requestUrl, method: init.method || "GET", body: init.body });
+        if (requestUrl.includes("admin_users?select=email,name,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "admin@example.com", name: "Admin", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("teachers?id=eq." + teacherId) && init.method === "PATCH") {
+            return new Response(JSON.stringify([
+                { id: teacherId, email: "teacher@example.com", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("audit_log")) return new Response("[]", { status: 201 });
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = {
+        method: "PUT",
+        headers: { origin: "https://school.example", "x-admin-token": adminToken },
+        socket: { remoteAddress: "test-admin-reactivate-teacher" },
+        body: { action: "set_active", id: teacherId, table: "teachers", is_active: true }
+    };
+    const res = responseMock();
+    await adminUsersHandler(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.is_active, true);
+    const patch = calls.find(call => call.method === "PATCH" && call.url.includes("teachers?id="));
+    assert.ok(patch);
+    assert.deepEqual(JSON.parse(patch.body), { is_active: true });
+    assert.ok(calls.some(call => call.url.includes("audit_log")));
+});
+
+test("permanent student deletion is refused when attendance history exists", async t => {
+    const originalFetch = globalThis.fetch;
+    const adminToken = signToken({ email: "admin@example.com", role: "admin" });
+    const studentId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const calls = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        calls.push({ url: requestUrl, method: init.method || "GET" });
+        if (requestUrl.includes("admin_users?select=email,name,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "admin@example.com", name: "Admin", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,email,name&id=eq." + studentId)) {
+            return new Response(JSON.stringify([
+                { id: studentId, email: "student@example.com", name: "Student" }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("attendance?select=id&student_id=eq." + studentId)) {
+            return new Response(JSON.stringify([{ id: "attendance-record" }]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = {
+        method: "POST",
+        query: { action: "permanent-delete" },
+        headers: { origin: "https://school.example", "x-admin-token": adminToken },
+        socket: { remoteAddress: "test-admin-safe-permanent-delete" },
+        body: { id: studentId, table: "students", confirm_email: "student@example.com" }
+    };
+    const res = responseMock();
+    await adminUsersHandler(req, res);
+    assert.equal(res.statusCode, 409);
+    assert.match(res.body.error, /riwayat presensi/i);
+    assert.equal(calls.some(call => call.method === "DELETE"), false);
+});
+
+test("a teacher can deactivate only a student assigned to that teacher's homeroom", async t => {
+    const originalFetch = globalThis.fetch;
+    const teacherToken = signToken({ email: "teacher@example.com", role: "guru" });
+    const teacherId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const studentId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+    const calls = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        calls.push({ url: requestUrl, method: init.method || "GET", body: init.body });
+        if (requestUrl.includes("teachers?select=email,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "teacher@example.com", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("system_settings?id=eq.00000000-0000-0000-0000-000000000002")) {
+            return new Response("[]", { status: 200 });
+        }
+        if (requestUrl.includes("teachers?select=id,email&email=eq.teacher%40example.com")) {
+            return new Response(JSON.stringify([{ id: teacherId, email: "teacher@example.com" }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,nisn,email,is_active,homeroom_teacher_id")) {
+            return new Response(JSON.stringify([{
+                id: studentId, nisn: "12345678", email: "student@example.com",
+                is_active: true, homeroom_teacher_id: teacherId
+            }]), { status: 200 });
+        }
+        if (requestUrl.includes("students?id=eq." + studentId) && init.method === "PATCH") {
+            return new Response(JSON.stringify([{
+                id: studentId, nisn: "12345678", email: "student@example.com", is_active: false
+            }]), { status: 200 });
+        }
+        if (requestUrl.includes("audit_log")) return new Response("[]", { status: 201 });
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = requestMock("PATCH", teacherToken, "test-teacher-deactivate-homeroom");
+    req.body = { action: "deactivate", nisn: "12345678" };
+    const res = responseMock();
+    await studentsHandler(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.is_active, false);
+    const studentPatch = calls.find(call => call.method === "PATCH" && call.url.includes("students?id="));
+    assert.ok(studentPatch);
+    assert.deepEqual(JSON.parse(studentPatch.body), { is_active: false });
+    assert.ok(calls.some(call => call.url.includes("audit_log")));
+});
+
+test("offline attendance upload remains pending and never inserts official attendance", async t => {
+    const originalFetch = globalThis.fetch;
+    const studentToken = signToken({ email: "student@example.com", role: "siswa", nisn: "12345678" });
+    const studentId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+    const eventId = "00000000-0000-4000-8000-000000000001";
+    const calls = [];
+    const now = Date.now();
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        calls.push({ url: requestUrl, method: init.method || "GET", body: init.body });
+        if (requestUrl.includes("students?select=email,nisn,is_active&email=eq.student%40example.com")) {
+            return new Response(JSON.stringify([
+                { email: "student@example.com", nisn: "12345678", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("system_settings?id=eq.00000000-0000-0000-0000-000000000002")) {
+            return new Response("[]", { status: 200 });
+        }
+        if (requestUrl.includes("students?select=id,nisn,name,class_name,is_active&is_active=eq.true")) {
+            return new Response(JSON.stringify([{
+                id: studentId, nisn: "12345678", name: "Student", class_name: "XI IPA 1", is_active: true
+            }]), { status: 200 });
+        }
+        if (requestUrl.includes("offline_attendance_events?select=id,event_id,status,student_id")) {
+            return new Response("[]", { status: 200 });
+        }
+        if (requestUrl.includes("school_settings?select=lat,lng,radius")) {
+            return new Response(JSON.stringify([{
+                lat: -6.253590517740096, lng: 106.60299502682263, radius: 50
+            }]), { status: 200 });
+        }
+        if (requestUrl.includes("attendance?select=id&student_id=")) return new Response("[]", { status: 200 });
+        if (requestUrl.includes("offline_attendance_events?select=id,event_id&student_id=")) return new Response("[]", { status: 200 });
+        if (requestUrl.includes("offline_attendance_events?select=id,event_id,status,claimed_at,received_at") && init.method === "POST") {
+            const body = JSON.parse(init.body);
+            assert.equal(body.status, "pending_review");
+            assert.equal(body.face_liveness_completed, true);
+            assert.equal(body.school_date, new Date(now).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" }));
+            return new Response(JSON.stringify([{
+                id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+                event_id: eventId,
+                status: "pending_review",
+                claimed_at: body.claimed_at,
+                received_at: new Date().toISOString()
+            }]), { status: 201 });
+        }
+        if (requestUrl.includes("audit_log")) return new Response("[]", { status: 201 });
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = requestMock("POST", studentToken, "test-offline-attendance-pending-only");
+    req.body = {
+        action: "offline-pending",
+        event_id: eventId,
+        claimed_at: now,
+        lat: -6.253590517740096,
+        lng: 106.60299502682263,
+        accuracy: 5,
+        gps_timestamp: now,
+        speed: 0,
+        face_liveness_completed: true,
+        face_model_key: "auraface-glintr100-int8-v1"
+    };
+    const res = responseMock();
+    await attendanceHandler(req, res);
+    assert.equal(res.statusCode, 202);
+    assert.equal(res.body.official_attendance, false);
+    assert.equal(res.body.status, "pending_review");
+    assert.equal(calls.some(call => call.method === "POST" && call.url.includes("/attendance?")), false);
+});
+
+test("Admin offline review delegates official attendance and audit to one atomic RPC", async t => {
+    const originalFetch = globalThis.fetch;
+    const adminToken = signToken({ email: "admin@example.com", role: "admin" });
+    const eventId = "00000000-0000-4000-8000-000000000002";
+    const eventRowId = "ffffffff-ffff-4fff-8fff-ffffffffffff";
+    const calls = [];
+    globalThis.fetch = async (url, init = {}) => {
+        const requestUrl = String(url);
+        calls.push({ url: requestUrl, method: init.method || "GET", body: init.body });
+        if (requestUrl.includes("admin_users?select=email,name,is_active")) {
+            return new Response(JSON.stringify([
+                { email: "admin@example.com", name: "Admin", is_active: true }
+            ]), { status: 200 });
+        }
+        if (requestUrl.includes("offline_attendance_events?select=id,event_id,student_id,claimed_at,school_date,status")) {
+            return new Response(JSON.stringify([{
+                id: eventRowId, event_id: eventId, student_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+                claimed_at: new Date().toISOString(), school_date: "2026-11-05", status: "pending_review",
+                student: {
+                    id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", nisn: "12345678", name: "Student",
+                    class_name: "XI IPA 1", is_active: true, homeroom_teacher_id: null, parent_whatsapp: null
+                }
+            }]), { status: 200 });
+        }
+        if (requestUrl.endsWith("/rpc/review_offline_attendance_event")) {
+            const body = JSON.parse(init.body);
+            assert.equal(body.p_actor_role, "admin");
+            assert.equal(body.p_decision, "approve");
+            assert.equal(body.p_teacher_id, null);
+            return new Response(JSON.stringify({
+                event_id: eventId, status: "approved", official_attendance: true,
+                attendance_id: "11111111-1111-4111-8111-111111111111",
+                student_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+                nisn: "12345678", name: "Student", class_name: "XI IPA 1",
+                parent_whatsapp: null, attendance_date: "2026-11-05", attendance_time: "07:30:00"
+            }), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+    };
+    t.after(() => { globalThis.fetch = originalFetch; });
+
+    const req = {
+        method: "POST",
+        headers: { origin: "https://school.example", "x-admin-token": adminToken },
+        socket: { remoteAddress: "test-admin-offline-atomic-review" },
+        body: { action: "offline-review", id: eventRowId, decision: "approve", notes: "Siswa dikonfirmasi hadir oleh wali kelas." }
+    };
+    const res = responseMock();
+    await attendanceHandler(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.official_attendance, true);
+    assert.equal(res.body.status, "approved");
+    assert.equal(res.body.audit_recorded, true);
+    assert.equal(calls.filter(call => call.url.endsWith("/rpc/review_offline_attendance_event")).length, 1);
+    assert.equal(calls.some(call => call.method === "POST" && call.url.includes("/attendance?")), false);
+});
