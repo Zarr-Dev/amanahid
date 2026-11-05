@@ -805,6 +805,30 @@
                         <p class="muted" data-i18n="adminAuditDescription">Riwayat operasi yang tercatat oleh API.</p>
                     </div>
                 </div>
+                <div class="admin-stat-grid admin-role-activity-grid" aria-label="Aktivitas akun berdasarkan peran">
+                    <article class="panel">
+                        <div class="panel-heading"><div><h3>Admin · Login & aktivitas terakhir</h3><p class="muted">Riwayat akun administrator</p></div></div>
+                        <div class="table-wrap"><table>
+                            <thead><tr><th>Nama / Email</th><th>Login terakhir</th><th>Aktivitas terakhir</th></tr></thead>
+                            <tbody id="admin-activity-admin-tbody"><tr><td colspan="3">Memuat aktivitas…</td></tr></tbody>
+                        </table></div>
+                    </article>
+                    <article class="panel">
+                        <div class="panel-heading"><div><h3>Guru · Login & aktivitas terakhir</h3><p class="muted">Riwayat akun guru</p></div></div>
+                        <div class="table-wrap"><table>
+                            <thead><tr><th>Nama / Email</th><th>Login terakhir</th><th>Aktivitas terakhir</th></tr></thead>
+                            <tbody id="admin-activity-teacher-tbody"><tr><td colspan="3">Memuat aktivitas…</td></tr></tbody>
+                        </table></div>
+                    </article>
+                    <article class="panel">
+                        <div class="panel-heading"><div><h3>Siswa · Login & aktivitas terakhir</h3><p class="muted">Riwayat akun siswa</p></div></div>
+                        <div class="table-wrap"><table>
+                            <thead><tr><th>Nama / Email</th><th>Login terakhir</th><th>Aktivitas terakhir</th></tr></thead>
+                            <tbody id="admin-activity-student-tbody"><tr><td colspan="3">Memuat aktivitas…</td></tr></tbody>
+                        </table></div>
+                    </article>
+                </div>
+                <p id="admin-activity-status" class="helper-text" role="status" aria-live="polite">Waktu aktivitas menggunakan zona waktu perangkat.</p>
                 <div class="panel">
                     <div class="filters">
                         <label for="admin-audit-actor"><span data-i18n="auditActorEmail">Email pelaku</span><input

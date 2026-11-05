@@ -13,7 +13,11 @@ let SCHOOL_LOCATION = {
     radius: 50,
     name: "Al Fityan School"
 };
-const MAX_GPS_ACCURACY_METERS = 35;
+function isGpsAccuracyAcceptable(accuracy, radius = SCHOOL_LOCATION.radius) {
+    const value = Number(accuracy);
+    const allowedRadius = Number(radius);
+    return Number.isFinite(value) && value > 0 && Number.isFinite(allowedRadius) && allowedRadius >= 10 && value <= allowedRadius;
+}
 const FACE_MATCH_THRESHOLD = 0.45;
 const MAX_FACE_SAMPLES = 5;
 
@@ -36,7 +40,7 @@ const ROLE_T = {
         roleTeacherMismatch: "Akun ini bukan akun guru. Silakan pilih peran Siswa.",
         roleStudentMismatch: "Akun ini bukan akun siswa. Silakan pilih peran Guru.",
         studentNeedsNisn: "Masukkan NISN yang didaftarkan oleh guru.",
-        studentUnlinked: "Akun sudah dibuat tetapi belum terhubung dengan data wajah. Minta guru mendaftarkan NISN Anda sebelum presensi.",
+        studentUnlinked: "Template wajah belum terdaftar dengan model biometrik terbaru. Hubungi guru untuk melakukan pendaftaran atau pembaruan wajah.",
         studentMatched: "Data wajah Anda sudah terhubung.",
         studentAlreadyPresent: "Presensi hari ini sudah tercatat untuk Anda.",
         studentAttendanceSuccess: "Presensi berhasil dicatat.",
@@ -62,7 +66,7 @@ const ROLE_T = {
         roleTeacherMismatch: "This is not a teacher account. Please select Student.",
         roleStudentMismatch: "This is not a student account. Please select Teacher.",
         studentNeedsNisn: "Enter the NISN registered by your teacher.",
-        studentUnlinked: "Your account was created but is not linked to a face record. Ask your teacher to register your NISN before checking in.",
+        studentUnlinked: "Your face template is not enrolled with the current biometric model. Ask your teacher to register or update your face before checking in.",
         studentMatched: "Your face record is linked.",
         studentAlreadyPresent: "Your attendance has already been recorded today.",
         studentAttendanceSuccess: "Attendance recorded successfully.",
@@ -88,7 +92,7 @@ const ROLE_T = {
         roleTeacherMismatch: "هذا ليس حساب معلّم. يرجى اختيار الطالب.",
         roleStudentMismatch: "هذا ليس حساب طالب. يرجى اختيار المعلّم.",
         studentNeedsNisn: "أدخل رقم NISN المسجل لدى المعلّم.",
-        studentUnlinked: "تم إنشاء الحساب لكنه غير مرتبط ببيانات الوجه. اطلب من المعلّم تسجيل رقم NISN قبل الحضور.",
+        studentUnlinked: "لم يتم تسجيل قالب وجهك باستخدام النموذج الحيوي الحالي. اطلب من المعلّم تسجيل وجهك أو تحديثه قبل الحضور.",
         studentMatched: "تم ربط بيانات وجهك.",
         studentAlreadyPresent: "تم تسجيل حضورك اليوم بالفعل.",
         studentAttendanceSuccess: "تم تسجيل الحضور بنجاح.",
@@ -674,6 +678,13 @@ const state = {
     modelReady: false,
     modelLoading: false,
     modelLoadingPromise: null,
+    faceDetectorReady: false,
+    faceRecognitionReady: false,
+    faceDetectorFailed: false,
+    faceRecognitionFailed: false,
+    faceDetectorLoadingPromise: null,
+    faceRecognitionLoadingPromise: null,
+    faceEngine: null,
     faceDetectorOptions: null,
     attendanceStream: null,
     attendanceStarting: false,
@@ -736,13 +747,13 @@ let heroTitleFrame = 0;
 // Three-language dictionary
 const T = {
     id: {
-        authEyebrow: "PRESENSI TERINTEGRASI · AL FITYAN SCHOOL", welcomeTitle: "Presensi yang lebih aman.", welcomeDesc: "Masuk untuk mengelola presensi dan data siswa.", login: "Masuk", signup: "Daftar", email: "Email", password: "Kata sandi", demoAccount: "Akun demo", fullName: "Nama lengkap", confirmPassword: "Konfirmasi kata sandi", terms: "Saya menyetujui ketentuan penggunaan demo.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Formulir", geofenceEnabled: "GPS geofencing aktif", viewProfile: "Lihat profil", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "PRESENSI HARIAN", cameraTitle: "Kamera presensi", cameraDesc: "Periksa lokasi sekolah, lalu verifikasi wajah untuk mencatat kehadiran.", viewMap: "Lihat peta", secureCamera: "Kamera presensi", modelLoading: "Memuat AI...", cameraOff: "Kamera belum aktif", cameraOffDesc: "Aktifkan sakelar setelah lokasi terverifikasi.", cameraReady: "Kamera siap", fullscreen: "Layar penuh", locationVerification: "Verifikasi lokasi", locationNotChecked: "Lokasi belum diperiksa", locationPending: "Belum diperiksa", attendanceSwitch: "Sakelar presensi", switchOffHint: "Kamera mati. Lokasi akan diperiksa saat diaktifkan.", off: "MATI", on: "AKTIF", waitingFace: "Menunggu kamera", livenessWaiting: "Verifikasi wajah dan gerakan dimulai setelah lokasi lolos.", recordsCenter: "PUSAT DATA", attendanceDatabase: "Database presensi", databaseDesc: "Cari, saring, dan ekspor riwayat kehadiran serta data siswa.", exportCsv: "Ekspor CSV", registeredStudents: "Siswa terdaftar", registeredStudentsHint: "Data wajah dalam sesi ini", todayAttendance: "Presensi hari ini", todayAttendanceHint: "Catatan kehadiran hari ini", totalRecords: "Total catatan", totalRecordsHint: "Semua catatan dalam sesi ini", attendanceHistory: "Riwayat presensi", historyDesc: "Data demo tersimpan selama halaman ini terbuka.", deleteAll: "Hapus semua data", searchPlaceholder: "Cari nama, NISN, atau kelas...", fromDate: "Dari", toDate: "Sampai", number: "No.", nisn: "NISN", name: "Nama", class: "Kelas", status: "Status", date: "Tanggal", time: "Waktu", method: "Metode", confidence: "Keyakinan", action: "Aksi", noRecords: "Belum ada catatan", noRecordsDesc: "Riwayat presensi muncul di sini setelah verifikasi berhasil.", studentRegistry: "Data siswa", studentRegistryDesc: "Daftar siswa dengan sampel wajah terdaftar.", registeredAt: "Waktu daftar", noStudents: "Belum ada siswa terdaftar", registerFromForm: "Tambahkan siswa melalui menu Formulir.", studentManagement: "MANAJEMEN SISWA", studentRegistration: "Formulir pendaftaran siswa", formDesc: "Daftarkan identitas dan sampel wajah untuk pengenalan presensi.", studentIdentity: "Identitas siswa", studentIdentityDesc: "Isi data dengan benar sebelum menyimpan.", faceSample: "Sampel wajah", faceSampleDesc: "Gunakan kamera atau unggah foto dengan satu wajah yang terlihat jelas.", openCamera: "Buka kamera", closeCamera: "Tutup kamera", uploadPhoto: "Unggah foto wajah", noFaceSample: "Belum ada sampel wajah.", saveStudent: "Simpan siswa", clearFace: "Wajah harus jelas", clearFaceDesc: "Pastikan hanya satu wajah terlihat, pencahayaan cukup, dan wajah tidak tertutup.", privacyFirst: "Data bersifat sementara", privacyDesc: "Demo menyimpan descriptor wajah di memori browser. Data hilang setelah halaman dimuat ulang.", accountSettings: "PENGATURAN AKUN", myProfile: "Profil saya", appearance: "Tampilan", lightTheme: "Terang", darkTheme: "Gelap", language: "Bahasa", saveSettings: "Simpan pengaturan", logout: "Keluar", locationSecurity: "KEAMANAN LOKASI", schoolMap: "Peta area sekolah", mapDesc: "Titik sekolah dan posisi perangkat Anda.", schoolPoint: "Titik sekolah", yourLocation: "Lokasi Anda", allowedRadius: "Radius diizinkan: 50 m", mapLocationPending: "Periksa lokasi untuk menampilkan posisi perangkat.", refreshLocation: "Periksa lokasi lagi", confirmDeleteTitle: "Hapus semua data?", confirmDeleteDesc: "Semua catatan presensi dan siswa dalam sesi ini akan dihapus.", cancel: "Batal", locationChecking: "Memeriksa lokasi...", locationInside: "Di dalam area sekolah", locationOutside: "Di luar area sekolah", locationError: "Lokasi gagal diperiksa", gpsDenied: "Izin lokasi ditolak. Aktifkan izin lokasi/GPS pada browser lalu coba lagi.", gpsUnavailable: "Posisi tidak tersedia. Aktifkan GPS dan pastikan perangkat mendapat sinyal lokasi.", gpsTimeout: "Waktu pemeriksaan lokasi habis. Coba lagi di area dengan sinyal GPS yang lebih baik.", gpsUnsupported: "Browser ini tidak mendukung geolocation. Gunakan browser modern dengan izin lokasi.", gpsFailed: "Lokasi gagal diperiksa. Periksa pengaturan lokasi perangkat lalu coba lagi.", outsideMessage: "Presensi ditolak. Jarak Anda dari sekolah {distance} m, sedangkan radius maksimum yang diizinkan {radius} m.", insideMessage: "Lokasi lolos: {distance} m dari sekolah, akurasi GPS ±{accuracy} m.", accuracyWarning: "Lokasi berada di dalam radius, tetapi akurasi GPS terlalu rendah ({accuracy} m). Coba lagi di area terbuka.", checkingBeforeCamera: "Memeriksa GPS sebelum kamera dinyalakan...", cameraPermission: "Izin kamera ditolak. Izinkan akses kamera di pengaturan browser.", cameraUnavailable: "Kamera tidak tersedia atau sedang digunakan aplikasi lain.", cameraUnsupported: "Browser tidak mendukung akses kamera.", modelFailed: "Model AI gagal dimuat. Periksa koneksi internet lalu tekan muat ulang halaman.", retryModel: "Muat ulang halaman untuk mencoba kembali.", faceNoMatch: "Wajah belum cocok dengan siswa terdaftar.", faceTooMany: "Terdeteksi lebih dari satu wajah. Pastikan hanya satu orang di depan kamera.", faceNotFound: "Wajah tidak terdeteksi. Posisikan wajah di dalam bingkai.", livenessMove: "Gerakkan kepala sedikit agar pemeriksaan keaktifan selesai.", attendanceSuccess: "Presensi berhasil dicatat untuk {name}.", alreadyPresent: "Presensi hari ini sudah tercatat untuk siswa ini.", cameraStopped: "Kamera dimatikan.", locationRequired: "Lokasi belum terverifikasi. Kamera tetap mati.", fullscreenError: "Mode layar penuh tidak tersedia pada perangkat ini.", mapFailed: "Peta gagal dimuat. Periksa koneksi internet.", mapLocationFailed: "Posisi Anda belum tersedia. Periksa lokasi terlebih dahulu.", studentExists: "NISN sudah terdaftar.", invalidNisn: "NISN harus diisi dengan benar.", needFace: "Ambil atau unggah sampel wajah terlebih dahulu.", studentSaved: "Data siswa berhasil didaftarkan.", studentDeleted: "Data siswa berhasil dihapus.", attendanceDeleted: "Catatan presensi berhasil dihapus.", allDeleted: "Semua data presensi dan siswa berhasil dihapus.", settingsSaved: "Pengaturan berhasil disimpan.", loginFailed: "Email atau kata sandi tidak sesuai.", signupSuccess: "Akun demo dibuat. Silakan masuk.", passwordMismatch: "Konfirmasi kata sandi tidak cocok.", termsRequired: "Setujui ketentuan sebelum mendaftar.", emailExists: "Email sudah terdaftar.", loggedOut: "Anda telah keluar.", emptyCsv: "Tidak ada data untuk diekspor.", csvSaved: "File CSV berhasil disiapkan.", cameraFormReady: "Kamera formulir aktif.", cameraFormOff: "Kamera formulir dimatikan.", faceSampleReady: "Sampel wajah siap digunakan.", modelReady: "AI siap", modelLoadingLong: "Menyiapkan model AI...", faceDetected: "Wajah terdeteksi", faceRegistered: "Wajah terdaftar", faceNotRegistered: "Wajah belum terdaftar", attendanceInProgress: "Memverifikasi wajah...", attendanceWaiting: "Menunggu wajah terdaftar...", attendanceReady: "Lokasi terverifikasi. Kamera siap.", methodFaceGps: "Wajah + GPS", delete: "Hapus", recordsCount: "{count} catatan", studentsCount: "{count} siswa", unknownClass: "Belum diisi", mapSchoolPopup: "Al Fityan School · Radius 50 m", mapUserPopup: "Posisi perangkat Anda", mapDistance: "Jarak dari sekolah: {distance} m", mapAccuracy: "Akurasi GPS: ±{accuracy} m", registeredAlready: "NISN tersebut sudah terdaftar.", locationMapReady: "Peta siap. Posisi perangkat akan muncul setelah GPS berhasil diperiksa.", noLocationForMap: "Periksa lokasi terlebih dahulu untuk menampilkan titik perangkat.", faceUploadError: "Foto tidak dapat diproses. Gunakan JPG, PNG, atau WebP yang valid.", faceSampleCapture: "Wajah terdeteksi. Sampel dapat digunakan.", cameraStartFailed: "Kamera gagal dimulai. Periksa izin browser dan koneksi aman HTTPS.", cameraStarting: "Memulai kamera...", locationVerified: "Lokasi terverifikasi.", confidenceLabel: "Keyakinan", student: "Siswa", attendance: "Hadir"
+        authEyebrow: "PRESENSI TERINTEGRASI · AL FITYAN SCHOOL", welcomeTitle: "Presensi yang lebih aman.", welcomeDesc: "Masuk untuk mengelola presensi dan data siswa.", login: "Masuk", signup: "Daftar", email: "Email", password: "Kata sandi", demoAccount: "Akun demo", fullName: "Nama lengkap", confirmPassword: "Konfirmasi kata sandi", terms: "Saya menyetujui ketentuan penggunaan demo.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Formulir", geofenceEnabled: "GPS geofencing aktif", viewProfile: "Lihat profil", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "PRESENSI HARIAN", cameraTitle: "Kamera presensi", cameraDesc: "Periksa lokasi sekolah, lalu verifikasi wajah untuk mencatat kehadiran.", viewMap: "Lihat peta", secureCamera: "Kamera presensi", modelLoading: "Memuat AI...", cameraOff: "Kamera belum aktif", cameraOffDesc: "Aktifkan sakelar setelah lokasi terverifikasi.", cameraReady: "Kamera siap", fullscreen: "Layar penuh", locationVerification: "Verifikasi lokasi", locationNotChecked: "Lokasi belum diperiksa", locationPending: "Belum diperiksa", attendanceSwitch: "Sakelar presensi", switchOffHint: "Kamera mati. Lokasi akan diperiksa saat diaktifkan.", off: "MATI", on: "AKTIF", waitingFace: "Menunggu kamera", livenessWaiting: "Verifikasi wajah dan gerakan dimulai setelah lokasi lolos.", recordsCenter: "PUSAT DATA", attendanceDatabase: "Database presensi", databaseDesc: "Cari, saring, dan ekspor riwayat kehadiran serta data siswa.", exportCsv: "Ekspor CSV", registeredStudents: "Siswa terdaftar", registeredStudentsHint: "Data wajah dalam sesi ini", todayAttendance: "Presensi hari ini", todayAttendanceHint: "Catatan kehadiran hari ini", totalRecords: "Total catatan", totalRecordsHint: "Semua catatan dalam sesi ini", attendanceHistory: "Riwayat presensi", historyDesc: "Data demo tersimpan selama halaman ini terbuka.", deleteAll: "Hapus semua data", searchPlaceholder: "Cari nama, NISN, atau kelas...", fromDate: "Dari", toDate: "Sampai", number: "No.", nisn: "NISN", name: "Nama", class: "Kelas", status: "Status", date: "Tanggal", time: "Waktu", method: "Metode", confidence: "Keyakinan", action: "Aksi", noRecords: "Belum ada catatan", noRecordsDesc: "Riwayat presensi muncul di sini setelah verifikasi berhasil.", studentRegistry: "Data siswa", studentRegistryDesc: "Daftar siswa dengan sampel wajah terdaftar.", registeredAt: "Waktu daftar", noStudents: "Belum ada siswa terdaftar", registerFromForm: "Tambahkan siswa melalui menu Formulir.", studentManagement: "MANAJEMEN SISWA", studentRegistration: "Formulir pendaftaran siswa", formDesc: "Daftarkan identitas dan sampel wajah untuk pengenalan presensi.", studentIdentity: "Identitas siswa", studentIdentityDesc: "Isi data dengan benar sebelum menyimpan.", faceSample: "Sampel wajah", faceSampleDesc: "Gunakan kamera atau unggah foto dengan satu wajah yang terlihat jelas.", openCamera: "Buka kamera", closeCamera: "Tutup kamera", uploadPhoto: "Unggah foto wajah", noFaceSample: "Belum ada sampel wajah.", saveStudent: "Simpan siswa", clearFace: "Wajah harus jelas", clearFaceDesc: "Pastikan hanya satu wajah terlihat, pencahayaan cukup, dan wajah tidak tertutup.", privacyFirst: "Data bersifat sementara", privacyDesc: "Demo menyimpan descriptor wajah di memori browser. Data hilang setelah halaman dimuat ulang.", accountSettings: "PENGATURAN AKUN", myProfile: "Profil saya", appearance: "Tampilan", lightTheme: "Terang", darkTheme: "Gelap", language: "Bahasa", saveSettings: "Simpan pengaturan", logout: "Keluar", locationSecurity: "KEAMANAN LOKASI", schoolMap: "Peta area sekolah", mapDesc: "Titik sekolah dan posisi perangkat Anda.", schoolPoint: "Titik sekolah", yourLocation: "Lokasi Anda", allowedRadius: "Radius diizinkan: 50 m", mapLocationPending: "Periksa lokasi untuk menampilkan posisi perangkat.", refreshLocation: "Periksa lokasi lagi", confirmDeleteTitle: "Hapus semua data?", confirmDeleteDesc: "Semua catatan presensi dan siswa dalam sesi ini akan dihapus.", cancel: "Batal", locationChecking: "Memeriksa lokasi...", locationInside: "Di dalam area sekolah", locationOutside: "Di luar area sekolah", locationError: "Lokasi gagal diperiksa", gpsDenied: "Izin lokasi ditolak. Aktifkan izin lokasi/GPS pada browser lalu coba lagi.", gpsUnavailable: "Posisi tidak tersedia. Aktifkan GPS dan pastikan perangkat mendapat sinyal lokasi.", gpsTimeout: "Waktu pemeriksaan lokasi habis. Coba lagi di area dengan sinyal GPS yang lebih baik.", gpsUnsupported: "Browser ini tidak mendukung geolocation. Gunakan browser modern dengan izin lokasi.", gpsFailed: "Lokasi gagal diperiksa. Periksa pengaturan lokasi perangkat lalu coba lagi.", outsideMessage: "Presensi ditolak. Jarak Anda dari sekolah {distance} m, sedangkan radius maksimum yang diizinkan {radius} m.", insideMessage: "Lokasi lolos: {distance} m dari sekolah, akurasi GPS ±{accuracy} m.", accuracyWarning: "Lokasi berada di dalam radius, tetapi akurasi GPS terlalu rendah ({accuracy} m). Coba lagi di area terbuka.", checkingBeforeCamera: "Memeriksa GPS sebelum kamera dinyalakan...", cameraPermission: "Izin kamera ditolak. Izinkan akses kamera di pengaturan browser.", cameraUnavailable: "Kamera tidak tersedia atau sedang digunakan aplikasi lain.", cameraUnsupported: "Browser tidak mendukung akses kamera.", modelFailed: "Model AI gagal dimuat. Periksa koneksi internet lalu tekan muat ulang halaman.", retryModel: "Coba muat model lagi.", faceNoMatch: "Wajah belum cocok dengan siswa terdaftar.", faceTooMany: "Terdeteksi lebih dari satu wajah. Pastikan hanya satu orang di depan kamera.", faceNotFound: "Wajah tidak terdeteksi. Posisikan wajah di dalam bingkai.", livenessMove: "Gerakkan kepala sedikit agar pemeriksaan keaktifan selesai.", attendanceSuccess: "Presensi berhasil dicatat untuk {name}.", alreadyPresent: "Presensi hari ini sudah tercatat untuk siswa ini.", cameraStopped: "Kamera dimatikan.", locationRequired: "Lokasi belum terverifikasi. Kamera tetap mati.", fullscreenError: "Mode layar penuh tidak tersedia pada perangkat ini.", mapFailed: "Peta gagal dimuat. Periksa koneksi internet.", mapLocationFailed: "Posisi Anda belum tersedia. Periksa lokasi terlebih dahulu.", studentExists: "NISN sudah terdaftar.", invalidNisn: "NISN harus diisi dengan benar.", needFace: "Ambil atau unggah sampel wajah terlebih dahulu.", studentSaved: "Data siswa berhasil didaftarkan.", studentDeleted: "Data siswa berhasil dihapus.", attendanceDeleted: "Catatan presensi berhasil dihapus.", allDeleted: "Semua data presensi dan siswa berhasil dihapus.", settingsSaved: "Pengaturan berhasil disimpan.", loginFailed: "Email atau kata sandi tidak sesuai.", signupSuccess: "Akun demo dibuat. Silakan masuk.", passwordMismatch: "Konfirmasi kata sandi tidak cocok.", termsRequired: "Setujui ketentuan sebelum mendaftar.", emailExists: "Email sudah terdaftar.", loggedOut: "Anda telah keluar.", emptyCsv: "Tidak ada data untuk diekspor.", csvSaved: "File CSV berhasil disiapkan.", cameraFormReady: "Kamera formulir aktif.", cameraFormOff: "Kamera formulir dimatikan.", faceSampleReady: "Sampel wajah siap digunakan.", modelReady: "AI siap", modelLoadingLong: "Menyiapkan model AI...", faceDetected: "Wajah terdeteksi", faceRegistered: "Wajah terdaftar", faceNotRegistered: "Wajah belum terdaftar", attendanceInProgress: "Memverifikasi wajah...", attendanceWaiting: "Menunggu wajah terdaftar...", attendanceReady: "Lokasi terverifikasi. Kamera siap.", methodFaceGps: "Wajah + GPS", delete: "Hapus", recordsCount: "{count} catatan", studentsCount: "{count} siswa", unknownClass: "Belum diisi", mapSchoolPopup: "Al Fityan School · Radius 50 m", mapUserPopup: "Posisi perangkat Anda", mapDistance: "Jarak dari sekolah: {distance} m", mapAccuracy: "Akurasi GPS: ±{accuracy} m", registeredAlready: "NISN tersebut sudah terdaftar.", locationMapReady: "Peta siap. Posisi perangkat akan muncul setelah GPS berhasil diperiksa.", noLocationForMap: "Periksa lokasi terlebih dahulu untuk menampilkan titik perangkat.", faceUploadError: "Foto tidak dapat diproses. Gunakan JPG, PNG, atau WebP yang valid.", faceSampleCapture: "Wajah terdeteksi. Sampel dapat digunakan.", cameraStartFailed: "Kamera gagal dimulai. Periksa izin browser dan koneksi aman HTTPS.", cameraStarting: "Memulai kamera...", locationVerified: "Lokasi terverifikasi.", confidenceLabel: "Keyakinan", student: "Siswa", attendance: "Hadir"
     },
     en: {
-        authEyebrow: "CONNECTED ATTENDANCE · AL FITYAN SCHOOL", welcomeTitle: "Attendance, made safer.", welcomeDesc: "Sign in to manage attendance and student records.", login: "Log in", signup: "Sign up", email: "Email", password: "Password", demoAccount: "Demo account", fullName: "Full name", confirmPassword: "Confirm password", terms: "I agree to the demo terms of use.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Registration", geofenceEnabled: "GPS geofencing active", viewProfile: "View profile", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "DAILY ATTENDANCE", cameraTitle: "Attendance camera", cameraDesc: "Verify your school location, then verify your face to record attendance.", viewMap: "View map", secureCamera: "Attendance camera", modelLoading: "Loading AI...", cameraOff: "Camera is off", cameraOffDesc: "Enable the switch after your location is verified.", cameraReady: "Camera ready", fullscreen: "Fullscreen", locationVerification: "Location verification", locationNotChecked: "Location not checked", locationPending: "Not checked", attendanceSwitch: "Attendance switch", switchOffHint: "Camera is off. Your location will be checked when enabled.", off: "OFF", on: "ON", waitingFace: "Waiting for camera", livenessWaiting: "Face and movement checks begin after location verification.", recordsCenter: "RECORDS CENTER", attendanceDatabase: "Attendance database", databaseDesc: "Search, filter, and export attendance history and student records.", exportCsv: "Export CSV", registeredStudents: "Registered students", registeredStudentsHint: "Face data in this session", todayAttendance: "Today's attendance", todayAttendanceHint: "Attendance records today", totalRecords: "Total records", totalRecordsHint: "All records in this session", attendanceHistory: "Attendance history", historyDesc: "Demo data stays while this page is open.", deleteAll: "Delete all data", searchPlaceholder: "Search name, NISN, or class...", fromDate: "From", toDate: "To", number: "No.", nisn: "NISN", name: "Name", class: "Class", status: "Status", date: "Date", time: "Time", method: "Method", confidence: "Confidence", action: "Action", noRecords: "No records yet", noRecordsDesc: "Attendance history appears here after successful verification.", studentRegistry: "Student registry", studentRegistryDesc: "Students with registered face samples.", registeredAt: "Registered at", noStudents: "No registered students yet", registerFromForm: "Add students from the Registration menu.", studentManagement: "STUDENT MANAGEMENT", studentRegistration: "Student registration form", formDesc: "Register student details and a face sample for attendance recognition.", studentIdentity: "Student identity", studentIdentityDesc: "Enter the correct information before saving.", faceSample: "Face sample", faceSampleDesc: "Use the camera or upload a photo with one clearly visible face.", openCamera: "Open camera", closeCamera: "Close camera", uploadPhoto: "Upload face photo", noFaceSample: "No face sample yet.", saveStudent: "Save student", clearFace: "Face must be clear", clearFaceDesc: "Ensure only one face is visible, lighting is sufficient, and the face is unobstructed.", privacyFirst: "Temporary data", privacyDesc: "This demo stores face descriptors only in browser memory. Data disappears after reload.", accountSettings: "ACCOUNT SETTINGS", myProfile: "My profile", appearance: "Appearance", lightTheme: "Light", darkTheme: "Dark", language: "Language", saveSettings: "Save settings", logout: "Log out", locationSecurity: "LOCATION SECURITY", schoolMap: "School area map", mapDesc: "School point and your device location.", schoolPoint: "School location", yourLocation: "Your location", allowedRadius: "Allowed radius: 50 m", mapLocationPending: "Check your location to show your device position.", refreshLocation: "Check location again", confirmDeleteTitle: "Delete all data?", confirmDeleteDesc: "All attendance records and registered students in this session will be deleted.", cancel: "Cancel", locationChecking: "Checking location...", locationInside: "Inside school area", locationOutside: "Outside school area", locationError: "Location check failed", gpsDenied: "Location permission was denied. Enable location/GPS permissions in your browser and try again.", gpsUnavailable: "Position unavailable. Enable GPS and ensure your device can receive location signals.", gpsTimeout: "Location check timed out. Try again where GPS reception is better.", gpsUnsupported: "This browser does not support geolocation. Use a modern browser with location permission.", gpsFailed: "Could not check location. Review your device location settings and try again.", outsideMessage: "Attendance denied. You are {distance} m from school; the maximum allowed radius is {radius} m.", insideMessage: "Location accepted: {distance} m from school, GPS accuracy ±{accuracy} m.", accuracyWarning: "You are inside the radius, but GPS accuracy is too low ({accuracy} m). Try again in an open area.", checkingBeforeCamera: "Checking GPS before enabling the camera...", cameraPermission: "Camera permission denied. Allow camera access in your browser settings.", cameraUnavailable: "Camera unavailable or already in use by another app.", cameraUnsupported: "This browser does not support camera access.", modelFailed: "AI model failed to load. Check your internet connection and reload the page.", retryModel: "Reload the page to try again.", faceNoMatch: "Face does not match a registered student.", faceTooMany: "More than one face detected. Ensure only one person is in front of the camera.", faceNotFound: "No face detected. Position your face inside the frame.", livenessMove: "Move your head slightly to complete the liveness check.", attendanceSuccess: "Attendance recorded for {name}.", alreadyPresent: "Attendance is already recorded for this student today.", cameraStopped: "Camera turned off.", locationRequired: "Location is not verified. The camera will remain off.", fullscreenError: "Fullscreen mode is unavailable on this device.", mapFailed: "Map failed to load. Check your internet connection.", mapLocationFailed: "Your position is unavailable. Check your location first.", studentExists: "This NISN is already registered.", invalidNisn: "Enter a valid NISN.", needFace: "Capture or upload a face sample first.", studentSaved: "Student registered successfully.", studentDeleted: "Student deleted successfully.", attendanceDeleted: "Attendance record deleted.", allDeleted: "All attendance and student data deleted.", settingsSaved: "Settings saved.", loginFailed: "Email or password is incorrect.", signupSuccess: "Demo account created. You can now log in.", passwordMismatch: "Password confirmation does not match.", termsRequired: "Accept the terms before signing up.", emailExists: "Email is already registered.", loggedOut: "You have logged out.", emptyCsv: "There is no data to export.", csvSaved: "CSV file prepared successfully.", cameraFormReady: "Registration camera is active.", cameraFormOff: "Registration camera turned off.", faceSampleReady: "Face sample is ready.", modelReady: "AI ready", modelLoadingLong: "Preparing AI models...", faceDetected: "Face detected", faceRegistered: "Face registered", faceNotRegistered: "Face not registered", attendanceInProgress: "Verifying face...", attendanceWaiting: "Waiting for a registered face...", attendanceReady: "Location verified. Camera ready.", methodFaceGps: "Face + GPS", delete: "Delete", recordsCount: "{count} records", studentsCount: "{count} students", unknownClass: "Not provided", mapSchoolPopup: "Al Fityan School · 50 m radius", mapUserPopup: "Your device location", mapDistance: "Distance from school: {distance} m", mapAccuracy: "GPS accuracy: ±{accuracy} m", registeredAlready: "This NISN is already registered.", locationMapReady: "Map ready. Your device position will appear after GPS verification.", noLocationForMap: "Check your location first to display your device marker.", faceUploadError: "Unable to process photo. Use a valid JPG, PNG, or WebP image.", faceSampleCapture: "Face detected. Sample can be used.", cameraStartFailed: "Could not start camera. Check browser permissions and secure HTTPS connection.", cameraStarting: "Starting camera...", locationVerified: "Location verified.", confidenceLabel: "Confidence", student: "Student", attendance: "Present"
+        authEyebrow: "CONNECTED ATTENDANCE · AL FITYAN SCHOOL", welcomeTitle: "Attendance, made safer.", welcomeDesc: "Sign in to manage attendance and student records.", login: "Log in", signup: "Sign up", email: "Email", password: "Password", demoAccount: "Demo account", fullName: "Full name", confirmPassword: "Confirm password", terms: "I agree to the demo terms of use.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Registration", geofenceEnabled: "GPS geofencing active", viewProfile: "View profile", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "DAILY ATTENDANCE", cameraTitle: "Attendance camera", cameraDesc: "Verify your school location, then verify your face to record attendance.", viewMap: "View map", secureCamera: "Attendance camera", modelLoading: "Loading AI...", cameraOff: "Camera is off", cameraOffDesc: "Enable the switch after your location is verified.", cameraReady: "Camera ready", fullscreen: "Fullscreen", locationVerification: "Location verification", locationNotChecked: "Location not checked", locationPending: "Not checked", attendanceSwitch: "Attendance switch", switchOffHint: "Camera is off. Your location will be checked when enabled.", off: "OFF", on: "ON", waitingFace: "Waiting for camera", livenessWaiting: "Face and movement checks begin after location verification.", recordsCenter: "RECORDS CENTER", attendanceDatabase: "Attendance database", databaseDesc: "Search, filter, and export attendance history and student records.", exportCsv: "Export CSV", registeredStudents: "Registered students", registeredStudentsHint: "Face data in this session", todayAttendance: "Today's attendance", todayAttendanceHint: "Attendance records today", totalRecords: "Total records", totalRecordsHint: "All records in this session", attendanceHistory: "Attendance history", historyDesc: "Demo data stays while this page is open.", deleteAll: "Delete all data", searchPlaceholder: "Search name, NISN, or class...", fromDate: "From", toDate: "To", number: "No.", nisn: "NISN", name: "Name", class: "Class", status: "Status", date: "Date", time: "Time", method: "Method", confidence: "Confidence", action: "Action", noRecords: "No records yet", noRecordsDesc: "Attendance history appears here after successful verification.", studentRegistry: "Student registry", studentRegistryDesc: "Students with registered face samples.", registeredAt: "Registered at", noStudents: "No registered students yet", registerFromForm: "Add students from the Registration menu.", studentManagement: "STUDENT MANAGEMENT", studentRegistration: "Student registration form", formDesc: "Register student details and a face sample for attendance recognition.", studentIdentity: "Student identity", studentIdentityDesc: "Enter the correct information before saving.", faceSample: "Face sample", faceSampleDesc: "Use the camera or upload a photo with one clearly visible face.", openCamera: "Open camera", closeCamera: "Close camera", uploadPhoto: "Upload face photo", noFaceSample: "No face sample yet.", saveStudent: "Save student", clearFace: "Face must be clear", clearFaceDesc: "Ensure only one face is visible, lighting is sufficient, and the face is unobstructed.", privacyFirst: "Temporary data", privacyDesc: "This demo stores face descriptors only in browser memory. Data disappears after reload.", accountSettings: "ACCOUNT SETTINGS", myProfile: "My profile", appearance: "Appearance", lightTheme: "Light", darkTheme: "Dark", language: "Language", saveSettings: "Save settings", logout: "Log out", locationSecurity: "LOCATION SECURITY", schoolMap: "School area map", mapDesc: "School point and your device location.", schoolPoint: "School location", yourLocation: "Your location", allowedRadius: "Allowed radius: 50 m", mapLocationPending: "Check your location to show your device position.", refreshLocation: "Check location again", confirmDeleteTitle: "Delete all data?", confirmDeleteDesc: "All attendance records and registered students in this session will be deleted.", cancel: "Cancel", locationChecking: "Checking location...", locationInside: "Inside school area", locationOutside: "Outside school area", locationError: "Location check failed", gpsDenied: "Location permission was denied. Enable location/GPS permissions in your browser and try again.", gpsUnavailable: "Position unavailable. Enable GPS and ensure your device can receive location signals.", gpsTimeout: "Location check timed out. Try again where GPS reception is better.", gpsUnsupported: "This browser does not support geolocation. Use a modern browser with location permission.", gpsFailed: "Could not check location. Review your device location settings and try again.", outsideMessage: "Attendance denied. You are {distance} m from school; the maximum allowed radius is {radius} m.", insideMessage: "Location accepted: {distance} m from school, GPS accuracy ±{accuracy} m.", accuracyWarning: "You are inside the radius, but GPS accuracy is too low ({accuracy} m). Try again in an open area.", checkingBeforeCamera: "Checking GPS before enabling the camera...", cameraPermission: "Camera permission denied. Allow camera access in your browser settings.", cameraUnavailable: "Camera unavailable or already in use by another app.", cameraUnsupported: "This browser does not support camera access.", modelFailed: "AI model failed to load. Check your internet connection and reload the page.", retryModel: "Retry model loading.", faceNoMatch: "Face does not match a registered student.", faceTooMany: "More than one face detected. Ensure only one person is in front of the camera.", faceNotFound: "No face detected. Position your face inside the frame.", livenessMove: "Move your head slightly to complete the liveness check.", attendanceSuccess: "Attendance recorded for {name}.", alreadyPresent: "Attendance is already recorded for this student today.", cameraStopped: "Camera turned off.", locationRequired: "Location is not verified. The camera will remain off.", fullscreenError: "Fullscreen mode is unavailable on this device.", mapFailed: "Map failed to load. Check your internet connection.", mapLocationFailed: "Your position is unavailable. Check your location first.", studentExists: "This NISN is already registered.", invalidNisn: "Enter a valid NISN.", needFace: "Capture or upload a face sample first.", studentSaved: "Student registered successfully.", studentDeleted: "Student deleted successfully.", attendanceDeleted: "Attendance record deleted.", allDeleted: "All attendance and student data deleted.", settingsSaved: "Settings saved.", loginFailed: "Email or password is incorrect.", signupSuccess: "Demo account created. You can now log in.", passwordMismatch: "Password confirmation does not match.", termsRequired: "Accept the terms before signing up.", emailExists: "Email is already registered.", loggedOut: "You have logged out.", emptyCsv: "There is no data to export.", csvSaved: "CSV file prepared successfully.", cameraFormReady: "Registration camera is active.", cameraFormOff: "Registration camera turned off.", faceSampleReady: "Face sample is ready.", modelReady: "AI ready", modelLoadingLong: "Preparing AI models...", faceDetected: "Face detected", faceRegistered: "Face registered", faceNotRegistered: "Face not registered", attendanceInProgress: "Verifying face...", attendanceWaiting: "Waiting for a registered face...", attendanceReady: "Location verified. Camera ready.", methodFaceGps: "Face + GPS", delete: "Delete", recordsCount: "{count} records", studentsCount: "{count} students", unknownClass: "Not provided", mapSchoolPopup: "Al Fityan School · 50 m radius", mapUserPopup: "Your device location", mapDistance: "Distance from school: {distance} m", mapAccuracy: "GPS accuracy: ±{accuracy} m", registeredAlready: "This NISN is already registered.", locationMapReady: "Map ready. Your device position will appear after GPS verification.", noLocationForMap: "Check your location first to display your device marker.", faceUploadError: "Unable to process photo. Use a valid JPG, PNG, or WebP image.", faceSampleCapture: "Face detected. Sample can be used.", cameraStartFailed: "Could not start camera. Check browser permissions and secure HTTPS connection.", cameraStarting: "Starting camera...", locationVerified: "Location verified.", confidenceLabel: "Confidence", student: "Student", attendance: "Present"
     },
     ar: {
-        authEyebrow: "حضور متكامل · مدرسة الفتيان", welcomeTitle: "حضور أكثر أمانًا.", welcomeDesc: "سجّل الدخول لإدارة الحضور وبيانات الطلاب.", login: "تسجيل الدخول", signup: "إنشاء حساب", email: "البريد الإلكتروني", password: "كلمة المرور", demoAccount: "حساب تجريبي", fullName: "الاسم الكامل", confirmPassword: "تأكيد كلمة المرور", terms: "أوافق على شروط استخدام النسخة التجريبية.", workspace: "مساحة العمل", dashboard: "الرئيسية", database: "قاعدة البيانات", formulir: "التسجيل", geofenceEnabled: "تحديد الموقع مفعّل", viewProfile: "عرض الملف الشخصي", schoolWorkspace: "مدرسة الفتيان", dailyAttendance: "الحضور اليومي", cameraTitle: "كاميرا الحضور", cameraDesc: "تحقق من وجودك داخل المدرسة ثم تحقق من الوجه لتسجيل الحضور.", viewMap: "عرض الخريطة", secureCamera: "كاميرا الحضور", modelLoading: "جارٍ تحميل الذكاء الاصطناعي...", cameraOff: "الكاميرا متوقفة", cameraOffDesc: "فعّل المفتاح بعد التحقق من الموقع.", cameraReady: "الكاميرا جاهزة", fullscreen: "ملء الشاشة", locationVerification: "التحقق من الموقع", locationNotChecked: "لم يتم التحقق من الموقع", locationPending: "لم يتم التحقق", attendanceSwitch: "مفتاح الحضور", switchOffHint: "الكاميرا متوقفة. سيتم التحقق من موقعك عند التفعيل.", off: "إيقاف", on: "تشغيل", waitingFace: "بانتظار الكاميرا", livenessWaiting: "يبدأ التحقق من الوجه والحركة بعد التحقق من الموقع.", recordsCenter: "مركز السجلات", attendanceDatabase: "قاعدة بيانات الحضور", databaseDesc: "ابحث عن سجل الحضور وبيانات الطلاب وصفِّها وصدرها.", exportCsv: "تصدير CSV", registeredStudents: "الطلاب المسجلون", registeredStudentsHint: "بيانات الوجه في هذه الجلسة", todayAttendance: "حضور اليوم", todayAttendanceHint: "سجلات الحضور اليوم", totalRecords: "إجمالي السجلات", totalRecordsHint: "جميع سجلات هذه الجلسة", attendanceHistory: "سجل الحضور", historyDesc: "تظل البيانات التجريبية متاحة أثناء فتح الصفحة.", deleteAll: "حذف جميع البيانات", searchPlaceholder: "ابحث بالاسم أو رقم الطالب أو الفصل...", fromDate: "من", toDate: "إلى", number: "رقم", nisn: "رقم الطالب", name: "الاسم", class: "الفصل", status: "الحالة", date: "التاريخ", time: "الوقت", method: "الطريقة", confidence: "نسبة الثقة", action: "الإجراء", noRecords: "لا توجد سجلات بعد", noRecordsDesc: "سيظهر سجل الحضور هنا بعد نجاح التحقق.", studentRegistry: "سجل الطلاب", studentRegistryDesc: "الطلاب الذين لديهم عينات وجه مسجلة.", registeredAt: "تاريخ التسجيل", noStudents: "لا يوجد طلاب مسجلون بعد", registerFromForm: "أضف الطلاب من قائمة التسجيل.", studentManagement: "إدارة الطلاب", studentRegistration: "نموذج تسجيل الطلاب", formDesc: "سجّل بيانات الطالب وعينة الوجه للتعرف على الحضور.", studentIdentity: "بيانات الطالب", studentIdentityDesc: "أدخل المعلومات الصحيحة قبل الحفظ.", faceSample: "عينة الوجه", faceSampleDesc: "استخدم الكاميرا أو ارفع صورة يظهر فيها وجه واحد بوضوح.", openCamera: "فتح الكاميرا", closeCamera: "إغلاق الكاميرا", uploadPhoto: "رفع صورة الوجه", noFaceSample: "لا توجد عينة وجه بعد.", saveStudent: "حفظ الطالب", clearFace: "يجب أن يكون الوجه واضحًا", clearFaceDesc: "تأكد من ظهور وجه واحد فقط ومن الإضاءة الجيدة وعدم تغطية الوجه.", privacyFirst: "بيانات مؤقتة", privacyDesc: "تحفظ هذه النسخة التجريبية بيانات الوجه في ذاكرة المتصفح فقط، وتختفي عند إعادة تحميل الصفحة.", accountSettings: "إعدادات الحساب", myProfile: "ملفي الشخصي", appearance: "المظهر", lightTheme: "فاتح", darkTheme: "داكن", language: "اللغة", saveSettings: "حفظ الإعدادات", logout: "تسجيل الخروج", locationSecurity: "أمان الموقع", schoolMap: "خريطة منطقة المدرسة", mapDesc: "موقع المدرسة وموقع جهازك.", schoolPoint: "موقع المدرسة", yourLocation: "موقعك", allowedRadius: "نطاق السماح: 50 مترًا", mapLocationPending: "تحقق من موقعك لإظهار موقع الجهاز.", refreshLocation: "التحقق من الموقع مجددًا", confirmDeleteTitle: "حذف جميع البيانات؟", confirmDeleteDesc: "سيتم حذف سجلات الحضور والطلاب المسجلين في هذه الجلسة.", cancel: "إلغاء", locationChecking: "جارٍ التحقق من الموقع...", locationInside: "داخل نطاق المدرسة", locationOutside: "خارج نطاق المدرسة", locationError: "فشل التحقق من الموقع", gpsDenied: "تم رفض إذن الموقع. فعّل إذن الموقع أو GPS في المتصفح ثم حاول مجددًا.", gpsUnavailable: "الموقع غير متاح. فعّل GPS وتأكد من استقبال الجهاز لإشارة الموقع.", gpsTimeout: "انتهت مهلة التحقق من الموقع. حاول مجددًا في مكان تكون فيه إشارة GPS أفضل.", gpsUnsupported: "هذا المتصفح لا يدعم تحديد الموقع. استخدم متصفحًا حديثًا مع السماح بالوصول إلى الموقع.", gpsFailed: "تعذر التحقق من الموقع. راجع إعدادات الموقع في جهازك ثم حاول مجددًا.", outsideMessage: "تم رفض الحضور. تبعد عن المدرسة {distance} مترًا، بينما النطاق الأقصى المسموح هو {radius} مترًا.", insideMessage: "تم قبول الموقع: البعد {distance} مترًا، ودقة GPS نحو ±{accuracy} متر.", accuracyWarning: "أنت داخل النطاق لكن دقة GPS منخفضة ({accuracy} متر). حاول مجددًا في مكان مفتوح.", checkingBeforeCamera: "جارٍ التحقق من GPS قبل تشغيل الكاميرا...", cameraPermission: "تم رفض إذن الكاميرا. اسمح للمتصفح باستخدام الكاميرا.", cameraUnavailable: "الكاميرا غير متاحة أو تستخدمها تطبيقات أخرى.", cameraUnsupported: "هذا المتصفح لا يدعم الوصول إلى الكاميرا.", modelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وأعد تحميل الصفحة.", retryModel: "أعد تحميل الصفحة للمحاولة مجددًا.", faceNoMatch: "الوجه لا يطابق أي طالب مسجل.", faceTooMany: "تم اكتشاف أكثر من وجه. تأكد من وجود شخص واحد أمام الكاميرا.", faceNotFound: "لم يتم اكتشاف وجه. ضع وجهك داخل الإطار.", livenessMove: "حرّك رأسك قليلًا لإكمال التحقق من الحيوية.", attendanceSuccess: "تم تسجيل الحضور للطالب {name}.", alreadyPresent: "تم تسجيل حضور هذا الطالب اليوم بالفعل.", cameraStopped: "تم إيقاف الكاميرا.", locationRequired: "لم يتم التحقق من الموقع. ستظل الكاميرا متوقفة.", fullscreenError: "وضع ملء الشاشة غير متاح على هذا الجهاز.", mapFailed: "تعذر تحميل الخريطة. تحقق من اتصال الإنترنت.", mapLocationFailed: "موقعك غير متاح. تحقق من الموقع أولًا.", studentExists: "رقم الطالب مسجل بالفعل.", invalidNisn: "أدخل رقم طالب صحيحًا.", needFace: "التقط عينة وجه أو ارفعها أولًا.", studentSaved: "تم تسجيل الطالب بنجاح.", studentDeleted: "تم حذف الطالب بنجاح.", attendanceDeleted: "تم حذف سجل الحضور.", allDeleted: "تم حذف جميع بيانات الحضور والطلاب.", settingsSaved: "تم حفظ الإعدادات.", loginFailed: "البريد الإلكتروني أو كلمة المرور غير صحيحة.", signupSuccess: "تم إنشاء الحساب التجريبي. يمكنك تسجيل الدخول الآن.", passwordMismatch: "تأكيد كلمة المرور غير مطابق.", termsRequired: "وافق على الشروط قبل التسجيل.", emailExists: "البريد الإلكتروني مسجل بالفعل.", loggedOut: "تم تسجيل الخروج.", emptyCsv: "لا توجد بيانات لتصديرها.", csvSaved: "تم تجهيز ملف CSV.", cameraFormReady: "كاميرا التسجيل تعمل.", cameraFormOff: "تم إيقاف كاميرا التسجيل.", faceSampleReady: "عينة الوجه جاهزة.", modelReady: "الذكاء الاصطناعي جاهز", modelLoadingLong: "جارٍ تجهيز نماذج الذكاء الاصطناعي...", faceDetected: "تم اكتشاف الوجه", faceRegistered: "الوجه مسجل", faceNotRegistered: "الوجه غير مسجل", attendanceInProgress: "جارٍ التحقق من الوجه...", attendanceWaiting: "بانتظار وجه مسجل...", attendanceReady: "تم التحقق من الموقع. الكاميرا جاهزة.", methodFaceGps: "الوجه + GPS", delete: "حذف", recordsCount: "{count} سجل", studentsCount: "{count} طالب", unknownClass: "غير محدد", mapSchoolPopup: "مدرسة الفتيان · نطاق 50 مترًا", mapUserPopup: "موقع جهازك", mapDistance: "المسافة من المدرسة: {distance} متر", mapAccuracy: "دقة GPS: ±{accuracy} متر", registeredAlready: "رقم الطالب مسجل بالفعل.", locationMapReady: "الخريطة جاهزة. سيظهر موقع جهازك بعد التحقق من GPS.", noLocationForMap: "تحقق من موقعك أولًا لإظهار علامة الجهاز.", faceUploadError: "تعذرت معالجة الصورة. استخدم صورة JPG أو PNG أو WebP صالحة.", faceSampleCapture: "تم اكتشاف الوجه. يمكن استخدام العينة.", cameraStartFailed: "تعذر تشغيل الكاميرا. تحقق من أذونات المتصفح واتصال HTTPS الآمن.", cameraStarting: "جارٍ تشغيل الكاميرا...", locationVerified: "تم التحقق من الموقع.", confidenceLabel: "الثقة", student: "الطالب", attendance: "حاضر"
+        authEyebrow: "حضور متكامل · مدرسة الفتيان", welcomeTitle: "حضور أكثر أمانًا.", welcomeDesc: "سجّل الدخول لإدارة الحضور وبيانات الطلاب.", login: "تسجيل الدخول", signup: "إنشاء حساب", email: "البريد الإلكتروني", password: "كلمة المرور", demoAccount: "حساب تجريبي", fullName: "الاسم الكامل", confirmPassword: "تأكيد كلمة المرور", terms: "أوافق على شروط استخدام النسخة التجريبية.", workspace: "مساحة العمل", dashboard: "الرئيسية", database: "قاعدة البيانات", formulir: "التسجيل", geofenceEnabled: "تحديد الموقع مفعّل", viewProfile: "عرض الملف الشخصي", schoolWorkspace: "مدرسة الفتيان", dailyAttendance: "الحضور اليومي", cameraTitle: "كاميرا الحضور", cameraDesc: "تحقق من وجودك داخل المدرسة ثم تحقق من الوجه لتسجيل الحضور.", viewMap: "عرض الخريطة", secureCamera: "كاميرا الحضور", modelLoading: "جارٍ تحميل الذكاء الاصطناعي...", cameraOff: "الكاميرا متوقفة", cameraOffDesc: "فعّل المفتاح بعد التحقق من الموقع.", cameraReady: "الكاميرا جاهزة", fullscreen: "ملء الشاشة", locationVerification: "التحقق من الموقع", locationNotChecked: "لم يتم التحقق من الموقع", locationPending: "لم يتم التحقق", attendanceSwitch: "مفتاح الحضور", switchOffHint: "الكاميرا متوقفة. سيتم التحقق من موقعك عند التفعيل.", off: "إيقاف", on: "تشغيل", waitingFace: "بانتظار الكاميرا", livenessWaiting: "يبدأ التحقق من الوجه والحركة بعد التحقق من الموقع.", recordsCenter: "مركز السجلات", attendanceDatabase: "قاعدة بيانات الحضور", databaseDesc: "ابحث عن سجل الحضور وبيانات الطلاب وصفِّها وصدرها.", exportCsv: "تصدير CSV", registeredStudents: "الطلاب المسجلون", registeredStudentsHint: "بيانات الوجه في هذه الجلسة", todayAttendance: "حضور اليوم", todayAttendanceHint: "سجلات الحضور اليوم", totalRecords: "إجمالي السجلات", totalRecordsHint: "جميع سجلات هذه الجلسة", attendanceHistory: "سجل الحضور", historyDesc: "تظل البيانات التجريبية متاحة أثناء فتح الصفحة.", deleteAll: "حذف جميع البيانات", searchPlaceholder: "ابحث بالاسم أو رقم الطالب أو الفصل...", fromDate: "من", toDate: "إلى", number: "رقم", nisn: "رقم الطالب", name: "الاسم", class: "الفصل", status: "الحالة", date: "التاريخ", time: "الوقت", method: "الطريقة", confidence: "نسبة الثقة", action: "الإجراء", noRecords: "لا توجد سجلات بعد", noRecordsDesc: "سيظهر سجل الحضور هنا بعد نجاح التحقق.", studentRegistry: "سجل الطلاب", studentRegistryDesc: "الطلاب الذين لديهم عينات وجه مسجلة.", registeredAt: "تاريخ التسجيل", noStudents: "لا يوجد طلاب مسجلون بعد", registerFromForm: "أضف الطلاب من قائمة التسجيل.", studentManagement: "إدارة الطلاب", studentRegistration: "نموذج تسجيل الطلاب", formDesc: "سجّل بيانات الطالب وعينة الوجه للتعرف على الحضور.", studentIdentity: "بيانات الطالب", studentIdentityDesc: "أدخل المعلومات الصحيحة قبل الحفظ.", faceSample: "عينة الوجه", faceSampleDesc: "استخدم الكاميرا أو ارفع صورة يظهر فيها وجه واحد بوضوح.", openCamera: "فتح الكاميرا", closeCamera: "إغلاق الكاميرا", uploadPhoto: "رفع صورة الوجه", noFaceSample: "لا توجد عينة وجه بعد.", saveStudent: "حفظ الطالب", clearFace: "يجب أن يكون الوجه واضحًا", clearFaceDesc: "تأكد من ظهور وجه واحد فقط ومن الإضاءة الجيدة وعدم تغطية الوجه.", privacyFirst: "بيانات مؤقتة", privacyDesc: "تحفظ هذه النسخة التجريبية بيانات الوجه في ذاكرة المتصفح فقط، وتختفي عند إعادة تحميل الصفحة.", accountSettings: "إعدادات الحساب", myProfile: "ملفي الشخصي", appearance: "المظهر", lightTheme: "فاتح", darkTheme: "داكن", language: "اللغة", saveSettings: "حفظ الإعدادات", logout: "تسجيل الخروج", locationSecurity: "أمان الموقع", schoolMap: "خريطة منطقة المدرسة", mapDesc: "موقع المدرسة وموقع جهازك.", schoolPoint: "موقع المدرسة", yourLocation: "موقعك", allowedRadius: "نطاق السماح: 50 مترًا", mapLocationPending: "تحقق من موقعك لإظهار موقع الجهاز.", refreshLocation: "التحقق من الموقع مجددًا", confirmDeleteTitle: "حذف جميع البيانات؟", confirmDeleteDesc: "سيتم حذف سجلات الحضور والطلاب المسجلين في هذه الجلسة.", cancel: "إلغاء", locationChecking: "جارٍ التحقق من الموقع...", locationInside: "داخل نطاق المدرسة", locationOutside: "خارج نطاق المدرسة", locationError: "فشل التحقق من الموقع", gpsDenied: "تم رفض إذن الموقع. فعّل إذن الموقع أو GPS في المتصفح ثم حاول مجددًا.", gpsUnavailable: "الموقع غير متاح. فعّل GPS وتأكد من استقبال الجهاز لإشارة الموقع.", gpsTimeout: "انتهت مهلة التحقق من الموقع. حاول مجددًا في مكان تكون فيه إشارة GPS أفضل.", gpsUnsupported: "هذا المتصفح لا يدعم تحديد الموقع. استخدم متصفحًا حديثًا مع السماح بالوصول إلى الموقع.", gpsFailed: "تعذر التحقق من الموقع. راجع إعدادات الموقع في جهازك ثم حاول مجددًا.", outsideMessage: "تم رفض الحضور. تبعد عن المدرسة {distance} مترًا، بينما النطاق الأقصى المسموح هو {radius} مترًا.", insideMessage: "تم قبول الموقع: البعد {distance} مترًا، ودقة GPS نحو ±{accuracy} متر.", accuracyWarning: "أنت داخل النطاق لكن دقة GPS منخفضة ({accuracy} متر). حاول مجددًا في مكان مفتوح.", checkingBeforeCamera: "جارٍ التحقق من GPS قبل تشغيل الكاميرا...", cameraPermission: "تم رفض إذن الكاميرا. اسمح للمتصفح باستخدام الكاميرا.", cameraUnavailable: "الكاميرا غير متاحة أو تستخدمها تطبيقات أخرى.", cameraUnsupported: "هذا المتصفح لا يدعم الوصول إلى الكاميرا.", modelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وأعد تحميل الصفحة.", retryModel: "أعد محاولة تحميل النموذج.", faceNoMatch: "الوجه لا يطابق أي طالب مسجل.", faceTooMany: "تم اكتشاف أكثر من وجه. تأكد من وجود شخص واحد أمام الكاميرا.", faceNotFound: "لم يتم اكتشاف وجه. ضع وجهك داخل الإطار.", livenessMove: "حرّك رأسك قليلًا لإكمال التحقق من الحيوية.", attendanceSuccess: "تم تسجيل الحضور للطالب {name}.", alreadyPresent: "تم تسجيل حضور هذا الطالب اليوم بالفعل.", cameraStopped: "تم إيقاف الكاميرا.", locationRequired: "لم يتم التحقق من الموقع. ستظل الكاميرا متوقفة.", fullscreenError: "وضع ملء الشاشة غير متاح على هذا الجهاز.", mapFailed: "تعذر تحميل الخريطة. تحقق من اتصال الإنترنت.", mapLocationFailed: "موقعك غير متاح. تحقق من الموقع أولًا.", studentExists: "رقم الطالب مسجل بالفعل.", invalidNisn: "أدخل رقم طالب صحيحًا.", needFace: "التقط عينة وجه أو ارفعها أولًا.", studentSaved: "تم تسجيل الطالب بنجاح.", studentDeleted: "تم حذف الطالب بنجاح.", attendanceDeleted: "تم حذف سجل الحضور.", allDeleted: "تم حذف جميع بيانات الحضور والطلاب.", settingsSaved: "تم حفظ الإعدادات.", loginFailed: "البريد الإلكتروني أو كلمة المرور غير صحيحة.", signupSuccess: "تم إنشاء الحساب التجريبي. يمكنك تسجيل الدخول الآن.", passwordMismatch: "تأكيد كلمة المرور غير مطابق.", termsRequired: "وافق على الشروط قبل التسجيل.", emailExists: "البريد الإلكتروني مسجل بالفعل.", loggedOut: "تم تسجيل الخروج.", emptyCsv: "لا توجد بيانات لتصديرها.", csvSaved: "تم تجهيز ملف CSV.", cameraFormReady: "كاميرا التسجيل تعمل.", cameraFormOff: "تم إيقاف كاميرا التسجيل.", faceSampleReady: "عينة الوجه جاهزة.", modelReady: "الذكاء الاصطناعي جاهز", modelLoadingLong: "جارٍ تجهيز نماذج الذكاء الاصطناعي...", faceDetected: "تم اكتشاف الوجه", faceRegistered: "الوجه مسجل", faceNotRegistered: "الوجه غير مسجل", attendanceInProgress: "جارٍ التحقق من الوجه...", attendanceWaiting: "بانتظار وجه مسجل...", attendanceReady: "تم التحقق من الموقع. الكاميرا جاهزة.", methodFaceGps: "الوجه + GPS", delete: "حذف", recordsCount: "{count} سجل", studentsCount: "{count} طالب", unknownClass: "غير محدد", mapSchoolPopup: "مدرسة الفتيان · نطاق 50 مترًا", mapUserPopup: "موقع جهازك", mapDistance: "المسافة من المدرسة: {distance} متر", mapAccuracy: "دقة GPS: ±{accuracy} متر", registeredAlready: "رقم الطالب مسجل بالفعل.", locationMapReady: "الخريطة جاهزة. سيظهر موقع جهازك بعد التحقق من GPS.", noLocationForMap: "تحقق من موقعك أولًا لإظهار علامة الجهاز.", faceUploadError: "تعذرت معالجة الصورة. استخدم صورة JPG أو PNG أو WebP صالحة.", faceSampleCapture: "تم اكتشاف الوجه. يمكن استخدام العينة.", cameraStartFailed: "تعذر تشغيل الكاميرا. تحقق من أذونات المتصفح واتصال HTTPS الآمن.", cameraStarting: "جارٍ تشغيل الكاميرا...", locationVerified: "تم التحقق من الموقع.", confidenceLabel: "الثقة", student: "الطالب", attendance: "حاضر"
     }
 };
 
@@ -1148,7 +1159,7 @@ async function checkAdminMapDeviceLocation() {
     const button = $("admin-map-check-location");
     const status = $("admin-map-device-status");
     if (!status) return;
-    if (!navigator.geolocation?.getCurrentPosition) {
+    if (!navigator.geolocation?.getCurrentPosition && !navigator.geolocation?.watchPosition) {
         status.textContent = tr("gpsUnsupported");
         return;
     }
@@ -1165,11 +1176,7 @@ async function checkAdminMapDeviceLocation() {
     if (button) { button.disabled = true; button.textContent = tr("adminMapCheckingDeviceLocation"); }
     status.textContent = tr("adminMapCheckingDeviceLocation");
     try {
-        const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true, timeout: 15000, maximumAge: 0
-            });
-        });
+        const position = await getBestGpsPosition();
         const { latitude, longitude, accuracy } = position.coords || {};
         if (![latitude, longitude, accuracy].every(Number.isFinite) ||
             Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
@@ -1180,7 +1187,7 @@ async function checkAdminMapDeviceLocation() {
             timestamp: Number.isFinite(position.timestamp) ? position.timestamp : Date.now()
         };
         updateAdminMapDistanceSummary();
-        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+        if (!isGpsAccuracyAcceptable(accuracy, radius)) {
             status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
         } else if (status) {
             status.textContent += ` ${tr("adminMapLocationSuccess")}`;
@@ -1593,7 +1600,7 @@ async function showApp(user) {
     if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = !settingsLoaded;
     if ($("btn-student-attendance")) $("btn-student-attendance").disabled = !settingsLoaded;
     if (!settingsLoaded) toast(tr("schoolSettingsFailed"), "error");
-    loadModels();
+    void loadFaceDetector();
 }
 
 function restoreSession() {
@@ -1668,7 +1675,7 @@ async function loadAdminDashboard() {
         return;
     }
     try {
-        const stats = await cloudRequest("/api/admin/dashboard-stats");
+        const stats = await cloudRequest("/api/admin/audit?action=stats");
         $("admin-total-students").textContent = stats?.total_students ?? 0;
         $("admin-total-teachers").textContent = stats?.total_teachers ?? 0;
         $("admin-attendance-today").textContent = stats?.attendance_today ?? 0;
@@ -1768,7 +1775,7 @@ function applyRuntimeFeatureFlags(features = {}) {
     document.querySelectorAll(".language-row").forEach(element => {
         element.classList.toggle("hidden", features.language_switcher === false);
     });
-    const coreAttendanceOff = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"]
+    const coreAttendanceOff = ["camera_attendance", "face_recognition", "liveness_check", "attendance_recording"]
         .some(key => features[key] === false);
     if (coreAttendanceOff) {
         if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
@@ -1955,7 +1962,7 @@ async function startAdminTestCamera() {
     status.textContent = tr("testModelLoading");
     modelState.textContent = tr("testModelLoading");
     try {
-        if (!await loadModels()) throw new Error("model");
+        if (!state.faceDetectorReady && !(await loadFaceDetector())) throw new Error("model");
         modelState.textContent = tr("testModelReady");
         const stream = await getCameraStream();
         if (!$("admin-view-tests")?.classList.contains("active")) {
@@ -1976,9 +1983,8 @@ async function startAdminTestCamera() {
             if (adminTestBusy || !adminTestStream || video.readyState < 2) return;
             adminTestBusy = true;
             try {
-                const rawDetections = await detectFaces(video);
+                const detections = await detectUsableFaces(video);
                 if (!adminTestStream) return;
-                const detections = rawDetections.filter(detection => isFaceDetectionUsable(detection, video));
                 drawDetections(video, $("admin-test-overlay"), detections);
                 $("admin-test-face-count").textContent = String(detections.length);
                 status.textContent = detections.length === 0 ? tr("testCameraNoFace")
@@ -2087,9 +2093,7 @@ async function testAdminGps() {
         const settingsAvailable = await loadSchoolSettings({ preserveOnError: true });
         if (!settingsAvailable || !state.schoolSettingsLoaded) throw new Error("School GPS settings could not be loaded.");
         if (!navigator.geolocation) throw new Error("Geolocation API tidak tersedia.");
-        const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true, timeout: 12000, maximumAge: 0
-        }));
+        const position = await getBestGpsPosition();
         const { latitude, longitude, accuracy } = position.coords || {};
         if (![latitude, longitude, accuracy].every(Number.isFinite) ||
             Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || accuracy <= 0) {
@@ -2103,7 +2107,7 @@ async function testAdminGps() {
         $("admin-test-gps-distance").textContent = Math.round(distance) + " m";
         const clearlyInside = distance + accuracy <= SCHOOL_LOCATION.radius;
         const clearlyOutside = Math.max(0, distance - accuracy) > SCHOOL_LOCATION.radius;
-        if (accuracy > MAX_GPS_ACCURACY_METERS) {
+        if (!isGpsAccuracyAcceptable(accuracy)) {
             status.textContent = tr("adminMapLowAccuracy", { accuracy: Math.round(accuracy) });
         } else if (clearlyInside) {
             status.textContent = tr("testGpsInside");
@@ -2201,7 +2205,76 @@ async function loadAdminSettings() {
     }
 }
 
+function formatRoleActivityTime(value, fallback) {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "Tidak tersedia";
+    return date.toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID");
+}
+
+function roleActivityActionLabel(action) {
+    const labels = {
+        "attendance.create": "Mencatat presensi",
+        "student.face_update_v2": "Memperbarui sampel wajah",
+        "student.create": "Mendaftarkan siswa",
+        "siswa.create": "Membuat akun siswa",
+        "guru.create": "Membuat akun guru",
+        "settings.update": "Memperbarui lokasi/jadwal sekolah",
+        "system.features.update": "Mengubah sakelar sistem",
+        "absence.create": "Mengirim pengajuan ketidakhadiran",
+        "absence.review": "Meninjau pengajuan ketidakhadiran",
+        "student.update": "Memperbarui data siswa",
+        "teacher.update": "Memperbarui data guru"
+    };
+    return labels[action] || String(action || "Aktivitas tercatat").replaceAll(".", " · ");
+}
+
+function renderRoleActivityTable(targetId, users) {
+    const table = $(targetId);
+    if (!table) return;
+    if (!Array.isArray(users) || users.length === 0) {
+        table.innerHTML = '<tr><td colspan="3">Belum ada akun pada peran ini.</td></tr>';
+        return;
+    }
+    table.innerHTML = users.map(user => {
+        const account = '<strong>' + safeText(user.name || "—") + '</strong><br><small>' +
+            safeText(user.email || "Email tidak tersedia") + '</small><br><small>' +
+            safeText(user.is_active ? "Aktif" : "Nonaktif") + '</small>';
+        const login = safeText(formatRoleActivityTime(user.last_login_at, "Belum pernah login"));
+        const activity = user.last_activity_action
+            ? '<strong>' + safeText(roleActivityActionLabel(user.last_activity_action)) + '</strong><br><small>' +
+                safeText(formatRoleActivityTime(user.last_activity_at, "Waktu tidak tersedia")) + '</small>'
+            : "Belum ada aktivitas tercatat";
+        return '<tr><td>' + account + '</td><td>' + login + '</td><td>' + activity + '</td></tr>';
+    }).join("");
+}
+
+async function loadAdminRoleActivity() {
+    const status = $("admin-activity-status");
+    if (status) status.textContent = "Memuat riwayat login dan aktivitas per peran...";
+    try {
+        const response = await cloudRequest("/api/admin/audit?action=activity");
+        const groups = response?.activity || {};
+        renderRoleActivityTable("admin-activity-admin-tbody", groups.admin);
+        renderRoleActivityTable("admin-activity-teacher-tbody", groups.guru);
+        renderRoleActivityTable("admin-activity-student-tbody", groups.siswa);
+        if (status) {
+            const limit = Number(response?.audit_history_limit_per_role) || 1000;
+            status.textContent = "Login diambil dari catatan login akun. Aktivitas menunjukkan tindakan penting yang tercatat pada API, dengan pemeriksaan hingga " +
+                limit.toLocaleString() + " catatan audit terbaru per peran.";
+        }
+    } catch (error) {
+        console.error("Admin role activity could not load:", error);
+        for (const id of ["admin-activity-admin-tbody", "admin-activity-teacher-tbody", "admin-activity-student-tbody"]) {
+            const table = $(id);
+            if (table) table.innerHTML = '<tr><td colspan="3">Riwayat aktivitas gagal dimuat.</td></tr>';
+        }
+        if (status) status.textContent = "Riwayat aktivitas tidak dapat dimuat. Periksa koneksi dan akses Admin.";
+    }
+}
+
 async function loadAdminAudit() {
+    void loadAdminRoleActivity();
     try {
         const filters = new URLSearchParams();
         if ($("admin-audit-actor").value) filters.set("actor", $("admin-audit-actor").value);
@@ -2747,96 +2820,151 @@ function geolocationErrorKey(error) {
     return "gpsFailed";
 }
 
-async function checkGeofence() {
-    if (!navigator.geolocation?.getCurrentPosition) {
-        return setLocationError("gpsUnsupported");
-    }
-
-    return new Promise(resolve => {
+async function getBestGpsPosition() {
+    if (!navigator.geolocation) throw { code: 2 };
+    return new Promise((resolve, reject) => {
+        let best = null;
+        let watchId = null;
         let settled = false;
-        const timeoutId = setTimeout(() => {
-            finishWithError("gpsTimeout");
-        }, 12000);
-        const finish = result => {
+        const geo = navigator.geolocation;
+        const finish = (position, error) => {
             if (settled) return;
             settled = true;
-            clearTimeout(timeoutId);
-            resolve(result);
-        };
-        const finishWithError = errorKey => {
-            const result = setLocationError(errorKey);
-            finish(result);
-        };
-        const onSuccess = position => {
-            if (settled) return;
-            try {
-                const { latitude, longitude, accuracy } = position.coords;
-                const distanceExact = calculateDistance(
-                    latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
-                );
-                const timestamp = Number.isFinite(position.timestamp) ? position.timestamp : Date.now();
-                const previousFix = state.lastGpsFix;
-                const elapsedSeconds = previousFix ? (timestamp - previousFix.timestamp) / 1000 : 0;
-                const estimatedSpeed = previousFix && elapsedSeconds > 0
-                    ? calculateDistance(previousFix.lat, previousFix.lng, latitude, longitude) / elapsedSeconds
-                    : 0;
-                const reportedSpeed = Number.isFinite(position.coords.speed) ? position.coords.speed : 0;
-                const fakeLocation = accuracy <= 0 || !Number.isFinite(accuracy) ||
-                    !Number.isFinite(distanceExact) || reportedSpeed > 55 ||
-                    (elapsedSeconds >= 1 && elapsedSeconds <= 600 && estimatedSpeed > 55);
-                state.lastGpsFix = { lat: latitude, lng: longitude, timestamp };
-                if (fakeLocation) {
-                    const error = tr("fakeLocation");
-                    state.lastLocation = { error, errorKey: "fakeLocation", fakeLocation: true, checkedAt: Date.now() };
-                    renderLocationBadge();
-                    updateMapText();
-                    finish({ inside: false, distance: NaN, accuracy, error, fakeLocation: true });
-                    return;
-                }
-                const roundedDistance = Math.round(distanceExact);
-                const roundedAccuracy = Math.round(accuracy);
-                const clearlyInside = distanceExact + accuracy <= SCHOOL_LOCATION.radius;
-                const clearlyOutside = Math.max(0, distanceExact - accuracy) > SCHOOL_LOCATION.radius;
-                const boundaryUncertain = !clearlyInside && !clearlyOutside;
-                const inside = clearlyInside;
-
-                state.lastLocation = {
-                    lat: latitude, lng: longitude, accuracy,
-                    distance: roundedDistance, inside, boundaryUncertain, checkedAt: Date.now(),
-                    positionTimestamp: timestamp, speed: reportedSpeed
-                };
-
-                renderLocationBadge();
-                updateMapUserMarker();
-
-                updateMapText();
-                finish({
-                    inside,
-                    boundaryUncertain,
-                    distance: roundedDistance,
-                    accuracy,
-                    error: null,
-                    fakeLocation: false
-                });
-            } catch (error) {
-                console.error("GPS location processing error:", error);
-                finishWithError("gpsFailed");
+            window.clearTimeout(timeoutId);
+            if (watchId !== null && typeof geo.clearWatch === "function") {
+                try { geo.clearWatch(watchId); } catch { /* best effort */ }
             }
+            if (position) resolve(position);
+            else reject(error || { code: 2 });
         };
+        const consider = position => {
+            const coords = position?.coords;
+            const latitude = Number(coords?.latitude);
+            const longitude = Number(coords?.longitude);
+            const accuracy = Number(coords?.accuracy);
+            const timestamp = Number(position?.timestamp);
+            const age = Date.now() - timestamp;
+            if (![latitude, longitude, accuracy, timestamp].every(Number.isFinite) ||
+                latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 ||
+                accuracy <= 0 || accuracy > 10000 || age < -5000 || age > 30000) {
+                return;
+            }
+            if (!best || accuracy < Number(best.coords.accuracy)) best = position;
+            // Finish early for a high-quality fix; otherwise keep watching briefly
+            // so indoor/phone GPS has a chance to improve from its first coarse fix.
+            if (accuracy <= 20) finish(best);
+        };
+        const onError = error => {
+            if (error?.code === 1) finish(null, error);
+            else if (best) finish(best);
+            else finish(null, error || { code: 2 });
+        };
+        const timeoutId = window.setTimeout(() => {
+            if (best) finish(best);
+            else finish(null, { code: 3 });
+        }, 15000);
+
         try {
-            navigator.geolocation.getCurrentPosition(onSuccess, error => {
-                if (settled) return;
-                finishWithError(geolocationErrorKey(error));
-            }, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
+            if (typeof geo.watchPosition === "function") {
+                watchId = geo.watchPosition(consider, onError, {
+                    enableHighAccuracy: true,
+                    timeout: 16000,
+                    maximumAge: 0
+                });
+            } else if (typeof geo.getCurrentPosition === "function") {
+                geo.getCurrentPosition(position => {
+                    consider(position);
+                    if (!settled && best) finish(best);
+                    else if (!settled) finish(null, { code: 2 });
+                }, onError, {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                });
+            } else {
+                finish(null, { code: 2 });
+            }
         } catch (error) {
-            console.error("GPS request failed:", error);
-            finishWithError("gpsFailed");
+            finish(null, error);
         }
     });
+}
+
+async function checkGeofence() {
+    if (!navigator.geolocation?.getCurrentPosition && !navigator.geolocation?.watchPosition) {
+        return setLocationError("gpsUnsupported");
+    }
+    if (![SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng, SCHOOL_LOCATION.radius].every(Number.isFinite) ||
+        SCHOOL_LOCATION.lat < -90 || SCHOOL_LOCATION.lat > 90 ||
+        SCHOOL_LOCATION.lng < -180 || SCHOOL_LOCATION.lng > 180 ||
+        SCHOOL_LOCATION.radius < 10 || SCHOOL_LOCATION.radius > 500) {
+        return setLocationError("gpsFailed");
+    }
+
+    try {
+        const position = await getBestGpsPosition();
+        const { latitude, longitude, accuracy } = position.coords;
+        const timestamp = Number(position.timestamp);
+        const age = Date.now() - timestamp;
+        if (![latitude, longitude, accuracy, timestamp].every(Number.isFinite) ||
+            latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 ||
+            accuracy <= 0 || age < -5000 || age > 30000) {
+            return setLocationError("gpsUnavailable");
+        }
+
+        const distanceExact = calculateDistance(
+            latitude, longitude, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
+        );
+        if (!Number.isFinite(distanceExact)) return setLocationError("gpsFailed");
+
+        const previousFix = state.lastGpsFix;
+        const elapsedSeconds = previousFix ? (timestamp - previousFix.timestamp) / 1000 : 0;
+        const estimatedSpeed = previousFix && elapsedSeconds > 0 && elapsedSeconds <= 600
+            ? calculateDistance(previousFix.lat, previousFix.lng, latitude, longitude) / elapsedSeconds
+            : 0;
+        const reportedSpeed = Number.isFinite(position.coords.speed) ? position.coords.speed : 0;
+        const fakeLocation = reportedSpeed > 55 ||
+            (elapsedSeconds >= 1 && elapsedSeconds <= 600 && estimatedSpeed > 55);
+        state.lastGpsFix = { lat: latitude, lng: longitude, timestamp };
+        if (fakeLocation) {
+            const error = tr("fakeLocation");
+            state.lastLocation = { error, errorKey: "fakeLocation", fakeLocation: true, checkedAt: Date.now() };
+            renderLocationBadge();
+            updateMapText();
+            return { inside: false, distance: NaN, accuracy, error, fakeLocation: true };
+        }
+
+        const roundedDistance = Math.round(distanceExact);
+        const clearlyInside = distanceExact + accuracy <= SCHOOL_LOCATION.radius;
+        const clearlyOutside = Math.max(0, distanceExact - accuracy) > SCHOOL_LOCATION.radius;
+        const boundaryUncertain = !clearlyInside && !clearlyOutside;
+        const inside = clearlyInside;
+
+        state.lastLocation = {
+            lat: latitude, lng: longitude, accuracy,
+            distance: roundedDistance, inside, boundaryUncertain, checkedAt: Date.now(),
+            positionTimestamp: timestamp, speed: reportedSpeed
+        };
+        renderLocationBadge();
+        updateMapUserMarker();
+        updateMapText();
+
+        return {
+            inside,
+            boundaryUncertain,
+            distance: roundedDistance,
+            accuracy,
+            lat: latitude,
+            lng: longitude,
+            positionTimestamp: timestamp,
+            speed: reportedSpeed,
+            error: null,
+            fakeLocation: false
+        };
+    } catch (error) {
+        console.error("GPS location processing error:", error);
+        return setLocationError(geolocationErrorKey(error));
+    }
 }
 
 function setLocationError(errorKey) {
@@ -2878,11 +3006,11 @@ function renderLocationBadge() {
         return;
     }
 
-    const accuracyAccepted = state.lastLocation.accuracy <= MAX_GPS_ACCURACY_METERS;
+    const accuracyAccepted = isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius);
     const badgeLabel = !accuracyAccepted
         ? `${tr("locationAccuracyBad")} · ±${Math.round(state.lastLocation.accuracy)} m`
         : `${tr(state.lastLocation.inside ? "locationInside" : "locationOutside")} · ${state.lastLocation.distance} m`;
-    const description = state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
+    const description = !isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius)
         ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
         : state.lastLocation.inside
             ? tr("insideMessage", {
@@ -2897,49 +3025,192 @@ function renderLocationBadge() {
 }
 
 // Camera lifecycle and face recognition
-function displayModelError(error) {
-    console.error("AI model error:", error);
-    state.modelReady = false;
+function displayModelError(error, stage = "recognition") {
+    console.error(stage === "detector" ? "Face detector error:" : "Face recognition model error:", error);
+    if (stage === "detector") state.faceDetectorReady = false;
+    else {
+        state.faceRecognitionReady = false;
+        state.faceEngine = null;
+    }
+    state.modelReady = state.faceDetectorReady && state.faceRecognitionReady;
     if ($("model-status")) {
         $("model-status").className = "model-badge error";
-        $("model-status").textContent = tr("modelFailed");
+        $("model-status").textContent = stage === "detector"
+            ? "Face detector gagal dimuat"
+            : "Model pengenalan gagal dimuat";
     }
-    if ($("model-error-text")) $("model-error-text").textContent = tr("modelFailed");
+    if ($("model-error-text")) {
+        const detail = String(error?.message || "").slice(0, 180);
+        $("model-error-text").textContent = detail
+            ? (stage === "detector" ? "Detector: " : "ArcFace: ") + detail
+            : tr("modelFailed");
+    }
     $("model-error")?.classList.remove("hidden");
 }
 
-function loadModels() {
-    if (state.modelReady) return Promise.resolve(true);
-    if (state.modelLoadingPromise) return state.modelLoadingPromise;
-    state.modelLoading = true;
+function loadExternalScript(url, timeoutMs = 20000) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        let settled = false;
+        const timeout = window.setTimeout(() => finish(new Error("Face detector library request timed out")), timeoutMs);
+        const finish = error => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeout);
+            if (error) {
+                script.remove();
+                reject(error);
+            } else resolve();
+        };
+        script.src = url;
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        script.onload = () => finish();
+        script.onerror = () => finish(new Error("Face detector library could not be loaded"));
+        document.head.appendChild(script);
+    });
+}
+
+async function ensureFaceApi() {
+    if (window.faceapi) return window.faceapi;
+    const sources = [
+        "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js",
+        "https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"
+    ];
+    let lastError = null;
+    for (const source of sources) {
+        try {
+            await loadExternalScript(source);
+            if (window.faceapi) return window.faceapi;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw lastError || new Error("Face detector library unavailable from supported CDN mirrors");
+}
+
+function updateFaceModelProgress(progress) {
+    const label = progress?.message || tr("modelLoadingLong");
     if ($("model-status")) {
         $("model-status").className = "model-badge";
-        $("model-status").textContent = tr("modelLoadingLong");
+        $("model-status").textContent = label;
     }
+    // Progress is not an error. Keep the error panel hidden while the model downloads.
+    $("model-error")?.classList.add("hidden");
+}
 
-    state.modelLoadingPromise = (async () => {
+function loadFaceDetector() {
+    if (state.faceDetectorReady && window.faceapi) return Promise.resolve(true);
+    if (state.faceDetectorFailed) return Promise.resolve(false);
+    if (state.faceDetectorLoadingPromise) return state.faceDetectorLoadingPromise;
+    state.faceDetectorLoadingPromise = (async () => {
         try {
-            if (!window.faceapi) throw new Error("face-api.js unavailable");
-            const base = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@v0.22.2/weights";
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(base),
-                faceapi.nets.faceLandmark68Net.loadFromUri(base),
-                faceapi.nets.faceRecognitionNet.loadFromUri(base)
-            ]);
-            state.modelReady = true;
+            if ($("model-status")) {
+                $("model-status").className = "model-badge";
+                $("model-status").textContent = "Menyiapkan deteksi wajah…";
+            }
+            const faceapi = await ensureFaceApi();
+            const detectorWeightSources = [
+                "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights",
+                "https://unpkg.com/face-api.js@0.22.2/weights"
+            ];
+            let detectorReady = false;
+            let lastError = null;
+            for (const base of detectorWeightSources) {
+                try {
+                    if (!faceapi.nets.tinyFaceDetector.isLoaded) {
+                        await faceapi.nets.tinyFaceDetector.loadFromUri(base);
+                    }
+                    if (!faceapi.nets.faceLandmark68Net.isLoaded) {
+                        await faceapi.nets.faceLandmark68Net.loadFromUri(base);
+                    }
+                    detectorReady = Boolean(
+                        faceapi.nets.tinyFaceDetector.isLoaded &&
+                        faceapi.nets.faceLandmark68Net.isLoaded
+                    );
+                    if (detectorReady) break;
+                    lastError = new Error("Face detector weights did not report ready");
+                } catch (error) {
+                    lastError = error;
+                    console.warn("Face detector weights mirror failed:", base, error);
+                }
+            }
+            if (!detectorReady) throw lastError || new Error("Face detector or landmark weights unavailable");
+
+            state.faceDetectorReady = true;
             if ($("model-status")) {
                 $("model-status").className = "model-badge ready";
-                $("model-status").textContent = tr("modelReady");
+                $("model-status").textContent = state.faceRecognitionReady
+                    ? "ArcFace 512D siap"
+                    : "Deteksi wajah siap · menyiapkan ArcFace…";
             }
             $("model-error")?.classList.add("hidden");
             return true;
         } catch (error) {
-            displayModelError(error);
+            state.faceDetectorFailed = true;
+            displayModelError(error, "detector");
             return false;
         } finally {
+            state.faceDetectorLoadingPromise = null;
+        }
+    })();
+    return state.faceDetectorLoadingPromise;
+}
+
+function loadFaceRecognition() {
+    if (state.faceRecognitionReady && state.faceEngine) return Promise.resolve(true);
+    if (state.faceRecognitionFailed) return Promise.resolve(false);
+    if (state.faceRecognitionLoadingPromise) return state.faceRecognitionLoadingPromise;
+    state.faceRecognitionLoadingPromise = (async () => {
+        try {
+            if (!state.faceDetectorReady && !(await loadFaceDetector())) {
+                throw new Error("Face detector is not ready");
+            }
+            if ($("model-status")) {
+                $("model-status").className = "model-badge";
+                $("model-status").textContent = "Menyiapkan model pengenalan ArcFace…";
+            }
+            const engineModule = await import("./face-engine.js");
+            const engine = await engineModule.createAmanahFaceEngine({
+                onProgress: updateFaceModelProgress
+            });
+            state.faceEngine = engine;
+            state.faceRecognitionReady = true;
+            state.faceRecognitionFailed = false;
+            state.modelReady = state.faceDetectorReady && state.faceRecognitionReady;
+            if ($("model-status")) {
+                $("model-status").className = "model-badge ready";
+                $("model-status").textContent = "ArcFace 512D siap";
+            }
+            $("model-error")?.classList.add("hidden");
+            return true;
+        } catch (error) {
+            state.faceRecognitionFailed = true;
+            displayModelError(error, "recognition");
+            return false;
+        } finally {
+            state.faceRecognitionLoadingPromise = null;
             state.modelLoading = false;
         }
     })();
+    state.modelLoading = true;
+    return state.faceRecognitionLoadingPromise;
+}
+
+function loadModels() {
+    if (state.faceDetectorReady && state.faceRecognitionReady && state.faceEngine) {
+        state.modelReady = true;
+        return Promise.resolve(true);
+    }
+    if (state.modelLoadingPromise) return state.modelLoadingPromise;
+    state.modelLoadingPromise = (async () => {
+        const detectorReady = await loadFaceDetector();
+        if (!detectorReady) return false;
+        return await loadFaceRecognition();
+    })().finally(() => {
+        state.modelLoadingPromise = null;
+        state.modelLoading = false;
+    });
     return state.modelLoadingPromise;
 }
 
@@ -2954,9 +3225,11 @@ function updateCameraTexts() {
         ? tr("studentCameraStop")
         : state.attendanceStarting ? tr("studentCameraStarting") : tr("checkInNow");
     if ($("model-status")) {
-        $("model-status").textContent = state.modelReady
-            ? tr("modelReady")
-            : state.modelLoading ? tr("modelLoadingLong") : tr("modelFailed");
+        $("model-status").textContent = state.faceRecognitionReady
+            ? "ArcFace 512D siap"
+            : state.faceDetectorReady
+                ? "Deteksi wajah siap · menyiapkan ArcFace…"
+                : state.modelLoading ? tr("modelLoadingLong") : tr("modelFailed");
     }
 }
 
@@ -3069,24 +3342,83 @@ function stopAllCameras() {
 }
 
 async function getCameraStream() {
-    if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("unsupported");
-    }
-    try {
-        return await navigator.mediaDevices.getUserMedia({
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
+    const constraints = [
+        {
             audio: false,
             video: {
-                facingMode: "user",
-                width: { ideal: 480 },
-                height: { ideal: 360 },
+                facingMode: { ideal: "user" },
+                width: { ideal: 640 },
+                height: { ideal: 480 },
                 frameRate: { ideal: 24, max: 30 }
             }
-        });
-    } catch (error) {
-        if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") throw new Error("permission");
-        if (error?.name === "NotFoundError" || error?.name === "NotReadableError" || error?.name === "AbortError") throw new Error("unavailable");
-        throw new Error("failed");
+        },
+        {
+            audio: false,
+            video: {
+                facingMode: { ideal: "user" },
+                width: { ideal: 480 },
+                height: { ideal: 360 }
+            }
+        },
+        { audio: false, video: true }
+    ];
+    let lastError = null;
+    for (const constraint of constraints) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraint);
+            const track = stream.getVideoTracks()[0];
+            if (track) {
+                const settings = track.getSettings?.() || {};
+                console.info("Amanah camera started", {
+                    width: settings.width || null,
+                    height: settings.height || null,
+                    frameRate: settings.frameRate || null,
+                    facingMode: settings.facingMode || null
+                });
+            }
+            return stream;
+        } catch (error) {
+            lastError = error;
+            if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") {
+                throw new Error("permission");
+            }
+            if (error?.name === "NotFoundError" || error?.name === "NotReadableError" ||
+                error?.name === "AbortError") {
+                throw new Error("unavailable");
+            }
+            // A device may reject an ideal resolution; fall back to simpler constraints.
+        }
     }
+    console.error("Camera constraints failed:", lastError);
+    throw new Error("failed");
+}
+
+async function waitForVideoReady(video, timeoutMs = 7000) {
+    if (video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) return;
+    if (!video) throw new Error("Camera video element is missing");
+    await new Promise((resolve, reject) => {
+        let settled = false;
+        const finish = error => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeout);
+            video.removeEventListener("loadeddata", onReady);
+            video.removeEventListener("canplay", onReady);
+            video.removeEventListener("error", onError);
+            if (error) reject(error);
+            else resolve();
+        };
+        const onReady = () => {
+            if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) finish();
+        };
+        const onError = () => finish(new Error("Camera video could not provide frames"));
+        const timeout = window.setTimeout(() => finish(new Error("Camera did not produce a video frame in time")), timeoutMs);
+        video.addEventListener("loadeddata", onReady);
+        video.addEventListener("canplay", onReady);
+        video.addEventListener("error", onError);
+        onReady();
+    });
 }
 
 function cameraErrorText(error) {
@@ -3096,8 +3428,8 @@ function cameraErrorText(error) {
     return tr("cameraStartFailed");
 }
 
-async function loadRuntimeFeatures() {
- if (state.runtimeFeatures) return state.runtimeFeatures;
+async function loadRuntimeFeatures({ refresh = false } = {}) {
+ if (state.runtimeFeatures && !refresh) return state.runtimeFeatures;
  const response = await cloudRequest("/api?action=features");
  if (!response?.features || typeof response.features !== "object") throw new Error("Runtime feature configuration is unavailable");
  state.runtimeFeatures = response.features;
@@ -3107,30 +3439,27 @@ async function loadRuntimeFeatures() {
 async function startAttendanceCamera() {
     if (state.attendanceStream || state.attendanceStarting) return;
     if (!state.user) return;
-    if (!state.schoolSettingsLoaded) {
-        toast(tr("schoolSettingsFailed"), "error");
-        return;
-    }
     const requestUser = state.user;
     const cloudDataPromise = state.cloudDataPromise;
     state.attendanceStarting = true;
     const startToken = ++state.attendanceStartToken;
 
     try {
-        const runtimeFeatures = await loadRuntimeFeatures();
-        const requiredFeatures = ["camera_attendance", "gps_geofencing", "face_recognition", "liveness_check", "attendance_recording"];
+        const runtimeFeatures = await loadRuntimeFeatures({ refresh: true });
+        const gpsGeofencingEnabled = runtimeFeatures.gps_geofencing !== false;
+        const requiredFeatures = ["camera_attendance", "face_recognition", "liveness_check", "attendance_recording"];
         const disabledFeature = requiredFeatures.find(key => runtimeFeatures[key] === false);
         if (disabledFeature) {
             toast("Fitur presensi sedang dinonaktifkan oleh administrator.", "error");
             return;
         }
-        const settingsLoaded = await loadSchoolSettings();
+        const settingsLoaded = gpsGeofencingEnabled ? await loadSchoolSettings() : true;
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
             state.cloudDataPromise !== cloudDataPromise) return;
         if (!settingsLoaded) {
-            if ($("btn-attendance-switch")) $("btn-attendance-switch").disabled = true;
-            if ($("btn-student-attendance")) $("btn-student-attendance").disabled = true;
-            toast(tr("schoolSettingsFailed"), "error");
+            const message = tr("schoolSettingsFailed");
+            setAttendanceMessage(message);
+            toast(message, "error");
             return;
         }
         if (!attendanceViewActive() || document.hidden) return;
@@ -3144,48 +3473,59 @@ async function startAttendanceCamera() {
             return;
         }
 
-        state.lastLocation = { checking: true };
-        renderLocationBadge();
-        if (requestUser.role === "siswa") {
-            if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("checkingBeforeCamera");
-            if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStarting");
+        if (gpsGeofencingEnabled) {
+            state.lastLocation = { checking: true };
+            renderLocationBadge();
+            if (requestUser.role === "siswa") {
+                if ($("student-attendance-status")) $("student-attendance-status").textContent = tr("checkingBeforeCamera");
+                if ($("btn-student-attendance")) $("btn-student-attendance").textContent = tr("studentCameraStarting");
+            } else {
+                if ($("camera-status")) $("camera-status").textContent = tr("checkingBeforeCamera");
+                if ($("switch-hint")) $("switch-hint").textContent = tr("checkingBeforeCamera");
+                setSwitch(false);
+            }
+
+            const result = await checkGeofence();
+            if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
+                !attendanceViewActive() || document.hidden) return;
+
+            if (result.error || !isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius) ||
+                result.boundaryUncertain || !result.inside) {
+                const message = result.error ||
+                    (!isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius)
+                        ? tr("accuracyWarning", { accuracy: Math.round(result.accuracy) })
+                        : result.boundaryUncertain
+                            ? tr("gpsBoundaryUncertain")
+                            : tr("outsideMessage", {
+                                distance: result.distance,
+                                radius: SCHOOL_LOCATION.radius
+                            }));
+                stopAttendanceCamera();
+                setAttendanceMessage(message);
+                toast(message, "error");
+                return;
+            }
         } else {
-            if ($("camera-status")) $("camera-status").textContent = tr("checkingBeforeCamera");
-            if ($("switch-hint")) $("switch-hint").textContent = tr("checkingBeforeCamera");
-            setSwitch(false);
+            const message = "GPS Geofencing sedang dinonaktifkan oleh Admin. Presensi tetap memakai verifikasi wajah.";
+            if (requestUser.role === "siswa") {
+                if ($("student-attendance-status")) $("student-attendance-status").textContent = message;
+            } else {
+                if ($("camera-status")) $("camera-status").textContent = message;
+                if ($("switch-hint")) $("switch-hint").textContent = message;
+            }
         }
 
-        const result = await checkGeofence();
-        if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
-            !attendanceViewActive() || document.hidden) return;
-
-        if (!result.inside || result.error) {
-            const message = result.error || tr("outsideMessage", {
-                distance: result.distance,
-                radius: SCHOOL_LOCATION.radius
-            });
-            stopAttendanceCamera();
-            setAttendanceMessage(message);
-            toast(message, "error");
-            return;
-        }
-
-        if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
-            const message = tr("accuracyWarning", { accuracy: Math.round(result.accuracy) });
-            stopAttendanceCamera();
-            setAttendanceMessage(message);
-            toast(message, "error");
-            return;
-        }
-
-        if (!state.modelReady && !(await loadModels())) {
+        if (!state.faceDetectorReady && !(await loadFaceDetector())) {
             if (startToken === state.attendanceStartToken) {
                 stopAttendanceCamera();
-                setAttendanceMessage(tr("modelFailed"));
-                toast(tr("modelFailed"), "error");
+                setAttendanceMessage("Deteksi wajah gagal dimuat. Periksa koneksi lalu coba lagi.");
+                toast("Deteksi wajah gagal dimuat. Periksa koneksi lalu coba lagi.", "error");
             }
             return;
         }
+        // The camera and live face detector can start while the 105 MB
+        // recognition model downloads in the background.
+        void loadFaceRecognition();
         if (startToken !== state.attendanceStartToken || state.user !== requestUser ||
             !attendanceViewActive() || document.hidden) return;
 
@@ -3219,6 +3559,7 @@ async function startAttendanceCamera() {
         }
         video.srcObject = stream;
         await video.play();
+        await waitForVideoReady(video);
         if (startToken !== state.attendanceStartToken || state.attendanceStream !== stream ||
             state.user !== requestUser || !attendanceViewActive() || document.hidden) {
             stopStream(stream);
@@ -3293,13 +3634,13 @@ function drawDetections(video, canvas, detections) {
     faceapi.draw.drawFaceLandmarks(canvas, resized);
 }
 
-async function detectFaces(video, { withDescriptors = false } = {}) {
-    if (!state.modelReady || !video.videoWidth || video.readyState < 2) return [];
-    // 320px is sufficient for the 480x360 camera stream and substantially
-    // cheaper than running 512px detection on every liveness frame.
-    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.50 });
-    const landmarksTask = faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks();
-    return withDescriptors ? landmarksTask.withFaceDescriptors() : landmarksTask;
+async function detectFaces(video) {
+    if (!state.faceDetectorReady || !window.faceapi || !video?.videoWidth || video.readyState < 2) return [];
+    // Run detection at a light resolution; do not block it on the much larger
+    // ArcFace recognition model. A slightly lower score threshold improves recall;
+    // size/landmark/embedding checks still gate any identity decision.
+    state.faceDetectorOptions ||= new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 });
+    return faceapi.detectAllFaces(video, state.faceDetectorOptions).withFaceLandmarks();
 }
 
 function isFaceDetectionUsable(detection, video) {
@@ -3309,11 +3650,16 @@ function isFaceDetectionUsable(detection, video) {
     const height = Number(box?.height);
     const sourceWidth = Number(video?.videoWidth) || 0;
     const sourceHeight = Number(video?.videoHeight) || 0;
-    const minimumWidth = Math.max(76, sourceWidth * 0.12);
-    const minimumHeight = Math.max(76, sourceHeight * 0.16);
-    return Number.isFinite(score) && score >= 0.54 &&
+    const minimumWidth = Math.max(64, sourceWidth * 0.10);
+    const minimumHeight = Math.max(64, sourceHeight * 0.12);
+    return Number.isFinite(score) && score >= 0.50 &&
         Number.isFinite(width) && width >= minimumWidth &&
         Number.isFinite(height) && height >= minimumHeight;
+}
+
+async function detectUsableFaces(video) {
+    const detections = await detectFaces(video);
+    return detections.filter(detection => isFaceDetectionUsable(detection, video));
 }
 
 function updateAttendanceLiveness(detection) {
@@ -3328,7 +3674,7 @@ function updateAttendanceLiveness(detection) {
     }
     const challenge = state.livenessChallenge;
     if (challenge.completed) return { completed: true, progress: 9 };
-    const angle = faceAngleBucket(detection);
+    const angle = faceAngleBucket(detection, true);
     const expected = challenge.stage === "turn" ? challenge.direction : "front";
     challenge.total += 1;
     if (angle === expected) challenge.frames += 1;
@@ -3359,7 +3705,7 @@ function updateFaceSampleCount() {
     }
 }
 
-function faceAngleBucket(detection) {
+function faceAngleBucket(detection, mirroredPreview = false) {
     const points = detection?.landmarks?.positions;
     const box = detection?.box;
     if (!Array.isArray(points) || points.length < 48 || !box?.width || !box?.height) return null;
@@ -3369,46 +3715,54 @@ function faceAngleBucket(detection) {
     const nose = points[30];
     const yaw = (nose.x - (leftEye.x + rightEye.x) / 2) / Math.max(1, Math.abs(rightEye.x - leftEye.x));
     const pitch = (nose.y - (leftEye.y + rightEye.y) / 2) / box.height;
-    if (yaw < -0.13) return 'left';
-    if (yaw > 0.13) return 'right';
+    if (yaw < -0.13) return mirroredPreview ? 'right' : 'left';
+    if (yaw > 0.13) return mirroredPreview ? 'left' : 'right';
     if (pitch < 0.19) return 'up';
     if (pitch > 0.31) return 'down';
     if (Math.abs(yaw) <= 0.13 && pitch >= 0.19 && pitch <= 0.31) return 'front';
     return null;
 }
 
-function saveFaceSample(descriptor, quality = state.faceCandidateQuality, angle = null) {
-    const values = Array.from(descriptor || []);
-    if (values.length !== 128 || !values.every(Number.isFinite)) {
-        toast(tr("faceUploadError"), "error");
+function saveFaceSample(embedding, quality = state.faceCandidateQuality, angle = null) {
+    const values = Array.from(embedding || [], Number);
+    if (values.length !== 512 || !values.every(Number.isFinite)) {
+        toast("Embedding ArcFace harus berisi 512 angka valid.", "error");
         return false;
     }
-    if (typeof quality !== "number" || quality < 0.7) {
-        $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
-        toast("Wajah kurang jelas, mendekatlah ke kamera.", "error");
+    const norm = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0));
+    if (norm < 0.98 || norm > 1.02) {
+        toast("Embedding wajah belum ternormalisasi dengan benar. Ambil sampel ulang.", "error");
+        return false;
+    }
+    if (typeof quality !== "number" || !Number.isFinite(quality) || quality < 0.70) {
+        $("form-face-status").textContent = "Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.";
+        toast("Kualitas wajah belum cukup. Perbaiki pencahayaan dan posisi kamera.", "error");
         return false;
     }
     if (state.faceSamples.length >= MAX_FACE_SAMPLES) {
         toast(tr("faceSampleLimit"), "info");
         return false;
     }
-    if (!['front', 'left', 'right', 'up', 'down'].includes(angle)) {
-        $('form-face-status').textContent = tr('faceTurnAngle');
+    if (!["front", "left", "right", "up", "down"].includes(angle)) {
+        $("form-face-status").textContent = tr("faceTurnAngle");
         return false;
     }
     if (state.faceSampleAngles.includes(angle)) {
-        $('form-face-status').textContent = tr('faceAngleAlreadyCaptured', { angle: tr('faceAngle_' + angle) });
+        $("form-face-status").textContent = tr("faceAngleAlreadyCaptured", { angle: tr("faceAngle_" + angle) });
         return false;
     }
-    const descriptorVector = new Float32Array(values);
-    if (state.faceSamples.some(sample =>
-        faceapi.euclideanDistance(descriptorVector, new Float32Array(sample)) < 0.05
-    )) {
-        $("form-face-status").textContent = "Ubah sudut wajah.";
-        toast("Ubah sudut wajah.", "info");
+    const duplicate = state.faceSamples.some(sample => {
+        const prior = sample.embedding || [];
+        let dot = 0;
+        for (let index = 0; index < 512; index += 1) dot += values[index] * prior[index];
+        return 1 - dot < 0.002;
+    });
+    if (duplicate) {
+        $("form-face-status").textContent = "Sampel terlalu mirip. Ubah sudut wajah dan ulangi.";
+        toast("Sampel terlalu mirip. Ubah sudut wajah dan ulangi.", "info");
         return false;
     }
-    state.faceSamples.push(values);
+    state.faceSamples.push({ sample_angle: angle, quality, embedding: values });
     state.faceSampleAngles.push(angle);
     state.faceCandidate = null;
     state.faceCandidateQuality = null;
@@ -3431,6 +3785,7 @@ async function processAttendanceFrame() {
     const requestUser = state.user;
     if (!requestUser) return;
     state.attendanceBusy = true;
+    let pipelineStage = "detection";
 
     try {
         const video = attendanceVideo();
@@ -3441,7 +3796,7 @@ async function processAttendanceFrame() {
         await new Promise(resolve => window.requestAnimationFrame(resolve));
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         if (video.readyState < 2) return;
-        const detections = await detectFaces(video);
+        const detections = await detectUsableFaces(video);
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
         drawDetections(video, attendanceCanvas(), detections);
 
@@ -3484,34 +3839,35 @@ async function processAttendanceFrame() {
             return;
         }
 
-        // Extract the descriptor only for the final server-side face match.
-        const descriptorDetections = await detectFaces(video, { withDescriptors: true });
-        if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
-        if (descriptorDetections.length !== 1 ||
-            !isFaceDetectionUsable(descriptorDetections[0], video)) {
-            const message = descriptorDetections.length > 1
-                ? tr("faceTooMany")
-                : descriptorDetections.length === 0
-                    ? tr("faceNotFound")
-                    : tr("faceQualityLow");
+        // Show face detection independently; wait for the recognition backbone
+        // without stopping the camera or resetting the completed liveness check.
+        if (!state.faceRecognitionReady || !state.faceEngine) {
+            const recognitionFailed = state.faceRecognitionFailed;
+            const message = recognitionFailed
+                ? "Wajah terdeteksi, tetapi model ArcFace gagal dimuat. Gunakan tombol coba lagi pada status model."
+                : "Wajah terdeteksi. Menyiapkan model pengenalan wajah…";
             setAttendanceMessage(message);
-            if (requestUser.role === "guru") updateProgress(0, message);
+            if (requestUser.role === "guru") updateProgress(88, message);
+            if (!recognitionFailed) void loadFaceRecognition();
             return;
         }
-        const descriptorDetection = descriptorDetections[0];
+        pipelineStage = "recognition";
+        const embedded = await state.faceEngine.embed(video, detection);
+        if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
 
         let student;
         let confidence;
         let faceProofToken = null;
         if (Date.now() - state.lastFaceMatchAt < 2500) return;
         state.lastFaceMatchAt = Date.now();
+        pipelineStage = "face-match";
         const result = await cloudRequest("/api/face-match", {
             method: "POST",
             role: requestUser.role,
             nisn: requestUser.nisn,
             body: {
-                ...(requestUser.role === "siswa" ? { nisn: requestUser.nisn } : {}),
-                descriptor: Array.from(descriptorDetection.descriptor)
+                model_key: "auraface-glintr100-int8-v1",
+                embedding: embedded.embedding
             }
         });
         if (state.attendanceStream !== requestStream || state.user !== requestUser) return;
@@ -3534,22 +3890,25 @@ async function processAttendanceFrame() {
         faceProofToken = result.proofToken;
         if (!student) return;
 
-        const location = await checkGeofence();
-        if (state.user !== requestUser || state.attendanceStream !== requestStream ||
-            !attendanceViewActive() || document.hidden) return;
-        if (location.error || !location.inside || location.accuracy > MAX_GPS_ACCURACY_METERS) {
-            const message = location.error || (location.boundaryUncertain
-                ? tr("gpsBoundaryUncertain")
-                : location.accuracy > MAX_GPS_ACCURACY_METERS
-                    ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
-                    : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
-            stopAttendanceCamera();
-            setAttendanceMessage(message);
-            if (requestUser.role === "guru") {
-                updateProgress(0, message);
+        let location = null;
+        if (state.runtimeFeatures?.gps_geofencing !== false) {
+            pipelineStage = "gps";
+            location = await checkGeofence();
+            if (state.user !== requestUser || state.attendanceStream !== requestStream ||
+                !attendanceViewActive() || document.hidden) return;
+            if (location.error || !location.inside ||
+                !isGpsAccuracyAcceptable(location.accuracy, SCHOOL_LOCATION.radius)) {
+                const message = location.error || (location.boundaryUncertain
+                    ? tr("gpsBoundaryUncertain")
+                    : !isGpsAccuracyAcceptable(location.accuracy, SCHOOL_LOCATION.radius)
+                        ? tr("accuracyWarning", { accuracy: Math.round(location.accuracy) })
+                        : tr("outsideMessage", { distance: location.distance, radius: SCHOOL_LOCATION.radius }));
+                stopAttendanceCamera();
+                setAttendanceMessage(message);
+                if (requestUser.role === "guru") updateProgress(0, message);
+                toast(message, "error");
+                return;
             }
-            toast(message, "error");
-            return;
         }
 
         const today = localDateKey();
@@ -3565,17 +3924,20 @@ async function processAttendanceFrame() {
             return;
         }
 
+        pipelineStage = "attendance";
         const saved = await cloudRequest("/api/attendance", {
             method: "POST",
             role: requestUser.role,
             nisn: requestUser.nisn,
             body: {
                 nisn: student.nisn,
-                lat: location.lat,
-                lng: location.lng,
-                accuracy: location.accuracy,
-                gpsTimestamp: location.positionTimestamp,
-                speed: location.speed || 0,
+                ...(location ? {
+                    lat: location.lat,
+                    lng: location.lng,
+                    accuracy: location.accuracy,
+                    gpsTimestamp: location.positionTimestamp,
+                    speed: location.speed || 0
+                } : {}),
                 confidence
             },
             idempotencyKey: state.attendanceIdempotencyKey,
@@ -3604,23 +3966,37 @@ async function processAttendanceFrame() {
         if (saved.whatsapp?.error) toast(tr("attendanceWhatsappFailed"), "error");
     } catch (error) {
         if (state.attendanceStream === requestStream) {
-            stopAttendanceCamera();
-            if (error.status === 409) {
+            console.error("Attendance pipeline error (" + pipelineStage + "):", error);
+            if (pipelineStage === "recognition") {
+                state.faceRecognitionReady = false;
+                state.faceRecognitionFailed = true;
+                state.faceEngine = null;
+                state.modelReady = false;
+                displayModelError(error, "recognition");
+                const message = "Wajah terdeteksi, tetapi model pengenalan gagal berjalan. Gunakan tombol coba lagi pada status model.";
+                setAttendanceMessage(message);
+                if (requestUser.role === "guru") updateProgress(0, message);
+            } else if (pipelineStage === "detection") {
+                const message = "Kamera aktif, tetapi satu frame gagal diproses. Sistem akan mencoba frame berikutnya.";
+                setAttendanceMessage(message);
+                if (requestUser.role === "guru") updateProgress(0, message);
+            } else if (error.status === 409) {
+                stopAttendanceCamera();
                 setAttendanceMessage(error.message);
                 toast(error.message, "info");
-            } else if (error.name === "CloudApiError") {
-                console.error("Attendance submission failed:", error);
+            } else if (error.name === "CloudApiError" || ["face-match", "gps", "attendance"].includes(pipelineStage)) {
+                stopAttendanceCamera();
                 const message = error.type === "gps_accuracy"
                     ? tr("accuracyWarning", {
-                        accuracy: Math.ceil(error.gpsAccuracy?.actual || MAX_GPS_ACCURACY_METERS + 1)
+                        accuracy: Math.ceil(error.gpsAccuracy?.actual || Number(SCHOOL_LOCATION.radius) + 1)
                     })
-                    : error.message;
+                    : error.message || "Koneksi ke layanan presensi gagal. Periksa jaringan dan coba lagi.";
                 setAttendanceMessage(message);
                 toast(message, "error");
             } else {
-                displayModelError(error);
-                setAttendanceMessage(tr("modelFailed"));
-                toast(tr("modelFailed"), "error");
+                const message = "Terjadi gangguan sementara pada kamera. Coba mulai kamera kembali.";
+                setAttendanceMessage(message);
+                toast(message, "error");
             }
         }
     } finally {
@@ -3646,10 +4022,12 @@ async function startFormCamera() {
     if (state.formStream) return;
     const startToken = ++state.formStartToken;
     try {
-        if (!state.modelReady && !(await loadModels())) {
-            toast(tr("modelFailed"), "error");
+        if (!state.faceDetectorReady && !(await loadFaceDetector())) {
+            toast("Deteksi wajah gagal dimuat. Periksa koneksi lalu coba lagi.", "error");
             return;
         }
+        // Do not block the camera preview/face-detected feedback on ArcFace download.
+        void loadFaceRecognition();
         if (startToken !== state.formStartToken || !$("view-formulir").classList.contains("active") || document.hidden) return;
         const stream = await getCameraStream();
         if (startToken !== state.formStartToken ||
@@ -3668,6 +4046,7 @@ async function startFormCamera() {
         });
         $("video-formulir").srcObject = stream;
         await $("video-formulir").play();
+        await waitForVideoReady($("video-formulir"));
         if (startToken !== state.formStartToken || state.formStream !== stream ||
             !$("view-formulir").classList.contains("active") || document.hidden) {
             stopStream(stream);
@@ -3689,40 +4068,52 @@ async function processFormFrame() {
     if (!state.formStream || state.formBusy) return;
     const requestStream = state.formStream;
     state.formBusy = true;
+    let pipelineStage = "detection";
     try {
         const video = $("video-formulir");
-        const detections = await detectFaces(video);
+        const detections = await detectUsableFaces(video);
         if (state.formStream !== requestStream) return;
         drawDetections(video, $("overlay-formulir"), detections);
         if (detections.length === 1) {
             const detection = detections[0];
-            const angle = faceAngleBucket(detection);
+            const angle = faceAngleBucket(detection, true);
             const nose = detection.landmarks.getNose()?.[3];
             const sourceWidth = video.videoWidth || 480;
-            const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
+            const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.18));
             state.faceCandidate = null;
             state.faceCandidateQuality = quality;
             $("form-face-status").textContent = angle ? tr("faceDetectedAngle", { angle: tr("faceAngle_" + angle) }) : tr("faceTurnAngle");
             if (!nose || !Number.isFinite(nose.x) || !Number.isFinite(nose.y) ||
-                quality < 0.7 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
+                quality < 0.70 || state.faceSamples.length >= MAX_FACE_SAMPLES) {
                 state.formStableFrames = 0;
                 state.lastFormNose = null;
-                if (quality < 0.7) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
+                if (quality < 0.70) $("form-face-status").textContent = "Wajah kurang jelas, mendekatlah ke kamera.";
             } else {
                 if (state.lastFormNose) {
                     const delta = Math.hypot(nose.x - state.lastFormNose.x, nose.y - state.lastFormNose.y);
-                    state.formStableFrames = delta < 0.5 ? state.formStableFrames + 1 : 0;
+                    state.formStableFrames = delta < Math.max(2, detection.box.width * 0.015)
+                        ? state.formStableFrames + 1 : 0;
                 }
                 state.lastFormNose = { x: nose.x, y: nose.y };
                 if (state.formStableFrames >= 3) {
                     let saved = false;
                     if (angle) {
-                        const sampleDetections = await detectFaces(video, { withDescriptors: true });
+                        const sampleDetections = await detectUsableFaces(video);
                         if (state.formStream !== requestStream) return;
                         const sample = sampleDetections.length === 1 ? sampleDetections[0] : null;
-                        if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample) === angle) {
-                            const sampleQuality = sample.score * Math.min(1, sample.box.width / (sourceWidth * 0.22));
-                            saved = saveFaceSample(sample.descriptor, sampleQuality, angle);
+                        if (sample && isFaceDetectionUsable(sample, video) && faceAngleBucket(sample, true) === angle) {
+                            const sampleQuality = sample.score * Math.min(1, sample.box.width / (sourceWidth * 0.18));
+                            if (!state.faceRecognitionReady || !state.faceEngine) {
+                                $("form-face-status").textContent = state.faceRecognitionFailed
+                                    ? "Wajah terdeteksi, tetapi model pengenalan gagal dimuat. Gunakan tombol coba lagi pada status model."
+                                    : "Wajah terdeteksi. Menyiapkan model pengenalan wajah…";
+                                if (!state.faceRecognitionFailed) void loadFaceRecognition();
+                            } else {
+                                pipelineStage = "recognition";
+                                const embedded = await state.faceEngine.embed(video, sample);
+                                if (state.formStream !== requestStream) return;
+                                saved = saveFaceSample(embedded.embedding, sampleQuality, angle);
+                            }
                         }
                     }
                     if (saved) toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
@@ -3745,59 +4136,144 @@ async function processFormFrame() {
         }
         updateFaceSampleCount();
     } catch (error) {
-        displayModelError(error);
-        stopFormCamera();
-        toast(tr("modelFailed"), "error");
+        console.error("Registration camera frame failed (" + pipelineStage + "):", error);
+        if (pipelineStage === "recognition") {
+            state.faceRecognitionReady = false;
+            state.faceRecognitionFailed = true;
+            state.faceEngine = null;
+            state.modelReady = false;
+            displayModelError(error, "recognition");
+            $("form-face-status").textContent = "Wajah sudah terdeteksi, tetapi model pengenalan gagal berjalan. Coba muat ulang model.";
+        } else {
+            $("form-face-status").textContent = "Kamera aktif. Frame belum dapat diproses; mencoba kembali…";
+        }
     } finally {
         state.formBusy = false;
     }
 }
 
-async function readUploadedFace(file) {
-    if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast(tr("faceUploadError"), "error");
-        return;
+async function decodeFaceUpload(file) {
+    if (!(file instanceof Blob) || file.size === 0) throw new Error("empty-image");
+    let bitmap = null;
+    try {
+        if (typeof createImageBitmap === "function") {
+            bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+        }
+    } catch (error) {
+        console.warn("createImageBitmap decode fallback:", error?.name || error);
     }
-    if (!state.modelReady && !(await loadModels())) {
-        toast(tr("modelFailed"), "error");
-        return;
+
+    let source = bitmap;
+    let sourceWidth = Number(bitmap?.width) || 0;
+    let sourceHeight = Number(bitmap?.height) || 0;
+    if (!source) {
+        const objectUrl = URL.createObjectURL(file);
+        try {
+            const image = new Image();
+            image.decoding = "async";
+            image.src = objectUrl;
+            await image.decode();
+            source = image;
+            sourceWidth = image.naturalWidth;
+            sourceHeight = image.naturalHeight;
+        } finally {
+            URL.revokeObjectURL(objectUrl);
+        }
     }
 
     try {
-        const image = await faceapi.bufferToImage(file);
+        if (!sourceWidth || !sourceHeight) throw new Error("invalid-image-dimensions");
+        const maxSide = 1600;
+        const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+        const width = Math.max(1, Math.round(sourceWidth * scale));
+        const height = Math.max(1, Math.round(sourceHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) throw new Error("image-canvas-unavailable");
+        context.drawImage(source, 0, 0, width, height);
+        // face-api.js accepts HTMLImageElement/HTMLCanvasElement/video/tensor,
+        // not ImageBitmap in all supported 0.22.2 code paths. Always return canvas.
+        return canvas;
+    } finally {
+        bitmap?.close?.();
+    }
+}
+async function readUploadedFace(file) {
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+        toast("Foto terlalu besar (maksimal 15 MB). Pilih foto yang lebih kecil.", "error");
+        return;
+    }
+    if (!state.faceDetectorReady && !(await loadFaceDetector())) {
+        toast("Deteksi wajah gagal dimuat. Periksa koneksi lalu coba lagi.", "error");
+        return;
+    }
+
+    let image = null;
+    try {
+        image = await decodeFaceUpload(file);
+        const width = image.width || image.naturalWidth;
+        const height = image.height || image.naturalHeight;
+        if (!width || !height || width < 96 || height < 96) {
+            throw new Error("image-resolution-too-small");
+        }
         const detections = await faceapi.detectAllFaces(
-            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.55 })
-        ).withFaceLandmarks().withFaceDescriptors();
+            image, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.48 })
+        ).withFaceLandmarks();
 
         if (detections.length !== 1) {
-            $("form-face-status").textContent = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
-            toast(detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound"), "error");
+            const message = detections.length > 1 ? tr("faceTooMany") : tr("faceNotFound");
+            $("form-face-status").textContent = message;
+            toast(message, "error");
             return;
         }
 
         const detection = detections[0];
+        $("form-face-status").textContent = "Wajah terdeteksi. Memeriksa kualitas foto…";
+        if (!isFaceDetectionUsable(detection, { videoWidth: width, videoHeight: height })) {
+            $("form-face-status").textContent = "Wajah ditemukan, tetapi ukurannya terlalu kecil atau kurang jelas. Gunakan foto yang lebih dekat.";
+            toast("Wajah ditemukan, tetapi kualitas foto belum cukup.", "error");
+            return;
+        }
         const angle = faceAngleBucket(detection);
-        const sourceWidth = image.naturalWidth || image.width || 640;
-        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.22));
+        const sourceWidth = width || 640;
+        const quality = detection.score * Math.min(1, detection.box.width / (sourceWidth * 0.18));
         if (!angle) {
             $("form-face-status").textContent = tr("faceTurnAngle");
             toast(tr("faceTurnAngle"), "error");
             return;
         }
+        if (!globalThis.crypto?.subtle) throw new Error("secure-context-required");
         const hash = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
         const imageHash = Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, "0")).join("");
         if (state.faceImageHashes.has(imageHash)) {
             toast(tr("duplicateImageFile"), "error");
             return;
         }
-        if (saveFaceSample(detection.descriptor, quality, angle)) {
+        $("form-face-status").textContent = "Wajah terdeteksi. Menyiapkan model pengenalan…";
+        if (!state.faceRecognitionReady && !(await loadFaceRecognition())) {
+            $("form-face-status").textContent = "Deteksi wajah berhasil, tetapi model pengenalan belum siap. Tekan coba lagi pada status model.";
+            toast("Deteksi wajah berhasil, tetapi model pengenalan belum siap.", "error");
+            return;
+        }
+        const embedded = await state.faceEngine.embed(image, detection);
+        if (saveFaceSample(embedded.embedding, quality, angle)) {
             state.faceImageHashes.add(imageHash);
             toast(`Sampel ${state.faceSamples.length}/${MAX_FACE_SAMPLES} tersimpan`, "success");
         }
     } catch (error) {
         console.error("Image processing error:", error);
-        toast(tr("faceUploadError"), "error");
+        const reason = error?.message === "secure-context-required"
+            ? "Pemrosesan foto membutuhkan HTTPS atau localhost."
+            : error?.message === "image-resolution-too-small"
+                ? "Resolusi foto terlalu kecil. Gunakan foto minimal 96 × 96 piksel."
+                : tr("faceUploadError");
+        $("form-face-status").textContent = reason;
+        toast(reason, "error");
+    } finally {
+        image?.close?.();
     }
 }
 
@@ -4007,7 +4483,7 @@ async function registerStudent(event) {
         try {
             const result = await cloudRequest("/api/students", {
                 method: "PATCH", role: "guru",
-                body: { nisn: state.faceUpdateNisn, face_descriptors: state.faceSamples.map(sample => [...sample]) }
+                body: { nisn: state.faceUpdateNisn, model_key: "auraface-glintr100-int8-v1", face_embeddings: state.faceSamples }
             });
             state.students = state.students.map(student => student.nisn === state.faceUpdateNisn
                 ? normalizeCloudStudent(result.student) : student);
@@ -4058,7 +4534,8 @@ async function registerStudent(event) {
                 parent_whatsapp: parentWhatsApp ? parentWhatsApp.replace(/^08/, "628") : undefined,
                 email,
                 password,
-                face_descriptors: state.faceSamples.map(sample => [...sample])
+                model_key: "auraface-glintr100-int8-v1",
+                face_embeddings: state.faceSamples
             }
         });
         state.students = [
@@ -4297,7 +4774,7 @@ function updateMapText() {
     if ($("map-subtitle")) $("map-subtitle").textContent = tr("mapDesc");
     const locationDetail = $("map-location-detail");
     if (locationDetail) locationDetail.textContent = state.lastLocation && !state.lastLocation.error && !state.lastLocation.checking
-        ? state.lastLocation.accuracy > MAX_GPS_ACCURACY_METERS
+        ? !isGpsAccuracyAcceptable(state.lastLocation.accuracy, SCHOOL_LOCATION.radius)
             ? tr("accuracyWarning", { accuracy: Math.round(state.lastLocation.accuracy) })
             : tr(state.lastLocation.inside ? "insideMessage" : "outsideMessage", {
                 distance: state.lastLocation.distance,
@@ -4333,7 +4810,7 @@ async function refreshMapLocation() {
         const result = await checkGeofence();
         if (result.error) {
             toast(result.error, "error");
-        } else if (result.accuracy > MAX_GPS_ACCURACY_METERS) {
+        } else if (!isGpsAccuracyAcceptable(result.accuracy, SCHOOL_LOCATION.radius)) {
             toast(tr("accuracyWarning", { accuracy: Math.round(result.accuracy) }), "error");
         } else {
             toast(result.inside
@@ -4491,7 +4968,23 @@ function setupEvents() {
     document.addEventListener("keydown", event => {
         if (event.key === "Escape" && !$("auth-modal").classList.contains("hidden")) closeAuthModal();
     });
-    $("model-retry").addEventListener("click", () => location.reload());
+    $("model-retry").addEventListener("click", async () => {
+        const button = $("model-retry");
+        button.disabled = true;
+        try {
+            state.faceDetectorFailed = false;
+            state.faceRecognitionFailed = false;
+            state.faceDetectorReady = false;
+            state.faceRecognitionReady = false;
+            state.modelReady = false;
+            state.faceEngine = null;
+            const loaded = await loadModels();
+            if (loaded) toast("Model ArcFace siap digunakan.", "success");
+            else toast("Model belum berhasil dimuat. Periksa koneksi lalu coba lagi.", "error");
+        } finally {
+            button.disabled = false;
+        }
+    });
     $("login-captcha-refresh").addEventListener("click", () => void refreshLoginCaptcha());
 
     $("login-form").addEventListener("submit", async event => {
