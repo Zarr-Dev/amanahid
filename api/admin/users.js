@@ -32,6 +32,68 @@ async function allUsers() {
     ];
 }
 
+async function setAccountActive(res, admin, body) {
+    if (!validBody(res, {
+        action: { type: "string", required: true, pattern: /^set_active$/ },
+        id: { type: "string", required: true, max: 36, pattern: UUID },
+        table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
+        is_active: { type: "boolean", required: true }
+    }, body)) return;
+    if (body.is_active === false) {
+        const features = await getFeatureFlags();
+        if (!features.account_deactivation) {
+            return featureDisabled(res, "account_deactivation", "Penonaktifan akun sedang dinonaktifkan");
+        }
+    }
+    const path = body.table + "?id=eq." + encodeURIComponent(body.id) + "&select=id,email,is_active";
+    const rows = await supabaseRequest(path, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ is_active: body.is_active }) });
+    const updated = Array.isArray(rows) ? rows[0] : null;
+    if (!updated) return jsonError(res, 404, "Account not found");
+    await writeAuditLog(admin, (body.table === "students" ? "student" : "teacher") + (body.is_active ? ".activate" : ".deactivate"), body.table, body.id, { email: updated.email, is_active: body.is_active });
+    return res.status(200).json({ ok: true, is_active: body.is_active });
+}
+
+async function permanentlyDeleteAccount(res, admin, body) {
+    if (!validBody(res, {
+        id: { type: "string", required: true, max: 36, pattern: UUID },
+        table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
+        confirm_email: { type: "string", required: true, max: 254, pattern: EMAIL }
+    }, body)) return;
+    const currentRows = await supabaseRequest(
+        body.table + "?select=id,email,name&id=eq." + encodeURIComponent(body.id) + "&limit=1"
+    );
+    const current = Array.isArray(currentRows) ? currentRows[0] : null;
+    if (!current) return jsonError(res, 404, "Account not found");
+    if (String(current.email || "").toLowerCase() !== body.confirm_email.trim().toLowerCase()) {
+        return jsonError(res, 409, "Confirmation email does not match this account");
+    }
+    const relatedChecks = body.table === "students"
+        ? await Promise.all([
+            supabaseRequest("attendance?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
+            supabaseRequest("absence_requests?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
+            supabaseRequest("notifications?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
+            supabaseRequest("offline_attendance_events?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1")
+        ])
+        : await Promise.all([
+            supabaseRequest("students?select=id&homeroom_teacher_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
+            supabaseRequest("teacher_notifications?select=id&teacher_id=eq." + encodeURIComponent(body.id) + "&limit=1")
+        ]);
+    if (relatedChecks.some(rows => Array.isArray(rows) && rows.length > 0)) {
+        return jsonError(res, 409, body.table === "students"
+            ? "Akun memiliki riwayat presensi, ketidakhadiran, atau notifikasi. Nonaktifkan akun untuk mempertahankan arsip sekolah."
+            : "Guru masih memiliki siswa binaan atau riwayat notifikasi. Pindahkan siswa terlebih dahulu, atau nonaktifkan akun.");
+    }
+    const deletedRows = await supabaseRequest(
+        body.table + "?id=eq." + encodeURIComponent(body.id) + "&select=id,email",
+        { method: "DELETE", headers: { Prefer: "return=representation" } }
+    );
+    const deleted = Array.isArray(deletedRows) ? deletedRows[0] : null;
+    if (!deleted) return jsonError(res, 409, "Akun tidak dapat dihapus karena masih memiliki relasi data sekolah.");
+    await writeAuditLog(admin, (body.table === "students" ? "student" : "teacher") + ".permanent_delete",
+        body.table, body.id, { email: deleted.email, confirmation_required: true });
+    return res.status(200).json({ ok: true, permanently_deleted: true });
+}
+
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store, max-age=0");
     const admin = await authorizeAdmin(req, res, "users");
@@ -39,6 +101,9 @@ export default async function handler(req, res) {
     try {
         if (req.method === "GET") {
             return res.status(200).json({ users: await allUsers() });
+        }
+        if (req.method === "POST" && req.query?.action === "permanent-delete") {
+            return permanentlyDeleteAccount(res, admin, req.body || {});
         }
         if (req.method === "POST") {
             const body = req.body || {};
@@ -138,6 +203,7 @@ export default async function handler(req, res) {
         }
         if (req.method === "PUT") {
             const body = req.body || {};
+            if (body.action === "set_active") return setAccountActive(res, admin, body);
             const schema = {
                 id: { type: "string", required: true, max: 36, pattern: UUID },
                 table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
@@ -202,24 +268,6 @@ export default async function handler(req, res) {
             await writeAuditLog(admin, `${body.table === "students" ? "student" : "teacher"}.update`,
                 body.table, body.id, { ...values, password_hash: undefined });
             return res.status(200).json({ user: updated });
-        }
-        if (req.method === "DELETE") {
-            const features = await getFeatureFlags();
-            if (!features.account_deactivation) return featureDisabled(res, "account_deactivation", "Penonaktifan akun sedang dinonaktifkan");
-            const body = req.body || {};
-            if (!validBody(res, {
-                id: { type: "string", required: true, max: 36, pattern: UUID },
-                table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ }
-            }, body)) return;
-            const rows = await supabaseRequest(
-                `${body.table}?id=eq.${encodeURIComponent(body.id)}&select=id,email`,
-                { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ is_active: false }) }
-            ) ?? [];
-            const deactivated = Array.isArray(rows) ? (rows[0] ?? null) : null;
-            if (!deactivated) return jsonError(res, 404, "User not found");
-            await writeAuditLog(admin, `${body.table === "students" ? "student" : "teacher"}.deactivate`,
-                body.table, body.id, { email: deactivated.email ?? null });
-            return res.status(200).json({ ok: true });
         }
         res.setHeader("Allow", "GET, POST, PUT, DELETE");
         return jsonError(res, 405, "Method not allowed");

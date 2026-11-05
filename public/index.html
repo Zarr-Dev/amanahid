@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f5f8ff">
+    <link rel="manifest" href="/manifest.webmanifest">
     <title>Amanah ID | Presensi Digital</title>
     <link rel="icon" type="image/svg+xml" href="assets/amanah-favicon.svg">
     <link rel="apple-touch-icon" href="assets/amanah-favicon.png">
@@ -200,6 +201,7 @@
                 <button class="nav-link active" type="button" data-target="view-presensi"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span><span data-i18n="dashboard">Dashboard</span></button>
                 <button class="nav-link" type="button" data-target="view-database"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16M15 4v16"/></svg></span><span data-i18n="database">Database</span></button>
                 <button class="nav-link" type="button" data-target="view-formulir"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3h8l4 4v14H4V3h4Z"/><path d="M8 3v5h8V3M12 12v6M9 15h6"/></svg></span><span data-i18n="formulir">Formulir</span></button>
+                <button class="nav-link" type="button" data-target="view-offline-review"><span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M7 3l-2 2M17 3l2 2"/></svg></span><span>Review presensi offline</span></button>
             </nav>
             <div class="sidebar-bottom">
                 <div class="school-mini"><span class="school-dot"></span>
@@ -495,6 +497,20 @@
                     </aside>
                 </div>
             </section>
+            <section id="view-offline-review" class="view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">OFFLINE ATTENDANCE REVIEW</span>
+                        <h2>Review presensi offline</h2>
+                        <p class="muted">Periksa permintaan dari siswa pada kelas binaan Anda. Menyetujui permintaan akan membuat catatan presensi resmi dengan metode offline-reviewed dan alasan review tersimpan dalam audit.</p>
+                    </div>
+                    <button id="teacher-offline-refresh" class="button secondary" type="button">Segarkan antrean</button>
+                </div>
+                <div class="panel admin-offline-review-panel">
+                    <p id="teacher-offline-status" class="helper-text" role="status" aria-live="polite">Memuat antrean presensi offline…</p>
+                    <div class="table-wrap"><table><thead><tr><th>Siswa</th><th>Kelas</th><th>Waktu perangkat</th><th>Lokasi</th><th>Aksi</th></tr></thead><tbody id="teacher-offline-pending-tbody"></tbody></table></div>
+                    <div id="teacher-offline-empty" class="empty-state hidden"><strong>Tidak ada permintaan offline.</strong><p>Antrean siswa pada kelas binaan Anda akan tampil di sini.</p></div>
+                </div>
+            </section>
         </section>
     </main>
 
@@ -518,6 +534,9 @@
                 </button>
                 <button class="nav-link" type="button" data-admin-target="admin-view-tests">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><span data-i18n="adminTestTools">Pengujian sistem</span>
+                </button>
+                <button class="nav-link" type="button" data-admin-target="admin-view-ops">
+                    <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M8 12h5M8 16h8M17 12l2 2 3-4"/></svg></span><span>Pusat operasional</span>
                 </button>
                 <button class="nav-link" type="button" data-admin-target="admin-view-audit">
                     <span class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h3"/></svg></span><span data-i18n="adminAudit">Audit aktivitas</span>
@@ -571,6 +590,7 @@
                     <article class="panel stat-card"><span data-i18n="totalActiveTeachers">Total guru
                             aktif</span><strong id="admin-total-teachers">0</strong><small
                             data-i18n="teacherAccounts">Akun pengajar</small></article>
+                    <article class="panel stat-card"><span>Admin aktif</span><strong id="admin-total-admins">0</strong><small>Akun administrator</small></article>
                     <article class="panel stat-card"><span data-i18n="attendanceToday">Presensi hari ini</span><strong
                             id="admin-attendance-today">0</strong><small data-i18n="todayRecords">Catatan hari
                             ini</small></article>
@@ -581,6 +601,16 @@
                             id="admin-active-week">0</strong><small data-i18n="loginsLast7Days">Login 7 hari
                             terakhir</small></article>
                 </div>
+                <section class="admin-analytics-grid" aria-label="Analisis visual presensi dan akun">
+                    <article class="panel admin-analytics-card">
+                        <div class="panel-heading"><div><span class="section-kicker">ATTENDANCE TREND</span><h3>Tren presensi 7 hari</h3><p class="muted">Jumlah catatan presensi harian dari database.</p></div></div>
+                        <div id="admin-attendance-trend-chart" class="admin-chart-bars" aria-live="polite"><p class="muted">Memuat data tren…</p></div>
+                    </article>
+                    <article class="panel admin-analytics-card">
+                        <div class="panel-heading"><div><span class="section-kicker">ACTIVE ACCOUNTS</span><h3>Aktivitas berdasarkan peran</h3><p class="muted">Akun yang login dalam 7 hari terakhir.</p></div></div>
+                        <div id="admin-role-activity-chart" class="admin-role-chart" aria-live="polite"><p class="muted">Memuat aktivitas…</p></div>
+                    </article>
+                </section>
                 <div id="admin-service-health-panel" class="panel">
                     <div class="panel-heading">
                         <div>
@@ -768,11 +798,10 @@
                     </section>
                     <section id="admin-test-whatsapp-card" class="panel admin-test-card">
                         <div class="panel-heading"><div><h3 data-i18n="testWhatsappTitle">Uji notifikasi WhatsApp</h3>
-                            <p class="muted" data-i18n="testWhatsappDesc">Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.</p></div></div>
-                        <p class="helper-text">Fonnte <strong id="admin-test-fonnte-state">Memeriksa konfigurasi…</strong></p>
-                        <label for="admin-test-whatsapp-number" data-i18n="testWhatsappNumber">Nomor uji WhatsApp</label>
-                        <input id="admin-test-whatsapp-number" type="tel" inputmode="numeric" autocomplete="off" placeholder="628xxxxxxxxxx" maxlength="15">
-                        <p class="helper-text"><span data-i18n="testFonnteList">Nomor uji yang diizinkan:</span> <span id="admin-test-whatsapp-allowlist">Memuat daftar…</span></p>
+                            <p class="muted" data-i18n="testWhatsappDesc">Masukkan nomor tujuan, isi pesan, lalu centang persetujuan untuk mengaktifkan pengiriman satu pesan uji.</p></div></div>
+                        <p class="helper-text">Status token: <strong id="admin-test-fonnte-state">Memeriksa konfigurasi…</strong></p>
+                        <label for="admin-test-whatsapp-number" data-i18n="testWhatsappNumber">Nomor tujuan WhatsApp</label>
+                        <input id="admin-test-whatsapp-number" type="tel" inputmode="tel" autocomplete="tel" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx" maxlength="15">
                         <label for="admin-test-whatsapp-template" data-i18n="testWhatsappTemplate">Template pesan</label>
                         <textarea id="admin-test-whatsapp-template" rows="4" maxlength="300">Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.</textarea>
                         <label for="admin-test-whatsapp-preview" data-i18n="testWhatsappPreview">Pratinjau pesan</label>
@@ -798,6 +827,51 @@
                 </div>
             </section>
 
+            <section id="admin-view-ops" class="admin-view hidden">
+                <div class="page-intro">
+                    <div><span class="section-kicker">OPERATIONS CENTER</span>
+                        <h2>Pusat operasional & integrasi</h2>
+                        <p class="muted">Satu tempat untuk memantau deployment Vercel, koneksi database Supabase, repositori GitHub, dan antrean presensi offline. Panel ini bersifat diagnostik dan tidak menyimpan token layanan.</p>
+                    </div>
+                    <button id="admin-ops-refresh" class="button secondary" type="button">Periksa semua layanan</button>
+                </div>
+                <div class="admin-ops-grid">
+                    <article class="panel admin-ops-card">
+                        <div class="admin-ops-brand"><strong>Vercel</strong><span id="admin-ops-vercel-state">Belum diperiksa</span></div>
+                        <p class="muted">Status API, environment, dan metadata deployment aktif.</p>
+                        <dl><div><dt>Environment</dt><dd id="admin-ops-vercel-env">—</dd></div><div><dt>Commit</dt><dd id="admin-ops-vercel-commit">—</dd></div><div><dt>Branch</dt><dd id="admin-ops-vercel-branch">—</dd></div></dl>
+                        <a class="admin-ops-link" href="https://vercel.com/zarr-devs-projects/amanahid" target="_blank" rel="noopener noreferrer">Buka dashboard Vercel ↗</a>
+                    </article>
+                    <article class="panel admin-ops-card">
+                        <div class="admin-ops-brand"><strong>Supabase</strong><span id="admin-ops-supabase-state">Belum diperiksa</span></div>
+                        <p class="muted">Koneksi aktual ke database dan kesiapan tabel pengaturan sekolah.</p>
+                        <dl><div><dt>Database round-trip</dt><dd id="admin-ops-supabase-db">—</dd></div><div><dt>Feature flags</dt><dd id="admin-ops-supabase-flags">—</dd></div></dl>
+                        <a class="admin-ops-link" href="https://supabase.com/dashboard/project/rpxutqfltugyndelbnts" target="_blank" rel="noopener noreferrer">Buka dashboard Supabase ↗</a>
+                    </article>
+                    <article class="panel admin-ops-card">
+                        <div class="admin-ops-brand"><strong>GitHub</strong><span id="admin-ops-github-state">Belum diperiksa</span></div>
+                        <p class="muted">Commit dan hasil workflow CI terbaru dari repositori Amanah ID.</p>
+                        <dl><div><dt>Branch utama</dt><dd id="admin-ops-github-branch">—</dd></div><div><dt>Workflow CI</dt><dd id="admin-ops-github-ci">—</dd></div><div><dt>Commit terbaru</dt><dd id="admin-ops-github-commit">—</dd></div></dl>
+                        <a class="admin-ops-link" href="https://github.com/Zarr-Dev/amanahid" target="_blank" rel="noopener noreferrer">Buka repositori GitHub ↗</a>
+                    </article>
+                    <article class="panel admin-ops-card">
+                        <div class="admin-ops-brand"><strong>Fonnte</strong><span id="admin-ops-fonnte-state">Belum diperiksa</span></div>
+                        <p class="muted">Pemeriksaan token server tanpa menampilkan atau membocorkan nilai rahasia.</p>
+                        <dl><div><dt>Environment</dt><dd id="admin-ops-fonnte-env">—</dd></div><div><dt>Pengiriman uji</dt><dd id="admin-ops-fonnte-send">Menunggu tes manual</dd></div></dl>
+                        <a class="admin-ops-link" href="https://fonnte.com" target="_blank" rel="noopener noreferrer">Buka layanan Fonnte ↗</a>
+                    </article>
+                </div>
+                <section class="panel admin-offline-review-panel">
+                    <div class="panel-heading">
+                        <div><span class="section-kicker">OFFLINE ATTENDANCE</span><h3>Presensi offline menunggu pemeriksaan</h3><p class="muted">Permintaan dari perangkat siswa akan tetap berstatus menunggu sampai Admin/Guru meninjaunya. Tidak otomatis menjadi presensi resmi.</p></div>
+                        <button id="admin-offline-refresh" class="button subtle" type="button">Segarkan antrean</button>
+                    </div>
+                    <p id="admin-offline-status" class="helper-text" role="status" aria-live="polite">Memuat antrean presensi offline…</p>
+                    <div class="table-wrap"><table><thead><tr><th>Siswa</th><th>Kelas</th><th>Waktu perangkat</th><th>Lokasi</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="admin-offline-pending-tbody"></tbody></table></div>
+                    <div id="admin-offline-empty" class="empty-state hidden"><strong>Tidak ada presensi offline menunggu.</strong><p>Antrean akan muncul setelah perangkat siswa tersambung kembali.</p></div>
+                </section>
+            </section>
+
             <section id="admin-view-audit" class="admin-view hidden">
                 <div class="page-intro">
                     <div><span class="section-kicker" data-i18n="adminSecurity">KEAMANAN</span>
@@ -805,30 +879,23 @@
                         <p class="muted" data-i18n="adminAuditDescription">Riwayat operasi yang tercatat oleh API.</p>
                     </div>
                 </div>
-                <div class="admin-stat-grid admin-role-activity-grid" aria-label="Aktivitas akun berdasarkan peran">
-                    <article class="panel">
-                        <div class="panel-heading"><div><h3>Admin · Login & aktivitas terakhir</h3><p class="muted">Riwayat akun administrator</p></div></div>
-                        <div class="table-wrap"><table>
-                            <thead><tr><th>Nama / Email</th><th>Login terakhir</th><th>Aktivitas terakhir</th></tr></thead>
-                            <tbody id="admin-activity-admin-tbody"><tr><td colspan="3">Memuat aktivitas…</td></tr></tbody>
-                        </table></div>
-                    </article>
-                    <article class="panel">
-                        <div class="panel-heading"><div><h3>Guru · Login & aktivitas terakhir</h3><p class="muted">Riwayat akun guru</p></div></div>
-                        <div class="table-wrap"><table>
-                            <thead><tr><th>Nama / Email</th><th>Login terakhir</th><th>Aktivitas terakhir</th></tr></thead>
-                            <tbody id="admin-activity-teacher-tbody"><tr><td colspan="3">Memuat aktivitas…</td></tr></tbody>
-                        </table></div>
-                    </article>
-                    <article class="panel">
-                        <div class="panel-heading"><div><h3>Siswa · Login & aktivitas terakhir</h3><p class="muted">Riwayat akun siswa</p></div></div>
-                        <div class="table-wrap"><table>
-                            <thead><tr><th>Nama / Email</th><th>Login terakhir</th><th>Aktivitas terakhir</th></tr></thead>
-                            <tbody id="admin-activity-student-tbody"><tr><td colspan="3">Memuat aktivitas…</td></tr></tbody>
-                        </table></div>
-                    </article>
+                <div class="panel admin-audit-activity-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h3>Aktivitas akun berdasarkan peran</h3>
+                            <p class="muted">Login terakhir dan tindakan penting dari Admin, Guru, serta Siswa dalam satu tabel.</p>
+                        </div>
+                    </div>
+                    <div class="table-wrap admin-audit-activity-wrap" role="region" aria-label="Tabel aktivitas akun; geser secara horizontal untuk melihat semua kolom" tabindex="0">
+                        <table class="admin-audit-activity-table">
+                            <thead>
+                                <tr><th>Peran</th><th>Nama dan email</th><th>Status</th><th>Login terakhir</th><th>Aktivitas terakhir</th></tr>
+                            </thead>
+                            <tbody id="admin-activity-tbody"><tr><td colspan="5">Memuat aktivitas…</td></tr></tbody>
+                        </table>
+                    </div>
+                    <p id="admin-activity-status" class="helper-text" role="status" aria-live="polite">Waktu aktivitas menggunakan zona waktu perangkat.</p>
                 </div>
-                <p id="admin-activity-status" class="helper-text" role="status" aria-live="polite">Waktu aktivitas menggunakan zona waktu perangkat.</p>
                 <div class="panel">
                     <div class="filters">
                         <label for="admin-audit-actor"><span data-i18n="auditActorEmail">Email pelaku</span><input
@@ -845,7 +912,7 @@
                         <button id="admin-export-audit" class="button secondary" type="button">Unduh audit (CSV)</button>
                     </div>
                     <div class="table-wrap">
-                        <table>
+                        <table class="admin-audit-log-table">
                             <thead>
                                 <tr>
                                     <th data-i18n="dateTime">Waktu</th>
@@ -967,6 +1034,10 @@
                         Anda berada di area sekolah.</p>
                     <button id="btn-student-attendance" class="button primary student-checkin-button" type="button"
                         data-i18n="checkInNow" disabled>Absen Sekarang</button>
+                    <aside id="student-offline-panel" class="student-offline-panel">
+                        <div><strong>Mode online & offline</strong><p class="muted">Jika jaringan terputus setelah wajah dan GPS lolos pemeriksaan lokal, permintaan dapat disimpan pada perangkat dan disinkronkan kembali. Permintaan offline tidak menjadi presensi resmi sebelum ditinjau Admin atau Guru wali kelas.</p></div>
+                        <small id="student-offline-status" role="status" aria-live="polite">Memeriksa penyimpanan offline…</small>
+                    </aside>
                 </div>
             </section>
             <section id="view-s-history" class="view hidden">

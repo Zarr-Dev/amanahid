@@ -2,9 +2,9 @@ name: Amanah.id CI
 
 on:
   pull_request:
-    branches: [main, feat/arcface-embedding-v2]
+    branches: [main, feat/arcface-embedding-v2, feat/admin-ops-offline-wa-hardening]
   push:
-    branches: [main, fix/authentication-roles-demo-accounts, fix/resolve-admin-backend-deployment]
+    branches: [main, fix/authentication-roles-demo-accounts, fix/resolve-admin-backend-deployment, feat/admin-ops-offline-wa-hardening, feat/admin-ui-offline-wa-reliability]
 
 jobs:
   validate:

@@ -6,7 +6,7 @@ export async function sendWhatsApp(target, message) {
         /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(message)) {
         throw new Error("Invalid WhatsApp message");
     }
-    const token = process.env.FONNTE_TOKEN;
+    const token = typeof process.env.FONNTE_TOKEN === "string" ? process.env.FONNTE_TOKEN.trim() : "";
     if (!token) throw new Error("FONNTE_TOKEN is not configured");
 
     const controller = new AbortController();

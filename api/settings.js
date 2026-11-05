@@ -32,17 +32,22 @@ export default async function handler(req, res) {
             return res.status(405).json({ error: "Method not allowed", method: req.method });
         }
         const missing = getMissingAuthConfiguration();
-        const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "")
-            .split(",").map(value => value.replace(/\D/g, ""))
-            .filter(value => /^628\d{8,13}$/.test(value));
+
         const payload = {
             ok: true,
             service: "Amanah.id API",
+            environment: process.env.VERCEL_ENV || "self-hosted",
+            deployment: {
+                url: process.env.VERCEL_URL || null,
+                branch: process.env.VERCEL_GIT_COMMIT_REF || null,
+                commit: typeof process.env.VERCEL_GIT_COMMIT_SHA === "string"
+                    ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 12) : null
+            },
             checks: {
                 api: "ok",
                 configuration: missing.length ? "missing" : "ok",
                 database: "not_checked",
-                whatsapp: process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured"
+                whatsapp: typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length > 0 ? "configured" : "not_configured"
             },
             authentication: { configured: missing.length === 0 }
         };
@@ -58,10 +63,8 @@ export default async function handler(req, res) {
             return res.status(405).json({ error: "Method not allowed", method: req.method });
         }
         const missing = getMissingAuthConfiguration();
-        const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "")
-            .split(",").map(value => value.replace(/\D/g, ""))
-            .filter(value => /^628\d{8,13}$/.test(value));
-        const whatsapp = process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured";
+
+        const whatsapp = typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length > 0 ? "configured" : "not_configured";
         if (missing.length) {
             const payload = {
                 ok: false,
@@ -76,8 +79,15 @@ export default async function handler(req, res) {
             if (!Array.isArray(rows) || !rows.length) throw new Error("School settings are not initialized");
             const payload = {
                 ok: true,
-                service: "Amanah.id API",
-                    checks: { api: "ok", configuration: "ok", database: "ok", whatsapp }
+                service: "Amanah ID API",
+                environment: process.env.VERCEL_ENV || "self-hosted",
+                deployment: {
+                    url: process.env.VERCEL_URL || null,
+                    branch: process.env.VERCEL_GIT_COMMIT_REF || null,
+                    commit: typeof process.env.VERCEL_GIT_COMMIT_SHA === "string"
+                        ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 12) : null
+                },
+                checks: { api: "ok", configuration: "ok", database: "ok", whatsapp }
             };
             return req.method === "HEAD" ? res.status(200).end() : res.status(200).json(payload);
         } catch (error) {
@@ -134,7 +144,7 @@ export default async function handler(req, res) {
 
     if (req.method === "HEAD") {
         try {
-            if (!await getRequestRole(req)) return jsonError(res, 403, "A valid user role is required");
+            if (!await getRequestRole(req)) return jsonError(res, 401, "Session is revoked or the account is inactive");
             const rows = await supabaseRequest(
                 `school_settings?select=id&id=eq.${SCHOOL_SETTINGS_ID}&limit=1`
             );

@@ -143,7 +143,8 @@ test("GPS geofence rejects implausible reported movement", async () => {
 });
 
 test("attendance request forwards all required GPS fields from the geofence result", () => {
-    const requestStart = frontend.indexOf('await cloudRequest("/api/attendance"');
+    const frameStart = frontend.indexOf("async function processAttendanceFrame()");
+    const requestStart = frontend.indexOf('await cloudRequest("/api/attendance"', frameStart);
     assert.ok(requestStart >= 0, "Attendance API request is missing");
     const request = frontend.slice(requestStart, requestStart + 900);
 

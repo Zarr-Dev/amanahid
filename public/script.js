@@ -212,7 +212,7 @@ const EXTRA_T = {
         testModelReady: "Model deteksi wajah siap.",
         testModelFailed: "Model AI gagal dimuat.",
         testWhatsappTitle: "Uji notifikasi WhatsApp",
-        testWhatsappDesc: "Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.",
+        testWhatsappDesc: "Masukkan nomor tujuan, periksa pesan, lalu centang persetujuan untuk mengirim satu pesan uji.",
         testWhatsappNumber: "Nomor uji WhatsApp",
         testWhatsappTemplate: "Template pesan",
         testWhatsappDefaultTemplate: "Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.",
@@ -220,9 +220,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "Saya menyetujui pengiriman satu pesan uji ke nomor yang ditampilkan.",
         testWhatsappSend: "Kirim satu pesan uji",
         testWhatsappSending: "Mengirim pesan uji...",
-        testWhatsappSent: "Permintaan pesan uji diterima penyedia WhatsApp.",
+        testWhatsappSent: "Fonnte menerima permintaan dan memasukkan pesan ke antrean. Periksa perangkat tujuan untuk memastikan pesan benar-benar diterima.",
         testWhatsappFailed: "Pesan uji gagal dikirim.",
-        testWhatsappBlocked: "Nomor tidak ada dalam daftar nomor uji yang diizinkan.",
+        testWhatsappBlocked: "Nomor tujuan tidak valid atau tidak dapat digunakan.",
         testGpsTitle: "Uji GPS dan geofence",
         testGpsDesc: "Periksa koordinat perangkat dan jaraknya dari titik sekolah yang tersimpan.",
         testGpsRun: "Uji lokasi saat ini",
@@ -238,8 +238,8 @@ const EXTRA_T = {
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
         testFonnteConfigured: "Token Fonnte tersedia",
         testFonnteMissing: "Token Fonnte belum dikonfigurasi",
-        testAllowlistEmpty: "Belum ada nomor uji yang disetujui Admin",
-        testAllowlistLoadFailed: "Gagal memuat daftar nomor uji",
+        testAllowlistEmpty: "Masukkan nomor tujuan untuk pengujian.",
+        testAllowlistLoadFailed: "Status pengujian nomor tidak dapat dimuat.",
         testGpsChecking: "Memeriksa lokasi perangkat...",
         testGpsInside: "Lokasi berada dalam radius sekolah dan akurasi memenuhi batas.",
         testGpsOutside: "Lokasi di luar radius atau akurasi tidak memenuhi batas.",
@@ -256,9 +256,6 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Akurasi",
         testMetricDistance: "Jarak sekolah",
-        testFonnteList: "Nomor uji yang diizinkan:",
-        testAllowlistEmpty: "Belum ada nomor uji yang diizinkan Admin.",
-        testFonnteConfigHint: "Konfigurasikan FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS pada environment Production untuk mengaktifkan pengujian.",
         testFonnteStatusUnavailable: "Status konfigurasi WhatsApp tidak dapat diperiksa.",
         faceMatchAmbiguous: "Dua atau lebih profil wajah terlalu mirip untuk diputuskan dengan aman. Minta guru mengulang pemindaian dalam pencahayaan yang lebih baik.",
         faceQualityLow: "Wajah belum cukup jelas. Hadapkan wajah ke kamera, dekatkan secukupnya, dan perbaiki pencahayaan.",
@@ -400,7 +397,7 @@ const EXTRA_T = {
         testModelReady: "Face detection model is ready.",
         testModelFailed: "The AI model could not be loaded.",
         testWhatsappTitle: "WhatsApp notification test",
-        testWhatsappDesc: "Preview the message and test only approved numbers.",
+        testWhatsappDesc: "Enter a recipient, review the message, then confirm consent to send one test request.",
         testWhatsappNumber: "Test WhatsApp number",
         testWhatsappTemplate: "Message template",
         testWhatsappDefaultTemplate: "Amanah ID: this is a WhatsApp notification test. No attendance or student data has been changed.",
@@ -408,9 +405,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "I approve sending one test message to the displayed number.",
         testWhatsappSend: "Send one test message",
         testWhatsappSending: "Sending test message...",
-        testWhatsappSent: "The WhatsApp provider accepted the test message request.",
+        testWhatsappSent: "Fonnte accepted the request and added it to its queue. Check the recipient device to confirm actual delivery.",
         testWhatsappFailed: "The test message could not be sent.",
-        testWhatsappBlocked: "This number is not on the approved test-recipient list.",
+        testWhatsappBlocked: "The recipient number is invalid or cannot be used.",
         testGpsTitle: "GPS and geofence test",
         testGpsDesc: "Check device coordinates and distance from the saved school location.",
         testGpsRun: "Test current location",
@@ -426,8 +423,8 @@ const EXTRA_T = {
         testWhatsappNoConsent: "Confirm consent before sending the test message.",
         testFonnteConfigured: "Fonnte token is configured",
         testFonnteMissing: "Fonnte token is not configured",
-        testAllowlistEmpty: "No approved test numbers configured",
-        testAllowlistLoadFailed: "Could not load the test-number list",
+        testAllowlistEmpty: "Enter a test recipient number.",
+        testAllowlistLoadFailed: "Could not check the test recipient status.",
         testGpsChecking: "Checking device location...",
         testGpsInside: "Location is within the school radius and accuracy meets the limit.",
         testGpsOutside: "Location is outside the radius or accuracy is insufficient.",
@@ -445,8 +442,8 @@ const EXTRA_T = {
         testMetricAccuracy: "Accuracy",
         testMetricDistance: "Distance to school",
         testFonnteList: "Approved test numbers:",
-        testAllowlistEmpty: "No Admin-approved test numbers are configured.",
-        testFonnteConfigHint: "Set FONNTE_TOKEN and FONNTE_TEST_RECIPIENTS in the Production environment to enable testing.",
+        testAllowlistEmpty: "Enter a test recipient number.",
+        testFonnteConfigHint: "Make sure FONNTE_TOKEN is set in the active Vercel environment, then redeploy after changing it.",
         testFonnteStatusUnavailable: "WhatsApp configuration status could not be checked.",
         faceMatchAmbiguous: "Two or more face profiles are too similar to distinguish safely. Ask a teacher to repeat the scan in better lighting.",
         faceQualityLow: "The face is not clear enough. Face the camera, move a little closer, and improve the lighting.",
@@ -588,7 +585,7 @@ const EXTRA_T = {
         testModelReady: "نموذج اكتشاف الوجه جاهز.",
         testModelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي.",
         testWhatsappTitle: "اختبار إشعارات واتساب",
-        testWhatsappDesc: "عاين الرسالة واختبر الأرقام المعتمدة فقط.",
+        testWhatsappDesc: "أدخل رقم المستلم، وراجع الرسالة، ثم أكد الموافقة لإرسال طلب اختبار واحد.",
         testWhatsappNumber: "رقم واتساب للاختبار",
         testWhatsappTemplate: "قالب الرسالة",
         testWhatsappDefaultTemplate: "أمانة ID: هذه رسالة اختبار لإشعارات واتساب. لم يتم تغيير أي سجل حضور أو بيانات طالب.",
@@ -596,9 +593,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "أوافق على إرسال رسالة اختبار واحدة إلى الرقم المعروض.",
         testWhatsappSend: "إرسال رسالة اختبار واحدة",
         testWhatsappSending: "جارٍ إرسال رسالة الاختبار...",
-        testWhatsappSent: "قبل مزود واتساب طلب إرسال رسالة الاختبار.",
+        testWhatsappSent: "قبلت Fonnte الطلب وأضافته إلى قائمة الإرسال. تحقق من جهاز المستلم لتأكيد وصول الرسالة فعليًا.",
         testWhatsappFailed: "تعذر إرسال رسالة الاختبار.",
-        testWhatsappBlocked: "هذا الرقم غير موجود في قائمة أرقام الاختبار المعتمدة.",
+        testWhatsappBlocked: "رقم المستلم غير صالح أو لا يمكن استخدامه.",
         testGpsTitle: "اختبار GPS والنطاق الجغرافي",
         testGpsDesc: "تحقق من إحداثيات الجهاز والمسافة عن موقع المدرسة المحفوظ.",
         testGpsRun: "اختبار الموقع الحالي",
@@ -614,8 +611,8 @@ const EXTRA_T = {
         testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار.",
         testFonnteConfigured: "رمز Fonnte مُعدّ",
         testFonnteMissing: "لم يتم إعداد رمز Fonnte",
-        testAllowlistEmpty: "لم تُضف أرقام اختبار معتمدة",
-        testAllowlistLoadFailed: "تعذر تحميل قائمة أرقام الاختبار",
+        testAllowlistEmpty: "أدخل رقمًا لاختباره.",
+        testAllowlistLoadFailed: "تعذر التحقق من رقم الاختبار.",
         testGpsChecking: "جارٍ التحقق من موقع الجهاز...",
         testGpsInside: "الموقع داخل نطاق المدرسة والدقة ضمن الحد المسموح.",
         testGpsOutside: "الموقع خارج النطاق أو الدقة غير كافية.",
@@ -633,8 +630,8 @@ const EXTRA_T = {
         testMetricAccuracy: "الدقة",
         testMetricDistance: "المسافة إلى المدرسة",
         testFonnteList: "أرقام الاختبار المعتمدة:",
-        testAllowlistEmpty: "لم يتم إعداد أرقام اختبار معتمدة من المسؤول.",
-        testFonnteConfigHint: "اضبط FONNTE_TOKEN وFONNTE_TEST_RECIPIENTS في بيئة Production لتفعيل الاختبار.",
+        testAllowlistEmpty: "أدخل رقمًا لاختباره.",
+        testFonnteConfigHint: "تأكد من ضبط FONNTE_TOKEN في بيئة Vercel النشطة، ثم أعد النشر بعد تغييره.",
         testFonnteStatusUnavailable: "تعذر التحقق من حالة إعداد WhatsApp.",
         faceMatchAmbiguous: "ملفان أو أكثر للوجه متشابهان جدًا ولا يمكن الاختيار بأمان. اطلب من المعلم إعادة المسح في إضاءة أفضل.",
         faceQualityLow: "الوجه غير واضح بما يكفي. واجه الكاميرا واقترب قليلًا وحسّن الإضاءة.",
@@ -1458,6 +1455,7 @@ function showView(target) {
 
     const titles = {
         "view-presensi": "teacherDashboard", "view-database": "database", "view-formulir": "formulir",
+        "view-offline-review": "Review presensi offline",
         "view-s-presensi": "studentAttendance", "view-s-history": "studentHistory", "view-s-profile": "myProfile"
     };
     if (target.startsWith("view-s-")) $("student-page-title").textContent = tr(titles[target]);
@@ -1469,6 +1467,7 @@ function showView(target) {
         state.cloudDataPromise = loadCloudData();
     }
     if (target === "view-s-history") renderStudentHistory();
+    if (target === "view-offline-review" && state.user?.role === "guru") void loadOfflineAttendanceQueue("teacher");
 }
 
 function showAuth({ clearSession = true } = {}) {
@@ -1632,6 +1631,7 @@ const ADMIN_VIEW_TITLES = {
     "admin-view-users": "schoolUsers",
     "admin-view-settings": "adminSchoolSettings",
     "admin-view-tests": "adminTestToolsTitle",
+    "admin-view-ops": "Pusat operasional",
     "admin-view-audit": "adminAudit",
     "admin-view-profile": "changeAdminPassword"
 };
@@ -1665,7 +1665,238 @@ function showAdminView(viewId) {
     if (viewId === "admin-view-audit") void loadAdminAudit();
     if (viewId === "admin-view-dashboard") void loadAdminFeatures();
     if (viewId === "admin-view-tests") void loadAdminTestTools();
+    if (viewId === "admin-view-ops") {
+        void loadAdminOperations();
+        void loadOfflineAttendanceQueue("admin");
+    }
     if (viewId !== "admin-view-tests") stopAdminTestCamera();
+}
+
+function renderAdminAnalytics(stats = {}) {
+    const trendRoot = $("admin-attendance-trend-chart");
+    const roleRoot = $("admin-role-activity-chart");
+    const trend = Array.isArray(stats.trend) ? stats.trend.slice(-7) : [];
+    if (trendRoot) {
+        const max = Math.max(1, ...trend.map(item => Number(item?.count) || 0));
+        trendRoot.innerHTML = trend.length ? trend.map(item => {
+            const count = Math.max(0, Number(item?.count) || 0);
+            const height = Math.max(3, Math.round(count / max * 100));
+            const label = typeof item?.date === "string" ? item.date.slice(5) : "—";
+            return '<div class="admin-chart-day"><strong>' + safeText(String(count)) +
+                '</strong><div class="admin-chart-bar-track"><div class="admin-chart-bar" style="height:' +
+                height + '%"></div></div><small>' + safeText(label) + '</small></div>';
+        }).join("") : '<p class="muted">Data tren belum tersedia.</p>';
+    }
+    if (roleRoot) {
+        const roles = [
+            { key: "admin", label: "Admin" },
+            { key: "guru", label: "Guru" },
+            { key: "siswa", label: "Siswa" }
+        ];
+        const values = roles.map(role => ({
+            ...role,
+            count: Math.max(0, Number(stats?.active_users_by_role?.[role.key]) || 0)
+        }));
+        const max = Math.max(1, ...values.map(item => item.count));
+        roleRoot.innerHTML = values.map(item => {
+            const width = Math.round(item.count / max * 100);
+            return '<div class="admin-role-row"><div class="admin-role-meta"><span>' +
+                safeText(item.label) + '</span><strong>' + safeText(String(item.count)) +
+                '</strong></div><div class="admin-role-track"><div class="admin-role-fill" style="width:' +
+                width + '%"></div></div></div>';
+        }).join("");
+    }
+}
+
+async function loadAdminOperations() {
+    const status = (id, value) => { const el = $(id); if (el) el.textContent = value; };
+    const defaults = [
+        "admin-ops-vercel-state", "admin-ops-supabase-state", "admin-ops-github-state",
+        "admin-ops-fonnte-state"
+    ];
+    defaults.forEach(id => status(id, "Memeriksa…"));
+
+    // Liveness and readiness are separate: a running Vercel Function must not
+    // be labelled broken just because its database dependency is unavailable.
+    const healthPromise = cloudRequest("/api/settings?action=health");
+    const readyPromise = cloudRequest("/api/ready");
+    const featuresPromise = cloudRequest("/api/admin/settings?action=features");
+    const fonntePromise = cloudRequest("/api/admin/settings?action=test-tools");
+    const githubPromise = (async () => {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 8_000);
+        try {
+            const [repoResponse, workflowResponse] = await Promise.all([
+                fetch("https://api.github.com/repos/Zarr-Dev/amanahid/commits/main", {
+                    cache: "no-store", credentials: "omit", headers: { Accept: "application/vnd.github+json" }, signal: controller.signal
+                }),
+                fetch("https://api.github.com/repos/Zarr-Dev/amanahid/actions/workflows/ci.yml/runs?per_page=1&branch=main", {
+                    cache: "no-store", credentials: "omit", headers: { Accept: "application/vnd.github+json" }, signal: controller.signal
+                })
+            ]);
+            if (!repoResponse.ok || !workflowResponse.ok) throw new Error("GitHub API returned an unavailable response");
+            return { commit: await repoResponse.json(), workflow: await workflowResponse.json() };
+        } finally {
+            window.clearTimeout(timer);
+        }
+    })();
+
+    const [healthResult, readyResult, featuresResult, githubResult, fonnteResult] = await Promise.allSettled([
+        healthPromise, readyPromise, featuresPromise, githubPromise, fonntePromise
+    ]);
+
+    if (healthResult.status === "fulfilled") {
+        const health = healthResult.value;
+        const deployment = health?.deployment || {};
+        const apiOk = health?.checks?.api === "ok";
+        const configOk = health?.checks?.configuration === "ok";
+        status("admin-ops-vercel-state", apiOk
+            ? (configOk ? "API aktif" : "API aktif · konfigurasi perlu dicek")
+            : "API bermasalah");
+        status("admin-ops-vercel-env", String(health?.environment || "unknown"));
+        status("admin-ops-vercel-commit", deployment.commit || "Tidak tersedia");
+        status("admin-ops-vercel-branch", deployment.branch || "Tidak tersedia");
+    } else {
+        status("admin-ops-vercel-state", "Gagal diperiksa");
+        status("admin-ops-vercel-env", "—");
+        status("admin-ops-vercel-commit", "—");
+        status("admin-ops-vercel-branch", "—");
+    }
+
+    if (readyResult.status === "fulfilled") {
+        const ready = readyResult.value;
+        const dbOk = ready?.checks?.database === "ok";
+        status("admin-ops-supabase-state", dbOk ? "Terhubung" : "Tidak terhubung");
+        status("admin-ops-supabase-db", String(ready?.checks?.database || "unknown"));
+        // The readiness endpoint carries deployment metadata when DB is ready.
+        // Use it only as a fallback if liveness metadata is not available.
+        if (healthResult.status !== "fulfilled") {
+            const deployment = ready?.deployment || {};
+            status("admin-ops-vercel-env", String(ready?.environment || "unknown"));
+            status("admin-ops-vercel-commit", deployment.commit || "Tidak tersedia");
+            status("admin-ops-vercel-branch", deployment.branch || "Tidak tersedia");
+        }
+    } else {
+        status("admin-ops-supabase-state", "Tidak tersedia");
+        status("admin-ops-supabase-db", "Gagal melakukan database round-trip");
+    }
+
+    if (featuresResult.status === "fulfilled") {
+        status("admin-ops-supabase-flags", featuresResult.value?.features ? "Tersedia" : "Tidak tersedia");
+    } else {
+        status("admin-ops-supabase-flags", "Gagal dimuat");
+    }
+
+    if (fonnteResult.status === "fulfilled") {
+        const configured = fonnteResult.value?.fonnte_configured === true;
+        status("admin-ops-fonnte-state", configured ? "Token tersedia" : "Token kosong");
+        status("admin-ops-fonnte-env", String(fonnteResult.value?.environment || "unknown"));
+        status("admin-ops-fonnte-send", "Gunakan Pengujian Sistem untuk mengirim pesan nyata");
+    } else {
+        status("admin-ops-fonnte-state", "Gagal diperiksa");
+        status("admin-ops-fonnte-env", "—");
+        status("admin-ops-fonnte-send", "Tidak dapat diuji");
+    }
+
+    if (githubResult.status === "fulfilled") {
+        const latest = githubResult.value.commit;
+        const run = githubResult.value.workflow?.workflow_runs?.[0] || null;
+        const commitMessage = String(latest?.commit?.message || "").split("\n")[0].slice(0, 54);
+        status("admin-ops-github-state", "Terhubung");
+        status("admin-ops-github-branch", "main");
+        status("admin-ops-github-commit", (latest?.sha || "").slice(0, 10) + (commitMessage ? " · " + commitMessage : ""));
+        status("admin-ops-github-ci", run ? (run.status === "completed" ? (run.conclusion || "completed") : run.status) : "Belum ada run");
+    } else {
+        status("admin-ops-github-state", "Tidak terjangkau");
+        status("admin-ops-github-branch", "—");
+        status("admin-ops-github-commit", "—");
+        status("admin-ops-github-ci", "Gagal diperiksa");
+    }
+    return {
+        health: healthResult.status === "fulfilled" ? healthResult.value : null,
+        ready: readyResult.status === "fulfilled" ? readyResult.value : null,
+        features: featuresResult.status === "fulfilled" ? featuresResult.value : null,
+        github: githubResult.status === "fulfilled" ? githubResult.value : null,
+        fonnte: fonnteResult.status === "fulfilled" ? fonnteResult.value : null
+    };
+}
+
+async function loadOfflineAttendanceQueue(audience = "admin") {
+    const isTeacher = audience === "teacher";
+    const tbody = $(isTeacher ? "teacher-offline-pending-tbody" : "admin-offline-pending-tbody");
+    const status = $(isTeacher ? "teacher-offline-status" : "admin-offline-status");
+    const empty = $(isTeacher ? "teacher-offline-empty" : "admin-offline-empty");
+    if (!tbody || !status) return;
+    status.textContent = "Memuat permintaan offline…";
+    try {
+        const result = await cloudRequest("/api/attendance?action=offline-pending");
+        const rows = Array.isArray(result?.pending) ? result.pending : [];
+        tbody.innerHTML = rows.map(item => {
+            const student = item.student || {};
+            const claimed = formatRoleActivityTime(item.claimed_at, "Waktu tidak tersedia");
+            const accuracy = Number.isFinite(item.gps?.accuracy) ? Math.round(item.gps.accuracy) + " m" : "—";
+            return '<tr><td><strong>' + safeText(student.name || "Siswa") +
+                '</strong><small>' + safeText(student.nisn || "") + '</small></td><td>' +
+                safeText(student.class_name || "—") + '</td><td>' + safeText(claimed) +
+                '</td><td>GPS ±' + safeText(accuracy) + '</td><td><span class="admin-offline-pending-badge">Menunggu review</span></td><td class="admin-account-actions">' +
+                '<button class="button secondary" type="button" data-offline-review="' + safeText(item.id) +
+                '" data-decision="approve">Setujui</button><button class="button danger-outline" type="button" data-offline-review="' +
+                safeText(item.id) + '" data-decision="reject">Tolak</button></td></tr>';
+        }).join("");
+        if (empty) empty.classList.toggle("hidden", rows.length > 0);
+        status.textContent = rows.length
+            ? rows.length + " permintaan menunggu pemeriksaan. Hasil liveness berasal dari perangkat dan belum diverifikasi server."
+            : "Tidak ada permintaan offline yang menunggu pemeriksaan.";
+    } catch (error) {
+        tbody.innerHTML = "";
+        if (empty) empty.classList.add("hidden");
+        status.textContent = error?.message || "Antrean offline belum tersedia. Pastikan migrasi offline sudah diterapkan.";
+    }
+}
+
+async function handleOfflineAttendanceReview(event) {
+    const button = event.target.closest("[data-offline-review]");
+    if (!button || button.disabled) return;
+    const id = button.dataset.offlineReview;
+    const decision = button.dataset.decision;
+    const approve = decision === "approve";
+    const result = await openAppDialog({
+        title: approve ? "Setujui presensi offline?" : "Tolak permintaan offline?",
+        description: approve
+            ? "Dengan persetujuan ini, sistem membuat catatan presensi resmi berdasarkan waktu perangkat. Pastikan identitas siswa dan alasan kehadiran telah diperiksa secara langsung."
+            : "Permintaan akan ditolak dan tidak akan menjadi catatan presensi resmi.",
+        fields: [{
+            name: "notes",
+            label: "Catatan pemeriksaan (wajib, minimal 8 karakter)",
+            type: "text",
+            placeholder: approve ? "Contoh: Siswa dikonfirmasi hadir oleh wali kelas." : "Tuliskan alasan penolakan.",
+            minLength: 8,
+            maxLength: 500
+        }],
+        confirmLabel: approve ? "Setujui & catat presensi" : "Tolak permintaan",
+        cancelLabel: "Batal",
+        danger: !approve,
+        icon: approve ? "✓" : "!"
+    });
+    if (result === null || !result.notes) return;
+    button.disabled = true;
+    try {
+        const response = await cloudRequest("/api/attendance", {
+            method: "POST",
+            body: { action: "offline-review", id, decision, notes: result.notes.trim() }
+        });
+        toast(approve
+            ? "Permintaan disetujui. Presensi resmi dibuat dan dicatat dalam audit."
+            : "Permintaan offline ditolak. Presensi resmi tidak dibuat.", "success");
+        const audience = state.user?.role === "guru" ? "teacher" : "admin";
+        await loadOfflineAttendanceQueue(audience);
+        if (state.user?.role === "admin") await loadAdminDashboard();
+        if (response?.whatsapp?.error) toast("Presensi dibuat, tetapi notifikasi WhatsApp orang tua gagal.", "warning");
+    } catch (error) {
+        toastAdminError(error);
+    } finally {
+        button.disabled = false;
+    }
 }
 
 async function loadAdminDashboard() {
@@ -1678,6 +1909,8 @@ async function loadAdminDashboard() {
         const stats = await cloudRequest("/api/admin/audit?action=stats");
         $("admin-total-students").textContent = stats?.total_students ?? 0;
         $("admin-total-teachers").textContent = stats?.total_teachers ?? 0;
+        $("admin-total-admins").textContent = stats?.total_admins ?? 0;
+        renderAdminAnalytics(stats);
         $("admin-attendance-today").textContent = stats?.attendance_today ?? 0;
         $("admin-attendance-week").textContent = stats?.attendance_week ?? 0;
         $("admin-active-week").textContent = stats?.active_users_week ?? 0;
@@ -1724,7 +1957,7 @@ function applyAdminFeatureFlags(features = {}) {
     const hide = (id, hidden) => $(id)?.classList.toggle("hidden", Boolean(hidden));
     hide("admin-export-users", features.admin_account_export === false);
     hide("admin-service-health-panel", features.service_health_panel === false);
-    hide("admin-test-whatsapp-card", features.parent_notifications === false);
+    // Fonnte diagnostics remain available even when parent attendance notifications are disabled.
 
     const profileForm = $("admin-profile-form");
     if (profileForm) {
@@ -1733,8 +1966,10 @@ function applyAdminFeatureFlags(features = {}) {
         profileForm.setAttribute("aria-disabled", String(disabled));
     }
     const deactivateDisabled = features.account_deactivation === false;
-    $("admin-users-tbody")?.querySelectorAll("[data-admin-disable]").forEach(button => {
-        button.disabled = deactivateDisabled || button.dataset.active === "false";
+    $("admin-users-tbody")?.querySelectorAll("[data-admin-set-active]").forEach(button => {
+        // Deactivation may be disabled by policy, but Admin must always be able
+        // to restore an account previously disabled by a teacher or Admin.
+        button.disabled = deactivateDisabled && button.dataset.active === "true";
     });
     const radius = $("admin-setting-radius");
     if (radius) radius.disabled = features.geofence_radius_edit === false;
@@ -2009,43 +2244,42 @@ async function startAdminTestCamera() {
     }
 }
 
+function normalizeAdminTestPhone(value) {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (/^08\d{8,13}$/.test(digits)) return digits.replace(/^08/, "628");
+    return /^628\d{8,13}$/.test(digits) ? digits : "";
+}
+
 function updateAdminWhatsAppTestControls() {
-    const allowed = Array.isArray(state.adminAllowedWhatsappRecipients)
-        ? state.adminAllowedWhatsappRecipients : [];
-    const target = $("admin-test-whatsapp-number")?.value.replace(/\D/g, "") || "";
+    const target = normalizeAdminTestPhone($("admin-test-whatsapp-number")?.value);
     const message = $("admin-test-whatsapp-template")?.value.trim() || "";
     const consent = Boolean($("admin-test-whatsapp-consent")?.checked);
     const printable = message.length >= 10 && message.length <= 300 &&
         !/[\u0000-\u001F\u007F]/.test(message);
-    const permitted = state.adminFonnteConfigured && allowed.includes(target);
     const button = $("admin-test-whatsapp-send");
-    if (button) button.disabled = !(permitted && printable && consent);
+    if (button) button.disabled = !(target && printable && consent);
 }
 
 async function loadAdminTestTools() {
+    const templateInput = $("admin-test-whatsapp-template");
+    if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
+    updateAdminWhatsAppPreview();
+    updateAdminWhatsAppTestControls();
     try {
-        const result = await cloudRequest("/api/admin/test-tools");
+        const result = await cloudRequest("/api/admin/settings?action=test-tools");
         state.adminFonnteConfigured = result.fonnte_configured === true;
-        state.adminAllowedWhatsappRecipients = Array.isArray(result.allowed_recipients)
-            ? result.allowed_recipients.filter(value => /^628\d{8,13}$/.test(String(value))) : [];
-        $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
-        $("admin-test-whatsapp-allowlist").textContent = state.adminAllowedWhatsappRecipients.length
-            ? state.adminAllowedWhatsappRecipients.join(", ") : tr("testAllowlistEmpty");
-        const templateInput = $("admin-test-whatsapp-template");
-        if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
-        updateAdminWhatsAppPreview();
-        updateAdminWhatsAppTestControls();
-        if (!state.adminFonnteConfigured || !state.adminAllowedWhatsappRecipients.length) {
-            $("admin-test-whatsapp-status").textContent = tr("testFonnteConfigHint");
-        }
+        const environment = String(result.environment || "environment aktif");
+        $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured
+            ? "Token Fonnte terdeteksi pada " + environment
+            : "Token Fonnte belum berisi nilai pada " + environment;
     } catch (error) {
         state.adminFonnteConfigured = false;
-        state.adminAllowedWhatsappRecipients = [];
-        $("admin-test-fonnte-state").textContent = tr("testFonnteStatusUnavailable");
-        $("admin-test-whatsapp-allowlist").textContent = tr("testAllowlistLoadFailed");
-        $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
-        updateAdminWhatsAppTestControls();
+        $("admin-test-fonnte-state").textContent = "Status token belum dapat diperiksa";
+        console.error("Fonnte configuration status could not load:", error);
     }
+    // Configuration failures are reported by the send API only after the Admin
+    // presses the enabled button. They must not block a real test attempt.
+    updateAdminWhatsAppTestControls();
 }
 
 function updateAdminWhatsAppPreview() {
@@ -2055,7 +2289,7 @@ function updateAdminWhatsAppPreview() {
 }
 
 async function sendAdminWhatsAppTest() {
-    const target = $("admin-test-whatsapp-number").value.replace(/\D/g, "");
+    const target = normalizeAdminTestPhone($("admin-test-whatsapp-number").value);
     const message = $("admin-test-whatsapp-template").value.trim();
     const status = $("admin-test-whatsapp-status");
     if (!/^628\d{8,13}$/.test(target)) {
@@ -2070,7 +2304,7 @@ async function sendAdminWhatsAppTest() {
     button.disabled = true;
     status.textContent = tr("testWhatsappSending");
     try {
-        const result = await cloudRequest("/api/admin/test-tools", {
+        const result = await cloudRequest("/api/admin/settings?action=test-tools", {
             method: "POST",
             body: { target, message, confirm: true }
         });
@@ -2126,43 +2360,88 @@ async function testAdminGps() {
 
 async function runAdminServiceChecks() {
     const root = $("admin-test-services-results");
-    root.textContent = tr("testServiceChecking");
+    if (!root) return;
+    root.textContent = "Memeriksa layanan…";
+
+    const add = (name, state, detail = "") => results.push({ name, state, detail });
     const results = [];
+    const normalizeState = ok => ok ? "ready" : "error";
+
+    // API liveness and database readiness are intentionally separate checks.
     try {
-        const health = await cloudRequest("/api/ready");
-        results.push({
-            name: "Vercel API + Supabase",
-            state: health?.ok === true && health?.checks?.database === "ok" ? "ready" : "error"
-        });
-    } catch {
-        results.push({ name: "Vercel API + Supabase", state: "error" });
+        const health = await cloudRequest("/api/settings?action=health");
+        add("Vercel Function · Liveness", health?.checks?.api === "ok" ? "ready" : "error",
+            health?.environment || "API memberi respons");
+    } catch (error) {
+        add("Vercel Function · Liveness", "error", error.message);
     }
     try {
-        const tools = await cloudRequest("/api/admin/test-tools");
-        const configured = tools?.fonnte_configured === true && tools?.allowlist_configured === true;
-        results.push({
-            name: "Fonnte WhatsApp + allowlist",
-            state: configured ? "ready" : "not_configured"
-        });
-    } catch {
-        results.push({ name: "Fonnte WhatsApp + allowlist", state: "error" });
+        const ready = await cloudRequest("/api/ready");
+        add("Supabase · Database round-trip",
+            ready?.ok === true && ready?.checks?.database === "ok" ? "ready" : "error",
+            ready?.checks?.database || "Tidak ada respons database");
+    } catch (error) {
+        add("Supabase · Database round-trip", "error", error.message);
     }
     try {
-        const flags = await cloudRequest("/api?action=features");
-        results.push({
-            name: "Konfigurasi feature flags",
-            state: flags?.features && typeof flags.features === "object" ? "ready" : "error"
-        });
-    } catch {
-        results.push({ name: "Konfigurasi feature flags", state: "error" });
+        const tools = await cloudRequest("/api/admin/settings?action=test-tools");
+        add("Fonnte · Token server", tools?.fonnte_configured === true ? "ready" : "not_configured",
+            tools?.environment || "Environment aktif");
+    } catch (error) {
+        add("Fonnte · Token server", "error", error.message);
     }
+    try {
+        const flags = await cloudRequest("/api/admin/settings?action=features");
+        const validFlags = flags?.features && typeof flags.features === "object" &&
+            !Array.isArray(flags.features);
+        add("Supabase · Feature flags", normalizeState(validFlags),
+            validFlags ? Object.keys(flags.features).length + " kebijakan" : "Konfigurasi tidak tersedia");
+    } catch (error) {
+        add("Supabase · Feature flags", "error", error.message);
+    }
+    try {
+        const response = await fetch("/face-engine.js", { method: "HEAD", cache: "no-store" });
+        add("Face AI · Engine asset", normalizeState(response.ok),
+            response.ok ? "File model client tersedia; inferensi tetap perlu diuji kamera" : "Asset tidak tersedia");
+    } catch (error) {
+        add("Face AI · Engine asset", "error", error.message);
+    }
+    const gpsAvailable = Boolean(window.isSecureContext && navigator.geolocation);
+    add("GPS · Browser geolocation", gpsAvailable ? "ready" : "error",
+        gpsAvailable ? "API tersedia; lokasi aktual memerlukan izin pengguna" : "Perlu HTTPS dan dukungan geolocation");
+    try {
+        const db = await openOfflineAttendanceDb();
+        const offlineReady = Boolean(db && window.crypto?.subtle && window.indexedDB);
+        add("Offline · IndexedDB + Crypto", normalizeState(offlineReady),
+            offlineReady ? "Penyimpanan antrean lokal tersedia" : "Browser tidak mendukung semua fitur");
+    } catch (error) {
+        add("Offline · IndexedDB + Crypto", "error", error.message || "Penyimpanan offline tidak tersedia");
+    }
+    try {
+        const response = await fetch("https://api.github.com/repos/Zarr-Dev/amanahid/commits/main", {
+            cache: "no-store", credentials: "omit", headers: { Accept: "application/vnd.github+json" }
+        });
+        add("GitHub · Repository API", normalizeState(response.ok),
+            response.ok ? "Repositori dapat dibaca" : "GitHub API memberi respons " + response.status);
+    } catch (error) {
+        add("GitHub · Repository API", "error", error.message);
+    }
+    try {
+        const registration = await navigator.serviceWorker?.getRegistration();
+        add("PWA · Service worker", normalizeState(Boolean(registration)),
+            registration ? "Terdaftar pada browser ini" : "Belum terdaftar pada browser ini");
+    } catch (error) {
+        add("PWA · Service worker", "error", error.message);
+    }
+
     root.innerHTML = results.map(item => {
         const css = item.state === "ready" ? "is-ok"
             : item.state === "not_configured" ? "is-not-configured" : "is-error";
-        const message = item.state === "ready" ? tr("testOtherPass")
-            : item.state === "not_configured" ? tr("testOtherNotConfigured") : tr("testOtherFail");
-        return '<div class="admin-test-service-row"><span>' + safeText(item.name) +
-            '</span><strong class="' + css + '">' + safeText(message) + '</strong></div>';
+        const message = item.state === "ready" ? "Siap"
+            : item.state === "not_configured" ? "Belum dikonfigurasi" : "Perlu diperiksa";
+        return '<div class="admin-test-service-row"><span><strong>' + safeText(item.name) +
+            '</strong><small>' + safeText(item.detail || "") + '</small></span><strong class="' +
+            css + '">' + safeText(message) + '</strong></div>';
     }).join("");
 }
 
@@ -2179,8 +2458,10 @@ async function loadAdminUsers() {
             <td>${safeText(user.role === "guru" ? tr("roleTeacher") : user.role === "siswa" ? tr("roleStudent") : tr("adminRole"))}</td>
             <td>${safeText(user.role === "siswa" ? user.homeroom_teacher?.name || "Belum ditetapkan" : user.homeroom_class || "—")}</td>
             <td>${safeText(user.is_active ? tr("activeStatus") : tr("inactiveStatus"))}</td>
-            <td><button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}" data-current-homeroom="${safeText(user.homeroom_teacher_id ?? "")}" data-class-name="${safeText(user.class_name ?? "")}">${safeText(tr("editAccount"))}</button>
-            <button class="button subtle" type="button" data-admin-disable="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" ${user.is_active ? "" : "disabled"}>${safeText(tr("deactivateAccount"))}</button></td>
+            <td class="admin-account-actions">
+            <button class="button subtle" type="button" data-admin-edit="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-parent-whatsapp="${safeText(user.parent_whatsapp ?? "")}" data-current-homeroom="${safeText(user.homeroom_teacher_id ?? "")}" data-class-name="${safeText(user.class_name ?? "")}">${safeText(tr("editAccount"))}</button>
+            <button class="button ${user.is_active ? "subtle" : "secondary"}" type="button" data-admin-set-active="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-active="${user.is_active ? "true" : "false"}">${user.is_active ? "Nonaktifkan" : "Aktifkan kembali"}</button>
+            <button class="button danger" type="button" data-admin-permanent-delete="${safeText(user.id ?? "")}" data-table="${safeText(user.table ?? "")}" data-email="${safeText(user.email ?? "")}">Hapus permanen</button></td>
         </tr>`).join("");
         $("admin-users-empty").classList.toggle("hidden", users.length > 0);
     } catch (error) {
@@ -2229,46 +2510,75 @@ function roleActivityActionLabel(action) {
     return labels[action] || String(action || "Aktivitas tercatat").replaceAll(".", " · ");
 }
 
-function renderRoleActivityTable(targetId, users) {
+function formatAdminActivityCompactTime(value, fallback) {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return fallback;
+    const locale = state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID";
+    return new Intl.DateTimeFormat(locale, {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+    }).format(date);
+}
+
+function renderRoleActivityTable(targetId, groups) {
     const table = $(targetId);
     if (!table) return;
-    if (!Array.isArray(users) || users.length === 0) {
-        table.innerHTML = '<tr><td colspan="3">Belum ada akun pada peran ini.</td></tr>';
+    const roles = [
+        { key: "admin", label: "Admin", className: "admin" },
+        { key: "guru", label: "Guru", className: "teacher" },
+        { key: "siswa", label: "Siswa", className: "student" }
+    ];
+    const rows = roles.flatMap(role => (Array.isArray(groups?.[role.key]) ? groups[role.key] : [])
+        .map(user => ({ ...user, activityRole: role })));
+    if (!rows.length) {
+        table.innerHTML = '<tr><td colspan="5">Belum ada akun untuk ditampilkan.</td></tr>';
         return;
     }
-    table.innerHTML = users.map(user => {
-        const account = '<strong>' + safeText(user.name || "—") + '</strong><br><small>' +
-            safeText(user.email || "Email tidak tersedia") + '</small><br><small>' +
-            safeText(user.is_active ? "Aktif" : "Nonaktif") + '</small>';
-        const login = safeText(formatRoleActivityTime(user.last_login_at, "Belum pernah login"));
-        const activity = user.last_activity_action
-            ? '<strong>' + safeText(roleActivityActionLabel(user.last_activity_action)) + '</strong><br><small>' +
-                safeText(formatRoleActivityTime(user.last_activity_at, "Waktu tidak tersedia")) + '</small>'
+    table.innerHTML = rows.map(user => {
+        const role = user.activityRole;
+        const name = safeText(user.name || "—");
+        const email = safeText(user.email || "Email tidak tersedia");
+        const active = user.is_active === true;
+        const loginText = formatAdminActivityCompactTime(user.last_login_at, "Belum pernah login");
+        const action = user.last_activity_action
+            ? safeText(roleActivityActionLabel(user.last_activity_action))
             : "Belum ada aktivitas tercatat";
-        return '<tr><td>' + account + '</td><td>' + login + '</td><td>' + activity + '</td></tr>';
+        const activityTime = user.last_activity_at
+            ? formatAdminActivityCompactTime(user.last_activity_at, "Waktu tidak tersedia")
+            : "";
+        return '<tr>' +
+            '<td><span class="admin-audit-role-chip is-' + role.className + '">' + safeText(role.label) + '</span></td>' +
+            '<td class="admin-audit-account"><strong>' + name + '</strong><small>' + email + '</small></td>' +
+            '<td><span class="admin-audit-status ' + (active ? "is-active" : "is-inactive") + '">' +
+                (active ? "Aktif" : "Nonaktif") + '</span></td>' +
+            '<td class="admin-audit-time">' + safeText(loginText) + '</td>' +
+            '<td class="admin-audit-activity"><strong>' + action + '</strong>' +
+                (activityTime ? '<small>' + safeText(activityTime) + '</small>' : '') + '</td>' +
+            '</tr>';
     }).join("");
 }
 
 async function loadAdminRoleActivity() {
     const status = $("admin-activity-status");
-    if (status) status.textContent = "Memuat riwayat login dan aktivitas per peran...";
+    const table = $("admin-activity-tbody");
+    if (status) status.textContent = "Memuat riwayat login dan aktivitas per peran…";
+    if (table) table.innerHTML = '<tr><td colspan="5">Memuat aktivitas…</td></tr>';
     try {
         const response = await cloudRequest("/api/admin/audit?action=activity");
         const groups = response?.activity || {};
-        renderRoleActivityTable("admin-activity-admin-tbody", groups.admin);
-        renderRoleActivityTable("admin-activity-teacher-tbody", groups.guru);
-        renderRoleActivityTable("admin-activity-student-tbody", groups.siswa);
+        renderRoleActivityTable("admin-activity-tbody", groups);
         if (status) {
+            const total = ["admin", "guru", "siswa"].reduce((sum, role) =>
+                sum + (Array.isArray(groups[role]) ? groups[role].length : 0), 0);
             const limit = Number(response?.audit_history_limit_per_role) || 1000;
-            status.textContent = "Login diambil dari catatan login akun. Aktivitas menunjukkan tindakan penting yang tercatat pada API, dengan pemeriksaan hingga " +
+            status.textContent = total.toLocaleString() +
+                " akun ditampilkan. Aktivitas adalah tindakan penting yang tercatat oleh API; pencarian riwayat memeriksa hingga " +
                 limit.toLocaleString() + " catatan audit terbaru per peran.";
         }
     } catch (error) {
         console.error("Admin role activity could not load:", error);
-        for (const id of ["admin-activity-admin-tbody", "admin-activity-teacher-tbody", "admin-activity-student-tbody"]) {
-            const table = $(id);
-            if (table) table.innerHTML = '<tr><td colspan="3">Riwayat aktivitas gagal dimuat.</td></tr>';
-        }
+        if (table) table.innerHTML = '<tr><td colspan="5">Riwayat aktivitas gagal dimuat.</td></tr>';
         if (status) status.textContent = "Riwayat aktivitas tidak dapat dimuat. Periksa koneksi dan akses Admin.";
     }
 }
@@ -2497,6 +2807,185 @@ function createIdempotencyKey() {
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+const OFFLINE_ATTENDANCE_DB = "amanah-id-offline-v1";
+let offlineAttendanceDbPromise = null;
+
+function openOfflineAttendanceDb() {
+    if (!("indexedDB" in window)) return Promise.reject(new Error("IndexedDB is not available"));
+    if (offlineAttendanceDbPromise) return offlineAttendanceDbPromise;
+    offlineAttendanceDbPromise = new Promise((resolve, reject) => {
+        const request = indexedDB.open(OFFLINE_ATTENDANCE_DB, 1);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains("events")) {
+                const store = db.createObjectStore("events", { keyPath: "eventId" });
+                store.createIndex("ownerKey", "ownerKey", { unique: false });
+                store.createIndex("capturedAt", "capturedAt", { unique: false });
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("Offline storage could not be opened"));
+        request.onblocked = () => reject(new Error("Offline storage upgrade is blocked by another tab"));
+    }).catch(error => {
+        offlineAttendanceDbPromise = null;
+        throw error;
+    });
+    return offlineAttendanceDbPromise;
+}
+
+async function getOfflineOwnerKey() {
+    const email = String(state.user?.email || "").trim().toLowerCase();
+    if (!email || !window.crypto?.subtle) throw new Error("Secure offline account key is unavailable");
+    const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode("amanah-id-offline:" + email));
+    return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
+}
+
+async function getOfflineAttendanceEvents() {
+    const db = await openOfflineAttendanceDb();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction("events", "readonly");
+        const request = tx.objectStore("events").getAll();
+        request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+        request.onerror = () => reject(request.error || new Error("Offline attendance queue could not be read"));
+    });
+}
+
+async function saveOfflineAttendanceIntent(location) {
+    if (state.user?.role !== "siswa" || !location || location.error ||
+        !Number.isFinite(location.lat) || !Number.isFinite(location.lng) ||
+        !Number.isFinite(location.accuracy) || !Number.isFinite(location.positionTimestamp)) {
+        throw new Error("A verified student session and a valid GPS fix are required for an offline request");
+    }
+    const ownerKey = await getOfflineOwnerKey();
+    const existing = (await getOfflineAttendanceEvents()).filter(item => item.ownerKey === ownerKey);
+    if (existing.length >= 3) throw new Error("Maksimum tiga permintaan offline boleh menunggu sinkronisasi.");
+    const event = {
+        eventId: createIdempotencyKey(),
+        ownerKey,
+        capturedAt: Date.now(),
+        gps: {
+            lat: location.lat,
+            lng: location.lng,
+            accuracy: location.accuracy,
+            timestamp: location.positionTimestamp,
+            speed: Number.isFinite(location.speed) ? location.speed : 0
+        },
+        faceLivenessCompleted: true,
+        faceModelKey: "auraface-glintr100-int8-v1",
+        localStatus: "waiting_for_sync"
+    };
+    try {
+        await navigator.storage?.persist?.();
+    } catch (error) {
+        console.info("Persistent offline storage was not granted; IndexedDB remains available for this browser session.", error);
+    }
+    const db = await openOfflineAttendanceDb();
+    await new Promise((resolve, reject) => {
+        const tx = db.transaction("events", "readwrite");
+        tx.objectStore("events").add(event);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error("Offline attendance request could not be saved"));
+        tx.onabort = () => reject(tx.error || new Error("Offline attendance save was cancelled"));
+    });
+    await updateOfflineAttendanceStatus();
+    return event;
+}
+
+async function deleteOfflineAttendanceEvent(eventId) {
+    const db = await openOfflineAttendanceDb();
+    await new Promise((resolve, reject) => {
+        const tx = db.transaction("events", "readwrite");
+        tx.objectStore("events").delete(eventId);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error("Offline event could not be removed"));
+    });
+}
+
+async function updateOfflineAttendanceStatus() {
+    const status = $("student-offline-status");
+    if (!status) return;
+    try {
+        const ownerKey = state.user?.role === "siswa" ? await getOfflineOwnerKey() : "";
+        const events = ownerKey
+            ? (await getOfflineAttendanceEvents()).filter(item => item.ownerKey === ownerKey)
+            : [];
+        const count = events.length;
+        status.textContent = count
+            ? count + " permintaan tersimpan di perangkat dan menunggu sinkronisasi. Belum menjadi presensi resmi."
+            : navigator.onLine
+                ? "Mode online aktif. Presensi offline hanya digunakan saat koneksi terputus."
+                : "Mode offline aktif. Koneksi akan diperiksa kembali saat tersedia.";
+    } catch (error) {
+        status.textContent = "Penyimpanan offline belum tersedia pada browser ini.";
+        console.warn("Offline attendance status could not be read:", error);
+    }
+}
+
+async function syncOfflineAttendanceQueue() {
+    if (state.offlineSyncBusy || state.user?.role !== "siswa" || !navigator.onLine) return;
+    state.offlineSyncBusy = true;
+    try {
+        const ownerKey = await getOfflineOwnerKey();
+        const events = (await getOfflineAttendanceEvents())
+            .filter(item => item.ownerKey === ownerKey)
+            .sort((a, b) => Number(a.capturedAt) - Number(b.capturedAt));
+        let synced = 0;
+        for (const item of events) {
+            if (!navigator.onLine || state.user?.role !== "siswa") break;
+            try {
+                await cloudRequest("/api/attendance", {
+                    method: "POST",
+                    body: {
+                        action: "offline-pending",
+                        event_id: item.eventId,
+                        claimed_at: item.capturedAt,
+                        lat: item.gps.lat,
+                        lng: item.gps.lng,
+                        accuracy: item.gps.accuracy,
+                        gps_timestamp: item.gps.timestamp,
+                        speed: item.gps.speed,
+                        face_liveness_completed: item.faceLivenessCompleted,
+                        face_model_key: item.faceModelKey
+                    }
+                });
+                await deleteOfflineAttendanceEvent(item.eventId);
+                synced++;
+            } catch (error) {
+                console.warn("Offline attendance request remains queued:", error);
+                if ([400, 403, 409].includes(error?.status)) {
+                    await deleteOfflineAttendanceEvent(item.eventId);
+                    toast("Satu permintaan offline tidak dapat diterima: " +
+                        (error.originalMessage || error.message) + ". Tidak ada presensi resmi yang dibuat.", "warning");
+                    continue;
+                }
+                break;
+            }
+        }
+        await updateOfflineAttendanceStatus();
+        if (synced) {
+            toast(synced + " permintaan offline terkirim dan menunggu pemeriksaan Admin/Guru. Presensi belum resmi.", "success");
+        }
+    } catch (error) {
+        console.warn("Offline attendance synchronization is unavailable:", error);
+    } finally {
+        state.offlineSyncBusy = false;
+    }
+}
+
+function updateOfflineConnectionState() {
+    const banner = $("network-banner");
+    if (banner && !navigator.onLine) {
+        banner.textContent = "Koneksi internet terputus. Permintaan presensi yang memenuhi verifikasi kamera dan GPS dapat disimpan di perangkat, lalu disinkronkan saat layanan tersedia.";
+        banner.classList.remove("hidden");
+    } else if (banner && state.networkHeartbeatFailures >= 3) {
+        banner.textContent = "Jaringan perangkat terhubung, tetapi layanan Amanah ID belum merespons. Data offline tetap tersimpan di perangkat.";
+        banner.classList.remove("hidden");
+    } else if (banner) {
+        banner.classList.add("hidden");
+    }
+    void updateOfflineAttendanceStatus();
+}
+
 async function checkNetworkHeartbeat() {
     const requestUser = state.user;
     if (!requestUser || state.networkHeartbeatBusy) return;
@@ -2508,8 +2997,17 @@ async function checkNetworkHeartbeat() {
         $("network-banner")?.classList.add("hidden");
         $("network-status-teacher")?.classList.add("hidden");
         $("network-status-student")?.classList.add("hidden");
+        if (requestUser.role === "siswa") {
+            void updateOfflineAttendanceStatus();
+            void syncOfflineAttendanceQueue();
+        }
     } catch (error) {
         if (state.user !== requestUser) return;
+        if (error?.status === 401) {
+            showAuth();
+            toast("Sesi berakhir karena akun tidak lagi aktif. Hubungi Admin sekolah.", "warning");
+            return;
+        }
         state.networkHeartbeatFailures++;
         console.warn("Network heartbeat failed; will retry on the next interval:", error);
         const badge = requestUser.role === "siswa"
@@ -2517,7 +3015,7 @@ async function checkNetworkHeartbeat() {
             : $("network-status-teacher");
         badge?.classList.remove("hidden");
         if (state.networkHeartbeatFailures >= 3) {
-            $("network-banner")?.classList.remove("hidden");
+            updateOfflineConnectionState();
         }
     } finally {
         if (state.user === requestUser) state.networkHeartbeatBusy = false;
@@ -2531,10 +3029,11 @@ function startNetworkHeartbeat() {
     state.networkHeartbeatBusy = false;
     state.networkHeartbeatFailures = 0;
     $("network-banner")?.classList.add("hidden");
+    void updateOfflineConnectionState();
     void checkNetworkHeartbeat();
     state.networkHeartbeatTimer = window.setInterval(() => {
         if (state.user) void checkNetworkHeartbeat();
-    }, 30_000);
+    }, 15_000);
 }
 
 function stopNetworkHeartbeat() {
@@ -2762,7 +3261,8 @@ function renderStudentList() {
       <td>${safeText(s.className)}</td>
       <td>${safeText(s.parentWhatsApp || "—")}</td>
       <td>${safeText(s.registeredDate)}</td>
-      <td><button class="row-action" type="button" data-edit-student-face="${safeText(s.nisn)}">${safeText(tr("replaceFace"))}</button></td>
+      <td><button class="row-action" type="button" data-edit-student-face="${safeText(s.nisn)}">${safeText(tr("replaceFace"))}</button>
+      ${state.user?.role === "guru" ? '<button class="row-action danger-outline" type="button" data-deactivate-student="' + safeText(s.nisn) + '">Nonaktifkan akun</button>' : ""}</td>
     </tr>`).join("");
     $("students-empty").classList.toggle("hidden", state.students.length > 0);
     $("student-count-badge").textContent = state.students.length;
@@ -3967,6 +4467,35 @@ async function processAttendanceFrame() {
     } catch (error) {
         if (state.attendanceStream === requestStream) {
             console.error("Attendance pipeline error (" + pipelineStage + "):", error);
+            const attendanceConnectionFailure = error?.type === "network" ||
+                [502, 503, 504].includes(Number(error?.status)) ||
+                (!navigator.onLine && ![400, 401, 403, 409, 422, 429].includes(Number(error?.status)));
+            if (requestUser.role === "siswa" &&
+                (pipelineStage === "face-match" || pipelineStage === "attendance") &&
+                attendanceConnectionFailure) {
+                try {
+                    const offlineLocation = await checkGeofence();
+                    if (!offlineLocation.error && offlineLocation.inside &&
+                        !offlineLocation.boundaryUncertain &&
+                        isGpsAccuracyAcceptable(offlineLocation.accuracy, SCHOOL_LOCATION.radius)) {
+                        const queued = await saveOfflineAttendanceIntent(offlineLocation);
+                        state.attendanceRecorded = true;
+                        stopAttendanceCamera();
+                        const message = "Permintaan presensi tersimpan di perangkat (" +
+                            queued.eventId.slice(0, 8) + "). Menunggu koneksi dan pemeriksaan Admin/Guru; belum resmi.";
+                        $("student-attendance-status").textContent = message;
+                        toast(message, "warning");
+                        return;
+                    }
+                    throw new Error(offlineLocation.error || "GPS tidak cukup akurat untuk permintaan offline.");
+                } catch (offlineError) {
+                    const message = offlineError?.message ||
+                        "Permintaan offline tidak dapat disimpan. Periksa GPS dan ruang penyimpanan browser.";
+                    setAttendanceMessage(message);
+                    toast(message, "error");
+                    return;
+                }
+            }
             if (pipelineStage === "recognition") {
                 state.faceRecognitionReady = false;
                 state.faceRecognitionFailed = true;
@@ -5101,20 +5630,42 @@ function setupEvents() {
         }
     });
     $("admin-users-tbody").addEventListener("click", async event => {
-        const button = event.target.closest("[data-admin-edit], [data-admin-disable]");
+        const button = event.target.closest("[data-admin-edit], [data-admin-disable], [data-admin-set-active], [data-admin-permanent-delete]");
         if (!button) return;
-        const id = button.dataset.adminEdit || button.dataset.adminDisable;
+        const id = button.dataset.adminEdit || button.dataset.adminDisable || button.dataset.adminSetActive || button.dataset.adminPermanentDelete;
         const table = button.dataset.table;
-        if (button.hasAttribute("data-admin-disable")) {
+        if (button.hasAttribute("data-admin-set-active") || button.hasAttribute("data-admin-disable")) {
+            const nextActive = button.dataset.active !== "true";
             const confirmed = await openAppDialog({
-                title: "Nonaktifkan akun?",
-                description: "Akun tidak dapat digunakan sampai diaktifkan kembali. Tindakan ini tercatat dalam audit aktivitas.",
-                confirmLabel: "Nonaktifkan", cancelLabel: "Batal", danger: true, icon: "!"
+                title: nextActive ? "Aktifkan kembali akun?" : "Nonaktifkan akun?",
+                description: nextActive
+                    ? "Akun dapat login kembali setelah statusnya diaktifkan."
+                    : "Akun segera kehilangan akses. Jika sedang login, browser akan mengeluarkan akun pada pemeriksaan sesi berikutnya.",
+                confirmLabel: nextActive ? "Aktifkan" : "Nonaktifkan",
+                cancelLabel: "Batal", danger: !nextActive, icon: nextActive ? "✓" : "!"
             });
             if (confirmed === null) return;
             try {
-                await cloudRequest("/api/admin/users", { method: "DELETE", body: { id, table } });
-                toast("Akun berhasil dinonaktifkan.", "success");
+                await cloudRequest("/api/admin/users", {
+                    method: "PUT",
+                    body: { action: "set_active", id, table, is_active: nextActive }
+                });
+                toast(nextActive ? "Akun berhasil diaktifkan kembali." : "Akun berhasil dinonaktifkan.", "success");
+            } catch (error) { toastAdminError(error); return; }
+        } else if (button.hasAttribute("data-admin-permanent-delete")) {
+            const confirmed = await openAppDialog({
+                title: "Hapus akun secara permanen?",
+                description: "Tindakan ini tidak dapat dibatalkan. Data dengan riwayat presensi, pengajuan ketidakhadiran, notifikasi, atau relasi Wali Kelas akan ditolak agar arsip sekolah tidak rusak.",
+                fields: [{ name: "confirm_email", label: "Ketik email akun untuk konfirmasi: " + (button.dataset.email || ""), type: "email", placeholder: button.dataset.email || "", autocomplete: "off", minLength: 3 }],
+                confirmLabel: "Hapus permanen", cancelLabel: "Batal", danger: true, icon: "!"
+            });
+            if (!confirmed?.confirm_email) return;
+            try {
+                await cloudRequest("/api/admin/users?action=permanent-delete", {
+                    method: "POST",
+                    body: { id, table, confirm_email: confirmed.confirm_email.trim() }
+                });
+                toast("Akun berhasil dihapus permanen.", "success");
             } catch (error) { toastAdminError(error); return; }
         } else {
             const fields = [
@@ -5204,6 +5755,11 @@ function setupEvents() {
     $("admin-export-users").addEventListener("click", () => exportTableCsv("admin-users-tbody", "amanah-id-daftar-akun.csv"));
     $("admin-export-audit").addEventListener("click", () => exportTableCsv("admin-audit-tbody", "amanah-id-audit-aktivitas.csv"));
     $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
+    $("admin-ops-refresh")?.addEventListener("click", () => void loadAdminOperations());
+    $("admin-offline-refresh")?.addEventListener("click", () => void loadOfflineAttendanceQueue("admin"));
+    $("teacher-offline-refresh")?.addEventListener("click", () => void loadOfflineAttendanceQueue("teacher"));
+    $("admin-offline-pending-tbody")?.addEventListener("click", event => void handleOfflineAttendanceReview(event));
+    $("teacher-offline-pending-tbody")?.addEventListener("click", event => void handleOfflineAttendanceReview(event));
     $("admin-user-role")?.addEventListener("change", updateAdminCreationControls);
     $("admin-governance-controls")?.addEventListener("change", event => {
         const input = event.target.closest("input[data-feature-key]");
@@ -5368,13 +5924,33 @@ function setupEvents() {
         toast(tr("attendanceDeleted"), "success");
     });
 
-    $("students-tbody").addEventListener("click", event => {
-        const editFace = event.target.closest("[data-edit-student-face]");
-        if (editFace) {
-            beginFaceUpdate(editFace.dataset.editStudentFace);
+    $("students-tbody").addEventListener("click", async event => {
+        const deactivate = event.target.closest("[data-deactivate-student]");
+        if (deactivate) {
+            if (state.user?.role !== "guru") return;
+            const nisn = deactivate.dataset.deactivateStudent;
+            const confirmed = await openAppDialog({
+                title: "Nonaktifkan akun siswa?",
+                description: "Siswa tidak dapat login sampai Admin mengaktifkannya kembali. Riwayat presensi tetap disimpan.",
+                confirmLabel: "Nonaktifkan", cancelLabel: "Batal", danger: true, icon: "!"
+            });
+            if (confirmed === null) return;
+            deactivate.disabled = true;
+            try {
+                await cloudRequest("/api/students", { method: "PATCH", body: { action: "deactivate", nisn } });
+                state.students = state.students.filter(student => student.nisn !== nisn);
+                renderStudentList();
+                toast("Akun siswa dinonaktifkan. Admin tetap dapat mengaktifkannya kembali.", "success");
+            } catch (error) {
+                toastAdminError(error);
+            } finally {
+                deactivate.disabled = false;
+            }
             return;
         }
-        });
+        const editFace = event.target.closest("[data-edit-student-face]");
+        if (editFace) beginFaceUpdate(editFace.dataset.editStudentFace);
+    });
 
     $("btn-map").addEventListener("click", openMap);
     $("close-map").addEventListener("click", () => {
@@ -5417,14 +5993,36 @@ function setupEvents() {
     window.addEventListener("beforeunload", clearSplashTimers, { once: true });
 
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden) stopAllCameras();
+        if (document.hidden) {
+            stopAllCameras();
+            return;
+        }
+        updateOfflineConnectionState();
+        if (state.user?.role === "siswa") void checkNetworkHeartbeat();
+    });
+    window.addEventListener("offline", updateOfflineConnectionState);
+    window.addEventListener("online", () => {
+        updateOfflineConnectionState();
+        // Let the heartbeat confirm API reachability before flushing the local queue.
+        // This avoids retrying while a device is connected to captive or broken Wi-Fi.
+        void checkNetworkHeartbeat();
     });
     window.addEventListener("pagehide", stopAllCameras);
     window.addEventListener("beforeunload", stopAllCameras);
     window.addEventListener("hashchange", handleHashRoute);
 }
 
+function registerOfflineAppShell() {
+    if (!("serviceWorker" in navigator) || !window.isSecureContext) return;
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(error => {
+            console.warn("Amanah ID offline shell could not be registered:", error);
+        });
+    }, { once: true });
+}
+
 function initialize() {
+    registerOfflineAppShell();
     // Bind controls before optional rendering/localization so one startup error
     // cannot leave the entire interface looking interactive but inert.
     try {

@@ -108,15 +108,76 @@ export default async function handler(req, res) {
         try {
             if (!await verifyTeacherSession(req)) return jsonError(res, 403, "Teacher role is required");
         } catch (error) {
-            console.error("Student face update authorization failed:", error);
+            console.error("Student PATCH authorization failed:", error);
             return jsonSupabaseError(res, error, "Unable to validate teacher session");
         }
+
+        const body = req.body || {};
+        if (body.action === "deactivate") {
+            if (!rateLimit(req, "students:PATCH:deactivate", 12, 60_000, res)) {
+                return jsonError(res, 429, "Terlalu banyak perubahan status akun. Coba lagi sebentar.");
+            }
+            try {
+                const features = await getFeatureFlags();
+                if (!features.account_deactivation) {
+                    return featureDisabled(res, "account_deactivation", "Penonaktifan akun sedang dinonaktifkan");
+                }
+                if (!parseNisn(body.nisn)) return jsonError(res, 400, "NISN siswa tidak valid");
+
+                const teacherRows = await supabaseRequest(
+                    "teachers?select=id,email&email=eq." + encodeURIComponent(getSession(req)?.email || "") +
+                    "&is_active=eq.true&limit=1"
+                );
+                const teacher = teacherRows?.[0];
+                if (!teacher) return jsonError(res, 403, "Akun Guru aktif diperlukan");
+
+                const students = await supabaseRequest(
+                    "students?select=id,nisn,email,is_active,homeroom_teacher_id&nisn=eq." +
+                    encodeURIComponent(body.nisn) + "&is_active=eq.true&limit=1"
+                );
+                const student = students?.[0];
+                if (!student || student.homeroom_teacher_id !== teacher.id) {
+                    return jsonError(res, 404, "Siswa tidak ditemukan pada kelas binaan Guru ini");
+                }
+
+                const updated = await supabaseRequest(
+                    "students?id=eq." + encodeURIComponent(student.id) + "&select=id,nisn,email,is_active",
+                    {
+                        method: "PATCH",
+                        headers: { Prefer: "return=representation" },
+                        body: JSON.stringify({ is_active: false })
+                    }
+                );
+                const result = Array.isArray(updated) ? updated[0] : null;
+                if (!result) return jsonError(res, 409, "Status siswa tidak berhasil diubah");
+
+                await writeAuditLog(getSession(req), "student.deactivate_by_homeroom_teacher",
+                    "students", student.id, {
+                        nisn: student.nisn,
+                        account_email: student.email,
+                        is_active: false
+                    });
+                return res.status(200).json({ ok: true, is_active: false, nisn: student.nisn });
+            } catch (error) {
+                console.error("Teacher student deactivation failed:", error);
+                return jsonSupabaseError(res, error, "Tidak dapat menonaktifkan akun siswa");
+            }
+        }
+
         if (!rateLimit(req, "students:PATCH:faces", 10, 60_000, res)) {
             return jsonError(res, 429, "Too many face update attempts. Try again later.");
         }
-        const features = await getFeatureFlags();
-        if (!features.face_enrollment) return featureDisabled(res, "face_enrollment", "Pendaftaran wajah sedang dinonaktifkan");
-        const body = req.body || {};
+        let features;
+        try {
+            features = await getFeatureFlags();
+        } catch (error) {
+            console.error("Student face enrollment policy failed:", error);
+            return jsonSupabaseError(res, error, "Unable to load student face-enrollment policy");
+        }
+        if (!features.face_enrollment) {
+            return featureDisabled(res, "face_enrollment", "Pendaftaran wajah sedang dinonaktifkan");
+        }
+
         const nisn = body.nisn;
         const faceEmbeddings = normalizeFaceEmbeddings(body.face_embeddings, body.model_key);
         if (!parseNisn(nisn) || !faceEmbeddings) {
@@ -124,12 +185,14 @@ export default async function handler(req, res) {
         }
         try {
             const teacherRows = await supabaseRequest(
-                "teachers?select=id&email=eq." + encodeURIComponent(getSession(req)?.email || "") + "&is_active=eq.true&limit=1"
+                "teachers?select=id&email=eq." + encodeURIComponent(getSession(req)?.email || "") +
+                "&is_active=eq.true&limit=1"
             );
             const teacher = teacherRows?.[0];
             if (!teacher) return jsonError(res, 403, "An active teacher account is required");
             const students = await supabaseRequest(
-                "students?select=id,nisn,name,homeroom_teacher_id&nisn=eq." + encodeURIComponent(nisn) + "&is_active=eq.true&limit=1"
+                "students?select=id,nisn,name,homeroom_teacher_id&nisn=eq." +
+                encodeURIComponent(nisn) + "&is_active=eq.true&limit=1"
             );
             if (!students.length || students[0].homeroom_teacher_id !== teacher.id) {
                 return jsonError(res, 404, "Student was not found in your homeroom");
@@ -153,7 +216,11 @@ export default async function handler(req, res) {
                 sample_count: faceEmbeddings.length,
                 dimensions: FACE_EMBEDDING_DIMENSIONS
             });
-            return res.status(200).json({ student: updated[0], face_model: FACE_MODEL_KEY, embedding_dimensions: FACE_EMBEDDING_DIMENSIONS });
+            return res.status(200).json({
+                student: updated[0],
+                face_model: FACE_MODEL_KEY,
+                embedding_dimensions: FACE_EMBEDDING_DIMENSIONS
+            });
         } catch (error) {
             console.error("Student ArcFace update failed:", error);
             return jsonSupabaseError(res, error, "Unable to update student face data");

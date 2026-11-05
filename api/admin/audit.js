@@ -53,9 +53,10 @@ export default async function handler(req, res) {
                 return day.toISOString().slice(0, 10);
             });
             const activeSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-            const [students, teachers, today, activeStudents, activeTeachers, activeAdmins, trendCounts] = await Promise.all([
+            const [students, teachers, admins, today, activeStudents, activeTeachers, activeAdmins, trendCounts] = await Promise.all([
                 supabaseCount("students?select=id&is_active=eq.true"),
                 supabaseCount("teachers?select=id&is_active=eq.true"),
+                supabaseCount("admin_users?select=id&is_active=eq.true"),
                 supabaseCount(`attendance?select=id&date=eq.${date}`),
                 supabaseCount(`students?select=id&is_active=eq.true&last_login_at=gte.${encodeURIComponent(activeSince)}`),
                 supabaseCount(`teachers?select=id&is_active=eq.true&last_login_at=gte.${encodeURIComponent(activeSince)}`),
@@ -66,11 +67,26 @@ export default async function handler(req, res) {
                 generated_at: new Date().toISOString(),
                 total_students: students ?? 0,
                 total_teachers: teachers ?? 0,
+                total_admins: admins ?? 0,
                 attendance_today: today ?? 0,
                 attendance_week: trendCounts.reduce((sum, value) => sum + (value ?? 0), 0),
                 active_users_week: (activeStudents ?? 0) + (activeTeachers ?? 0) + (activeAdmins ?? 0),
+                active_users_by_role: {
+                    admin: activeAdmins ?? 0,
+                    guru: activeTeachers ?? 0,
+                    siswa: activeStudents ?? 0
+                },
+                active_accounts_by_role: {
+                    admin: admins ?? 0,
+                    guru: teachers ?? 0,
+                    siswa: students ?? 0
+                },
                 trend: dates.map((day, index) => ({ date: day, count: trendCounts[index] ?? 0 })),
-                health: { supabase: "ok", vercel: "ok", fonnte: process.env.FONNTE_TOKEN && String(process.env.FONNTE_TEST_RECIPIENTS || "").split(",").some(value => /^628\d{8,13}$/.test(value.replace(/\D/g, ""))) ? "ready" : "not_configured" }
+                health: {
+                    supabase: "ok",
+                    vercel: typeof process.env.VERCEL === "string" ? "ok" : "unknown",
+                    fonnte: typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length > 0 ? "configured" : "not_configured"
+                }
             });
         } catch (error) {
             console.error("Admin dashboard stats failed:", error);
