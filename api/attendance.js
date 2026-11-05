@@ -320,7 +320,7 @@ export default async function handler(req, res) {
                         process: providerResult?.process || "pending"
                     };
                 } catch (error) {
-                    const uncertain = ["FONNTE_TIMEOUT", "FONNTE_NETWORK_ERROR"].includes(error?.code);
+                    const uncertain = ["FONNTE_TIMEOUT", "FONNTE_NETWORK_ERROR", "FONNTE_UNCERTAIN_RESPONSE"].includes(error?.code);
                     const status = uncertain ? "unknown" : "failed";
                     console.error("Attendance WhatsApp notification failed:", error);
                     await updateAttendanceWhatsAppStatus(attendanceId, {
