@@ -329,6 +329,7 @@ if (!html.includes('rel="manifest" href="/manifest.webmanifest"') ||
     !serviceWorker.includes('url.pathname.startsWith("/api/")') ||
     !serviceWorker.includes('amanah-face-runtime-v1') ||
     !serviceWorker.includes('onnxruntime-web@1.31.1/dist/') ||
+    !faceEngineSource.includes('await navigator.storage?.persist?.()') ||
     !js.includes("navigator.storage?.persist?.()") ||
     !js.includes("attendanceConnectionFailure") ||
     !js.includes("async function loadAdminRoleActivity") ||
