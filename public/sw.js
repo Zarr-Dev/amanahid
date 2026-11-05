@@ -34,7 +34,13 @@ self.addEventListener("fetch", event => {
     const request = event.request;
     if (request.method !== "GET") return;
     const url = new URL(request.url);
-    if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+    const isSameOrigin = url.origin === self.location.origin;
+    const isPinnedFaceRuntime =
+        (url.hostname === "cdn.jsdelivr.net" || url.hostname === "unpkg.com") &&
+        url.pathname.includes("/onnxruntime-web@1.31.1/dist/") &&
+        /\.(?:js|mjs|wasm)$/.test(url.pathname);
+    if (!isSameOrigin && !isPinnedFaceRuntime) return;
+    if (isSameOrigin && url.pathname.startsWith("/api/")) return;
 
     if (request.mode === "navigate") {
         event.respondWith((async () => {
@@ -55,7 +61,24 @@ self.addEventListener("fetch", event => {
         return;
     }
 
-    if (/\.(?:css|js|svg|png|webmanifest)$/.test(url.pathname)) {
+    if (isPinnedFaceRuntime) {
+        event.respondWith((async () => {
+            const cache = await caches.open("amanah-face-runtime-v1");
+            try {
+                const response = await fetch(request);
+                if (response.ok && (response.type === "cors" || response.type === "basic")) {
+                    await cache.put(request, response.clone());
+                    return response;
+                }
+                return (await cache.match(request)) || response;
+            } catch {
+                return (await cache.match(request)) || new Response("", { status: 503 });
+            }
+        })());
+        return;
+    }
+
+    if (isSameOrigin && /\.(?:css|js|svg|png|webmanifest)$/.test(url.pathname)) {
         event.respondWith((async () => {
             const cache = await caches.open(CACHE_NAME);
             try {
