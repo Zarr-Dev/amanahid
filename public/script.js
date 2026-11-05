@@ -1632,6 +1632,7 @@ const ADMIN_VIEW_TITLES = {
     "admin-view-users": "schoolUsers",
     "admin-view-settings": "adminSchoolSettings",
     "admin-view-tests": "adminTestToolsTitle",
+    "admin-view-ops": "Pusat operasional",
     "admin-view-audit": "adminAudit",
     "admin-view-profile": "changeAdminPassword"
 };
@@ -1665,6 +1666,10 @@ function showAdminView(viewId) {
     if (viewId === "admin-view-audit") void loadAdminAudit();
     if (viewId === "admin-view-dashboard") void loadAdminFeatures();
     if (viewId === "admin-view-tests") void loadAdminTestTools();
+    if (viewId === "admin-view-ops") {
+        void loadAdminOperations();
+        void loadOfflineAttendanceQueue("admin");
+    }
     if (viewId !== "admin-view-tests") stopAdminTestCamera();
 }
 
@@ -5348,6 +5353,8 @@ function setupEvents() {
     $("admin-export-users").addEventListener("click", () => exportTableCsv("admin-users-tbody", "amanah-id-daftar-akun.csv"));
     $("admin-export-audit").addEventListener("click", () => exportTableCsv("admin-audit-tbody", "amanah-id-audit-aktivitas.csv"));
     $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
+    $("admin-ops-refresh")?.addEventListener("click", () => void loadAdminOperations());
+    $("admin-offline-refresh")?.addEventListener("click", () => void loadOfflineAttendanceQueue("admin"));
     $("admin-user-role")?.addEventListener("change", updateAdminCreationControls);
     $("admin-governance-controls")?.addEventListener("change", event => {
         const input = event.target.closest("input[data-feature-key]");
