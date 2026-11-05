@@ -53,13 +53,17 @@ function attendanceWhatsAppResult(row) {
 }
 
 async function updateAttendanceWhatsAppStatus(attendanceId, fields) {
-    if (!attendanceId) return;
+    if (!attendanceId) return false;
     try {
         await supabaseRequest(`attendance?id=eq.${encodeURIComponent(attendanceId)}`, {
             method: "PATCH", headers: { Prefer: "return=minimal" },
             body: JSON.stringify({ ...fields, parent_whatsapp_updated_at: new Date().toISOString() })
         });
-    } catch (error) { console.error("Attendance WhatsApp status could not be saved:", error); }
+        return true;
+    } catch (error) {
+        console.error("Attendance WhatsApp status could not be saved:", error);
+        return false;
+    }
 }
 
 function isLate(time, schedule) {
@@ -283,9 +287,13 @@ export default async function handler(req, res) {
                     })
                 }
                 );
-            await writeAuditLog(getSession(req), "attendance.create", "attendance", inserted[0]?.id, {
-                student_id: student.id, date, method: "face-gps"
-            });
+            try {
+                await writeAuditLog(getSession(req), "attendance.create", "attendance", inserted[0]?.id, {
+                    student_id: student.id, date, method: "face-gps"
+                });
+            } catch (auditError) {
+                console.error("Attendance audit could not be saved after the attendance record was created:", auditError);
+            }
 
             let whatsapp = { status: "not_applicable", queued: false, delivered: false, skipped: true };
             const attendanceId = inserted[0]?.id;
@@ -308,17 +316,27 @@ export default async function handler(req, res) {
                 await updateAttendanceWhatsAppStatus(attendanceId, { parent_whatsapp_status: "sending", parent_whatsapp_error: null });
                 try {
                     const providerResult = await sendWhatsApp(target, message);
-                    await updateAttendanceWhatsAppStatus(attendanceId, {
+                    const queueSaved = await updateAttendanceWhatsAppStatus(attendanceId, {
                         parent_whatsapp_status: "queued",
                         parent_whatsapp_request_id: providerResult?.requestid ? String(providerResult.requestid) : null,
                         parent_whatsapp_message_ids: Array.isArray(providerResult?.id) ? providerResult.id : [],
                         parent_whatsapp_error: null
                     });
-                    whatsapp = {
-                        status: "queued", queued: true, delivered: false,
-                        request_id: providerResult?.requestid ?? null,
-                        process: providerResult?.process || "pending"
-                    };
+                    if (!queueSaved) {
+                        await updateAttendanceWhatsAppStatus(attendanceId, {
+                            parent_whatsapp_status: "unknown",
+                            parent_whatsapp_request_id: providerResult?.requestid ? String(providerResult.requestid) : null,
+                            parent_whatsapp_message_ids: Array.isArray(providerResult?.id) ? providerResult.id : [],
+                            parent_whatsapp_error: "Provider accepted the message; local status needs review"
+                        });
+                        whatsapp = { status: "unknown", queued: false, delivered: false, skipped: false };
+                    } else {
+                        whatsapp = {
+                            status: "queued", queued: true, delivered: false,
+                            request_id: providerResult?.requestid ?? null,
+                            process: providerResult?.process || "pending"
+                        };
+                    }
                 } catch (error) {
                     const uncertain = ["FONNTE_TIMEOUT", "FONNTE_NETWORK_ERROR", "FONNTE_UNCERTAIN_RESPONSE"].includes(error?.code);
                     const status = uncertain ? "unknown" : "failed";
