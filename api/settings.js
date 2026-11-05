@@ -47,7 +47,7 @@ export default async function handler(req, res) {
                 api: "ok",
                 configuration: missing.length ? "missing" : "ok",
                 database: "not_checked",
-                whatsapp: typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length >= 10 ? "configured" : "not_configured"
+                whatsapp: typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length > 0 ? "configured" : "not_configured"
             },
             authentication: { configured: missing.length === 0 }
         };
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
         }
         const missing = getMissingAuthConfiguration();
 
-        const whatsapp = typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length >= 10 ? "configured" : "not_configured";
+        const whatsapp = typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length > 0 ? "configured" : "not_configured";
         if (missing.length) {
             const payload = {
                 ok: false,
