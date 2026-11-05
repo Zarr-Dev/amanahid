@@ -1458,6 +1458,7 @@ function showView(target) {
 
     const titles = {
         "view-presensi": "teacherDashboard", "view-database": "database", "view-formulir": "formulir",
+        "view-offline-review": "Review presensi offline",
         "view-s-presensi": "studentAttendance", "view-s-history": "studentHistory", "view-s-profile": "myProfile"
     };
     if (target.startsWith("view-s-")) $("student-page-title").textContent = tr(titles[target]);
@@ -1469,6 +1470,7 @@ function showView(target) {
         state.cloudDataPromise = loadCloudData();
     }
     if (target === "view-s-history") renderStudentHistory();
+    if (target === "view-offline-review" && state.user?.role === "guru") void loadOfflineAttendanceQueue("teacher");
 }
 
 function showAuth({ clearSession = true } = {}) {
@@ -1778,6 +1780,84 @@ async function loadAdminOperations() {
         features: featuresResult.status === "fulfilled" ? featuresResult.value : null,
         github: githubResult.status === "fulfilled" ? githubResult.value : null
     };
+}
+
+async function loadOfflineAttendanceQueue(audience = "admin") {
+    const isTeacher = audience === "teacher";
+    const tbody = $(isTeacher ? "teacher-offline-pending-tbody" : "admin-offline-pending-tbody");
+    const status = $(isTeacher ? "teacher-offline-status" : "admin-offline-status");
+    const empty = $(isTeacher ? "teacher-offline-empty" : "admin-offline-empty");
+    if (!tbody || !status) return;
+    status.textContent = "Memuat permintaan offline…";
+    try {
+        const result = await cloudRequest("/api/attendance?action=offline-pending");
+        const rows = Array.isArray(result?.pending) ? result.pending : [];
+        tbody.innerHTML = rows.map(item => {
+            const student = item.student || {};
+            const claimed = formatRoleActivityTime(item.claimed_at, "Waktu tidak tersedia");
+            const accuracy = Number.isFinite(item.gps?.accuracy) ? Math.round(item.gps.accuracy) + " m" : "—";
+            return '<tr><td><strong>' + safeText(student.name || "Siswa") +
+                '</strong><small>' + safeText(student.nisn || "") + '</small></td><td>' +
+                safeText(student.class_name || "—") + '</td><td>' + safeText(claimed) +
+                '</td><td>GPS ±' + safeText(accuracy) + '</td><td><span class="admin-offline-pending-badge">Menunggu review</span></td><td class="admin-account-actions">' +
+                '<button class="button secondary" type="button" data-offline-review="' + safeText(item.id) +
+                '" data-decision="approve">Setujui</button><button class="button danger-outline" type="button" data-offline-review="' +
+                safeText(item.id) + '" data-decision="reject">Tolak</button></td></tr>';
+        }).join("");
+        if (empty) empty.classList.toggle("hidden", rows.length > 0);
+        status.textContent = rows.length
+            ? rows.length + " permintaan menunggu pemeriksaan. Hasil liveness berasal dari perangkat dan belum diverifikasi server."
+            : "Tidak ada permintaan offline yang menunggu pemeriksaan.";
+    } catch (error) {
+        tbody.innerHTML = "";
+        if (empty) empty.classList.add("hidden");
+        status.textContent = error?.message || "Antrean offline belum tersedia. Pastikan migrasi offline sudah diterapkan.";
+    }
+}
+
+async function handleOfflineAttendanceReview(event) {
+    const button = event.target.closest("[data-offline-review]");
+    if (!button || button.disabled) return;
+    const id = button.dataset.offlineReview;
+    const decision = button.dataset.decision;
+    const approve = decision === "approve";
+    const result = await openAppDialog({
+        title: approve ? "Setujui presensi offline?" : "Tolak permintaan offline?",
+        description: approve
+            ? "Dengan persetujuan ini, sistem membuat catatan presensi resmi berdasarkan waktu perangkat. Pastikan identitas siswa dan alasan kehadiran telah diperiksa secara langsung."
+            : "Permintaan akan ditolak dan tidak akan menjadi catatan presensi resmi.",
+        fields: [{
+            name: "notes",
+            label: "Catatan pemeriksaan (wajib, minimal 8 karakter)",
+            type: "text",
+            placeholder: approve ? "Contoh: Siswa dikonfirmasi hadir oleh wali kelas." : "Tuliskan alasan penolakan.",
+            minLength: 8,
+            maxLength: 500
+        }],
+        confirmLabel: approve ? "Setujui & catat presensi" : "Tolak permintaan",
+        cancelLabel: "Batal",
+        danger: !approve,
+        icon: approve ? "✓" : "!"
+    });
+    if (result === null || !result.notes) return;
+    button.disabled = true;
+    try {
+        const response = await cloudRequest("/api/attendance", {
+            method: "POST",
+            body: { action: "offline-review", id, decision, notes: result.notes.trim() }
+        });
+        toast(approve
+            ? "Permintaan disetujui. Presensi resmi dibuat dan dicatat dalam audit."
+            : "Permintaan offline ditolak. Presensi resmi tidak dibuat.", "success");
+        const audience = state.user?.role === "guru" ? "teacher" : "admin";
+        await loadOfflineAttendanceQueue(audience);
+        if (state.user?.role === "admin") await loadAdminDashboard();
+        if (response?.whatsapp?.error) toast("Presensi dibuat, tetapi notifikasi WhatsApp orang tua gagal.", "warning");
+    } catch (error) {
+        toastAdminError(error);
+    } finally {
+        button.disabled = false;
+    }
 }
 
 async function loadAdminDashboard() {
@@ -5555,6 +5635,9 @@ function setupEvents() {
     $("admin-health-refresh").addEventListener("click", () => void loadAdminDashboard());
     $("admin-ops-refresh")?.addEventListener("click", () => void loadAdminOperations());
     $("admin-offline-refresh")?.addEventListener("click", () => void loadOfflineAttendanceQueue("admin"));
+    $("teacher-offline-refresh")?.addEventListener("click", () => void loadOfflineAttendanceQueue("teacher"));
+    $("admin-offline-pending-tbody")?.addEventListener("click", event => void handleOfflineAttendanceReview(event));
+    $("teacher-offline-pending-tbody")?.addEventListener("click", event => void handleOfflineAttendanceReview(event));
     $("admin-user-role")?.addEventListener("change", updateAdminCreationControls);
     $("admin-governance-controls")?.addEventListener("change", event => {
         const input = event.target.closest("input[data-feature-key]");
