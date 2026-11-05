@@ -1,28 +1,31 @@
-import { rateLimit, jsonError, jsonSupabaseError } from "../_lib/supabase.js";
+import { rateLimit, jsonError } from "../_lib/supabase.js";
 import { sendWhatsApp } from "../_lib/whatsapp.js";
 import { writeAuditLog } from "../_lib/audit.js";
 
 const DEFAULT_TEMPLATE = "Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.";
 
-function configuredRecipients() {
-    return String(process.env.FONNTE_TEST_RECIPIENTS || "")
-        .split(",")
-        .map(value => value.replace(/\D/g, ""))
-        .filter(value => /^628\d{8,13}$/.test(value))
-        .filter((value, index, all) => all.indexOf(value) === index)
-        .slice(0, 10);
+function normalizeTarget(value) {
+    if (typeof value !== "string") return "";
+    const digits = value.replace(/\\D/g, "");
+    if (/^08\\d{8,13}$/.test(digits)) return digits.replace(/^08/, "628");
+    return /^628\\d{8,13}$/.test(digits) ? digits : "";
+}
+
+function fonnteConfigured() {
+    return typeof process.env.FONNTE_TOKEN === "string" &&
+        process.env.FONNTE_TOKEN.trim().length >= 10;
 }
 
 export async function handleAdminTestTools(req, res, admin) {
-    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     res.setHeader("X-Content-Type-Options", "nosniff");
 
-    const recipients = configuredRecipients();
     if (req.method === "GET") {
         return res.status(200).json({
-            fonnte_configured: Boolean(process.env.FONNTE_TOKEN),
-            allowlist_configured: recipients.length > 0,
-            allowed_recipients: recipients,
+            provider: "Fonnte",
+            fonnte_configured: fonnteConfigured(),
+            test_send_enabled: true,
+            recipient_allowlist_required: false,
             template: DEFAULT_TEMPLATE
         });
     }
@@ -32,41 +35,64 @@ export async function handleAdminTestTools(req, res, admin) {
         return jsonError(res, 405, "Method not allowed");
     }
     if (!rateLimit(req, "admin:fonnte-test-send", 2, 60_000, res)) {
-        return jsonError(res, 429, "Only two WhatsApp test messages are allowed per minute");
+        return jsonError(res, 429, "Hanya dua pesan uji WhatsApp yang diizinkan setiap menit.");
     }
+
     const body = req.body || {};
-    const target = typeof body.target === "string" ? body.target.replace(/\D/g, "") : "";
+    const target = normalizeTarget(body.target);
     const message = typeof body.message === "string" ? body.message.trim() : "";
-    if (body.confirm !== true) return jsonError(res, 400, "Explicit confirmation is required");
-    if (!recipients.includes(target)) return jsonError(res, 403, "Recipient is not on the configured Fonnte test allowlist");
-    if (!process.env.FONNTE_TOKEN) return jsonError(res, 503, "FONNTE_TOKEN is not configured");
-    if (message.length < 10 || message.length > 300 || /[\u0000-\u001F\u007F]/.test(message)) {
-        return jsonError(res, 400, "Test message must contain 10 to 300 printable characters");
+    if (body.confirm !== true) {
+        return res.status(400).json({ code: "FONNTE_CONFIRMATION_REQUIRED", error: "Centang persetujuan sebelum mengirim pesan uji." });
+    }
+    if (!target) {
+        return res.status(400).json({ code: "FONNTE_RECIPIENT_INVALID", error: "Nomor tujuan harus menggunakan format 08 atau 628 yang valid." });
+    }
+    if (message.length < 10 || message.length > 300 || /[\\u0000-\\u001F\\u007F]/.test(message)) {
+        return res.status(400).json({ code: "FONNTE_MESSAGE_INVALID", error: "Pesan uji harus terdiri dari 10–300 karakter yang dapat dicetak." });
+    }
+    if (!fonnteConfigured()) {
+        return res.status(503).json({
+            code: "FONNTE_TOKEN_MISSING",
+            error: "FONNTE_TOKEN di Vercel Production belum berisi nilai. Isi token di Project Settings → Environment Variables, lalu redeploy Production."
+        });
     }
 
     try {
-        await sendWhatsApp(target, message);
+        const providerResult = await sendWhatsApp(target, message);
+        try {
+            await writeAuditLog(admin, "admin.fonnte_test.send", "whatsapp_test", null, {
+                recipient_suffix: target.slice(-4),
+                message_length: message.length,
+                result: "accepted_by_provider"
+            });
+        } catch (auditError) {
+            console.error("Fonnte test audit failed after provider acceptance:", auditError);
+        }
+        return res.status(200).json({
+            ok: true,
+            accepted: true,
+            provider: "Fonnte",
+            provider_status: providerResult?.status === true || providerResult?.status === "true" ? "accepted" : "unknown",
+            message: "Fonnte menerima permintaan pesan uji. Periksa perangkat WhatsApp tujuan untuk memastikan pesan diterima."
+        });
     } catch (error) {
         console.error("Admin Fonnte test failed:", error);
         try {
             await writeAuditLog(admin, "admin.fonnte_test.failed", "whatsapp_test", null, {
                 recipient_suffix: target.slice(-4),
-                reason: String(error?.message || "provider error").slice(0, 100)
+                message_length: message.length,
+                reason_code: String(error?.code || "FONNTE_ERROR").slice(0, 50)
             });
         } catch (auditError) {
             console.error("Fonnte test audit failed:", auditError);
         }
-        return jsonError(res, 502, "Fonnte could not accept the test message");
+        const code = String(error?.code || "FONNTE_ERROR");
+        const status = error?.status === 504 ? 504 : 502;
+        const messageText = code === "FONNTE_TIMEOUT"
+            ? "Permintaan ke Fonnte melewati batas waktu. Status pengiriman belum dapat dipastikan."
+            : code === "FONNTE_NETWORK_ERROR"
+                ? "Layanan Fonnte tidak dapat dijangkau. Periksa koneksi atau coba kembali."
+                : "Fonnte menolak permintaan pesan uji. Periksa status perangkat dan token pada Fonnte.";
+        return res.status(status).json({ code, error: messageText });
     }
-    try {
-        await writeAuditLog(admin, "admin.fonnte_test.send", "whatsapp_test", null, {
-            recipient_suffix: target.slice(-4),
-            message_length: message.length,
-            result: "accepted"
-        });
-    } catch (auditError) {
-        // A post-send audit failure must not falsely report that the message itself failed.
-        console.error("Fonnte test audit failed after provider acceptance:", auditError);
-    }
-    return res.status(200).json({ ok: true, accepted: true });
 }
