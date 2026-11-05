@@ -5105,20 +5105,42 @@ function setupEvents() {
         }
     });
     $("admin-users-tbody").addEventListener("click", async event => {
-        const button = event.target.closest("[data-admin-edit], [data-admin-disable]");
+        const button = event.target.closest("[data-admin-edit], [data-admin-disable], [data-admin-set-active], [data-admin-permanent-delete]");
         if (!button) return;
-        const id = button.dataset.adminEdit || button.dataset.adminDisable;
+        const id = button.dataset.adminEdit || button.dataset.adminDisable || button.dataset.adminSetActive || button.dataset.adminPermanentDelete;
         const table = button.dataset.table;
-        if (button.hasAttribute("data-admin-disable")) {
+        if (button.hasAttribute("data-admin-set-active") || button.hasAttribute("data-admin-disable")) {
+            const nextActive = button.dataset.active !== "true";
             const confirmed = await openAppDialog({
-                title: "Nonaktifkan akun?",
-                description: "Akun tidak dapat digunakan sampai diaktifkan kembali. Tindakan ini tercatat dalam audit aktivitas.",
-                confirmLabel: "Nonaktifkan", cancelLabel: "Batal", danger: true, icon: "!"
+                title: nextActive ? "Aktifkan kembali akun?" : "Nonaktifkan akun?",
+                description: nextActive
+                    ? "Akun dapat login kembali setelah statusnya diaktifkan."
+                    : "Akun segera kehilangan akses. Jika sedang login, browser akan mengeluarkan akun pada pemeriksaan sesi berikutnya.",
+                confirmLabel: nextActive ? "Aktifkan" : "Nonaktifkan",
+                cancelLabel: "Batal", danger: !nextActive, icon: nextActive ? "✓" : "!"
             });
             if (confirmed === null) return;
             try {
-                await cloudRequest("/api/admin/users", { method: "DELETE", body: { id, table } });
-                toast("Akun berhasil dinonaktifkan.", "success");
+                await cloudRequest("/api/admin/users", {
+                    method: "PUT",
+                    body: { action: "set_active", id, table, is_active: nextActive }
+                });
+                toast(nextActive ? "Akun berhasil diaktifkan kembali." : "Akun berhasil dinonaktifkan.", "success");
+            } catch (error) { toastAdminError(error); return; }
+        } else if (button.hasAttribute("data-admin-permanent-delete")) {
+            const confirmed = await openAppDialog({
+                title: "Hapus akun secara permanen?",
+                description: "Tindakan ini tidak dapat dibatalkan. Data dengan riwayat presensi, pengajuan ketidakhadiran, notifikasi, atau relasi Wali Kelas akan ditolak agar arsip sekolah tidak rusak.",
+                fields: [{ name: "confirm_email", label: "Ketik email akun untuk konfirmasi: " + (button.dataset.email || ""), type: "email", placeholder: button.dataset.email || "", autocomplete: "off", minLength: 3 }],
+                confirmLabel: "Hapus permanen", cancelLabel: "Batal", danger: true, icon: "!"
+            });
+            if (!confirmed?.confirm_email) return;
+            try {
+                await cloudRequest("/api/admin/users?action=permanent-delete", {
+                    method: "POST",
+                    body: { id, table, confirm_email: confirmed.confirm_email.trim() }
+                });
+                toast("Akun berhasil dihapus permanen.", "success");
             } catch (error) { toastAdminError(error); return; }
         } else {
             const fields = [
