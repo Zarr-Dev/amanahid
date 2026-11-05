@@ -39,6 +39,12 @@ async function setAccountActive(res, admin, body) {
         table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
         is_active: { type: "boolean", required: true }
     }, body)) return;
+    if (body.is_active === false) {
+        const features = await getFeatureFlags();
+        if (!features.account_deactivation) {
+            return featureDisabled(res, "account_deactivation", "Penonaktifan akun sedang dinonaktifkan");
+        }
+    }
     const path = body.table + "?id=eq." + encodeURIComponent(body.id) + "&select=id,email,is_active";
     const rows = await supabaseRequest(path, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ is_active: body.is_active }) });
     const updated = Array.isArray(rows) ? rows[0] : null;
