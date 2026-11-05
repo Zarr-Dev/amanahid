@@ -79,6 +79,11 @@ create table if not exists public.attendance (
     method text not null default 'face-gps',
     idempotency_key uuid,
     created_at timestamptz not null default now(),
+    parent_whatsapp_status text not null default 'not_applicable',
+    parent_whatsapp_request_id text,
+    parent_whatsapp_message_ids jsonb not null default '[]'::jsonb,
+    parent_whatsapp_error text,
+    parent_whatsapp_updated_at timestamptz,
     constraint attendance_student_date_unique unique (student_id, date)
 );
 
@@ -102,6 +107,8 @@ create table if not exists public.school_settings (
     timezone text not null default 'Asia/Jakarta',
     entry_time time not null default '07:00',
     late_tolerance_min integer not null default 15 check (late_tolerance_min between 0 and 180),
+    attendance_whatsapp_enabled boolean not null default true,
+    attendance_whatsapp_template text not null default 'Assalamu''alaikum, Bapak/Ibu. Kami informasikan bahwa {name} telah tercatat hadir di Al-Fityan School pada {date} pukul {time}. Terima kasih.',
     updated_by text not null default 'system',
     updated_at timestamptz not null default now()
 );
@@ -109,6 +116,16 @@ create table if not exists public.school_settings (
 alter table public.school_settings add column if not exists timezone text not null default 'Asia/Jakarta';
 alter table public.school_settings add column if not exists entry_time time not null default '07:00';
 alter table public.school_settings add column if not exists late_tolerance_min integer not null default 15;
+alter table public.school_settings add column if not exists attendance_whatsapp_enabled boolean not null default true;
+alter table public.school_settings add column if not exists attendance_whatsapp_template text not null default 'Assalamu''alaikum, Bapak/Ibu. Kami informasikan bahwa {name} telah tercatat hadir di Al-Fityan School pada {date} pukul {time}. Terima kasih.';
+alter table public.attendance add column if not exists parent_whatsapp_status text not null default 'not_applicable';
+alter table public.attendance add column if not exists parent_whatsapp_request_id text;
+alter table public.attendance add column if not exists parent_whatsapp_message_ids jsonb not null default '[]'::jsonb;
+alter table public.attendance add column if not exists parent_whatsapp_error text;
+alter table public.attendance add column if not exists parent_whatsapp_updated_at timestamptz;
+create index if not exists idx_attendance_parent_whatsapp_status
+    on public.attendance (parent_whatsapp_status, date desc)
+    where parent_whatsapp_status in ('failed', 'unknown', 'sending');
 
 insert into public.school_settings (id, lat, lng, radius)
 values ('00000000-0000-0000-0000-000000000001'::uuid, -6.253590517740096, 106.60299502682263, 50)
