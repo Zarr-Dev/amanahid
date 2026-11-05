@@ -11,7 +11,7 @@ const requiredFiles = [
     "api/_lib/supabase.js", "api/_lib/validate.js", "api/_lib/whatsapp.js",
     "api/admin/login.js", "api/admin/users.js",
     "api/admin/settings.js", "api/admin/audit.js", "api/_lib/test-tools.js", "api/auth/login.js",
-    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261102003205_lockdown_direct_public_api_grants.sql", "supabase/migrations/20261103100000_add_homeroom_dispensation_and_medical_evidence.sql", "supabase/migrations/20261103120000_absence_evidence_before_submit_revoke_and_notifications.sql", "supabase/migrations/20261103180000_arcface_embedding_v2.sql", "supabase/migrations/20261105090000_create_offline_attendance_events.sql", "public/sw.js", "public/manifest.webmanifest", "supabase-demo-accounts.sql"
+    "api/absence.js", "supabase/migrations/20261029080000_create_absence_requests.sql", "supabase/migrations/20261029080500_unique_pending_absence_request.sql", "supabase/migrations/20261102003205_lockdown_direct_public_api_grants.sql", "supabase/migrations/20261103100000_add_homeroom_dispensation_and_medical_evidence.sql", "supabase/migrations/20261103120000_absence_evidence_before_submit_revoke_and_notifications.sql", "supabase/migrations/20261103180000_arcface_embedding_v2.sql", "supabase/migrations/20261105090000_create_offline_attendance_events.sql", "supabase/migrations/20261105110000_add_offline_attendance_attendance_index.sql", "public/sw.js", "public/manifest.webmanifest", "supabase-demo-accounts.sql"
 ];
 const missing = requiredFiles.filter(path => !existsSync(join(root, path)));
 if (missing.length) {
@@ -321,12 +321,25 @@ if (!js.includes("phase === \"pending\" ? \"disabled\"") || !js.includes("featur
 const offlineMigration = readFileSync(join(root, "supabase/migrations/20261105090000_create_offline_attendance_events.sql"), "utf8");
 const offlineApi = readFileSync(join(root, "api/attendance.js"), "utf8");
 const serviceWorker = readFileSync(join(root, "public/sw.js"), "utf8");
+const vercelConfig = readFileSync(join(root, "vercel.json"), "utf8");
 if (!html.includes('rel="manifest" href="/manifest.webmanifest"') ||
     !js.includes('navigator.serviceWorker.register("/sw.js"') ||
     !offlineMigration.includes("pending_review") ||
     !offlineApi.includes('req.body?.action === "offline-pending"') ||
     !offlineApi.includes('req.body?.action === "offline-review"') ||
-    !serviceWorker.includes('url.pathname.startsWith("/api/")')) {
+    !serviceWorker.includes('url.pathname.startsWith("/api/")') ||
+    !serviceWorker.includes('amanah-face-runtime-v1') ||
+    !serviceWorker.includes('onnxruntime-web@1.31.1/dist/') ||
+    !vercelConfig.includes("https://huggingface.co") ||
+    !vercelConfig.includes("https://cas-bridge.xethub.hf.co") ||
+    !faceEngineSource.includes('await navigator.storage?.persist?.()') ||
+    !js.includes("navigator.storage?.persist?.()") ||
+    !js.includes("attendanceConnectionFailure") ||
+    !js.includes("async function loadAdminRoleActivity") ||
+    !html.includes('id="admin-activity-tbody"') ||
+    !html.includes("admin-audit-activity-table") ||
+    /admin-activity-(?:admin|teacher|student)-tbody/.test(html + js) ||
+    !css.includes("#admin-view-audit .admin-audit-activity-table")) {
     console.error("Build check failed: offline attendance queue or PWA app-shell wiring is incomplete.");
     process.exit(1);
 }

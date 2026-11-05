@@ -309,15 +309,18 @@ async function reviewOfflineAttendance(req, res, role, session) {
             return jsonError(res, 503, "The database did not confirm the offline attendance review");
         }
 
-        let whatsapp = { sent: false, skipped: true };
+        let whatsapp = { sent: false, accepted: false, queued: false, delivered: false, skipped: true };
         if (reviewed.official_attendance === true && reviewed.parent_whatsapp) {
             try {
                 const target = String(reviewed.parent_whatsapp).replace(/\D/g, "").replace(/^08/, "628");
                 const message = "Presensi offline " + reviewed.name + " (" + reviewed.nisn +
                     ") telah diverifikasi sekolah pada " + reviewed.attendance_date +
                     " pukul " + String(reviewed.attendance_time || "").slice(0, 8) + ".";
-                await sendWhatsApp(target, message);
-                whatsapp = { sent: true, skipped: false };
+                const providerResult = await sendWhatsApp(target, message);
+                whatsapp = {
+                    sent: false, accepted: true, queued: true, delivered: false, skipped: false,
+                    process: providerResult?.process || "pending", request_id: providerResult?.requestid ?? null
+                };
             } catch (error) {
                 console.error("Offline attendance parent notification failed:", error);
                 whatsapp = { sent: false, skipped: false, error: "WhatsApp notification failed" };
@@ -508,7 +511,7 @@ export default async function handler(req, res) {
                 }
                 return res.status(200).json({
                     attendance: normalizeAttendance(repeated[0]),
-                    whatsapp: { sent: false, skipped: true }
+                    whatsapp: { sent: false, accepted: false, queued: false, delivered: false, skipped: true }
                 });
             }
             const settingsRows = await supabaseRequest(
@@ -583,7 +586,7 @@ export default async function handler(req, res) {
                 if (existing[0].idempotency_key === idempotencyKey) {
                     return res.status(200).json({
                         attendance: normalizeAttendance(existing[0], settings, features),
-                        whatsapp: { sent: false, skipped: true }
+                        whatsapp: { sent: false, accepted: false, queued: false, delivered: false, skipped: true }
                     });
                 }
                 return failedAttendance(req, res, role, 409, {
@@ -611,13 +614,20 @@ export default async function handler(req, res) {
                 student_id: student.id, date, method: attendanceMethod
             });
 
-            let whatsapp = { sent: false, skipped: !student.parent_whatsapp || !features.parent_notifications, reason: features.parent_notifications ? undefined : "disabled_by_admin" };
+            let whatsapp = {
+                sent: false, accepted: false, queued: false, delivered: false,
+                skipped: !student.parent_whatsapp || !features.parent_notifications,
+                reason: features.parent_notifications ? undefined : "disabled_by_admin"
+            };
             if (student.parent_whatsapp && features.parent_notifications) {
                 const target = student.parent_whatsapp.replace(/\D/g, "").replace(/^08/, "628");
                 const message = `Presensi ${student.name} (${student.nisn}) berhasil tercatat pada ${date} pukul ${time} di Al-Fityan School.`;
                 try {
-                    await sendWhatsApp(target, message);
-                    whatsapp = { sent: true, skipped: false };
+                    const providerResult = await sendWhatsApp(target, message);
+                    whatsapp = {
+                        sent: false, accepted: true, queued: true, delivered: false, skipped: false,
+                        process: providerResult?.process || "pending", request_id: providerResult?.requestid ?? null
+                    };
                 } catch (error) {
                     console.error("Attendance WhatsApp notification failed:", error);
                     whatsapp = { sent: false, skipped: false, error: "WhatsApp notification failed" };
@@ -637,7 +647,7 @@ export default async function handler(req, res) {
                     if (repeated.length && repeated[0].students?.nisn === nisn) {
                         return res.status(200).json({
                             attendance: normalizeAttendance(repeated[0]),
-                            whatsapp: { sent: false, skipped: true }
+                            whatsapp: { sent: false, accepted: false, queued: false, delivered: false, skipped: true }
                         });
                     }
                 } catch (lookupError) {

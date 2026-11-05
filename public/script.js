@@ -212,7 +212,7 @@ const EXTRA_T = {
         testModelReady: "Model deteksi wajah siap.",
         testModelFailed: "Model AI gagal dimuat.",
         testWhatsappTitle: "Uji notifikasi WhatsApp",
-        testWhatsappDesc: "Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.",
+        testWhatsappDesc: "Masukkan nomor tujuan, periksa pesan, lalu centang persetujuan untuk mengirim satu pesan uji.",
         testWhatsappNumber: "Nomor uji WhatsApp",
         testWhatsappTemplate: "Template pesan",
         testWhatsappDefaultTemplate: "Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.",
@@ -220,9 +220,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "Saya menyetujui pengiriman satu pesan uji ke nomor yang ditampilkan.",
         testWhatsappSend: "Kirim satu pesan uji",
         testWhatsappSending: "Mengirim pesan uji...",
-        testWhatsappSent: "Permintaan pesan uji diterima penyedia WhatsApp.",
+        testWhatsappSent: "Fonnte menerima permintaan dan memasukkan pesan ke antrean. Periksa perangkat tujuan untuk memastikan pesan benar-benar diterima.",
         testWhatsappFailed: "Pesan uji gagal dikirim.",
-        testWhatsappBlocked: "Nomor tidak ada dalam daftar nomor uji yang diizinkan.",
+        testWhatsappBlocked: "Nomor tujuan tidak valid atau tidak dapat digunakan.",
         testGpsTitle: "Uji GPS dan geofence",
         testGpsDesc: "Periksa koordinat perangkat dan jaraknya dari titik sekolah yang tersimpan.",
         testGpsRun: "Uji lokasi saat ini",
@@ -238,8 +238,8 @@ const EXTRA_T = {
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
         testFonnteConfigured: "Token Fonnte tersedia",
         testFonnteMissing: "Token Fonnte belum dikonfigurasi",
-        testAllowlistEmpty: "Belum ada nomor uji yang disetujui Admin",
-        testAllowlistLoadFailed: "Gagal memuat daftar nomor uji",
+        testAllowlistEmpty: "Masukkan nomor tujuan untuk pengujian.",
+        testAllowlistLoadFailed: "Status pengujian nomor tidak dapat dimuat.",
         testGpsChecking: "Memeriksa lokasi perangkat...",
         testGpsInside: "Lokasi berada dalam radius sekolah dan akurasi memenuhi batas.",
         testGpsOutside: "Lokasi di luar radius atau akurasi tidak memenuhi batas.",
@@ -397,7 +397,7 @@ const EXTRA_T = {
         testModelReady: "Face detection model is ready.",
         testModelFailed: "The AI model could not be loaded.",
         testWhatsappTitle: "WhatsApp notification test",
-        testWhatsappDesc: "Preview the message and test only approved numbers.",
+        testWhatsappDesc: "Enter a recipient, review the message, then confirm consent to send one test request.",
         testWhatsappNumber: "Test WhatsApp number",
         testWhatsappTemplate: "Message template",
         testWhatsappDefaultTemplate: "Amanah ID: this is a WhatsApp notification test. No attendance or student data has been changed.",
@@ -405,9 +405,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "I approve sending one test message to the displayed number.",
         testWhatsappSend: "Send one test message",
         testWhatsappSending: "Sending test message...",
-        testWhatsappSent: "The WhatsApp provider accepted the test message request.",
+        testWhatsappSent: "Fonnte accepted the request and added it to its queue. Check the recipient device to confirm actual delivery.",
         testWhatsappFailed: "The test message could not be sent.",
-        testWhatsappBlocked: "This number is not on the approved test-recipient list.",
+        testWhatsappBlocked: "The recipient number is invalid or cannot be used.",
         testGpsTitle: "GPS and geofence test",
         testGpsDesc: "Check device coordinates and distance from the saved school location.",
         testGpsRun: "Test current location",
@@ -423,8 +423,8 @@ const EXTRA_T = {
         testWhatsappNoConsent: "Confirm consent before sending the test message.",
         testFonnteConfigured: "Fonnte token is configured",
         testFonnteMissing: "Fonnte token is not configured",
-        testAllowlistEmpty: "No approved test numbers configured",
-        testAllowlistLoadFailed: "Could not load the test-number list",
+        testAllowlistEmpty: "Enter a test recipient number.",
+        testAllowlistLoadFailed: "Could not check the test recipient status.",
         testGpsChecking: "Checking device location...",
         testGpsInside: "Location is within the school radius and accuracy meets the limit.",
         testGpsOutside: "Location is outside the radius or accuracy is insufficient.",
@@ -442,8 +442,8 @@ const EXTRA_T = {
         testMetricAccuracy: "Accuracy",
         testMetricDistance: "Distance to school",
         testFonnteList: "Approved test numbers:",
-        testAllowlistEmpty: "No Admin-approved test numbers are configured.",
-        testFonnteConfigHint: "Set FONNTE_TOKEN and FONNTE_TEST_RECIPIENTS in the Production environment to enable testing.",
+        testAllowlistEmpty: "Enter a test recipient number.",
+        testFonnteConfigHint: "Make sure FONNTE_TOKEN is set in the active Vercel environment, then redeploy after changing it.",
         testFonnteStatusUnavailable: "WhatsApp configuration status could not be checked.",
         faceMatchAmbiguous: "Two or more face profiles are too similar to distinguish safely. Ask a teacher to repeat the scan in better lighting.",
         faceQualityLow: "The face is not clear enough. Face the camera, move a little closer, and improve the lighting.",
@@ -585,7 +585,7 @@ const EXTRA_T = {
         testModelReady: "نموذج اكتشاف الوجه جاهز.",
         testModelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي.",
         testWhatsappTitle: "اختبار إشعارات واتساب",
-        testWhatsappDesc: "عاين الرسالة واختبر الأرقام المعتمدة فقط.",
+        testWhatsappDesc: "أدخل رقم المستلم، وراجع الرسالة، ثم أكد الموافقة لإرسال طلب اختبار واحد.",
         testWhatsappNumber: "رقم واتساب للاختبار",
         testWhatsappTemplate: "قالب الرسالة",
         testWhatsappDefaultTemplate: "أمانة ID: هذه رسالة اختبار لإشعارات واتساب. لم يتم تغيير أي سجل حضور أو بيانات طالب.",
@@ -593,9 +593,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "أوافق على إرسال رسالة اختبار واحدة إلى الرقم المعروض.",
         testWhatsappSend: "إرسال رسالة اختبار واحدة",
         testWhatsappSending: "جارٍ إرسال رسالة الاختبار...",
-        testWhatsappSent: "قبل مزود واتساب طلب إرسال رسالة الاختبار.",
+        testWhatsappSent: "قبلت Fonnte الطلب وأضافته إلى قائمة الإرسال. تحقق من جهاز المستلم لتأكيد وصول الرسالة فعليًا.",
         testWhatsappFailed: "تعذر إرسال رسالة الاختبار.",
-        testWhatsappBlocked: "هذا الرقم غير موجود في قائمة أرقام الاختبار المعتمدة.",
+        testWhatsappBlocked: "رقم المستلم غير صالح أو لا يمكن استخدامه.",
         testGpsTitle: "اختبار GPS والنطاق الجغرافي",
         testGpsDesc: "تحقق من إحداثيات الجهاز والمسافة عن موقع المدرسة المحفوظ.",
         testGpsRun: "اختبار الموقع الحالي",
@@ -611,8 +611,8 @@ const EXTRA_T = {
         testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار.",
         testFonnteConfigured: "رمز Fonnte مُعدّ",
         testFonnteMissing: "لم يتم إعداد رمز Fonnte",
-        testAllowlistEmpty: "لم تُضف أرقام اختبار معتمدة",
-        testAllowlistLoadFailed: "تعذر تحميل قائمة أرقام الاختبار",
+        testAllowlistEmpty: "أدخل رقمًا لاختباره.",
+        testAllowlistLoadFailed: "تعذر التحقق من رقم الاختبار.",
         testGpsChecking: "جارٍ التحقق من موقع الجهاز...",
         testGpsInside: "الموقع داخل نطاق المدرسة والدقة ضمن الحد المسموح.",
         testGpsOutside: "الموقع خارج النطاق أو الدقة غير كافية.",
@@ -630,8 +630,8 @@ const EXTRA_T = {
         testMetricAccuracy: "الدقة",
         testMetricDistance: "المسافة إلى المدرسة",
         testFonnteList: "أرقام الاختبار المعتمدة:",
-        testAllowlistEmpty: "لم يتم إعداد أرقام اختبار معتمدة من المسؤول.",
-        testFonnteConfigHint: "اضبط FONNTE_TOKEN وFONNTE_TEST_RECIPIENTS في بيئة Production لتفعيل الاختبار.",
+        testAllowlistEmpty: "أدخل رقمًا لاختباره.",
+        testFonnteConfigHint: "تأكد من ضبط FONNTE_TOKEN في بيئة Vercel النشطة، ثم أعد النشر بعد تغييره.",
         testFonnteStatusUnavailable: "تعذر التحقق من حالة إعداد WhatsApp.",
         faceMatchAmbiguous: "ملفان أو أكثر للوجه متشابهان جدًا ولا يمكن الاختيار بأمان. اطلب من المعلم إعادة المسح في إضاءة أفضل.",
         faceQualityLow: "الوجه غير واضح بما يكفي. واجه الكاميرا واقترب قليلًا وحسّن الإضاءة.",
@@ -2510,46 +2510,75 @@ function roleActivityActionLabel(action) {
     return labels[action] || String(action || "Aktivitas tercatat").replaceAll(".", " · ");
 }
 
-function renderRoleActivityTable(targetId, users) {
+function formatAdminActivityCompactTime(value, fallback) {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return fallback;
+    const locale = state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID";
+    return new Intl.DateTimeFormat(locale, {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+    }).format(date);
+}
+
+function renderRoleActivityTable(targetId, groups) {
     const table = $(targetId);
     if (!table) return;
-    if (!Array.isArray(users) || users.length === 0) {
-        table.innerHTML = '<tr><td colspan="3">Belum ada akun pada peran ini.</td></tr>';
+    const roles = [
+        { key: "admin", label: "Admin", className: "admin" },
+        { key: "guru", label: "Guru", className: "teacher" },
+        { key: "siswa", label: "Siswa", className: "student" }
+    ];
+    const rows = roles.flatMap(role => (Array.isArray(groups?.[role.key]) ? groups[role.key] : [])
+        .map(user => ({ ...user, activityRole: role })));
+    if (!rows.length) {
+        table.innerHTML = '<tr><td colspan="5">Belum ada akun untuk ditampilkan.</td></tr>';
         return;
     }
-    table.innerHTML = users.map(user => {
-        const account = '<strong>' + safeText(user.name || "—") + '</strong><br><small>' +
-            safeText(user.email || "Email tidak tersedia") + '</small><br><small>' +
-            safeText(user.is_active ? "Aktif" : "Nonaktif") + '</small>';
-        const login = safeText(formatRoleActivityTime(user.last_login_at, "Belum pernah login"));
-        const activity = user.last_activity_action
-            ? '<strong>' + safeText(roleActivityActionLabel(user.last_activity_action)) + '</strong><br><small>' +
-                safeText(formatRoleActivityTime(user.last_activity_at, "Waktu tidak tersedia")) + '</small>'
+    table.innerHTML = rows.map(user => {
+        const role = user.activityRole;
+        const name = safeText(user.name || "—");
+        const email = safeText(user.email || "Email tidak tersedia");
+        const active = user.is_active === true;
+        const loginText = formatAdminActivityCompactTime(user.last_login_at, "Belum pernah login");
+        const action = user.last_activity_action
+            ? safeText(roleActivityActionLabel(user.last_activity_action))
             : "Belum ada aktivitas tercatat";
-        return '<tr><td>' + account + '</td><td>' + login + '</td><td>' + activity + '</td></tr>';
+        const activityTime = user.last_activity_at
+            ? formatAdminActivityCompactTime(user.last_activity_at, "Waktu tidak tersedia")
+            : "";
+        return '<tr>' +
+            '<td><span class="admin-audit-role-chip is-' + role.className + '">' + safeText(role.label) + '</span></td>' +
+            '<td class="admin-audit-account"><strong>' + name + '</strong><small>' + email + '</small></td>' +
+            '<td><span class="admin-audit-status ' + (active ? "is-active" : "is-inactive") + '">' +
+                (active ? "Aktif" : "Nonaktif") + '</span></td>' +
+            '<td class="admin-audit-time">' + safeText(loginText) + '</td>' +
+            '<td class="admin-audit-activity"><strong>' + action + '</strong>' +
+                (activityTime ? '<small>' + safeText(activityTime) + '</small>' : '') + '</td>' +
+            '</tr>';
     }).join("");
 }
 
 async function loadAdminRoleActivity() {
     const status = $("admin-activity-status");
-    if (status) status.textContent = "Memuat riwayat login dan aktivitas per peran...";
+    const table = $("admin-activity-tbody");
+    if (status) status.textContent = "Memuat riwayat login dan aktivitas per peran…";
+    if (table) table.innerHTML = '<tr><td colspan="5">Memuat aktivitas…</td></tr>';
     try {
         const response = await cloudRequest("/api/admin/audit?action=activity");
         const groups = response?.activity || {};
-        renderRoleActivityTable("admin-activity-admin-tbody", groups.admin);
-        renderRoleActivityTable("admin-activity-teacher-tbody", groups.guru);
-        renderRoleActivityTable("admin-activity-student-tbody", groups.siswa);
+        renderRoleActivityTable("admin-activity-tbody", groups);
         if (status) {
+            const total = ["admin", "guru", "siswa"].reduce((sum, role) =>
+                sum + (Array.isArray(groups[role]) ? groups[role].length : 0), 0);
             const limit = Number(response?.audit_history_limit_per_role) || 1000;
-            status.textContent = "Login diambil dari catatan login akun. Aktivitas menunjukkan tindakan penting yang tercatat pada API, dengan pemeriksaan hingga " +
+            status.textContent = total.toLocaleString() +
+                " akun ditampilkan. Aktivitas adalah tindakan penting yang tercatat oleh API; pencarian riwayat memeriksa hingga " +
                 limit.toLocaleString() + " catatan audit terbaru per peran.";
         }
     } catch (error) {
         console.error("Admin role activity could not load:", error);
-        for (const id of ["admin-activity-admin-tbody", "admin-activity-teacher-tbody", "admin-activity-student-tbody"]) {
-            const table = $(id);
-            if (table) table.innerHTML = '<tr><td colspan="3">Riwayat aktivitas gagal dimuat.</td></tr>';
-        }
+        if (table) table.innerHTML = '<tr><td colspan="5">Riwayat aktivitas gagal dimuat.</td></tr>';
         if (status) status.textContent = "Riwayat aktivitas tidak dapat dimuat. Periksa koneksi dan akses Admin.";
     }
 }
@@ -2845,6 +2874,11 @@ async function saveOfflineAttendanceIntent(location) {
         faceModelKey: "auraface-glintr100-int8-v1",
         localStatus: "waiting_for_sync"
     };
+    try {
+        await navigator.storage?.persist?.();
+    } catch (error) {
+        console.info("Persistent offline storage was not granted; IndexedDB remains available for this browser session.", error);
+    }
     const db = await openOfflineAttendanceDb();
     await new Promise((resolve, reject) => {
         const tx = db.transaction("events", "readwrite");
@@ -2940,11 +2974,14 @@ async function syncOfflineAttendanceQueue() {
 
 function updateOfflineConnectionState() {
     const banner = $("network-banner");
-    if (!navigator.onLine && banner) {
-        banner.textContent = "Koneksi internet terputus. Amanah ID menyimpan permintaan offline secara lokal jika verifikasi kamera dan GPS selesai; permintaan tetap menunggu pemeriksaan.";
+    if (banner && !navigator.onLine) {
+        banner.textContent = "Koneksi internet terputus. Permintaan presensi yang memenuhi verifikasi kamera dan GPS dapat disimpan di perangkat, lalu disinkronkan saat layanan tersedia.";
         banner.classList.remove("hidden");
-    } else if (banner && state.networkHeartbeatFailures < 3) {
-        banner.textContent = "Koneksi ke layanan terputus. Periksa jaringan dan konfigurasi API.";
+    } else if (banner && state.networkHeartbeatFailures >= 3) {
+        banner.textContent = "Jaringan perangkat terhubung, tetapi layanan Amanah ID belum merespons. Data offline tetap tersimpan di perangkat.";
+        banner.classList.remove("hidden");
+    } else if (banner) {
+        banner.classList.add("hidden");
     }
     void updateOfflineAttendanceStatus();
 }
@@ -2978,7 +3015,7 @@ async function checkNetworkHeartbeat() {
             : $("network-status-teacher");
         badge?.classList.remove("hidden");
         if (state.networkHeartbeatFailures >= 3) {
-            $("network-banner")?.classList.remove("hidden");
+            updateOfflineConnectionState();
         }
     } finally {
         if (state.user === requestUser) state.networkHeartbeatBusy = false;
@@ -4430,9 +4467,12 @@ async function processAttendanceFrame() {
     } catch (error) {
         if (state.attendanceStream === requestStream) {
             console.error("Attendance pipeline error (" + pipelineStage + "):", error);
+            const attendanceConnectionFailure = error?.type === "network" ||
+                [502, 503, 504].includes(Number(error?.status)) ||
+                (!navigator.onLine && ![400, 401, 403, 409, 422, 429].includes(Number(error?.status)));
             if (requestUser.role === "siswa" &&
                 (pipelineStage === "face-match" || pipelineStage === "attendance") &&
-                error?.type === "network") {
+                attendanceConnectionFailure) {
                 try {
                     const offlineLocation = await checkGeofence();
                     if (!offlineLocation.error && offlineLocation.inside &&
@@ -5953,13 +5993,19 @@ function setupEvents() {
     window.addEventListener("beforeunload", clearSplashTimers, { once: true });
 
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden) stopAllCameras();
+        if (document.hidden) {
+            stopAllCameras();
+            return;
+        }
+        updateOfflineConnectionState();
+        if (state.user?.role === "siswa") void checkNetworkHeartbeat();
     });
     window.addEventListener("offline", updateOfflineConnectionState);
     window.addEventListener("online", () => {
         updateOfflineConnectionState();
+        // Let the heartbeat confirm API reachability before flushing the local queue.
+        // This avoids retrying while a device is connected to captive or broken Wi-Fi.
         void checkNetworkHeartbeat();
-        void syncOfflineAttendanceQueue();
     });
     window.addEventListener("pagehide", stopAllCameras);
     window.addEventListener("beforeunload", stopAllCameras);

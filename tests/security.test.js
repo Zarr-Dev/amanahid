@@ -1365,6 +1365,7 @@ test("Fonnte test status does not require a test-recipient allowlist", async t =
     assert.equal(res.body.fonnte_configured, false);
     assert.equal(res.body.environment, process.env.VERCEL_ENV || "unknown");
     assert.equal(res.body.test_send_enabled, true);
+    assert.equal(res.body.requires_consent, true);
     assert.equal(res.body.recipient_allowlist_required, false);
 
     process.env.FONNTE_TOKEN = "x";
@@ -1434,6 +1435,10 @@ test("Fonnte test accepts a valid number after explicit consent and reports empt
     }), sentResponse);
     assert.equal(sentResponse.statusCode, 200);
     assert.equal(sentResponse.body.accepted, true);
+    assert.equal(sentResponse.body.queued, true);
+    assert.equal(sentResponse.body.delivered, false);
+    assert.equal(sentResponse.body.provider_status, "accepted");
+    assert.equal(sentResponse.body.process, "pending");
     assert.equal(providerCalls.length, 1);
     assert.equal(providerCalls[0].target, "6281234567890");
     assert.equal(providerCalls[0].init.headers.Authorization, "fonnte-test-token");
