@@ -32,9 +32,7 @@ export default async function handler(req, res) {
             return res.status(405).json({ error: "Method not allowed", method: req.method });
         }
         const missing = getMissingAuthConfiguration();
-        const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "")
-            .split(",").map(value => value.replace(/\D/g, ""))
-            .filter(value => /^628\d{8,13}$/.test(value));
+
         const payload = {
             ok: true,
             service: "Amanah.id API",
@@ -42,7 +40,7 @@ export default async function handler(req, res) {
                 api: "ok",
                 configuration: missing.length ? "missing" : "ok",
                 database: "not_checked",
-                whatsapp: process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured"
+                whatsapp: typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length >= 10 ? "configured" : "not_configured"
             },
             authentication: { configured: missing.length === 0 }
         };
@@ -58,10 +56,8 @@ export default async function handler(req, res) {
             return res.status(405).json({ error: "Method not allowed", method: req.method });
         }
         const missing = getMissingAuthConfiguration();
-        const allowlist = String(process.env.FONNTE_TEST_RECIPIENTS || "")
-            .split(",").map(value => value.replace(/\D/g, ""))
-            .filter(value => /^628\d{8,13}$/.test(value));
-        const whatsapp = process.env.FONNTE_TOKEN && allowlist.length ? "ready" : "not_configured";
+
+        const whatsapp = typeof process.env.FONNTE_TOKEN === "string" && process.env.FONNTE_TOKEN.trim().length >= 10 ? "configured" : "not_configured";
         if (missing.length) {
             const payload = {
                 ok: false,
