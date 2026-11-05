@@ -37,7 +37,7 @@ function normalizeAttendance(row, schedule = null, features = {}) {
         className: student.class_name,
         date: row.date,
         time: row.time,
-        confidence: Number(row.confidence),
+        confidence: row.confidence == null ? null : Number(row.confidence),
         status: features.late_detection && features.school_schedule_rules && schedule
             ? (isLate(row.time, schedule) ? "late" : "present") : null,
         method: row.method,
@@ -182,6 +182,7 @@ async function handleOfflinePendingRequest(req, res, session) {
                     event_id: body.event_id,
                     student_id: student.id,
                     claimed_at: new Date(body.claimed_at).toISOString(),
+                    school_date: claimedTime.date,
                     gps_lat: body.lat,
                     gps_lng: body.lng,
                     gps_accuracy: body.accuracy,
@@ -268,87 +269,52 @@ async function reviewOfflineAttendance(req, res, role, session) {
     if (!validation.valid) return jsonError(res, 400, validation.error);
 
     try {
-        const query = "offline_attendance_events?select=id,event_id,student_id,claimed_at,gps_lat,gps_lng,gps_accuracy,status,student:students!inner(id,nisn,name,class_name,is_active,homeroom_teacher_id,parent_whatsapp)&id=eq." +
-            encodeURIComponent(body.id) + "&limit=1";
-        const rows = await supabaseRequest(query);
+        const rows = await supabaseRequest(
+            "offline_attendance_events?select=id,event_id,student_id,claimed_at,school_date,status,student:students!inner(id,nisn,name,class_name,is_active,homeroom_teacher_id,parent_whatsapp)&id=eq." +
+            encodeURIComponent(body.id) + "&limit=1"
+        );
         const event = Array.isArray(rows) ? rows[0] : null;
         if (!event) return jsonError(res, 404, "Offline attendance request was not found");
-        if (event.status !== "pending_review") return jsonError(res, 409, "This offline attendance request has already been reviewed");
+        if (event.status !== "pending_review") {
+            return jsonError(res, 409, "This offline attendance request has already been reviewed");
+        }
+
+        let teacherId = null;
         if (role === "guru") {
             const teacherRows = await supabaseRequest(
-                "teachers?select=id&email=eq." + encodeURIComponent(session?.email || "") + "&is_active=eq.true&limit=1"
+                "teachers?select=id&email=eq." + encodeURIComponent(session?.email || "") +
+                "&is_active=eq.true&limit=1"
             );
             const teacher = teacherRows?.[0];
             if (!teacher || event.student?.homeroom_teacher_id !== teacher.id) {
                 return jsonError(res, 403, "Teachers can review only students in their homeroom");
             }
+            teacherId = teacher.id;
         }
 
-        let attendance = null;
-        let claimed = null;
-        if (body.decision === "approve") {
-            if (event.student?.is_active !== true) {
-                return jsonError(res, 409, "The student account is inactive. Admin must reactivate it before approval.");
-            }
-            claimed = jakartaDateTime(new Date(event.claimed_at));
-            const existing = await supabaseRequest(
-                "attendance?select=id&student_id=eq." + encodeURIComponent(event.student_id) +
-                "&date=eq." + claimed.date + "&limit=1"
-            );
-            if (Array.isArray(existing) && existing.length) {
-                return jsonError(res, 409, "An official attendance record already exists for the claimed school date");
-            }
-            const inserted = await supabaseRequest(
-                "attendance?select=id,student_id,date,time,confidence,method,created_at",
-                {
-                    method: "POST",
-                    headers: { Prefer: "return=representation" },
-                    body: JSON.stringify({
-                        student_id: event.student_id,
-                        date: claimed.date,
-                        time: claimed.time,
-                        confidence: null,
-                        method: "offline-reviewed",
-                        idempotency_key: event.event_id
-                    })
-                }
-            );
-            attendance = Array.isArray(inserted) ? inserted[0] : null;
-            if (!attendance) return jsonError(res, 503, "Official attendance could not be created");
-        }
-
-        const reviewedAt = new Date().toISOString();
-        const status = body.decision === "approve" ? "approved" : "rejected";
-        const updated = await supabaseRequest(
-            "offline_attendance_events?id=eq." + encodeURIComponent(event.id) +
-            "&status=eq.pending_review&select=id,status,attendance_id,reviewed_at",
-            {
-                method: "PATCH",
-                headers: { Prefer: "return=representation" },
-                body: JSON.stringify({
-                    status,
-                    review_notes: body.notes.trim(),
-                    reviewed_by: session.email,
-                    reviewed_at: reviewedAt,
-                    ...(attendance ? { attendance_id: attendance.id } : {})
-                })
-            }
-        );
-        const result = Array.isArray(updated) ? updated[0] : null;
-        if (!result) return jsonError(res, 409, "The offline request was already reviewed by another administrator or teacher");
-        await writeAuditLog(session, "attendance.offline_" + status, "offline_attendance_events", event.id, {
-            student_id: event.student_id,
-            nisn: event.student?.nisn,
-            attendance_id: attendance?.id || null,
-            notes: body.notes.trim()
+        const rpcResult = await supabaseRequest("rpc/review_offline_attendance_event", {
+            method: "POST",
+            body: JSON.stringify({
+                p_event_id: event.event_id,
+                p_decision: body.decision,
+                p_review_notes: body.notes.trim(),
+                p_reviewed_by: session.email,
+                p_actor_role: role,
+                p_teacher_id: teacherId
+            })
         });
+        const reviewed = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+        if (!reviewed || reviewed.status !== (body.decision === "approve" ? "approved" : "rejected")) {
+            return jsonError(res, 503, "The database did not confirm the offline attendance review");
+        }
 
         let whatsapp = { sent: false, skipped: true };
-        if (attendance && event.student?.parent_whatsapp) {
+        if (reviewed.official_attendance === true && reviewed.parent_whatsapp) {
             try {
-                const target = String(event.student.parent_whatsapp).replace(/\D/g, "").replace(/^08/, "628");
-                const message = "Presensi offline " + event.student.name + " (" + event.student.nisn +
-                    ") telah diverifikasi sekolah pada " + claimed.date + " pukul " + claimed.time + ".";
+                const target = String(reviewed.parent_whatsapp).replace(/\D/g, "").replace(/^08/, "628");
+                const message = "Presensi offline " + reviewed.name + " (" + reviewed.nisn +
+                    ") telah diverifikasi sekolah pada " + reviewed.attendance_date +
+                    " pukul " + String(reviewed.attendance_time || "").slice(0, 8) + ".";
                 await sendWhatsApp(target, message);
                 whatsapp = { sent: true, skipped: false };
             } catch (error) {
@@ -356,19 +322,45 @@ async function reviewOfflineAttendance(req, res, role, session) {
                 whatsapp = { sent: false, skipped: false, error: "WhatsApp notification failed" };
             }
         }
+
+        let attendance = null;
+        if (reviewed.official_attendance === true && reviewed.attendance_id) {
+            attendance = {
+                id: reviewed.attendance_id,
+                student_id: reviewed.student_id,
+                date: reviewed.attendance_date,
+                time: String(reviewed.attendance_time || "").slice(0, 8),
+                confidence: null,
+                method: "offline-reviewed",
+                created_at: new Date().toISOString(),
+                students: {
+                    id: reviewed.student_id,
+                    nisn: reviewed.nisn,
+                    name: reviewed.name,
+                    class_name: reviewed.class_name
+                }
+            };
+        }
+
         return res.status(200).json({
             ok: true,
-            status,
-            official_attendance: Boolean(attendance),
-            attendance: attendance ? normalizeAttendance({ ...attendance, students: event.student }) : null,
-            whatsapp
+            status: reviewed.status,
+            official_attendance: reviewed.official_attendance === true,
+            attendance: attendance ? normalizeAttendance(attendance) : null,
+            whatsapp,
+            audit_recorded: true
         });
     } catch (error) {
-        if (error?.code === "23505") return jsonError(res, 409, "An official attendance record already exists for this student and date");
+        if (error?.code === "23505") {
+            return jsonError(res, 409, "An official attendance record already exists for this student and school date");
+        }
+        if (error?.code === "P0002") return jsonError(res, 404, "Offline attendance request or student was not found");
+        if (error?.code === "42501") return jsonError(res, 403, error.message);
         console.error("Offline attendance review failed:", error);
-        return jsonSupabaseError(res, error, "Unable to review offline attendance");
+        return jsonSupabaseError(res, error, "Unable to review offline attendance. Check migration 20261105090000.");
     }
 }
+
 
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
