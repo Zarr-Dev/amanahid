@@ -2507,6 +2507,11 @@ async function checkNetworkHeartbeat() {
         $("network-status-student")?.classList.add("hidden");
     } catch (error) {
         if (state.user !== requestUser) return;
+        if (error?.status === 401 || error?.status === 403) {
+            showAuth();
+            toast("Sesi berakhir karena akun tidak lagi aktif. Hubungi Admin sekolah.", "warning");
+            return;
+        }
         state.networkHeartbeatFailures++;
         console.warn("Network heartbeat failed; will retry on the next interval:", error);
         const badge = requestUser.role === "siswa"
