@@ -69,4 +69,5 @@ self.addEventListener("fetch", event => {
                 return (await cache.match(request)) || new Response("", { status: 503 });
             }
         })());
-    }});
+    }
+});
