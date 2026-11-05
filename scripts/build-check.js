@@ -127,13 +127,15 @@ const htmlChecks = [
     ["official SVG favicon", /rel="icon" type="image\/svg\+xml" href="assets\/amanah-favicon\.svg"/],
     ["two-tone Amanah ID wordmark", /class="brand-name-amanah"[\s\S]*?class="brand-name-id"/],
     ["standalone stylesheet and script", /href="style\.css"[\s\S]*?src="script\.js"/],
-    ["administrator dashboard", /id="dashboard-admin"[\s\S]*?id="admin-view-dashboard"[\s\S]*?id="admin-view-users"[\s\S]*?id="admin-view-settings"[\s\S]*?id="admin-view-audit"[\s\S]*?id="admin-view-profile"/],
-    ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
+    ["administrator dashboard", /id="dashboard-admin"[\s\S]*?id="admin-view-dashboard"[\s\S]*?id="admin-view-users"[\s\S]*?id="admin-view-settings"[\s\S]*?id="admin-view-whatsapp"[\s\S]*?id="admin-view-audit"[\s\S]*?id="admin-view-profile"/],
+    ["permanent parent WhatsApp template", /id="admin-whatsapp-template-form"[\s\S]*?id="admin-whatsapp-template-preview"/],
+    ["parent WhatsApp retry list", /id="admin-whatsapp-failures-tbody"/],    ["teacher-managed student account fields", /id="input-student-email"[\s\S]*?id="input-student-password"/],
     ["Admin parent WhatsApp field", /id="admin-user-parent-whatsapp"/],
     ["visible student face sample progress", /id="face-sample-progress-bar"/],
     ["student absence form", /id="student-absence-form"/],
     ["teacher absence request table", /id="absence-requests-tbody"/],
     ["admin test lab", /id="admin-view-tests"/],
+    ["permanent WhatsApp settings", /id="admin-view-whatsapp"/],
     ["admin camera diagnostics", /id="admin-test-camera-start"/],
     ["admin WhatsApp test preview", /id="admin-test-whatsapp-preview"/],
     ["admin GPS diagnostics", /id="admin-test-gps-run"/],
@@ -147,9 +149,9 @@ const htmlChecks = [
     ["Admin audit export", /id="admin-export-audit"/]
 ];
 const navIconCount = (html.match(/class="nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24">/g) || []).length;
-if (navIconCount !== 13 || !css.includes(".nav-symbol svg") ||
+if (navIconCount !== 14 || !css.includes(".nav-symbol svg") ||
     !css.includes(".nav-link:hover .nav-symbol svg")) {
-    console.error("Build check failed: all 13 role-navigation icons must use consistent SVG line symbols with hover styling.");
+    console.error("Build check failed: all 14 role-navigation icons must use consistent SVG line symbols with hover styling.");
     process.exit(1);
 }
 
@@ -221,8 +223,8 @@ if (/height:\s*100vh\b/.test(css)) {
 }
 if (!/headers\["X-Admin-Token"\]\s*=\s*token/.test(js) ||
     !/stats\?\.total_students\s*\?\?\s*0/.test(js) ||
-    !/body\.parent_whatsapp\s*=\s*parentWhatsApp\.replace\(\/\^08\/,\s*"628"\)/.test(js) ||
-    !/parent_whatsapp:\s*body\.parent_whatsapp\s*\?\s*body\.parent_whatsapp\.replace\(\/\^08\/,\s*"628"\)/.test(adminUserApi) ||
+    !js.includes("normalizeWhatsAppNumberInput(parentWhatsApp)") ||
+    !/normalizeWhatsAppNumber\(body\.parent_whatsapp\)/.test(adminUserApi) ||
     !allApiSource.includes("sendWhatsApp(target, message)")) {
     console.error("Build check failed: admin token injection, null-safe statistics, or parent WhatsApp delivery wiring is missing.");
     process.exit(1);
