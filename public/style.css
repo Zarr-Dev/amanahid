@@ -4670,3 +4670,52 @@ video { object-fit:cover; }
     #dashboard-admin .admin-view .panel-heading h3 { font-size: 14px; }
     #admin-view-audit .filters { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Consistent Admin typography baseline */
+#dashboard-admin .admin-view {
+    font-size: 13px;
+    line-height: 1.5;
+}
+#dashboard-admin .admin-view h2 {
+    font-size: 18px;
+    line-height: 1.3;
+    letter-spacing: -.015em;
+}
+#dashboard-admin .admin-view h3 {
+    font-size: 15px;
+    line-height: 1.35;
+}
+#dashboard-admin .admin-view h4 {
+    font-size: 13px;
+    line-height: 1.4;
+}
+#dashboard-admin .admin-view p,
+#dashboard-admin .admin-view .muted,
+#dashboard-admin .admin-view .helper-text {
+    font-size: 12px;
+    line-height: 1.55;
+}
+#dashboard-admin .admin-view label {
+    font-size: 11px;
+    line-height: 1.45;
+}
+#dashboard-admin .admin-view input:not([type="checkbox"]):not([type="radio"]),
+#dashboard-admin .admin-view select,
+#dashboard-admin .admin-view textarea {
+    font-size: 12px;
+    line-height: 1.45;
+}
+#dashboard-admin .admin-view button,
+#dashboard-admin .admin-view .button,
+#dashboard-admin .admin-view [role="button"] {
+    font-size: 12px;
+    line-height: 1.35;
+}
+#dashboard-admin .admin-view .table-wrap table {
+    font-size: 12px;
+    line-height: 1.45;
+}
+#dashboard-admin .admin-view .table-wrap th {
+    font-size: 10px;
+    line-height: 1.35;
+}
