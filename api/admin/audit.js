@@ -53,9 +53,10 @@ export default async function handler(req, res) {
                 return day.toISOString().slice(0, 10);
             });
             const activeSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-            const [students, teachers, today, activeStudents, activeTeachers, activeAdmins, trendCounts] = await Promise.all([
+            const [students, teachers, admins, today, activeStudents, activeTeachers, activeAdmins, trendCounts] = await Promise.all([
                 supabaseCount("students?select=id&is_active=eq.true"),
                 supabaseCount("teachers?select=id&is_active=eq.true"),
+                supabaseCount("admin_users?select=id&is_active=eq.true"),
                 supabaseCount(`attendance?select=id&date=eq.${date}`),
                 supabaseCount(`students?select=id&is_active=eq.true&last_login_at=gte.${encodeURIComponent(activeSince)}`),
                 supabaseCount(`teachers?select=id&is_active=eq.true&last_login_at=gte.${encodeURIComponent(activeSince)}`),
