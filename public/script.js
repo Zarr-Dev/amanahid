@@ -1733,8 +1733,8 @@ function applyAdminFeatureFlags(features = {}) {
         profileForm.setAttribute("aria-disabled", String(disabled));
     }
     const deactivateDisabled = features.account_deactivation === false;
-    $("admin-users-tbody")?.querySelectorAll("[data-admin-disable]").forEach(button => {
-        button.disabled = deactivateDisabled || button.dataset.active === "false";
+    $("admin-users-tbody")?.querySelectorAll("[data-admin-set-active]").forEach(button => {
+        button.disabled = deactivateDisabled;
     });
     const radius = $("admin-setting-radius");
     if (radius) radius.disabled = features.geofence_radius_edit === false;
