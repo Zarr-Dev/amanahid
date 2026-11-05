@@ -1668,6 +1668,113 @@ function showAdminView(viewId) {
     if (viewId !== "admin-view-tests") stopAdminTestCamera();
 }
 
+function renderAdminAnalytics(stats = {}) {
+    const trendRoot = $("admin-attendance-trend-chart");
+    const roleRoot = $("admin-role-activity-chart");
+    const trend = Array.isArray(stats.trend) ? stats.trend.slice(-7) : [];
+    if (trendRoot) {
+        const max = Math.max(1, ...trend.map(item => Number(item?.count) || 0));
+        trendRoot.innerHTML = trend.length ? trend.map(item => {
+            const count = Math.max(0, Number(item?.count) || 0);
+            const height = Math.max(3, Math.round(count / max * 100));
+            const label = typeof item?.date === "string" ? item.date.slice(5) : "—";
+            return '<div class="admin-chart-day"><strong>' + safeText(String(count)) +
+                '</strong><div class="admin-chart-bar-track"><div class="admin-chart-bar" style="height:' +
+                height + '%"></div></div><small>' + safeText(label) + '</small></div>';
+        }).join("") : '<p class="muted">Data tren belum tersedia.</p>';
+    }
+    if (roleRoot) {
+        const roles = [
+            { key: "admin", label: "Admin" },
+            { key: "guru", label: "Guru" },
+            { key: "siswa", label: "Siswa" }
+        ];
+        const values = roles.map(role => ({
+            ...role,
+            count: Math.max(0, Number(stats?.active_users_by_role?.[role.key]) || 0)
+        }));
+        const max = Math.max(1, ...values.map(item => item.count));
+        roleRoot.innerHTML = values.map(item => {
+            const width = Math.round(item.count / max * 100);
+            return '<div class="admin-role-row"><div class="admin-role-meta"><span>' +
+                safeText(item.label) + '</span><strong>' + safeText(String(item.count)) +
+                '</strong></div><div class="admin-role-track"><div class="admin-role-fill" style="width:' +
+                width + '%"></div></div></div>';
+        }).join("");
+    }
+}
+
+async function loadAdminOperations() {
+    const status = (id, value) => { const el = $(id); if (el) el.textContent = value; };
+    const defaults = [
+        "admin-ops-vercel-state", "admin-ops-supabase-state", "admin-ops-github-state"
+    ];
+    defaults.forEach(id => status(id, "Memeriksa…"));
+    const readyPromise = cloudRequest("/api/ready");
+    const featuresPromise = cloudRequest("/api/admin/settings?action=features");
+    const githubPromise = (async () => {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 8_000);
+        try {
+            const [repoResponse, workflowResponse] = await Promise.all([
+                fetch("https://api.github.com/repos/Zarr-Dev/amanahid/commits/main", {
+                    cache: "no-store", credentials: "omit", headers: { Accept: "application/vnd.github+json" }, signal: controller.signal
+                }),
+                fetch("https://api.github.com/repos/Zarr-Dev/amanahid/actions/workflows/ci.yml/runs?per_page=1&branch=main", {
+                    cache: "no-store", credentials: "omit", headers: { Accept: "application/vnd.github+json" }, signal: controller.signal
+                })
+            ]);
+            if (!repoResponse.ok || !workflowResponse.ok) throw new Error("GitHub API returned an unavailable response");
+            return { commit: await repoResponse.json(), workflow: await workflowResponse.json() };
+        } finally {
+            window.clearTimeout(timer);
+        }
+    })();
+    const [readyResult, featuresResult, githubResult] = await Promise.allSettled([
+        readyPromise, featuresPromise, githubPromise
+    ]);
+    if (readyResult.status === "fulfilled") {
+        const ready = readyResult.value;
+        const deployment = ready?.deployment || {};
+        const apiOk = ready?.ok === true && ready?.checks?.api === "ok";
+        const dbOk = ready?.checks?.database === "ok";
+        status("admin-ops-vercel-state", apiOk ? "API aktif" : "API bermasalah");
+        status("admin-ops-vercel-env", String(ready?.environment || "unknown"));
+        status("admin-ops-vercel-commit", deployment.commit || "Tidak tersedia");
+        status("admin-ops-vercel-branch", deployment.branch || "Tidak tersedia");
+        status("admin-ops-supabase-state", dbOk ? "Terhubung" : "Tidak terhubung");
+        status("admin-ops-supabase-db", String(ready?.checks?.database || "unknown"));
+    } else {
+        status("admin-ops-vercel-state", "Gagal diperiksa");
+        status("admin-ops-supabase-state", "Tidak tersedia");
+        status("admin-ops-supabase-db", "Tidak tersedia");
+    }
+    if (featuresResult.status === "fulfilled") {
+        status("admin-ops-supabase-flags", featuresResult.value?.features ? "Tersedia" : "Tidak tersedia");
+    } else {
+        status("admin-ops-supabase-flags", "Gagal dimuat");
+    }
+    if (githubResult.status === "fulfilled") {
+        const latest = githubResult.value.commit;
+        const run = githubResult.value.workflow?.workflow_runs?.[0] || null;
+        const commitMessage = String(latest?.commit?.message || "").split("\n")[0].slice(0, 54);
+        status("admin-ops-github-state", "Terhubung");
+        status("admin-ops-github-branch", "main");
+        status("admin-ops-github-commit", (latest?.sha || "").slice(0, 10) + (commitMessage ? " · " + commitMessage : ""));
+        status("admin-ops-github-ci", run ? (run.status === "completed" ? (run.conclusion || "completed") : run.status) : "Belum ada run");
+    } else {
+        status("admin-ops-github-state", "Tidak terjangkau");
+        status("admin-ops-github-branch", "—");
+        status("admin-ops-github-commit", "—");
+        status("admin-ops-github-ci", "Gagal diperiksa");
+    }
+    return {
+        ready: readyResult.status === "fulfilled" ? readyResult.value : null,
+        features: featuresResult.status === "fulfilled" ? featuresResult.value : null,
+        github: githubResult.status === "fulfilled" ? githubResult.value : null
+    };
+}
+
 async function loadAdminDashboard() {
     if (state.user?.role !== "admin" || !sessionStorage.getItem("amanahid.adminToken")) {
         showAuth();
@@ -1678,6 +1785,8 @@ async function loadAdminDashboard() {
         const stats = await cloudRequest("/api/admin/audit?action=stats");
         $("admin-total-students").textContent = stats?.total_students ?? 0;
         $("admin-total-teachers").textContent = stats?.total_teachers ?? 0;
+        $("admin-total-admins").textContent = stats?.total_admins ?? 0;
+        renderAdminAnalytics(stats);
         $("admin-attendance-today").textContent = stats?.attendance_today ?? 0;
         $("admin-attendance-week").textContent = stats?.attendance_week ?? 0;
         $("admin-active-week").textContent = stats?.active_users_week ?? 0;
