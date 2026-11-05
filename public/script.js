@@ -212,7 +212,7 @@ const EXTRA_T = {
         testModelReady: "Model deteksi wajah siap.",
         testModelFailed: "Model AI gagal dimuat.",
         testWhatsappTitle: "Uji notifikasi WhatsApp",
-        testWhatsappDesc: "Pratinjau pesan dan uji hanya ke nomor yang disetujui admin.",
+        testWhatsappDesc: "Masukkan nomor tujuan, periksa pesan, lalu centang persetujuan untuk mengirim satu pesan uji.",
         testWhatsappNumber: "Nomor uji WhatsApp",
         testWhatsappTemplate: "Template pesan",
         testWhatsappDefaultTemplate: "Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.",
@@ -220,9 +220,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "Saya menyetujui pengiriman satu pesan uji ke nomor yang ditampilkan.",
         testWhatsappSend: "Kirim satu pesan uji",
         testWhatsappSending: "Mengirim pesan uji...",
-        testWhatsappSent: "Permintaan pesan uji diterima penyedia WhatsApp.",
+        testWhatsappSent: "Fonnte menerima permintaan dan memasukkan pesan ke antrean. Periksa perangkat tujuan untuk memastikan pesan benar-benar diterima.",
         testWhatsappFailed: "Pesan uji gagal dikirim.",
-        testWhatsappBlocked: "Nomor tidak ada dalam daftar nomor uji yang diizinkan.",
+        testWhatsappBlocked: "Nomor tujuan tidak valid atau tidak dapat digunakan.",
         testGpsTitle: "Uji GPS dan geofence",
         testGpsDesc: "Periksa koordinat perangkat dan jaraknya dari titik sekolah yang tersimpan.",
         testGpsRun: "Uji lokasi saat ini",
@@ -238,8 +238,8 @@ const EXTRA_T = {
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
         testFonnteConfigured: "Token Fonnte tersedia",
         testFonnteMissing: "Token Fonnte belum dikonfigurasi",
-        testAllowlistEmpty: "Belum ada nomor uji yang disetujui Admin",
-        testAllowlistLoadFailed: "Gagal memuat daftar nomor uji",
+        testAllowlistEmpty: "Masukkan nomor tujuan untuk pengujian.",
+        testAllowlistLoadFailed: "Status pengujian nomor tidak dapat dimuat.",
         testGpsChecking: "Memeriksa lokasi perangkat...",
         testGpsInside: "Lokasi berada dalam radius sekolah dan akurasi memenuhi batas.",
         testGpsOutside: "Lokasi di luar radius atau akurasi tidak memenuhi batas.",
@@ -397,7 +397,7 @@ const EXTRA_T = {
         testModelReady: "Face detection model is ready.",
         testModelFailed: "The AI model could not be loaded.",
         testWhatsappTitle: "WhatsApp notification test",
-        testWhatsappDesc: "Preview the message and test only approved numbers.",
+        testWhatsappDesc: "Enter a recipient, review the message, then confirm consent to send one test request.",
         testWhatsappNumber: "Test WhatsApp number",
         testWhatsappTemplate: "Message template",
         testWhatsappDefaultTemplate: "Amanah ID: this is a WhatsApp notification test. No attendance or student data has been changed.",
@@ -405,9 +405,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "I approve sending one test message to the displayed number.",
         testWhatsappSend: "Send one test message",
         testWhatsappSending: "Sending test message...",
-        testWhatsappSent: "The WhatsApp provider accepted the test message request.",
+        testWhatsappSent: "Fonnte accepted the request and added it to its queue. Check the recipient device to confirm actual delivery.",
         testWhatsappFailed: "The test message could not be sent.",
-        testWhatsappBlocked: "This number is not on the approved test-recipient list.",
+        testWhatsappBlocked: "The recipient number is invalid or cannot be used.",
         testGpsTitle: "GPS and geofence test",
         testGpsDesc: "Check device coordinates and distance from the saved school location.",
         testGpsRun: "Test current location",
@@ -424,7 +424,7 @@ const EXTRA_T = {
         testFonnteConfigured: "Fonnte token is configured",
         testFonnteMissing: "Fonnte token is not configured",
         testAllowlistEmpty: "No approved test numbers configured",
-        testAllowlistLoadFailed: "Could not load the test-number list",
+        testAllowlistLoadFailed: "Could not check the test recipient status.",
         testGpsChecking: "Checking device location...",
         testGpsInside: "Location is within the school radius and accuracy meets the limit.",
         testGpsOutside: "Location is outside the radius or accuracy is insufficient.",
@@ -442,7 +442,7 @@ const EXTRA_T = {
         testMetricAccuracy: "Accuracy",
         testMetricDistance: "Distance to school",
         testFonnteList: "Approved test numbers:",
-        testAllowlistEmpty: "No Admin-approved test numbers are configured.",
+        testAllowlistEmpty: "Enter a test recipient number.",
         testFonnteConfigHint: "Set FONNTE_TOKEN and FONNTE_TEST_RECIPIENTS in the Production environment to enable testing.",
         testFonnteStatusUnavailable: "WhatsApp configuration status could not be checked.",
         faceMatchAmbiguous: "Two or more face profiles are too similar to distinguish safely. Ask a teacher to repeat the scan in better lighting.",
@@ -585,7 +585,7 @@ const EXTRA_T = {
         testModelReady: "نموذج اكتشاف الوجه جاهز.",
         testModelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي.",
         testWhatsappTitle: "اختبار إشعارات واتساب",
-        testWhatsappDesc: "عاين الرسالة واختبر الأرقام المعتمدة فقط.",
+        testWhatsappDesc: "أدخل رقم المستلم، وراجع الرسالة، ثم أكد الموافقة لإرسال طلب اختبار واحد.",
         testWhatsappNumber: "رقم واتساب للاختبار",
         testWhatsappTemplate: "قالب الرسالة",
         testWhatsappDefaultTemplate: "أمانة ID: هذه رسالة اختبار لإشعارات واتساب. لم يتم تغيير أي سجل حضور أو بيانات طالب.",
@@ -593,9 +593,9 @@ const EXTRA_T = {
         testWhatsappConfirm: "أوافق على إرسال رسالة اختبار واحدة إلى الرقم المعروض.",
         testWhatsappSend: "إرسال رسالة اختبار واحدة",
         testWhatsappSending: "جارٍ إرسال رسالة الاختبار...",
-        testWhatsappSent: "قبل مزود واتساب طلب إرسال رسالة الاختبار.",
+        testWhatsappSent: "قبلت Fonnte الطلب وأضافته إلى قائمة الإرسال. تحقق من جهاز المستلم لتأكيد وصول الرسالة فعليًا.",
         testWhatsappFailed: "تعذر إرسال رسالة الاختبار.",
-        testWhatsappBlocked: "هذا الرقم غير موجود في قائمة أرقام الاختبار المعتمدة.",
+        testWhatsappBlocked: "رقم المستلم غير صالح أو لا يمكن استخدامه.",
         testGpsTitle: "اختبار GPS والنطاق الجغرافي",
         testGpsDesc: "تحقق من إحداثيات الجهاز والمسافة عن موقع المدرسة المحفوظ.",
         testGpsRun: "اختبار الموقع الحالي",
@@ -612,7 +612,7 @@ const EXTRA_T = {
         testFonnteConfigured: "رمز Fonnte مُعدّ",
         testFonnteMissing: "لم يتم إعداد رمز Fonnte",
         testAllowlistEmpty: "لم تُضف أرقام اختبار معتمدة",
-        testAllowlistLoadFailed: "تعذر تحميل قائمة أرقام الاختبار",
+        testAllowlistLoadFailed: "تعذر التحقق من رقم الاختبار.",
         testGpsChecking: "جارٍ التحقق من موقع الجهاز...",
         testGpsInside: "الموقع داخل نطاق المدرسة والدقة ضمن الحد المسموح.",
         testGpsOutside: "الموقع خارج النطاق أو الدقة غير كافية.",
@@ -630,7 +630,7 @@ const EXTRA_T = {
         testMetricAccuracy: "الدقة",
         testMetricDistance: "المسافة إلى المدرسة",
         testFonnteList: "أرقام الاختبار المعتمدة:",
-        testAllowlistEmpty: "لم يتم إعداد أرقام اختبار معتمدة من المسؤول.",
+        testAllowlistEmpty: "أدخل رقمًا لاختباره.",
         testFonnteConfigHint: "اضبط FONNTE_TOKEN وFONNTE_TEST_RECIPIENTS في بيئة Production لتفعيل الاختبار.",
         testFonnteStatusUnavailable: "تعذر التحقق من حالة إعداد WhatsApp.",
         faceMatchAmbiguous: "ملفان أو أكثر للوجه متشابهان جدًا ولا يمكن الاختيار بأمان. اطلب من المعلم إعادة المسح في إضاءة أفضل.",
@@ -2874,6 +2874,11 @@ async function saveOfflineAttendanceIntent(location) {
         faceModelKey: "auraface-glintr100-int8-v1",
         localStatus: "waiting_for_sync"
     };
+    try {
+        await navigator.storage?.persist?.();
+    } catch (error) {
+        console.info("Persistent offline storage was not granted; IndexedDB remains available for this browser session.", error);
+    }
     const db = await openOfflineAttendanceDb();
     await new Promise((resolve, reject) => {
         const tx = db.transaction("events", "readwrite");
@@ -2969,11 +2974,14 @@ async function syncOfflineAttendanceQueue() {
 
 function updateOfflineConnectionState() {
     const banner = $("network-banner");
-    if (!navigator.onLine && banner) {
-        banner.textContent = "Koneksi internet terputus. Amanah ID menyimpan permintaan offline secara lokal jika verifikasi kamera dan GPS selesai; permintaan tetap menunggu pemeriksaan.";
+    if (banner && !navigator.onLine) {
+        banner.textContent = "Koneksi internet terputus. Permintaan presensi yang memenuhi verifikasi kamera dan GPS dapat disimpan di perangkat, lalu disinkronkan saat layanan tersedia.";
         banner.classList.remove("hidden");
-    } else if (banner && state.networkHeartbeatFailures < 3) {
-        banner.textContent = "Koneksi ke layanan terputus. Periksa jaringan dan konfigurasi API.";
+    } else if (banner && state.networkHeartbeatFailures >= 3) {
+        banner.textContent = "Jaringan perangkat terhubung, tetapi layanan Amanah ID belum merespons. Data offline tetap tersimpan di perangkat.";
+        banner.classList.remove("hidden");
+    } else if (banner) {
+        banner.classList.add("hidden");
     }
     void updateOfflineAttendanceStatus();
 }
@@ -3007,7 +3015,7 @@ async function checkNetworkHeartbeat() {
             : $("network-status-teacher");
         badge?.classList.remove("hidden");
         if (state.networkHeartbeatFailures >= 3) {
-            $("network-banner")?.classList.remove("hidden");
+            updateOfflineConnectionState();
         }
     } finally {
         if (state.user === requestUser) state.networkHeartbeatBusy = false;
@@ -4459,9 +4467,12 @@ async function processAttendanceFrame() {
     } catch (error) {
         if (state.attendanceStream === requestStream) {
             console.error("Attendance pipeline error (" + pipelineStage + "):", error);
+            const attendanceConnectionFailure = error?.type === "network" ||
+                [502, 503, 504].includes(Number(error?.status)) ||
+                (!navigator.onLine && ![400, 401, 403, 409, 422, 429].includes(Number(error?.status)));
             if (requestUser.role === "siswa" &&
                 (pipelineStage === "face-match" || pipelineStage === "attendance") &&
-                error?.type === "network") {
+                attendanceConnectionFailure) {
                 try {
                     const offlineLocation = await checkGeofence();
                     if (!offlineLocation.error && offlineLocation.inside &&
@@ -5982,13 +5993,19 @@ function setupEvents() {
     window.addEventListener("beforeunload", clearSplashTimers, { once: true });
 
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden) stopAllCameras();
+        if (document.hidden) {
+            stopAllCameras();
+            return;
+        }
+        updateOfflineConnectionState();
+        if (state.user?.role === "siswa") void checkNetworkHeartbeat();
     });
     window.addEventListener("offline", updateOfflineConnectionState);
     window.addEventListener("online", () => {
         updateOfflineConnectionState();
+        // Let the heartbeat confirm API reachability before flushing the local queue.
+        // This avoids retrying while a device is connected to captive or broken Wi-Fi.
         void checkNetworkHeartbeat();
-        void syncOfflineAttendanceQueue();
     });
     window.addEventListener("pagehide", stopAllCameras);
     window.addEventListener("beforeunload", stopAllCameras);
