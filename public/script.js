@@ -2009,43 +2009,41 @@ async function startAdminTestCamera() {
     }
 }
 
+function normalizeAdminTestPhone(value) {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (/^08\d{8,13}$/.test(digits)) return digits.replace(/^08/, "628");
+    return /^628\d{8,13}$/.test(digits) ? digits : "";
+}
+
 function updateAdminWhatsAppTestControls() {
-    const allowed = Array.isArray(state.adminAllowedWhatsappRecipients)
-        ? state.adminAllowedWhatsappRecipients : [];
-    const target = $("admin-test-whatsapp-number")?.value.replace(/\D/g, "") || "";
+    const target = normalizeAdminTestPhone($("admin-test-whatsapp-number")?.value);
     const message = $("admin-test-whatsapp-template")?.value.trim() || "";
     const consent = Boolean($("admin-test-whatsapp-consent")?.checked);
     const printable = message.length >= 10 && message.length <= 300 &&
         !/[\u0000-\u001F\u007F]/.test(message);
-    const permitted = state.adminFonnteConfigured && allowed.includes(target);
     const button = $("admin-test-whatsapp-send");
-    if (button) button.disabled = !(permitted && printable && consent);
+    if (button) button.disabled = !(target && printable && consent);
 }
 
 async function loadAdminTestTools() {
+    const templateInput = $("admin-test-whatsapp-template");
+    if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
+    updateAdminWhatsAppPreview();
+    updateAdminWhatsAppTestControls();
     try {
         const result = await cloudRequest("/api/admin/test-tools");
         state.adminFonnteConfigured = result.fonnte_configured === true;
-        state.adminAllowedWhatsappRecipients = Array.isArray(result.allowed_recipients)
-            ? result.allowed_recipients.filter(value => /^628\d{8,13}$/.test(String(value))) : [];
-        $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
-        $("admin-test-whatsapp-allowlist").textContent = state.adminAllowedWhatsappRecipients.length
-            ? state.adminAllowedWhatsappRecipients.join(", ") : tr("testAllowlistEmpty");
-        const templateInput = $("admin-test-whatsapp-template");
-        if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
-        updateAdminWhatsAppPreview();
-        updateAdminWhatsAppTestControls();
-        if (!state.adminFonnteConfigured || !state.adminAllowedWhatsappRecipients.length) {
-            $("admin-test-whatsapp-status").textContent = tr("testFonnteConfigHint");
-        }
+        $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured
+            ? "Token Fonnte terdeteksi"
+            : "Token Fonnte belum berisi nilai pada Production";
     } catch (error) {
         state.adminFonnteConfigured = false;
-        state.adminAllowedWhatsappRecipients = [];
-        $("admin-test-fonnte-state").textContent = tr("testFonnteStatusUnavailable");
-        $("admin-test-whatsapp-allowlist").textContent = tr("testAllowlistLoadFailed");
-        $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
-        updateAdminWhatsAppTestControls();
+        $("admin-test-fonnte-state").textContent = "Status token belum dapat diperiksa";
+        console.error("Fonnte configuration status could not load:", error);
     }
+    // Configuration failures are reported by the send API only after the Admin
+    // presses the enabled button. They must not block a real test attempt.
+    updateAdminWhatsAppTestControls();
 }
 
 function updateAdminWhatsAppPreview() {
@@ -2055,7 +2053,7 @@ function updateAdminWhatsAppPreview() {
 }
 
 async function sendAdminWhatsAppTest() {
-    const target = $("admin-test-whatsapp-number").value.replace(/\D/g, "");
+    const target = normalizeAdminTestPhone($("admin-test-whatsapp-number").value);
     const message = $("admin-test-whatsapp-template").value.trim();
     const status = $("admin-test-whatsapp-status");
     if (!/^628\d{8,13}$/.test(target)) {
@@ -2139,13 +2137,12 @@ async function runAdminServiceChecks() {
     }
     try {
         const tools = await cloudRequest("/api/admin/test-tools");
-        const configured = tools?.fonnte_configured === true && tools?.allowlist_configured === true;
         results.push({
-            name: "Fonnte WhatsApp + allowlist",
-            state: configured ? "ready" : "not_configured"
+            name: "Fonnte WhatsApp token",
+            state: tools?.fonnte_configured === true ? "ready" : "not_configured"
         });
     } catch {
-        results.push({ name: "Fonnte WhatsApp + allowlist", state: "error" });
+        results.push({ name: "Fonnte WhatsApp token", state: "error" });
     }
     try {
         const flags = await cloudRequest("/api?action=features");
