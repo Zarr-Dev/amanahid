@@ -93,3 +93,36 @@ test("Attendance WhatsApp template replaces only supported student and schedule 
         "Halo Alya Pratama, presensi 1234567890 kelas XI IPA 1 tercatat 2026-11-05 pukul 07:15 di Al-Fityan School."
     );
 });
+
+
+test("Fonnte server errors are marked uncertain to prevent duplicate retries", async t => {
+    const previousToken = process.env.FONNTE_TOKEN;
+    const originalFetch = globalThis.fetch;
+    process.env.FONNTE_TOKEN = "test-fonnte-token";
+    globalThis.fetch = async () => new Response(JSON.stringify({ error: "temporary provider issue" }), { status: 503 });
+    t.after(() => {
+        if (previousToken === undefined) delete process.env.FONNTE_TOKEN;
+        else process.env.FONNTE_TOKEN = previousToken;
+        globalThis.fetch = originalFetch;
+    });
+    await assert.rejects(
+        () => sendWhatsApp("6281234567890", "Amanah ID: presensi siswa telah tercatat."),
+        error => error.code === "FONNTE_UNCERTAIN_RESPONSE"
+    );
+});
+
+test("Unreadable successful Fonnte responses are not classified as safe retries", async t => {
+    const previousToken = process.env.FONNTE_TOKEN;
+    const originalFetch = globalThis.fetch;
+    process.env.FONNTE_TOKEN = "test-fonnte-token";
+    globalThis.fetch = async () => new Response("not-json", { status: 200 });
+    t.after(() => {
+        if (previousToken === undefined) delete process.env.FONNTE_TOKEN;
+        else process.env.FONNTE_TOKEN = previousToken;
+        globalThis.fetch = originalFetch;
+    });
+    await assert.rejects(
+        () => sendWhatsApp("6281234567890", "Amanah ID: presensi siswa telah tercatat."),
+        error => error.code === "FONNTE_UNCERTAIN_RESPONSE"
+    );
+});
