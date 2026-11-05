@@ -2233,42 +2233,50 @@ async function testAdminGps() {
 
 async function runAdminServiceChecks() {
     const root = $("admin-test-services-results");
+    if (!root) return;
     root.textContent = tr("testServiceChecking");
     const results = [];
-    try {
-        const health = await cloudRequest("/api/ready");
-        results.push({
-            name: "Vercel API + Supabase",
-            state: health?.ok === true && health?.checks?.database === "ok" ? "ready" : "error"
-        });
-    } catch {
-        results.push({ name: "Vercel API + Supabase", state: "error" });
-    }
-    try {
-        const tools = await cloudRequest("/api/admin/test-tools");
-        results.push({
-            name: "Fonnte WhatsApp token",
-            state: tools?.fonnte_configured === true ? "ready" : "not_configured"
-        });
-    } catch {
-        results.push({ name: "Fonnte WhatsApp token", state: "error" });
-    }
-    try {
-        const flags = await cloudRequest("/api?action=features");
-        results.push({
-            name: "Konfigurasi feature flags",
-            state: flags?.features && typeof flags.features === "object" ? "ready" : "error"
-        });
-    } catch {
-        results.push({ name: "Konfigurasi feature flags", state: "error" });
-    }
+    const [operations, toolsResult, featureResult] = await Promise.allSettled([
+        loadAdminOperations(),
+        cloudRequest("/api/admin/test-tools"),
+        cloudRequest("/api/admin/settings?action=features")
+    ]);
+    const ready = operations.status === "fulfilled" ? operations.value?.ready : null;
+    const features = featureResult.status === "fulfilled" ? featureResult.value?.features : null;
+    const tools = toolsResult.status === "fulfilled" ? toolsResult.value : null;
+    const push = (name, state, detail) => results.push({ name, state, detail });
+    push("Vercel Serverless API", ready?.checks?.api === "ok" ? "ready" : "error",
+        ready?.environment || "Environment tidak terbaca");
+    push("Supabase PostgreSQL", ready?.checks?.database === "ok" ? "ready" : "error",
+        ready?.checks?.database || "Tidak dapat melakukan round-trip");
+    push("Environment autentikasi", ready?.checks?.configuration === "ok" ? "ready" : "error",
+        ready?.checks?.configuration || "Konfigurasi tidak tersedia");
+    push("Fonnte WhatsApp token", tools?.fonnte_configured === true ? "ready" : "not_configured",
+        tools?.fonnte_configured === true ? "Token terdeteksi; pengiriman tetap perlu tes nyata" : "Token belum berisi nilai pada environment aktif");
+    push("Supabase feature flags", features && typeof features === "object" ? "ready" : "error",
+        features ? "Konfigurasi kebijakan berhasil dibaca" : "Tidak dapat membaca konfigurasi");
+    push("Kamera perangkat", window.isSecureContext && Boolean(navigator.mediaDevices?.getUserMedia) ? "ready" : "not_configured",
+        window.isSecureContext ? "Browser menyediakan getUserMedia" : "Perlu HTTPS atau browser yang mendukung kamera");
+    push("Geolocation perangkat", Boolean(navigator.geolocation?.getCurrentPosition) ? "ready" : "not_configured",
+        navigator.geolocation ? "API tersedia; akurasi diuji terpisah" : "Browser tidak menyediakan geolocation");
+    push("ArcFace AI runtime", state.faceRecognitionReady && state.faceEngine ? "ready" : "not_configured",
+        state.faceRecognitionReady ? "Model telah dimuat pada sesi ini" : "Model belum dimuat; jalankan tes kamera untuk memvalidasi");
+    push("Penyimpanan offline", Boolean(window.indexedDB && navigator.serviceWorker) ? "ready" : "not_configured",
+        "IndexedDB dan Service Worker " + (window.indexedDB && navigator.serviceWorker ? "tersedia" : "tidak lengkap"));
+    push("GitHub Actions CI", operations.status === "fulfilled" && operations.value?.github?.workflow?.workflow_runs?.[0]?.conclusion === "success"
+        ? "ready" : operations.status === "fulfilled" && operations.value?.github?.workflow?.workflow_runs?.[0]?.status
+            ? "not_configured" : "error",
+        operations.status === "fulfilled"
+            ? (operations.value?.github?.workflow?.workflow_runs?.[0]?.conclusion || operations.value?.github?.workflow?.workflow_runs?.[0]?.status || "Status CI tidak tersedia")
+            : "GitHub API tidak dapat dijangkau");
     root.innerHTML = results.map(item => {
         const css = item.state === "ready" ? "is-ok"
             : item.state === "not_configured" ? "is-not-configured" : "is-error";
-        const message = item.state === "ready" ? tr("testOtherPass")
-            : item.state === "not_configured" ? tr("testOtherNotConfigured") : tr("testOtherFail");
-        return '<div class="admin-test-service-row"><span>' + safeText(item.name) +
-            '</span><strong class="' + css + '">' + safeText(message) + '</strong></div>';
+        const message = item.state === "ready" ? "Siap"
+            : item.state === "not_configured" ? "Perlu perhatian" : "Gagal";
+        return '<div class="admin-test-service-row"><span><strong>' + safeText(item.name) +
+            '</strong><small>' + safeText(item.detail || "") + '</small></span><strong class="' +
+            css + '">' + safeText(message) + '</strong></div>';
     }).join("");
 }
 
