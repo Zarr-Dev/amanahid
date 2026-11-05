@@ -1716,6 +1716,7 @@ async function loadAdminOperations() {
     defaults.forEach(id => status(id, "Memeriksa…"));
     const readyPromise = cloudRequest("/api/ready");
     const featuresPromise = cloudRequest("/api/admin/settings?action=features");
+    const fonntePromise = cloudRequest("/api/admin/settings?action=test-tools");
     const githubPromise = (async () => {
         const controller = new AbortController();
         const timer = window.setTimeout(() => controller.abort(), 8_000);
@@ -1734,8 +1735,8 @@ async function loadAdminOperations() {
             window.clearTimeout(timer);
         }
     })();
-    const [readyResult, featuresResult, githubResult] = await Promise.allSettled([
-        readyPromise, featuresPromise, githubPromise
+    const [readyResult, featuresResult, githubResult, fonnteResult] = await Promise.allSettled([
+        readyPromise, featuresPromise, githubPromise, fonntePromise
     ]);
     if (readyResult.status === "fulfilled") {
         const ready = readyResult.value;
@@ -1758,6 +1759,16 @@ async function loadAdminOperations() {
     } else {
         status("admin-ops-supabase-flags", "Gagal dimuat");
     }
+    if (fonnteResult.status === "fulfilled") {
+        const configured = fonnteResult.value?.fonnte_configured === true;
+        status("admin-ops-fonnte-state", configured ? "Token tersedia" : "Token kosong");
+        status("admin-ops-fonnte-env", String(fonnteResult.value?.environment || "unknown"));
+        status("admin-ops-fonnte-send", "Gunakan Pengujian Sistem untuk mengirim pesan nyata");
+    } else {
+        status("admin-ops-fonnte-state", "Gagal diperiksa");
+        status("admin-ops-fonnte-env", "—");
+        status("admin-ops-fonnte-send", "Tidak dapat diuji");
+    }
     if (githubResult.status === "fulfilled") {
         const latest = githubResult.value.commit;
         const run = githubResult.value.workflow?.workflow_runs?.[0] || null;
@@ -1775,7 +1786,8 @@ async function loadAdminOperations() {
     return {
         ready: readyResult.status === "fulfilled" ? readyResult.value : null,
         features: featuresResult.status === "fulfilled" ? featuresResult.value : null,
-        github: githubResult.status === "fulfilled" ? githubResult.value : null
+        github: githubResult.status === "fulfilled" ? githubResult.value : null,
+        fonnte: fonnteResult.status === "fulfilled" ? fonnteResult.value : null
     };
 }
 
