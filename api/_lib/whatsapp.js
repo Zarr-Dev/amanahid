@@ -58,7 +58,12 @@ export async function sendWhatsApp(target, message) {
         });
         const responseText = await response.text();
         try { payload = responseText ? JSON.parse(responseText) : null; }
-        catch { throw new Error("WhatsApp provider returned an invalid response"); }
+        catch {
+            const error = new Error("WhatsApp provider returned an unreadable response; delivery could not be confirmed");
+            error.status = response.status;
+            error.code = "FONNTE_UNCERTAIN_RESPONSE";
+            throw error;
+        }
     } catch (cause) {
         if (cause?.name === "AbortError") {
             const error = new Error("WhatsApp provider timed out; delivery could not be confirmed");
@@ -66,7 +71,7 @@ export async function sendWhatsApp(target, message) {
             error.code = "FONNTE_TIMEOUT";
             throw error;
         }
-        if (cause?.message === "WhatsApp provider returned an invalid response") throw cause;
+        if (cause?.code === "FONNTE_UNCERTAIN_RESPONSE") throw cause;
         const error = new Error("WhatsApp provider is temporarily unreachable");
         error.code = "FONNTE_NETWORK_ERROR";
         throw error;
@@ -74,10 +79,23 @@ export async function sendWhatsApp(target, message) {
         clearTimeout(timeoutId);
     }
 
-    if (!response.ok || payload?.status === false || payload?.status === "false" || payload?.status !== true && payload?.status !== "true") {
+    if (response.status >= 500 || !payload || typeof payload !== "object" ||
+        response.ok && payload.status !== true && payload.status !== "true" && payload.status !== false && payload.status !== "false") {
+        const error = new Error("WhatsApp provider response was inconclusive; delivery could not be confirmed");
+        error.status = response.status;
+        error.code = "FONNTE_UNCERTAIN_RESPONSE";
+        throw error;
+    }
+    if (!response.ok || payload.status === false || payload.status === "false") {
         const error = new Error("WhatsApp provider rejected the request or did not accept the message");
         error.status = response.status;
         error.code = "FONNTE_REJECTED";
+        throw error;
+    }
+    if (payload.status !== true && payload.status !== "true") {
+        const error = new Error("WhatsApp provider did not confirm the message request");
+        error.status = response.status;
+        error.code = "FONNTE_UNCERTAIN_RESPONSE";
         throw error;
     }
     return payload;
