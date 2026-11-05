@@ -193,7 +193,7 @@ export default async function handler(req, res) {
                 }
                 return res.status(200).json({
                     attendance: normalizeAttendance(repeated[0]),
-                    whatsapp: attendanceWhatsAppResult(existing[0])
+                    whatsapp: attendanceWhatsAppResult(repeated[0])
                 });
             }
             const settings = await supabaseRequest(
@@ -344,7 +344,7 @@ export default async function handler(req, res) {
                     if (repeated.length && repeated[0].students?.nisn === nisn) {
                         return res.status(200).json({
                             attendance: normalizeAttendance(repeated[0]),
-                            whatsapp: { sent: false, skipped: true }
+                            whatsapp: attendanceWhatsAppResult(repeated[0])
                         });
                     }
                 } catch (lookupError) {
