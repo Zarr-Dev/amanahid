@@ -30,7 +30,7 @@ const ROLE_T = {
         studentHistoryEmpty: "Riwayat presensi Anda akan tampil di sini.",
         parentWhatsApp: "WhatsApp orang tua",
         whatsappPlaceholder: "08..., 628..., atau +62...",
-        invalidWhatsApp: "Nomor WhatsApp orang tua harus dimulai dengan 08 atau 628 dan berisi nomor yang valid.",
+        invalidWhatsApp: "Masukkan nomor WhatsApp orang tua yang valid, misalnya 08..., 628..., atau +62....",
         whatsappSuccess: "Notifikasi WhatsApp berhasil dikirim ke orang tua.",
         whatsappFailed: "Presensi tercatat, tetapi notifikasi WhatsApp gagal dikirim.",
         roleTeacherMismatch: "Akun ini bukan akun guru. Silakan pilih peran Siswa.",
@@ -58,7 +58,7 @@ const ROLE_T = {
         studentHistoryEmpty: "Your attendance history will appear here.",
         parentWhatsApp: "Parent's WhatsApp",
         whatsappPlaceholder: "08..., 628..., or +62...",
-        invalidWhatsApp: "The parent's WhatsApp number must start with 08 or 628 and be a valid number.",
+        invalidWhatsApp: "Enter a valid parent WhatsApp number, such as 08..., 628..., or +62....",
         whatsappSuccess: "WhatsApp notification sent to the parent.",
         whatsappFailed: "Attendance was recorded, but the WhatsApp notification could not be sent.",
         roleTeacherMismatch: "This is not a teacher account. Please select Student.",
@@ -86,7 +86,7 @@ const ROLE_T = {
         studentHistoryEmpty: "سيظهر سجل حضورك هنا.",
         parentWhatsApp: "واتساب ولي الأمر",
         whatsappPlaceholder: "08... أو 628... أو +62...",
-        invalidWhatsApp: "يجب أن يبدأ رقم واتساب ولي الأمر بـ 08 أو 628 وأن يكون صالحاً.",
+        invalidWhatsApp: "أدخل رقم واتساب صالحًا لولي الأمر، مثل 08... أو 628... أو +62....",
         whatsappSuccess: "تم إرسال إشعار واتساب إلى ولي الأمر.",
         whatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب.",
         roleTeacherMismatch: "هذا ليس حساب معلّم. يرجى اختيار الطالب.",
@@ -216,7 +216,7 @@ const EXTRA_T = {
         testModelReady: "Model deteksi wajah siap.",
         testModelFailed: "Model AI gagal dimuat.",
         testWhatsappTitle: "Uji notifikasi WhatsApp",
-        testWhatsappDesc: "Pratinjau dan kirim satu pesan percobaan ke nomor yang disetujui Admin. Tidak mengubah template presensi.",
+        testWhatsappDesc: "Masukkan nomor tujuan, periksa pesan, lalu setujui sebelum mengirim satu pesan percobaan. Pengaturan presensi otomatis tidak berubah.",
         testWhatsappNumber: "Nomor uji WhatsApp",
         testWhatsappTemplate: "Template pesan",
         testWhatsappDefaultTemplate: "Amanah ID: ini adalah pesan uji notifikasi WhatsApp. Tidak ada presensi atau data siswa yang diubah.",
@@ -240,10 +240,10 @@ const EXTRA_T = {
         testOtherFail: "Layanan tidak merespons.",
         testPhoneInvalid: "Masukkan nomor uji yang valid dalam format 628xxxxxxxxxx.",
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
-        testFonnteConfigured: "Token Fonnte tersedia",
-        testFonnteMissing: "Token Fonnte belum dikonfigurasi",
-        testAllowlistEmpty: "Belum ada nomor uji yang disetujui Admin",
-        testAllowlistLoadFailed: "Gagal memuat daftar nomor uji",
+        testFonnteConfigured: "Konfigurasi WhatsApp tersedia",
+        testFonnteMissing: "Layanan WhatsApp belum dikonfigurasi",
+        testAllowlistEmpty: "Nomor uji diisi langsung pada kolom tujuan",
+        testAllowlistLoadFailed: "Nomor tujuan uji belum dapat diperiksa",
         testGpsChecking: "Memeriksa lokasi perangkat...",
         testGpsInside: "Lokasi berada dalam radius sekolah dan akurasi memenuhi batas.",
         testGpsOutside: "Lokasi di luar radius atau akurasi tidak memenuhi batas.",
@@ -260,9 +260,9 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Akurasi",
         testMetricDistance: "Jarak sekolah",
-        testFonnteList: "Nomor uji yang diizinkan:",
-        testAllowlistEmpty: "Belum ada nomor uji yang diizinkan Admin.",
-        testFonnteConfigHint: "Konfigurasikan FONNTE_TOKEN dan FONNTE_TEST_RECIPIENTS pada environment Production untuk mengaktifkan pengujian.",
+        testFonnteList: "Nomor tujuan uji:",
+        testAllowlistEmpty: "Nomor tujuan uji diisi langsung oleh Admin.",
+        testFonnteConfigHint: "Layanan WhatsApp belum siap. Hubungi Admin teknis sekolah untuk memeriksa pengaturannya.",
         testFonnteStatusUnavailable: "Status konfigurasi WhatsApp tidak dapat diperiksa.",
         faceMatchAmbiguous: "Dua atau lebih profil wajah terlalu mirip untuk diputuskan dengan aman. Minta guru mengulang pemindaian dalam pencahayaan yang lebih baik.",
         faceQualityLow: "Wajah belum cukup jelas. Hadapkan wajah ke kamera, dekatkan secukupnya, dan perbaiki pencahayaan.",
@@ -406,7 +406,7 @@ const EXTRA_T = {
         testModelReady: "Face detection model is ready.",
         testModelFailed: "The AI model could not be loaded.",
         testWhatsappTitle: "WhatsApp notification test",
-        testWhatsappDesc: "Preview and send one trial message to an Admin-approved number. This does not change the attendance template.",
+        testWhatsappDesc: "Enter a destination, review the message, and approve one test send. Automatic attendance notifications will not change.",
         testWhatsappNumber: "Test WhatsApp number",
         testWhatsappTemplate: "Message template",
         testWhatsappDefaultTemplate: "Amanah ID: this is a WhatsApp notification test. No attendance or student data has been changed.",
@@ -430,10 +430,10 @@ const EXTRA_T = {
         testOtherFail: "Service did not respond.",
         testPhoneInvalid: "Enter a valid test number in 628xxxxxxxxxx format.",
         testWhatsappNoConsent: "Confirm consent before sending the test message.",
-        testFonnteConfigured: "Fonnte token is configured",
-        testFonnteMissing: "Fonnte token is not configured",
-        testAllowlistEmpty: "No approved test numbers configured",
-        testAllowlistLoadFailed: "Could not load the test-number list",
+        testFonnteConfigured: "WhatsApp configuration is available",
+        testFonnteMissing: "WhatsApp service is not configured",
+        testAllowlistEmpty: "Enter the destination number above",
+        testAllowlistLoadFailed: "The test destination could not be checked",
         testGpsChecking: "Checking device location...",
         testGpsInside: "Location is within the school radius and accuracy meets the limit.",
         testGpsOutside: "Location is outside the radius or accuracy is insufficient.",
@@ -450,9 +450,9 @@ const EXTRA_T = {
         testMetricLongitude: "Longitude",
         testMetricAccuracy: "Accuracy",
         testMetricDistance: "Distance to school",
-        testFonnteList: "Approved test numbers:",
-        testAllowlistEmpty: "No Admin-approved test numbers are configured.",
-        testFonnteConfigHint: "Set FONNTE_TOKEN and FONNTE_TEST_RECIPIENTS in the Production environment to enable testing.",
+        testFonnteList: "Test destination number:",
+        testAllowlistEmpty: "The Admin enters the destination number above.",
+        testFonnteConfigHint: "The WhatsApp service is not ready. Ask the technical Admin to check its configuration.",
         testFonnteStatusUnavailable: "WhatsApp configuration status could not be checked.",
         faceMatchAmbiguous: "Two or more face profiles are too similar to distinguish safely. Ask a teacher to repeat the scan in better lighting.",
         faceQualityLow: "The face is not clear enough. Face the camera, move a little closer, and improve the lighting.",
@@ -596,7 +596,7 @@ const EXTRA_T = {
         testModelReady: "نموذج اكتشاف الوجه جاهز.",
         testModelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي.",
         testWhatsappTitle: "اختبار إشعارات واتساب",
-        testWhatsappDesc: "اعرض الرسالة وأرسل رسالة تجريبية واحدة إلى رقم وافق عليه المسؤول. لا يغيّر ذلك قالب الحضور.",
+        testWhatsappDesc: "أدخل رقم الوجهة وراجع الرسالة ووافق على إرسال رسالة تجريبية واحدة. لن تتغير إشعارات الحضور التلقائية.",
         testWhatsappNumber: "رقم واتساب للاختبار",
         testWhatsappTemplate: "قالب الرسالة",
         testWhatsappDefaultTemplate: "أمانة ID: هذه رسالة اختبار لإشعارات واتساب. لم يتم تغيير أي سجل حضور أو بيانات طالب.",
@@ -620,10 +620,10 @@ const EXTRA_T = {
         testOtherFail: "لم تستجب الخدمة.",
         testPhoneInvalid: "أدخل رقم اختبار صالحًا بالتنسيق 628xxxxxxxxxx.",
         testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار.",
-        testFonnteConfigured: "رمز Fonnte مُعدّ",
-        testFonnteMissing: "لم يتم إعداد رمز Fonnte",
-        testAllowlistEmpty: "لم تُضف أرقام اختبار معتمدة",
-        testAllowlistLoadFailed: "تعذر تحميل قائمة أرقام الاختبار",
+        testFonnteConfigured: "إعداد WhatsApp متاح",
+        testFonnteMissing: "لم يتم إعداد خدمة WhatsApp",
+        testAllowlistEmpty: "أدخل رقم الوجهة أعلاه",
+        testAllowlistLoadFailed: "تعذر التحقق من رقم الوجهة",
         testGpsChecking: "جارٍ التحقق من موقع الجهاز...",
         testGpsInside: "الموقع داخل نطاق المدرسة والدقة ضمن الحد المسموح.",
         testGpsOutside: "الموقع خارج النطاق أو الدقة غير كافية.",
@@ -640,9 +640,9 @@ const EXTRA_T = {
         testMetricLongitude: "خط الطول",
         testMetricAccuracy: "الدقة",
         testMetricDistance: "المسافة إلى المدرسة",
-        testFonnteList: "أرقام الاختبار المعتمدة:",
-        testAllowlistEmpty: "لم يتم إعداد أرقام اختبار معتمدة من المسؤول.",
-        testFonnteConfigHint: "اضبط FONNTE_TOKEN وFONNTE_TEST_RECIPIENTS في بيئة Production لتفعيل الاختبار.",
+        testFonnteList: "رقم وجهة الاختبار:",
+        testAllowlistEmpty: "يدخل المسؤول رقم الوجهة أعلاه.",
+        testFonnteConfigHint: "خدمة WhatsApp غير جاهزة. اطلب من المسؤول التقني التحقق من الإعدادات.",
         testFonnteStatusUnavailable: "تعذر التحقق من حالة إعداد WhatsApp.",
         faceMatchAmbiguous: "ملفان أو أكثر للوجه متشابهان جدًا ولا يمكن الاختيار بأمان. اطلب من المعلم إعادة المسح في إضاءة أفضل.",
         faceQualityLow: "الوجه غير واضح بما يكفي. واجه الكاميرا واقترب قليلًا وحسّن الإضاءة.",
@@ -721,7 +721,6 @@ const state = {
     adminSettingsDeviceMarker: null,
     adminSettingsAccuracyCircle: null,
     livenessChallenge: null,
-    adminAllowedWhatsappRecipients: [],
     adminFonnteConfigured: false,
     lastNose: null,
     movementFrames: 0,
@@ -859,7 +858,7 @@ Object.keys(LANDING_T).forEach(lang => Object.assign(T[lang], LANDING_T[lang]));
 const ADMIN_T = {
     id: {
         adminWorkspace: "ADMINISTRATOR", adminNavigation: "Navigasi Admin", faceSampleProgress: "Progres sampel wajah", administratorRole: "Administrator", confirmDeactivateAccount: "Nonaktifkan akun ini?", promptNewEmail: "Email baru (kosongkan jika tidak berubah):", promptNewName: "Nama baru (kosongkan jika tidak berubah):", promptNewPassword: "Kata sandi baru (kosongkan jika tidak berubah):", adminOverview: "Ringkasan", adminAccounts: "Kelola akun",
-        adminSchoolSettings: "Pengaturan sekolah", adminWhatsappNotifications: "Notifikasi orang tua", adminWhatsappTemplateTitle: "Pesan otomatis untuk orang tua", adminWhatsappTemplateDesc: "Pesan ini dikirim setiap kali presensi siswa berhasil dicatat. Pengaturan berlaku terus sampai Admin mengubahnya.", adminWhatsappEnabled: "Kirim pemberitahuan otomatis setelah presensi siswa berhasil dicatat", adminWhatsappTemplateLabel: "Isi pesan", adminWhatsappTemplateHelp: "Penanda yang tersedia: {name} untuk nama siswa, {nisn} untuk NISN, {class} untuk kelas, {date} untuk tanggal, {time} untuk waktu, dan {school} untuk nama sekolah.", adminWhatsappPreviewTitle: "Contoh pesan", adminWhatsappSave: "Simpan pengaturan", adminWhatsappSaving: "Menyimpan...", adminWhatsappSaved: "Pengaturan pemberitahuan berhasil disimpan.", adminWhatsappLoadFailed: "Pengaturan pemberitahuan gagal dimuat.", adminWhatsappProvider: "Koneksi Fonnte", adminWhatsappFailuresTitle: "Pesan yang perlu diperiksa", adminWhatsappFailuresDesc: "Pesan yang ditolak Fonnte dapat dicoba kembali. Jika status belum pasti, periksa riwayat Fonnte terlebih dahulu agar tidak terkirim dua kali.", adminWhatsappFailuresEmpty: "Tidak ada pesan yang perlu ditindaklanjuti.", adminWhatsappStudent: "Siswa", adminWhatsappDestination: "Nomor tujuan", adminWhatsappWhen: "Waktu presensi", adminWhatsappStatus: "Status pesan", adminWhatsappStatusFailed: "Gagal diterima Fonnte", adminWhatsappStatusUnknown: "Belum dapat dipastikan", adminWhatsappStatusSending: "Sedang diproses", adminWhatsappRetry: "Kirim ulang", adminWhatsappRetrying: "Mengirim ulang...", adminWhatsappRetryQueued: "Permintaan kirim ulang sudah masuk antrean Fonnte.", adminWhatsappReviewFirst: "Periksa riwayat Fonnte sebelum mencoba lagi.", adminWhatsappTemplateOneTime: "Template pada menu Pengujian hanya berlaku untuk satu pesan percobaan. Template tersebut tidak mengubah pesan otomatis presensi.", adminAudit: "Audit aktivitas", adminSecurity: "Keamanan akun",
+        adminSchoolSettings: "Pengaturan sekolah", adminWhatsappNotifications: "Notifikasi orang tua", adminWhatsappTemplateTitle: "Pesan otomatis untuk orang tua", adminWhatsappTemplateDesc: "Pesan ini dikirim setiap kali presensi siswa berhasil dicatat. Pengaturan berlaku terus sampai Admin mengubahnya.", adminWhatsappEnabled: "Kirim pemberitahuan otomatis setelah presensi siswa berhasil dicatat", adminWhatsappTemplateLabel: "Isi pesan", adminWhatsappTemplateHelp: "Penanda yang tersedia: {name} untuk nama siswa, {nisn} untuk NISN, {class} untuk kelas, {date} untuk tanggal, {time} untuk waktu, dan {school} untuk nama sekolah.", adminWhatsappPreviewTitle: "Contoh pesan", adminWhatsappSave: "Simpan pengaturan", adminWhatsappSaving: "Menyimpan...", adminWhatsappSaved: "Pengaturan pemberitahuan berhasil disimpan.", adminWhatsappLoadFailed: "Pengaturan pemberitahuan gagal dimuat.", adminWhatsappLoading: "Memuat pengaturan...", adminWhatsappTemplateInvalid: "Pesan harus berisi 10 sampai 450 karakter. Periksa kembali penanda informasi yang digunakan.", adminWhatsappRetryUncertain: "Permintaan sudah diterima atau statusnya belum dapat dipastikan. Periksa riwayat Fonnte sebelum mencoba lagi.", adminWhatsappStatusPending: "Menunggu pemeriksaan", testWhatsappDirectTarget: "Pesan percobaan hanya dikirim ke nomor yang kamu masukkan setelah menyetujui pengiriman.", adminWhatsappProvider: "Koneksi Fonnte", adminWhatsappFailuresTitle: "Pesan yang perlu diperiksa", adminWhatsappFailuresDesc: "Pesan yang ditolak Fonnte dapat dicoba kembali. Jika status belum pasti, periksa riwayat Fonnte terlebih dahulu agar tidak terkirim dua kali.", adminWhatsappFailuresEmpty: "Tidak ada pesan yang perlu ditindaklanjuti.", adminWhatsappStudent: "Siswa", adminWhatsappDestination: "Nomor tujuan", adminWhatsappWhen: "Waktu presensi", adminWhatsappStatus: "Status pesan", adminWhatsappStatusFailed: "Gagal diterima Fonnte", adminWhatsappStatusUnknown: "Belum dapat dipastikan", adminWhatsappStatusSending: "Sedang diproses", adminWhatsappRetry: "Kirim ulang", adminWhatsappRetrying: "Mengirim ulang...", adminWhatsappRetryQueued: "Permintaan kirim ulang sudah masuk antrean Fonnte.", adminWhatsappReviewFirst: "Periksa riwayat Fonnte sebelum mencoba lagi.", adminWhatsappTemplateOneTime: "Template pada menu Pengujian hanya berlaku untuk satu pesan percobaan. Template tersebut tidak mengubah pesan otomatis presensi.", adminAudit: "Audit aktivitas", adminSecurity: "Keamanan akun",
         adminOverviewTitle: "Ringkasan sistem", refreshData: "Segarkan data", adminOverviewKicker: "RINGKASAN",
         adminAttendanceOverview: "Ikhtisar presensi", adminOverviewDescription: "Pantau akun, aktivitas presensi, dan kesehatan layanan dari satu tempat.",
         totalActiveStudents: "Total siswa aktif", supabaseData: "Data pada Supabase", totalActiveTeachers: "Total guru aktif",
@@ -887,7 +886,7 @@ const ADMIN_T = {
     },
     en: {
         adminWorkspace: "ADMINISTRATOR", adminNavigation: "Admin navigation", faceSampleProgress: "Face sample progress", administratorRole: "Administrator", confirmDeactivateAccount: "Deactivate this account?", promptNewEmail: "New email (leave blank to keep it unchanged):", promptNewName: "New name (leave blank to keep it unchanged):", promptNewPassword: "New password (leave blank to keep it unchanged):", adminOverview: "Overview", adminAccounts: "Manage accounts",
-        adminSchoolSettings: "School settings", adminWhatsappNotifications: "Parent notifications", adminWhatsappTemplateTitle: "Automatic message for parents", adminWhatsappTemplateDesc: "This message is sent whenever student attendance is recorded. These settings remain in effect until an Admin changes them.", adminWhatsappEnabled: "Automatically notify parents after a student's attendance is recorded", adminWhatsappTemplateLabel: "Message text", adminWhatsappTemplateHelp: "Available placeholders: {name} for student name, {nisn} for NISN, {class} for class, {date} for date, {time} for time, and {school} for school name.", adminWhatsappPreviewTitle: "Message preview", adminWhatsappSave: "Save settings", adminWhatsappSaving: "Saving...", adminWhatsappSaved: "Parent notification settings were saved.", adminWhatsappLoadFailed: "Parent notification settings could not be loaded.", adminWhatsappProvider: "Fonnte connection", adminWhatsappFailuresTitle: "Messages that need attention", adminWhatsappFailuresDesc: "Messages rejected by Fonnte can be retried. If the status is uncertain, check Fonnte history first to avoid sending duplicates.", adminWhatsappFailuresEmpty: "No messages need follow-up.", adminWhatsappStudent: "Student", adminWhatsappDestination: "Destination", adminWhatsappWhen: "Attendance time", adminWhatsappStatus: "Message status", adminWhatsappStatusFailed: "Not accepted by Fonnte", adminWhatsappStatusUnknown: "Could not be confirmed", adminWhatsappStatusSending: "In progress", adminWhatsappRetry: "Retry", adminWhatsappRetrying: "Retrying...", adminWhatsappRetryQueued: "The retry request was added to the Fonnte queue.", adminWhatsappReviewFirst: "Check Fonnte history before trying again.", adminWhatsappTemplateOneTime: "The template in the Testing menu is used for one test message only. It does not change the automatic attendance message.", adminAudit: "Activity audit", adminSecurity: "Account security",
+        adminSchoolSettings: "School settings", adminWhatsappNotifications: "Parent notifications", adminWhatsappTemplateTitle: "Automatic message for parents", adminWhatsappTemplateDesc: "This message is sent whenever student attendance is recorded. These settings remain in effect until an Admin changes them.", adminWhatsappEnabled: "Automatically notify parents after a student's attendance is recorded", adminWhatsappTemplateLabel: "Message text", adminWhatsappTemplateHelp: "Available placeholders: {name} for student name, {nisn} for NISN, {class} for class, {date} for date, {time} for time, and {school} for school name.", adminWhatsappPreviewTitle: "Message preview", adminWhatsappSave: "Save settings", adminWhatsappSaving: "Saving...", adminWhatsappSaved: "Parent notification settings were saved.", adminWhatsappLoadFailed: "Parent notification settings could not be loaded.", adminWhatsappLoading: "Loading settings...", adminWhatsappTemplateInvalid: "The message must contain 10 to 450 characters. Check the information placeholders.", adminWhatsappRetryUncertain: "The request may have been accepted, but its status is uncertain. Check Fonnte history before trying again.", adminWhatsappStatusPending: "Waiting for review", testWhatsappDirectTarget: "The test message is sent only to the number entered above after you approve it.", adminWhatsappProvider: "Fonnte connection", adminWhatsappFailuresTitle: "Messages that need attention", adminWhatsappFailuresDesc: "Messages rejected by Fonnte can be retried. If the status is uncertain, check Fonnte history first to avoid sending duplicates.", adminWhatsappFailuresEmpty: "No messages need follow-up.", adminWhatsappStudent: "Student", adminWhatsappDestination: "Destination", adminWhatsappWhen: "Attendance time", adminWhatsappStatus: "Message status", adminWhatsappStatusFailed: "Not accepted by Fonnte", adminWhatsappStatusUnknown: "Could not be confirmed", adminWhatsappStatusSending: "In progress", adminWhatsappRetry: "Retry", adminWhatsappRetrying: "Retrying...", adminWhatsappRetryQueued: "The retry request was added to the Fonnte queue.", adminWhatsappReviewFirst: "Check Fonnte history before trying again.", adminWhatsappTemplateOneTime: "The template in the Testing menu is used for one test message only. It does not change the automatic attendance message.", adminAudit: "Activity audit", adminSecurity: "Account security",
         adminOverviewTitle: "System overview", refreshData: "Refresh data", adminOverviewKicker: "OVERVIEW",
         adminAttendanceOverview: "Attendance overview", adminOverviewDescription: "Monitor accounts, attendance activity, and service health in one place.",
         totalActiveStudents: "Active students", supabaseData: "Supabase records", totalActiveTeachers: "Active teachers",
@@ -915,7 +914,7 @@ const ADMIN_T = {
     },
     ar: {
         adminWorkspace: "مساحة المسؤول", adminNavigation: "تنقل المسؤول", faceSampleProgress: "تقدم عينات الوجه", administratorRole: "المسؤول", confirmDeactivateAccount: "هل تريد تعطيل هذا الحساب؟", promptNewEmail: "البريد الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewName: "الاسم الجديد (اتركه فارغًا لإبقائه كما هو):", promptNewPassword: "كلمة المرور الجديدة (اتركها فارغة لإبقائها كما هي):", adminOverview: "نظرة عامة", adminAccounts: "إدارة الحسابات",
-        adminSchoolSettings: "إعدادات المدرسة", adminWhatsappNotifications: "إشعارات أولياء الأمور", adminWhatsappTemplateTitle: "رسالة تلقائية لأولياء الأمور", adminWhatsappTemplateDesc: "تُرسل هذه الرسالة عند تسجيل حضور الطالب. تظل هذه الإعدادات فعالة حتى يغيّرها المسؤول.", adminWhatsappEnabled: "إرسال إشعار تلقائي لولي الأمر بعد تسجيل حضور الطالب", adminWhatsappTemplateLabel: "نص الرسالة", adminWhatsappTemplateHelp: "الرموز المتاحة: {name} لاسم الطالب، و{nisn} لرقم NISN، و{class} للصف، و{date} للتاريخ، و{time} للوقت، و{school} لاسم المدرسة.", adminWhatsappPreviewTitle: "معاينة الرسالة", adminWhatsappSave: "حفظ الإعدادات", adminWhatsappSaving: "جارٍ الحفظ...", adminWhatsappSaved: "تم حفظ إعدادات إشعار ولي الأمر.", adminWhatsappLoadFailed: "تعذر تحميل إعدادات إشعار ولي الأمر.", adminWhatsappProvider: "اتصال Fonnte", adminWhatsappFailuresTitle: "رسائل تحتاج إلى متابعة", adminWhatsappFailuresDesc: "يمكن إعادة محاولة الرسائل التي رفضتها Fonnte. إذا كانت الحالة غير مؤكدة، راجع سجل Fonnte أولاً لتجنب تكرار الرسالة.", adminWhatsappFailuresEmpty: "لا توجد رسائل تحتاج إلى متابعة.", adminWhatsappStudent: "الطالب", adminWhatsappDestination: "رقم الوجهة", adminWhatsappWhen: "وقت الحضور", adminWhatsappStatus: "حالة الرسالة", adminWhatsappStatusFailed: "لم تقبلها Fonnte", adminWhatsappStatusUnknown: "تعذر التأكيد", adminWhatsappStatusSending: "قيد المعالجة", adminWhatsappRetry: "إعادة الإرسال", adminWhatsappRetrying: "جارٍ إعادة الإرسال...", adminWhatsappRetryQueued: "تمت إضافة طلب إعادة الإرسال إلى قائمة Fonnte.", adminWhatsappReviewFirst: "راجع سجل Fonnte قبل المحاولة مرة أخرى.", adminWhatsappTemplateOneTime: "يُستخدم القالب الموجود في قائمة الاختبار لرسالة تجريبية واحدة فقط، ولا يغيّر رسالة الحضور التلقائية.", adminAudit: "سجل النشاط", adminSecurity: "أمان الحساب",
+        adminSchoolSettings: "إعدادات المدرسة", adminWhatsappNotifications: "إشعارات أولياء الأمور", adminWhatsappTemplateTitle: "رسالة تلقائية لأولياء الأمور", adminWhatsappTemplateDesc: "تُرسل هذه الرسالة عند تسجيل حضور الطالب. تظل هذه الإعدادات فعالة حتى يغيّرها المسؤول.", adminWhatsappEnabled: "إرسال إشعار تلقائي لولي الأمر بعد تسجيل حضور الطالب", adminWhatsappTemplateLabel: "نص الرسالة", adminWhatsappTemplateHelp: "الرموز المتاحة: {name} لاسم الطالب، و{nisn} لرقم NISN، و{class} للصف، و{date} للتاريخ، و{time} للوقت، و{school} لاسم المدرسة.", adminWhatsappPreviewTitle: "معاينة الرسالة", adminWhatsappSave: "حفظ الإعدادات", adminWhatsappSaving: "جارٍ الحفظ...", adminWhatsappSaved: "تم حفظ إعدادات إشعار ولي الأمر.", adminWhatsappLoadFailed: "تعذر تحميل إعدادات إشعار ولي الأمر.", adminWhatsappLoading: "جارٍ تحميل الإعدادات...", adminWhatsappTemplateInvalid: "يجب أن تحتوي الرسالة على 10 إلى 450 حرفًا. تحقق من الرموز المستخدمة.", adminWhatsappRetryUncertain: "قد يكون الطلب قد قُبل، لكن حالته غير مؤكدة. راجع سجل Fonnte قبل المحاولة مرة أخرى.", adminWhatsappStatusPending: "بانتظار المراجعة", testWhatsappDirectTarget: "تُرسل الرسالة التجريبية إلى الرقم المدخل أعلاه فقط بعد الموافقة.", adminWhatsappProvider: "اتصال Fonnte", adminWhatsappFailuresTitle: "رسائل تحتاج إلى متابعة", adminWhatsappFailuresDesc: "يمكن إعادة محاولة الرسائل التي رفضتها Fonnte. إذا كانت الحالة غير مؤكدة، راجع سجل Fonnte أولاً لتجنب تكرار الرسالة.", adminWhatsappFailuresEmpty: "لا توجد رسائل تحتاج إلى متابعة.", adminWhatsappStudent: "الطالب", adminWhatsappDestination: "رقم الوجهة", adminWhatsappWhen: "وقت الحضور", adminWhatsappStatus: "حالة الرسالة", adminWhatsappStatusFailed: "لم تقبلها Fonnte", adminWhatsappStatusUnknown: "تعذر التأكيد", adminWhatsappStatusSending: "قيد المعالجة", adminWhatsappRetry: "إعادة الإرسال", adminWhatsappRetrying: "جارٍ إعادة الإرسال...", adminWhatsappRetryQueued: "تمت إضافة طلب إعادة الإرسال إلى قائمة Fonnte.", adminWhatsappReviewFirst: "راجع سجل Fonnte قبل المحاولة مرة أخرى.", adminWhatsappTemplateOneTime: "يُستخدم القالب الموجود في قائمة الاختبار لرسالة تجريبية واحدة فقط، ولا يغيّر رسالة الحضور التلقائية.", adminAudit: "سجل النشاط", adminSecurity: "أمان الحساب",
         adminOverviewTitle: "نظرة عامة على النظام", refreshData: "تحديث البيانات", adminOverviewKicker: "نظرة عامة",
         adminAttendanceOverview: "ملخص الحضور", adminOverviewDescription: "تابع الحسابات ونشاط الحضور وحالة الخدمات من مكان واحد.",
         totalActiveStudents: "إجمالي الطلاب النشطين", supabaseData: "سجلات Supabase", totalActiveTeachers: "إجمالي المعلمين النشطين",
@@ -2018,14 +2017,12 @@ async function startAdminTestCamera() {
 }
 
 function updateAdminWhatsAppTestControls() {
-    const allowed = Array.isArray(state.adminAllowedWhatsappRecipients)
-        ? state.adminAllowedWhatsappRecipients : [];
-    const target = $("admin-test-whatsapp-number")?.value.replace(/\D/g, "") || "";
+    const target = normalizeWhatsAppNumberInput($("admin-test-whatsapp-number")?.value || "");
     const message = $("admin-test-whatsapp-template")?.value.trim() || "";
     const consent = Boolean($("admin-test-whatsapp-consent")?.checked);
     const printable = message.length >= 10 && message.length <= 300 &&
         !/[\u0000-\u001F\u007F]/.test(message);
-    const permitted = state.adminFonnteConfigured && allowed.includes(target);
+    const permitted = state.adminFonnteConfigured && Boolean(target);
     const button = $("admin-test-whatsapp-send");
     if (button) button.disabled = !(permitted && printable && consent);
 }
@@ -2034,24 +2031,16 @@ async function loadAdminTestTools() {
     try {
         const result = await cloudRequest("/api/admin/test-tools");
         state.adminFonnteConfigured = result.fonnte_configured === true;
-        state.adminAllowedWhatsappRecipients = Array.isArray(result.allowed_recipients)
-            ? result.allowed_recipients.filter(value => /^628\d{8,13}$/.test(String(value))) : [];
         $("admin-test-fonnte-state").textContent = state.adminFonnteConfigured ? tr("testFonnteConfigured") : tr("testFonnteMissing");
-        $("admin-test-whatsapp-allowlist").textContent = state.adminAllowedWhatsappRecipients.length
-            ? state.adminAllowedWhatsappRecipients.join(", ") : tr("testAllowlistEmpty");
         const templateInput = $("admin-test-whatsapp-template");
         if (templateInput && !templateInput.dataset.userEdited) templateInput.value = tr("testWhatsappDefaultTemplate");
         updateAdminWhatsAppPreview();
         updateAdminWhatsAppTestControls();
-        if (!state.adminFonnteConfigured || !state.adminAllowedWhatsappRecipients.length) {
-            $("admin-test-whatsapp-status").textContent = tr("testFonnteConfigHint");
-        }
+        $("admin-test-whatsapp-status").textContent = state.adminFonnteConfigured ? "" : tr("testFonnteConfigHint");
     } catch (error) {
         state.adminFonnteConfigured = false;
-        state.adminAllowedWhatsappRecipients = [];
         $("admin-test-fonnte-state").textContent = tr("testFonnteStatusUnavailable");
-        $("admin-test-whatsapp-allowlist").textContent = tr("testAllowlistLoadFailed");
-        $("admin-test-whatsapp-status").textContent = error.message || tr("testWhatsappFailed");
+        $("admin-test-whatsapp-status").textContent = tr("testFonnteStatusUnavailable");
         updateAdminWhatsAppTestControls();
     }
 }
@@ -2063,7 +2052,7 @@ function updateAdminWhatsAppPreview() {
 }
 
 async function sendAdminWhatsAppTest() {
-    const target = $("admin-test-whatsapp-number").value.replace(/\D/g, "");
+    const target = normalizeWhatsAppNumberInput($("admin-test-whatsapp-number").value);
     const message = $("admin-test-whatsapp-template").value.trim();
     const status = $("admin-test-whatsapp-status");
     if (!/^628\d{8,13}$/.test(target)) {
@@ -2228,7 +2217,7 @@ function updateAdminWhatsAppTemplatePreview() {
 }
 async function loadAdminWhatsAppSettings() {
     const status = $("admin-whatsapp-settings-status");
-    if (status) status.textContent = tr("adminWhatsappSaving");
+    if (status) status.textContent = tr("adminWhatsappLoading");
     try {
         const result = await cloudRequest("/api/admin/settings?action=whatsapp");
         $("admin-whatsapp-enabled").checked = result.enabled !== false;
@@ -2250,7 +2239,8 @@ function renderAdminWhatsAppFailures(items) {
     const rows = Array.isArray(items) ? items : [];
     tbody.innerHTML = rows.map(item => {
         const label = item.status === "failed" ? tr("adminWhatsappStatusFailed")
-            : item.status === "sending" ? tr("adminWhatsappStatusSending") : tr("adminWhatsappStatusUnknown");
+            : item.status === "sending" ? tr("adminWhatsappStatusSending")
+                : item.status === "pending" ? tr("adminWhatsappStatusPending") : tr("adminWhatsappStatusUnknown");
         const action = item.status === "failed"
             ? '<button class="button subtle" type="button" data-whatsapp-retry="' + safeText(item.id) + '">' + safeText(tr("adminWhatsappRetry")) + '</button>'
             : '<span class="helper-text">' + safeText(tr("adminWhatsappReviewFirst")) + '</span>';
@@ -2267,7 +2257,7 @@ async function saveAdminWhatsAppSettings(event) {
     const status = $("admin-whatsapp-settings-status");
     const template = $("admin-whatsapp-template").value.trim();
     if (template.length < 10 || template.length > 450) {
-        toast(tr("adminWhatsappLoadFailed"), "error");
+        toast(tr("adminWhatsappTemplateInvalid"), "error");
         $("admin-whatsapp-template").focus();
         return;
     }
@@ -2296,7 +2286,8 @@ async function retryAdminAttendanceWhatsApp(id, button) {
     button.textContent = tr("adminWhatsappRetrying");
     try {
         const result = await cloudRequest("/api/admin/settings?action=whatsapp", { method: "POST", body: { attendance_id: id } });
-        toast(result?.status === "queued" ? tr("adminWhatsappRetryQueued") : tr("adminWhatsappReviewFirst"), "success");
+        if (result?.status === "queued") toast(tr("adminWhatsappRetryQueued"), "success");
+        else toast(tr("adminWhatsappRetryUncertain"), "warning");
     } catch (error) {
         console.error("Parent WhatsApp retry failed:", error);
         toastAdminError(error);
@@ -2419,9 +2410,7 @@ async function cloudRequest(path, {
                 } catch {
                     payload = null;
                 }
-                let message = response.status === 405
-                    ? `HTTP 405 (${payload?.error ?? "metode tidak diizinkan"}). Pastikan Root Directory Vercel menunjuk ke folder proyek yang berisi api/, package.json, dan vercel.json, bukan folder public/. Periksa juga endpoint dan metode request.`
-                    : (payload?.error || `Request failed (${response.status})`);
+                let message = payload?.error || tr("cloudRequestFailed");
                 const error = new Error(message);
                 error.name = "CloudApiError";
                 error.status = response.status;
@@ -2435,7 +2424,8 @@ async function cloudRequest(path, {
                 if (gpsErrorMessages[rawError]) {
                     message = gpsErrorMessages[rawError];
                     if (rawError === "GPS_ACCURACY_TOO_LOW") { error.type = "gps_accuracy"; error.gpsAccuracy = payload; }
-                } else if (/^[A-Z][A-Z0-9_]{3,}$/.test(rawError)) {
+                } else if (/^[A-Z][A-Z0-9_]{3,}$/.test(rawError) ||
+                    /\b(?:FONNTE_[A-Z0-9_]+|PGRST\d+|SQLSTATE|HTTP\s?\d{3})\b/i.test(rawError)) {
                     message = tr("cloudRequestFailed");
                 } else if (/Attendance has already been recorded today/i.test(rawError)) {
                     message = tr("studentAlreadyPresent");
