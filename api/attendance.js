@@ -69,6 +69,7 @@ async function handleOfflinePendingRequest(req, res, session) {
     }
     const body = req.body || {};
     const validation = validateSchema({
+        action: { type: "string", required: true, pattern: /^offline-pending$/ },
         event_id: { type: "string", required: true, max: 36, pattern: IDEMPOTENCY_KEY_PATTERN },
         claimed_at: { type: "number", required: true, min: 1_600_000_000_000, max: 2_200_000_000_000 },
         lat: { type: "number", required: true, min: -90, max: 90 },
