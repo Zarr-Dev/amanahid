@@ -259,7 +259,7 @@ export default async function handler(req, res) {
                 if (existing[0].idempotency_key === idempotencyKey) {
                     return res.status(200).json({
                         attendance: normalizeAttendance(existing[0], settings[0], features),
-                        whatsapp: attendanceWhatsAppResult(repeated[0])
+                        whatsapp: attendanceWhatsAppResult(existing[0])
                     });
                 }
                 return failedAttendance(req, res, role, 409, {
