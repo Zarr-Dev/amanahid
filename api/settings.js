@@ -144,7 +144,7 @@ export default async function handler(req, res) {
 
     if (req.method === "HEAD") {
         try {
-            if (!await getRequestRole(req)) return jsonError(res, 403, "A valid user role is required");
+            if (!await getRequestRole(req)) return jsonError(res, 401, "Session is revoked or the account is inactive");
             const rows = await supabaseRequest(
                 `school_settings?select=id&id=eq.${SCHOOL_SETTINGS_ID}&limit=1`
             );
