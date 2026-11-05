@@ -2910,6 +2910,7 @@ function startNetworkHeartbeat() {
     state.networkHeartbeatBusy = false;
     state.networkHeartbeatFailures = 0;
     $("network-banner")?.classList.add("hidden");
+    void updateOfflineConnectionState();
     void checkNetworkHeartbeat();
     state.networkHeartbeatTimer = window.setInterval(() => {
         if (state.user) void checkNetworkHeartbeat();
