@@ -47,6 +47,46 @@ async function setAccountActive(res, admin, body) {
     return res.status(200).json({ ok: true, is_active: body.is_active });
 }
 
+async function permanentlyDeleteAccount(res, admin, body) {
+    if (!validBody(res, {
+        id: { type: "string", required: true, max: 36, pattern: UUID },
+        table: { type: "string", required: true, max: 8, pattern: /^(students|teachers)$/ },
+        confirm_email: { type: "string", required: true, max: 254, pattern: EMAIL }
+    }, body)) return;
+    const currentRows = await supabaseRequest(
+        body.table + "?select=id,email,name&id=eq." + encodeURIComponent(body.id) + "&limit=1"
+    );
+    const current = Array.isArray(currentRows) ? currentRows[0] : null;
+    if (!current) return jsonError(res, 404, "Account not found");
+    if (String(current.email || "").toLowerCase() !== body.confirm_email.trim().toLowerCase()) {
+        return jsonError(res, 409, "Confirmation email does not match this account");
+    }
+    const relatedChecks = body.table === "students"
+        ? await Promise.all([
+            supabaseRequest("attendance?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
+            supabaseRequest("absence_requests?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
+            supabaseRequest("notifications?select=id&student_id=eq." + encodeURIComponent(body.id) + "&limit=1")
+        ])
+        : await Promise.all([
+            supabaseRequest("students?select=id&homeroom_teacher_id=eq." + encodeURIComponent(body.id) + "&limit=1"),
+            supabaseRequest("teacher_notifications?select=id&teacher_id=eq." + encodeURIComponent(body.id) + "&limit=1")
+        ]);
+    if (relatedChecks.some(rows => Array.isArray(rows) && rows.length > 0)) {
+        return jsonError(res, 409, body.table === "students"
+            ? "Akun memiliki riwayat presensi, ketidakhadiran, atau notifikasi. Nonaktifkan akun untuk mempertahankan arsip sekolah."
+            : "Guru masih memiliki siswa binaan atau riwayat notifikasi. Pindahkan siswa terlebih dahulu, atau nonaktifkan akun.");
+    }
+    const deletedRows = await supabaseRequest(
+        body.table + "?id=eq." + encodeURIComponent(body.id) + "&select=id,email",
+        { method: "DELETE", headers: { Prefer: "return=representation" } }
+    );
+    const deleted = Array.isArray(deletedRows) ? deletedRows[0] : null;
+    if (!deleted) return jsonError(res, 409, "Akun tidak dapat dihapus karena masih memiliki relasi data sekolah.");
+    await writeAuditLog(admin, (body.table === "students" ? "student" : "teacher") + ".permanent_delete",
+        body.table, body.id, { email: deleted.email, confirmation_required: true });
+    return res.status(200).json({ ok: true, permanently_deleted: true });
+}
+
 export default async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store, max-age=0");
     const admin = await authorizeAdmin(req, res, "users");
