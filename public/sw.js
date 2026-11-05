@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "amanah-shell-";
-const CACHE_NAME = "amanah-shell-v2";
+const CACHE_NAME = "amanah-shell-v3";
 const SHELL_FILES = [
     "/",
     "/index.html",
@@ -57,20 +57,16 @@ self.addEventListener("fetch", event => {
 
     if (/\.(?:css|js|svg|png|webmanifest)$/.test(url.pathname)) {
         event.respondWith((async () => {
-            const cached = await caches.match(request);
-            if (cached) {
-                event.waitUntil(fetch(request).then(async response => {
-                    if (response.ok) (await caches.open(CACHE_NAME)).put(request, response.clone());
-                }).catch(() => {}));
-                return cached;
-            }
+            const cache = await caches.open(CACHE_NAME);
             try {
                 const response = await fetch(request);
-                if (response.ok) (await caches.open(CACHE_NAME)).put(request, response.clone());
-                return response;
+                if (response.ok) {
+                    await cache.put(request, response.clone());
+                    return response;
+                }
+                return (await cache.match(request)) || response;
             } catch {
-                return new Response("", { status: 503 });
+                return (await cache.match(request)) || new Response("", { status: 503 });
             }
         })());
-    }
-});
+    }});
