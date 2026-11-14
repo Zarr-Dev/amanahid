@@ -149,8 +149,8 @@
         <section class="modal-card auth-modal-card">
             <div class="auth-modal-heading">
                 <div>
-                    <span class="auth-modal-kicker">AMANAH ID · SCHOOL ACCESS</span>
-                    <h2 id="auth-modal-title">Masuk ke Amanah ID</h2>
+                    <span class="auth-modal-kicker" data-i18n="authModalKicker">AMANAH ID · SCHOOL ACCESS</span>
+                    <h2 id="auth-modal-title" data-i18n="authModalTitle">Masuk ke Amanah ID</h2>
                 </div>
                 <button id="close-auth-modal" class="icon-button" type="button" aria-label="Tutup"
                     data-i18n-aria="close">×</button>
@@ -272,7 +272,7 @@
                                 data-i18n-aria="fullscreen">⛶</button>
                         </div>
                     </div>
-                    <p class="camera-lighting-hint" role="note">Tips kamera: gunakan cahaya merata dari depan, posisikan wajah di tengah bingkai, dan hindari sumber cahaya kuat tepat di belakang kepala. Kamera ponsel/laptop tetap bergantung pada auto-exposure perangkat.</p>
+                    <p class="camera-lighting-hint" role="note" data-i18n="cameraLightingHint">Tips kamera: gunakan cahaya merata dari depan, posisikan wajah di tengah bingkai, dan hindari sumber cahaya kuat tepat di belakang kepala. Kamera ponsel/laptop tetap bergantung pada auto-exposure perangkat.</p>
 
                     <div class="location-strip">
                         <div class="location-info">
@@ -453,7 +453,7 @@
                         <input id="input-student-password" type="password" autocomplete="new-password" required
                             minlength="8" maxlength="128" data-i18n-placeholder="passwordPlaceholder"
                             placeholder="Minimal 8 karakter">
-                        <p class="helper-text">Akun ini hanya dibuat oleh Guru. Siswa tidak dapat mendaftar sendiri.</p>
+                        <p class="helper-text" data-i18n="studentAccountHint">Akun ini hanya dibuat oleh Guru. Siswa tidak dapat mendaftar sendiri.</p>
                         <label data-i18n="faceSample">Sampel wajah</label>
                         <div class="form-camera-stage">
                             <video id="video-formulir" autoplay muted playsinline></video><canvas
@@ -464,7 +464,7 @@
                                     terlihat jelas.</p>
                             </div>
                         </div>
-                        <p class="helper-text camera-lighting-hint">Ambil sampel saat wajah menghadap kamera dengan cahaya merata. Hindari wajah membelakangi jendela atau lampu yang sangat terang.</p>
+                        <p class="helper-text camera-lighting-hint" data-i18n="faceEnrollmentLightingHint">Ambil sampel saat wajah menghadap kamera dengan cahaya merata. Hindari wajah membelakangi jendela atau lampu yang sangat terang.</p>
                         <div class="form-camera-actions"><button id="btn-start-form-camera" class="button secondary"
                                 type="button" data-i18n="openCamera">Buka kamera</button><button
                                 id="btn-stop-form-camera" class="button subtle" type="button"
@@ -605,7 +605,7 @@
                         </div>
                         <button id="admin-governance-reset" class="button subtle" type="button" data-i18n="governanceReload">Muat ulang</button>
                     </div>
-                    <p id="admin-governance-status" class="admin-governance-status" role="status" aria-live="polite">Memuat kebijakan sistem…</p>
+                    <p id="admin-governance-status" class="admin-governance-status" role="status" aria-live="polite" data-i18n="governanceLoading">Memuat kebijakan sistem…</p>
                     <div id="admin-governance-controls" class="admin-governance-grid"></div>
                 </section>
             </section>
@@ -618,7 +618,7 @@
                     </div>
                 </div>
                 <div class="admin-export-actions">
-                    <button id="admin-export-users" class="button secondary" type="button">Unduh daftar akun (CSV)</button>
+                    <button id="admin-export-users" class="button secondary" type="button" data-i18n="exportAccountsCsv">Unduh daftar akun (CSV)</button>
                 </div>
                 <div class="panel">
                     <div class="panel-heading">
@@ -832,7 +832,7 @@
                         <button id="admin-test-gps-run" class="button secondary" type="button" data-i18n="testGpsRun">Uji lokasi saat ini</button>
                         <button id="admin-test-open-settings" class="button subtle" type="button" data-i18n="testGpsOpenSettings">Atur titik GPS sekolah</button>
                         <p id="admin-test-gps-status" class="helper-text" role="status" aria-live="polite" data-i18n="testGpsStatus">Lokasi belum diuji.</p>
-                        <p class="muted">Pengujian ini membaca geolokasi browser. Hasilnya bukan bukti anti-Fake-GPS.</p>
+                        <p class="muted" data-i18n="testGpsCaveat">Pengujian ini membaca geolokasi browser. Hasilnya bukan bukti anti-Fake-GPS.</p>
                     </section>
                     <section class="panel admin-test-card">
                         <div class="panel-heading"><div><h3 data-i18n="testOtherTitle">Pemeriksaan layanan</h3></div></div>
@@ -1039,25 +1039,25 @@
                             <option value="sick" data-i18n="absenceSick">Sakit</option>
                             <option value="permission" data-i18n="absencePermission">Izin</option>
                             <option value="other" data-i18n="absenceOther">Lainnya</option>
-                            <option value="dispensation">Dispensasi</option>
+                            <option value="dispensation" data-i18n="absenceDispensation">Dispensasi</option>
                         </select>
                         <div id="absence-severity-wrap" class="form-stack absence-extra-field">
-                            <label for="absence-severity">Tingkat sakit</label>
+                            <label for="absence-severity" data-i18n="absenceSeverityLabel">Tingkat sakit</label>
                             <select id="absence-severity" name="severity">
-                                <option value="mild">Sakit ringan</option>
-                                <option value="moderate">Sakit sedang</option>
-                                <option value="severe">Sakit berat</option>
+                                <option value="mild" data-i18n="absenceSeverityMild">Sakit ringan</option>
+                                <option value="moderate" data-i18n="absenceSeverityModerate">Sakit sedang</option>
+                                <option value="severe" data-i18n="absenceSeveritySevere">Sakit berat</option>
                             </select>
-                            <p class="helper-text">Pilih tingkat yang paling mendekati. Tidak perlu menuliskan diagnosis atau informasi medis pribadi.</p>
+                            <p class="helper-text" data-i18n="absenceSeverityHelp">Pilih tingkat yang paling mendekati. Tidak perlu menuliskan diagnosis atau informasi medis pribadi.</p>
                         </div>
                         <div id="absence-evidence-wrap" class="form-stack absence-evidence-field">
-                            <label for="absence-medical-file">Surat keterangan dokter <span class="required-mark">*</span></label>
+                            <label for="absence-medical-file"><span data-i18n="absenceMedicalEvidenceLabel">Surat keterangan dokter</span> <span class="required-mark">*</span></label>
                             <input id="absence-medical-file" name="medical_evidence" type="file" accept="application/pdf,image/jpeg,image/png" required aria-describedby="absence-evidence-help">
-                            <p id="absence-evidence-help" class="helper-text">Wajib dilampirkan sebelum pengajuan sakit dikirim. PDF, JPG, atau PNG · Maksimal 5 MB. Berkas hanya dapat dibuka pihak sekolah yang berwenang.</p>
+                            <p id="absence-evidence-help" class="helper-text" data-i18n="absenceMedicalEvidenceHelp">Wajib dilampirkan sebelum pengajuan sakit dikirim. PDF, JPG, atau PNG · Maksimal 5 MB. Berkas hanya dapat dibuka pihak sekolah yang berwenang.</p>
                         </div>
                         <div id="absence-dispensation-hint" class="notice-card dispensation-notice hidden" role="note">
-                            <strong>Dispensasi hanya dari dalam sekolah</strong>
-                            <p>Presensi hari ini harus sudah tercatat. Saat mengirim, GPS akan memeriksa bahwa perangkat masih berada di dalam radius sekolah.</p>
+                            <strong data-i18n="absenceDispensationTitle">Dispensasi hanya dari dalam sekolah</strong>
+                            <p data-i18n="absenceDispensationDesc">Presensi hari ini harus sudah tercatat. Saat mengirim, GPS akan memeriksa bahwa perangkat masih berada di dalam radius sekolah.</p>
                         </div>
                         <label for="absence-note" data-i18n="absenceNote">Catatan</label>
                         <textarea id="absence-note" name="note" rows="5" maxlength="1000" required data-i18n-placeholder="absenceNotePlaceholder" placeholder="Jelaskan alasan ketidakhadiran secara singkat."></textarea>
@@ -1067,9 +1067,9 @@
                     </form>
                 </div>
                 <div class="panel student-absence-history">
-                    <div class="panel-heading"><div><h3>Riwayat pengajuan</h3><p class="muted">Pantau status izin dan pengajuan sakit di sini.</p></div></div>
+                    <div class="panel-heading"><div><h3 data-i18n="studentAbsenceHistoryTitle">Riwayat pengajuan</h3><p class="muted" data-i18n="studentAbsenceHistoryDesc">Pantau status izin dan pengajuan sakit di sini.</p></div></div>
                     <div id="student-absence-requests-list" class="absence-request-list" aria-live="polite"></div>
-                    <p id="student-absence-empty" class="empty-state compact-empty">Belum ada pengajuan ketidakhadiran.</p>
+                    <p id="student-absence-empty" class="empty-state compact-empty" data-i18n="studentAbsenceEmpty">Belum ada pengajuan ketidakhadiran.</p>
                 </div>
             </section>
             <section id="view-s-profile" class="view hidden">
@@ -1086,10 +1086,10 @@
                     <p><strong data-i18n="nisn">NISN</strong>: <span id="student-profile-nisn">—</span></p>
                     <p><strong data-i18n="class">Kelas</strong>: <span id="student-profile-class">—</span></p>
                     <section class="homeroom-profile-card" aria-labelledby="student-homeroom-title">
-                        <span class="section-kicker">PENDAMPING KELAS</span>
-                        <h3 id="student-homeroom-title">Wali kelas</h3>
-                        <strong id="student-profile-homeroom">Belum ditetapkan</strong>
-                        <p>Guru yang terhubung dengan akun kelas Anda.</p>
+                        <span class="section-kicker" data-i18n="studentHomeroomKicker">PENDAMPING KELAS</span>
+                        <h3 id="student-homeroom-title" data-i18n="studentHomeroomTitle">Wali kelas</h3>
+                        <strong id="student-profile-homeroom" data-i18n="studentHomeroomUnassigned">Belum ditetapkan</strong>
+                        <p data-i18n="studentHomeroomDesc">Guru yang terhubung dengan akun kelas Anda.</p>
                     </section>
                     <label for="student-theme-select" data-i18n="appearance">Tampilan</label>
                     <select id="student-theme-select">
@@ -1186,14 +1186,14 @@
     <div id="app-dialog" class="modal-backdrop hidden app-dialog-backdrop" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title" aria-describedby="app-dialog-description">
         <section class="modal-card app-dialog-card">
             <div class="app-dialog-icon" aria-hidden="true"><span id="app-dialog-icon">✦</span></div>
-            <h2 id="app-dialog-title">Konfirmasi</h2>
+            <h2 id="app-dialog-title" data-i18n="dialogConfirm">Konfirmasi</h2>
             <p id="app-dialog-description" class="muted"></p>
             <form id="app-dialog-form" class="form-stack">
                 <div id="app-dialog-fields" class="app-dialog-fields"></div>
                 <p id="app-dialog-error" class="app-dialog-error hidden" role="alert"></p>
                 <div class="app-dialog-actions">
-                    <button id="app-dialog-cancel" class="button subtle" type="button">Batal</button>
-                    <button id="app-dialog-submit" class="button primary" type="submit">Simpan</button>
+                    <button id="app-dialog-cancel" class="button subtle" type="button" data-i18n="cancel">Batal</button>
+                    <button id="app-dialog-submit" class="button primary" type="submit" data-i18n="dialogSave">Simpan</button>
                 </div>
             </form>
         </section>
