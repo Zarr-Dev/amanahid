@@ -292,7 +292,41 @@ const EXTRA_T = {
         adminMapSaved: "Pengaturan lokasi sekolah telah disimpan.",
         adminSettingsSaving: "Menyimpan titik GPS dan aturan sekolah…",
         adminSettingsSaved: "Titik GPS, radius, dan aturan sekolah berhasil disimpan."
-    },
+            authModalKicker: "AMANAH ID · AKSES SEKOLAH",
+        authModalTitle: "Masuk ke Amanah ID",
+        cameraLightingHint: "Tips kamera: gunakan cahaya merata dari depan, posisikan wajah di tengah bingkai, dan hindari cahaya kuat tepat di belakang kepala. Kamera ponsel atau laptop tetap bergantung pada pengaturan otomatis perangkat.",
+        studentAccountHint: "Akun ini hanya dapat dibuat oleh Guru. Siswa tidak dapat mendaftar sendiri.",
+        faceEnrollmentLightingHint: "Ambil sampel saat wajah menghadap kamera dengan pencahayaan merata. Hindari membelakangi jendela atau lampu yang sangat terang.",
+        exportAccountsCsv: "Unduh daftar akun (CSV)",
+        governanceLoading: "Memuat kebijakan sistem…",
+        testGpsCaveat: "Pengujian ini membaca lokasi dari browser. Hasilnya tidak membuktikan bahwa lokasi bebas dari manipulasi Fake GPS.",
+        absenceDispensation: "Dispensasi",
+        absenceSeverityLabel: "Tingkat kondisi",
+        absenceSeverityMild: "Ringan",
+        absenceSeverityModerate: "Sedang",
+        absenceSeveritySevere: "Berat",
+        absenceMedicalEvidenceLabel: "Surat keterangan dokter",
+        absenceMedicalEvidenceHelp: "Lampirkan surat keterangan sebelum mengirim pengajuan sakit. PDF, JPG, atau PNG · Maksimal 5 MB. Berkas hanya dapat dibuka oleh pihak sekolah yang berwenang.",
+        absenceDispensationTitle: "Dispensasi hanya dapat diajukan dari dalam sekolah",
+        absenceDispensationDesc: "Presensi hari ini harus sudah tercatat. Saat pengajuan dikirim, GPS akan memeriksa bahwa perangkat masih berada di dalam radius sekolah.",
+        studentAbsenceHistoryTitle: "Riwayat pengajuan",
+        studentAbsenceHistoryDesc: "Pantau status izin dan pengajuan sakit di sini.",
+        studentAbsenceEmpty: "Belum ada pengajuan ketidakhadiran.",
+        studentHomeroomKicker: "PENDAMPING KELAS",
+        studentHomeroomTitle: "Wali kelas",
+        studentHomeroomUnassigned: "Belum ditetapkan",
+        studentHomeroomDesc: "Guru yang terhubung dengan akun kelas Anda.",
+        dialogConfirm: "Konfirmasi",
+        dialogSave: "Simpan",
+        absenceCardPending: "Menunggu peninjauan wali kelas",
+        absenceCardApproved: "Disetujui wali kelas",
+        absenceCardRejected: "Ditolak wali kelas",
+        absenceCardRevoked: "Persetujuan dicabut oleh wali kelas",
+        absenceEvidenceAttached: "Surat dokter terlampir",
+        absenceEvidenceMissing: "Surat dokter belum terlampir",
+        absenceCardUpdated: "Diperbarui {date}",
+        absenceSeverityHelp: "Pilih tingkat yang paling sesuai. Anda tidak perlu menuliskan diagnosis atau informasi medis pribadi.",
+},
     en: {
         heroHeaderNote: "AL FITYAN SCHOOL · DIGITAL ATTENDANCE",
         heroFactRolesTitle: "3 roles, one system", heroFactRolesDesc: "Admin · Teacher · Student",
@@ -480,7 +514,41 @@ const EXTRA_T = {
         adminMapSaved: "School location settings have been saved.",
         adminSettingsSaving: "Saving the GPS point and school rules…",
         adminSettingsSaved: "The GPS point, radius, and school rules were saved successfully."
-    },
+            authModalKicker: "AMANAH ID · SCHOOL ACCESS",
+        authModalTitle: "Sign in to Amanah ID",
+        cameraLightingHint: "Camera tip: use even front lighting, keep your face centered in the frame, and avoid strong light directly behind your head. Phone and laptop cameras still depend on the device's automatic exposure.",
+        studentAccountHint: "Only a Teacher can create this account. Students cannot register themselves.",
+        faceEnrollmentLightingHint: "Capture samples while facing the camera in even lighting. Avoid having a bright window or lamp directly behind you.",
+        exportAccountsCsv: "Download account list (CSV)",
+        governanceLoading: "Loading system policies…",
+        testGpsCaveat: "This test reads the browser's geolocation. It does not prove that the location is free from Fake GPS manipulation.",
+        absenceDispensation: "Dispensation",
+        absenceSeverityLabel: "Severity",
+        absenceSeverityMild: "Mild",
+        absenceSeverityModerate: "Moderate",
+        absenceSeveritySevere: "Severe",
+        absenceMedicalEvidenceLabel: "Medical certificate",
+        absenceMedicalEvidenceHelp: "Attach a medical certificate before submitting a sick-leave request. PDF, JPG, or PNG · Maximum 5 MB. Only authorized school staff can access the file.",
+        absenceDispensationTitle: "Dispensation requests must be submitted from within the school",
+        absenceDispensationDesc: "Today's attendance must already be recorded. When you submit the request, GPS checks that your device is still within the school geofence.",
+        studentAbsenceHistoryTitle: "Absence request history",
+        studentAbsenceHistoryDesc: "Track the status of your permission and sick-leave requests here.",
+        studentAbsenceEmpty: "No absence requests yet.",
+        studentHomeroomKicker: "HOMEROOM SUPPORT",
+        studentHomeroomTitle: "Homeroom teacher",
+        studentHomeroomUnassigned: "Not assigned yet",
+        studentHomeroomDesc: "The teacher linked to your class account.",
+        dialogConfirm: "Confirmation",
+        dialogSave: "Save",
+        absenceCardPending: "Awaiting homeroom teacher review",
+        absenceCardApproved: "Approved by homeroom teacher",
+        absenceCardRejected: "Rejected by homeroom teacher",
+        absenceCardRevoked: "Approval revoked by homeroom teacher",
+        absenceEvidenceAttached: "Medical certificate attached",
+        absenceEvidenceMissing: "Medical certificate not attached",
+        absenceCardUpdated: "Updated {date}",
+        absenceSeverityHelp: "Choose the closest level. You do not need to provide a diagnosis or personal medical details.",
+},
     ar: {
         heroHeaderNote: "مدرسة الفتيان · نظام الحضور الرقمي",
         heroFactRolesTitle: "ثلاثة أدوار، نظام واحد", heroFactRolesDesc: "الإدارة · المعلم · الطالب",
@@ -668,7 +736,41 @@ const EXTRA_T = {
         adminMapSaved: "تم حفظ إعدادات موقع المدرسة.",
         adminSettingsSaving: "جارٍ حفظ نقطة GPS وقواعد المدرسة…",
         adminSettingsSaved: "تم حفظ نقطة GPS والنطاق وقواعد المدرسة بنجاح."
-    }
+            authModalKicker: "أمانة ID · دخول المدرسة",
+        authModalTitle: "تسجيل الدخول إلى أمانة ID",
+        cameraLightingHint: "نصيحة للكاميرا: خل الإضاءة موزّعة من جدام، وحط وجهك بنص الإطار، وتجنب وجود ضوء قوي وراك مباشرة. كاميرا التلفون أو اللابتوب تعتمد بعد على ضبط الإضاءة التلقائي بالجهاز.",
+        studentAccountHint: "الحساب هذا ينشئه المعلّم بس. الطالب ما يقدر يسجّل حساب بنفسه.",
+        faceEnrollmentLightingHint: "خذ العينة ووجهك مقابل الكاميرا والإضاءة موزّعة. تجنب تكون النافذة أو اللمبة القوية وراك مباشرة.",
+        exportAccountsCsv: "نزّل قائمة الحسابات (CSV)",
+        governanceLoading: "جاري تحميل سياسات النظام…",
+        testGpsCaveat: "الفحص هذا يقرأ موقع المتصفح بس، وما يثبت إن الموقع خالٍ من التلاعب باستخدام Fake GPS.",
+        absenceDispensation: "تصريح",
+        absenceSeverityLabel: "درجة الحالة",
+        absenceSeverityMild: "خفيف",
+        absenceSeverityModerate: "متوسط",
+        absenceSeveritySevere: "شديد",
+        absenceMedicalEvidenceLabel: "شهادة طبية",
+        absenceMedicalEvidenceHelp: "لازم ترفق الشهادة الطبية قبل إرسال طلب المرض. PDF أو JPG أو PNG · الحد الأقصى 5 MB. الملف يقدر يفتحه بس موظفو المدرسة المخوّلون.",
+        absenceDispensationTitle: "طلب التصريح يكون من داخل المدرسة بس",
+        absenceDispensationDesc: "لازم يكون حضور اليوم مسجّل. وقت إرسال الطلب، GPS بيتأكد إن جهازك للحين داخل نطاق المدرسة.",
+        studentAbsenceHistoryTitle: "سجل طلبات الغياب",
+        studentAbsenceHistoryDesc: "تابع حالة طلبات الإذن والمرض هني.",
+        studentAbsenceEmpty: "ما عندك طلبات غياب للحين.",
+        studentHomeroomKicker: "مشرف الصف",
+        studentHomeroomTitle: "المعلّم المسؤول عن الصف",
+        studentHomeroomUnassigned: "ما تم تحديده للحين",
+        studentHomeroomDesc: "المعلّم المرتبط بصفك.",
+        dialogConfirm: "تأكيد",
+        dialogSave: "حفظ",
+        absenceCardPending: "بانتظار مراجعة مشرف الصف",
+        absenceCardApproved: "وافق عليه مشرف الصف",
+        absenceCardRejected: "رفضه مشرف الصف",
+        absenceCardRevoked: "تم سحب موافقة مشرف الصف",
+        absenceEvidenceAttached: "الشهادة الطبية مرفقة",
+        absenceEvidenceMissing: "الشهادة الطبية مو مرفقة",
+        absenceCardUpdated: "آخر تحديث: {date}",
+        absenceSeverityHelp: "اختَر الدرجة الأقرب للحالة. مو لازم تكتب التشخيص أو أي معلومات طبية شخصية.",
+}
 };
 
 const state = {
@@ -2299,7 +2401,7 @@ async function loadAdminAudit() {
         const entries = Array.isArray(response?.entries)
             ? response.entries.filter(entry => entry && typeof entry === "object") : [];
         $("admin-audit-tbody").innerHTML = entries.map(entry => `<tr>
-            <td>${safeText(new Date(entry.created_at ?? 0).toLocaleString())}</td>
+            <td>${safeText(formatDateTime(entry.created_at ?? 0))}</td>
             <td>${safeText(entry.actor_email ?? "")}</td><td>${safeText(entry.actor_role === "guru" ? tr("roleTeacher") : entry.actor_role === "siswa" ? tr("roleStudent") : entry.actor_role === "admin" ? tr("administratorRole") : entry.actor_role ?? "")}</td>
             <td>${safeText(entry.action ?? "")}</td><td>${safeText(entry.target_table ?? "")}</td>
         </tr>`).join("");
@@ -2341,6 +2443,14 @@ function formatDate(dateString) {
     return date.toLocaleDateString(state.lang === "ar" ? "ar-KW" : state.lang === "en" ? "en-GB" : "id-ID", {
         day: "2-digit", month: "short", year: "numeric"
     });
+}
+
+
+function formatDateTime(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "—";
+    const locale = state.lang === "ar" ? "ar-KW" : state.lang === "en" ? "en-GB" : "id-ID";
+    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 function normalizeWhatsAppNumberInput(value) {
@@ -2643,21 +2753,21 @@ async function loadStudentAbsenceRequests({ silent = false } = {}) {
     try {
         const result = await cloudRequest("/api/absence", { role: "siswa" });
         const requests = Array.isArray(result.requests) ? result.requests : [];
-        const statusLabels = { pending: "Menunggu peninjauan wali kelas", approved: "Disetujui wali kelas", rejected: "Ditolak wali kelas", revoked: "Persetujuan dicabut oleh wali kelas" };
+        const statusLabels = { pending: tr("absenceCardPending"), approved: tr("absenceCardApproved"), rejected: tr("absenceCardRejected"), revoked: tr("absenceCardRevoked") };
         list.innerHTML = requests.map(item => {
             const typeLabel = item.absence_type === "dispensation" ? "Dispensasi" : tr("absenceType_" + item.absence_type);
-            const evidence = item.absence_type === "sick" ? '<span class="absence-request-meta">' + (item.medical_evidence_uploaded ? "Surat dokter terlampir" : "Surat dokter belum terlampir") + '</span>' : "";
+            const evidence = item.absence_type === "sick" ? '<span class="absence-request-meta">' + tr(item.medical_evidence_uploaded ? "absenceEvidenceAttached" : "absenceEvidenceMissing") + '</span>' : "";
             const status = statusLabels[item.status] || tr("absenceStatus_" + item.status);
             const stateClass = item.status === "revoked" ? "is-revoked" : item.status === "rejected" ? "is-rejected" : item.status === "approved" ? "is-approved" : "is-pending";
             return '<article class="absence-request-card ' + stateClass + '">' +
                 '<div class="absence-request-card-top"><strong>' + safeText(typeLabel) + '</strong><span class="absence-request-status">' + safeText(status) + '</span></div>' +
                 '<p>' + safeText(formatDate(item.absence_date)) + ' · ' + safeText(item.note || "—") + '</p>' + evidence +
-                (item.reviewed_at ? '<small class="absence-request-meta">Diperbarui ' + safeText(new Date(item.reviewed_at).toLocaleString("id-ID")) + '</small>' : "") + '</article>';
+                (item.reviewed_at ? '<small class="absence-request-meta">' + safeText(tr("absenceCardUpdated", { date: formatDateTime(item.reviewed_at) })) + '</small>' : "") + '</article>';
         }).join("");
         $("student-absence-empty")?.classList.toggle("hidden", requests.length > 0);
     } catch (error) {
         console.error("Student absence status could not load:", error);
-        if (!silent) toast(error.message || "Riwayat pengajuan gagal dimuat.", "error");
+        if (!silent) toast(error.message || tr("absenceLoadFailed"), "error");
     }
 }
 
@@ -2734,7 +2844,7 @@ function updateStudentProfile() {
     $("student-profile-nisn").textContent = user.nisn || "—";
     $("student-profile-class").textContent = student?.className || "—";
     const homeroom = $("student-profile-homeroom");
-    if (homeroom) homeroom.textContent = student?.homeroomTeacherName || "Belum ditetapkan";
+    if (homeroom) homeroom.textContent = student?.homeroomTeacherName || tr("studentHomeroomUnassigned");
 }
 
 function attendanceStatusLabel(record) {
