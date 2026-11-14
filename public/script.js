@@ -2755,7 +2755,7 @@ async function loadStudentAbsenceRequests({ silent = false } = {}) {
         const requests = Array.isArray(result.requests) ? result.requests : [];
         const statusLabels = { pending: tr("absenceCardPending"), approved: tr("absenceCardApproved"), rejected: tr("absenceCardRejected"), revoked: tr("absenceCardRevoked") };
         list.innerHTML = requests.map(item => {
-            const typeLabel = item.absence_type === "dispensation" ? "Dispensasi" : tr("absenceType_" + item.absence_type);
+            const typeLabel = item.absence_type === "dispensation" ? tr("absenceDispensation") : tr("absenceType_" + item.absence_type);
             const evidence = item.absence_type === "sick" ? '<span class="absence-request-meta">' + tr(item.medical_evidence_uploaded ? "absenceEvidenceAttached" : "absenceEvidenceMissing") + '</span>' : "";
             const status = statusLabels[item.status] || tr("absenceStatus_" + item.status);
             const stateClass = item.status === "revoked" ? "is-revoked" : item.status === "rejected" ? "is-rejected" : item.status === "approved" ? "is-approved" : "is-pending";
