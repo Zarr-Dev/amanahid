@@ -291,7 +291,7 @@ const EXTRA_T = {
         adminMapPointChanged: "Titik GPS diperbarui. Simpan pengaturan untuk menerapkannya.",
         adminMapSaved: "Pengaturan lokasi sekolah telah disimpan.",
         adminSettingsSaving: "Menyimpan titik GPS dan aturan sekolah…",
-        adminSettingsSaved: "Titik GPS, radius, dan aturan sekolah berhasil disimpan."
+        adminSettingsSaved: "Titik GPS, radius, dan aturan sekolah berhasil disimpan.",
             authModalKicker: "AMANAH ID · AKSES SEKOLAH",
         authModalTitle: "Masuk ke Amanah ID",
         cameraLightingHint: "Tips kamera: gunakan cahaya merata dari depan, posisikan wajah di tengah bingkai, dan hindari cahaya kuat tepat di belakang kepala. Kamera ponsel atau laptop tetap bergantung pada pengaturan otomatis perangkat.",
@@ -513,7 +513,7 @@ const EXTRA_T = {
         adminMapPointChanged: "The GPS point was updated. Save the settings to apply it.",
         adminMapSaved: "School location settings have been saved.",
         adminSettingsSaving: "Saving the GPS point and school rules…",
-        adminSettingsSaved: "The GPS point, radius, and school rules were saved successfully."
+        adminSettingsSaved: "The GPS point, radius, and school rules were saved successfully.",
             authModalKicker: "AMANAH ID · SCHOOL ACCESS",
         authModalTitle: "Sign in to Amanah ID",
         cameraLightingHint: "Camera tip: use even front lighting, keep your face centered in the frame, and avoid strong light directly behind your head. Phone and laptop cameras still depend on the device's automatic exposure.",
@@ -735,7 +735,7 @@ const EXTRA_T = {
         adminMapPointChanged: "تم تحديث نقطة GPS. احفظ الإعدادات لتطبيقها.",
         adminMapSaved: "تم حفظ إعدادات موقع المدرسة.",
         adminSettingsSaving: "جارٍ حفظ نقطة GPS وقواعد المدرسة…",
-        adminSettingsSaved: "تم حفظ نقطة GPS والنطاق وقواعد المدرسة بنجاح."
+        adminSettingsSaved: "تم حفظ نقطة GPS والنطاق وقواعد المدرسة بنجاح.",
             authModalKicker: "أمانة ID · دخول المدرسة",
         authModalTitle: "تسجيل الدخول إلى أمانة ID",
         cameraLightingHint: "نصيحة للكاميرا: خل الإضاءة موزّعة من جدام، وحط وجهك بنص الإطار، وتجنب وجود ضوء قوي وراك مباشرة. كاميرا التلفون أو اللابتوب تعتمد بعد على ضبط الإضاءة التلقائي بالجهاز.",
