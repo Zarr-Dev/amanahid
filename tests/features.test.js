@@ -93,7 +93,17 @@ test("face, GPS map, and WhatsApp testing strings exist in all three app languag
         "adminMapDeviceDistance", "adminMapGpsAccuracy", "adminMapSchoolRadius",
         "adminMapCheckDeviceLocation", "adminMapBoundary", "adminMapPointChanged", "adminMapSaved",
         "adminSettingsSaving", "adminSettingsSaved", "testWhatsappConfirm",
-        "testWhatsappNoConsent"
+        "testWhatsappNoConsent",
+        "authModalKicker", "authModalTitle", "cameraLightingHint", "studentAccountHint",
+        "faceEnrollmentLightingHint", "exportAccountsCsv", "governanceLoading", "testGpsCaveat",
+        "absenceDispensation", "absenceSeverityLabel", "absenceSeverityMild",
+        "absenceSeverityModerate", "absenceSeveritySevere", "absenceSeverityHelp",
+        "absenceMedicalEvidenceLabel", "absenceMedicalEvidenceHelp", "absenceDispensationTitle",
+        "absenceDispensationDesc", "studentAbsenceHistoryTitle", "studentAbsenceHistoryDesc",
+        "studentAbsenceEmpty", "studentHomeroomKicker", "studentHomeroomTitle",
+        "studentHomeroomUnassigned", "studentHomeroomDesc", "dialogConfirm", "dialogSave",
+        "absenceCardPending", "absenceCardApproved", "absenceCardRejected", "absenceCardRevoked",
+        "absenceEvidenceAttached", "absenceEvidenceMissing", "absenceCardUpdated"
     ];
     for (const language of ["id", "en", "ar"]) {
         for (const key of required) {
@@ -196,4 +206,22 @@ test("Arabic locale metadata uses Kuwait regional formatting and keeps right-to-
     assert.equal((html.match(/option value="ar" lang="ar-KW"/g) ?? []).length, 2);
     assert.match(html, /العربية \(الكويت\)/);
     assert.match(css, /html\[dir="rtl"\]/);
+});
+
+
+test("remaining student and system labels are wired to the three-language dictionaries", () => {
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+    const keys = [
+        "authModalKicker", "authModalTitle", "cameraLightingHint", "studentAccountHint",
+        "faceEnrollmentLightingHint", "exportAccountsCsv", "governanceLoading", "testGpsCaveat",
+        "absenceDispensation", "absenceSeverityLabel", "absenceSeverityMild",
+        "absenceSeverityModerate", "absenceSeveritySevere", "absenceSeverityHelp",
+        "absenceMedicalEvidenceLabel", "absenceMedicalEvidenceHelp", "absenceDispensationTitle",
+        "absenceDispensationDesc", "studentAbsenceHistoryTitle", "studentAbsenceHistoryDesc",
+        "studentAbsenceEmpty", "studentHomeroomKicker", "studentHomeroomTitle",
+        "studentHomeroomUnassigned", "studentHomeroomDesc", "dialogConfirm", "dialogSave"
+    ];
+    for (const key of keys) {
+        assert.ok(html.includes('data-i18n="' + key + '"'), "Missing data-i18n binding for " + key);
+    }
 });
