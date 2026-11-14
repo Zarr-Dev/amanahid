@@ -102,3 +102,97 @@ test("face, GPS map, and WhatsApp testing strings exist in all three app languag
         }
     }
 });
+
+
+function extractTopLevelObjectKeys(source, objectName, language) {
+    const start = source.indexOf(`const ${objectName} =`);
+    const stopMarker = objectName === "EXTRA_T" ? "\\nconst state =" : null;
+    const open = source.indexOf("{", start);
+    const end = stopMarker ? source.indexOf(stopMarker, open) : -1;
+    assert.ok(start >= 0 && open > start && end > open, `Could not locate ${objectName}`);
+
+    const block = source.slice(open + 1, end);
+    const languageMatch = new RegExp(`\\\\b${language}\\\\s*:\\\\\s*\\\\{`).exec(block);
+    assert.ok(languageMatch, `Missing ${language} in ${objectName}`);
+    const bodyStart = languageMatch.index + languageMatch[0].length;
+    const remaining = block.slice(bodyStart);
+    const nextLanguage = /\\b(?:en|ar)\\s*:\\s*\\{/g;
+    const nextMatch = nextLanguage.exec(remaining);
+    const body = remaining.slice(0, nextMatch ? nextMatch.index : remaining.length);
+
+    const keys = [];
+    let quote = null;
+    let escaped = false;
+    for (let i = 0; i < body.length;) {
+        const char = body[i];
+        if (quote) {
+            if (escaped) { escaped = false; i++; continue; }
+            if (char === "\\\\") { escaped = true; i++; continue; }
+            if (char === quote) quote = null;
+            i++;
+            continue;
+        }
+        if (char === "\\"" || char === "'" || char === "`") {
+            quote = char;
+            i++;
+            continue;
+        }
+        if (/[A-Za-z_$]/.test(char)) {
+            let j = i + 1;
+            while (j < body.length && /[A-Za-z0-9_$]/.test(body[j])) j++;
+            let k = j;
+            while (k < body.length && /\\s/.test(body[k])) k++;
+            if (body[k] === ":") keys.push(body.slice(i, j));
+            i = j;
+            continue;
+        }
+        i++;
+    }
+    return keys;
+}
+
+test("application language dictionaries are complete and preserve interpolation placeholders", () => {
+    const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
+    const dictionaries = [
+        ["ROLE_T", "\\nconst EXTRA_T ="],
+        ["EXTRA_T", "\\nconst state ="],
+        ["T", "\\nObject.keys(ROLE_T)"],
+        ["LANDING_T", "\\nObject.keys(LANDING_T)"],
+        ["ADMIN_T", "\\nObject.keys(ADMIN_T)"]
+    ];
+
+    for (const [name, nextDeclaration] of dictionaries) {
+        const dictionary = evaluateFrontendConstant(source, name, nextDeclaration);
+        const canonicalKeys = Object.keys(dictionary.id).sort();
+        assert.deepEqual(Object.keys(dictionary.en).sort(), canonicalKeys, `${name}: EN keys differ from ID`);
+        assert.deepEqual(Object.keys(dictionary.ar).sort(), canonicalKeys, `${name}: AR keys differ from ID`);
+
+        for (const key of canonicalKeys) {
+            const placeholders = value => Array.from(String(value).matchAll(/\\{([A-Za-z0-9_]+)\\}/g), match => match[1]).sort();
+            assert.deepEqual(placeholders(dictionary.en[key]), placeholders(dictionary.id[key]), `${name}.${key}: EN placeholders differ`);
+            assert.deepEqual(placeholders(dictionary.ar[key]), placeholders(dictionary.id[key]), `${name}.${key}: AR placeholders differ`);
+        }
+    }
+});
+
+test("EXTRA_T has no duplicate translation keys in Indonesian, English, or Kuwaiti Arabic", () => {
+    const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
+    for (const language of ["id", "en", "ar"]) {
+        const keys = extractTopLevelObjectKeys(source, "EXTRA_T", language);
+        assert.equal(new Set(keys).size, keys.length, `Duplicate property in EXTRA_T.${language}`);
+    }
+});
+
+test("Arabic locale metadata uses Kuwait regional formatting and keeps right-to-left layout", () => {
+    const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../public/style.css", import.meta.url), "utf8");
+
+    assert.ok(source.includes('document.documentElement.lang = lang === "ar" ? "ar-KW" : lang;'));
+    assert.ok(source.includes('document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";'));
+    assert.ok(source.includes('state.lang === "ar" ? "ar-KW"'));
+    assert.equal((html.match(/data-lang="ar" lang="ar-KW"/g) ?? []).length, 4);
+    assert.equal((html.match(/option value="ar" lang="ar-KW"/g) ?? []).length, 2);
+    assert.match(html, /العربية \(الكويت\)/);
+    assert.match(css, /html\\[dir="rtl"\\]/);
+});
