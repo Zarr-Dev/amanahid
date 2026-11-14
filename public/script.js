@@ -78,26 +78,26 @@ const ROLE_T = {
         roleTeacher: "معلّم", roleStudent: "طالب", teacherDashboard: "لوحة المعلّم",
         studentWorkspace: "قائمة الطالب", studentAttendance: "حضوري", studentHistory: "سجلي",
         studentCheckinTitle: "تسجيل الحضور",
-        studentCheckinDesc: "تأكد من وجودك داخل منطقة المدرسة. سيتم التحقق من الموقع قبل تشغيل الكاميرا.",
+        studentCheckinDesc: "تأكد إنك داخل نطاق المدرسة. بنتحقق من موقعك قبل ما نشغّل الكاميرا.",
         studentCameraOff: "الكاميرا متوقفة",
-        studentCameraOffDesc: "اضغط على تسجيل الحضور للتحقق من الموقع وبدء التحقق من الوجه.",
-        checkInNow: "تسجيل الحضور", studentHistoryTitle: "سجل حضوري",
-        studentHistoryDesc: "تظهر هنا سجلات الحضور الخاصة بحسابك فقط.",
-        studentHistoryEmpty: "سيظهر سجل حضورك هنا.",
+        studentCameraOffDesc: "اضغط «سجّل حضورك» عشان نتحقق من موقعك ونبدأ التحقق من الوجه.",
+        checkInNow: "سجّل حضورك", studentHistoryTitle: "سجل حضوري",
+        studentHistoryDesc: "هني تظهر بس سجلات الحضور الخاصة بحسابك.",
+        studentHistoryEmpty: "سجل حضورك بيظهر هني.",
         parentWhatsApp: "واتساب ولي الأمر",
         whatsappPlaceholder: "08... أو 628... أو +62...",
         invalidWhatsApp: "أدخل رقم واتساب صالحًا لولي الأمر، مثل 08... أو 628... أو +62....",
-        whatsappSuccess: "تم إرسال إشعار واتساب إلى ولي الأمر.",
-        whatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار واتساب.",
-        roleTeacherMismatch: "هذا ليس حساب معلّم. يرجى اختيار الطالب.",
-        roleStudentMismatch: "هذا ليس حساب طالب. يرجى اختيار المعلّم.",
-        studentNeedsNisn: "أدخل رقم NISN المسجل لدى المعلّم.",
-        studentUnlinked: "تم إنشاء الحساب لكنه غير مرتبط ببيانات الوجه. اطلب من المعلّم تسجيل رقم NISN قبل الحضور.",
+        whatsappSuccess: "وصل إشعار واتساب لولي الأمر بنجاح.",
+        whatsappFailed: "تم تسجيل الحضور، بس ما قدرنا نرسل إشعار واتساب لولي الأمر.",
+        roleTeacherMismatch: "هذا مو حساب معلّم. اختَر دور الطالب.",
+        roleStudentMismatch: "هذا مو حساب طالب. اختَر دور المعلّم.",
+        studentNeedsNisn: "أدخل رقم NISN اللي سجّله لك المعلّم.",
+        studentUnlinked: "تم إنشاء حسابك، بس للحين مو مربوط ببيانات الوجه. اطلب من المعلّم يسجّل رقم NISN قبل الحضور.",
         studentMatched: "تم ربط بيانات وجهك.",
-        studentAlreadyPresent: "تم تسجيل حضورك اليوم بالفعل.",
-        studentAttendanceSuccess: "تم تسجيل الحضور بنجاح.",
-        whatsappQueued: "تمت إضافة إشعار ولي الأمر إلى قائمة الإرسال.", whatsappUnknown: "تم تسجيل الحضور، لكن تعذر تأكيد حالة واتساب. يجب على المسؤول مراجعة سجل Fonnte.", whatsappNoParent: "لم يتم تسجيل رقم واتساب لولي الأمر. يرجى التواصل مع إدارة المدرسة.",
-        gpsFixStale: "قراءة الموقع قديمة. حدّث GPS ثم حاول مرة أخرى.", gpsSpeedAnomaly: "تغير الموقع غير طبيعي. تحقق من GPS ثم حاول مرة أخرى.", gpsBoundaryUncertain: "موقعك قريب جدًا من حدود المدرسة ولا يمكن تأكيده. حدّث الموقع.",
+        studentAlreadyPresent: "حضورك مسجّل اليوم من قبل.",
+        studentAttendanceSuccess: "تم تسجيل حضورك بنجاح.",
+        whatsappQueued: "تمت إضافة إشعار ولي الأمر إلى قائمة الإرسال.", whatsappUnknown: "تم تسجيل الحضور، بس حالة واتساب للحين مو مؤكدة. على المسؤول يراجع سجل Fonnte.", whatsappNoParent: "رقم واتساب ولي الأمر مو مسجّل. تواصل مع إدارة المدرسة.",
+        gpsFixStale: "قراءة الموقع قديمة. حدّث GPS وجرب مرة ثانية.", gpsSpeedAnomaly: "تغيّر الموقع مو طبيعي. تأكد من GPS وجرب مرة ثانية.", gpsBoundaryUncertain: "موقعك قريب من حدود المدرسة وما نقدر نأكد وجودك داخلها. حدّث موقعك وجرب مرة ثانية.",
         gpsAccuracyStatus: "دقة GPS ±{accuracy} م",
         studentMissingWa: "لا يوجد رقم واتساب لولي الأمر في سجل الطالب.",
         parentAttendanceMessage: "تم تسجيل حضور {name} ({nisn}) بتاريخ {date} الساعة {time} في مدرسة الفتيان."
@@ -112,7 +112,6 @@ const EXTRA_T = {
         heroFactDevicesTitle: "Akses lintas perangkat", heroFactDevicesDesc: "Ponsel · Tablet · Laptop",
         heroVisualLabel: "PRATINJAU TAMPILAN PRESENSI",
         welcomeTitle: "Presensi sekolah, lebih mudah.",
-        welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
         welcomeDesc: "Amanah ID mencatat kehadiran dengan verifikasi wajah dan GPS. Tanpa mesin fingerprint atau RFID, dan membantu mencegah titip absen.",
         loginAccessNote: "Admin, Guru, dan Siswa masuk dari formulir yang sama. Peran ditentukan otomatis berdasarkan akun resmi yang terdaftar.",
         captchaLabel: "VERIFIKASI SINGKAT", captchaAnswerPlaceholder: "Ketik jawaban",
@@ -242,7 +241,6 @@ const EXTRA_T = {
         testWhatsappNoConsent: "Centang persetujuan sebelum mengirim pesan uji.",
         testFonnteConfigured: "Konfigurasi WhatsApp tersedia",
         testFonnteMissing: "Layanan WhatsApp belum dikonfigurasi",
-        testAllowlistEmpty: "Nomor uji diisi langsung pada kolom tujuan",
         testAllowlistLoadFailed: "Nomor tujuan uji belum dapat diperiksa",
         testGpsChecking: "Memeriksa lokasi perangkat...",
         testGpsInside: "Lokasi berada dalam radius sekolah dan akurasi memenuhi batas.",
@@ -302,7 +300,6 @@ const EXTRA_T = {
         heroFactDevicesTitle: "Cross-device access", heroFactDevicesDesc: "Phone · Tablet · Laptop",
         heroVisualLabel: "ATTENDANCE INTERFACE PREVIEW",
         welcomeTitle: "School attendance, made simple.",
-        welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
         welcomeDesc: "Amanah ID records attendance with face and GPS checks. No fingerprint or RFID machines, helping prevent proxy attendance.",
         loginAccessNote: "Admins, Teachers, and Students all use the same sign-in form. The system resolves each role from the registered school account.",
         captchaLabel: "QUICK SECURITY CHECK", captchaAnswerPlaceholder: "Type your answer",
@@ -432,7 +429,6 @@ const EXTRA_T = {
         testWhatsappNoConsent: "Confirm consent before sending the test message.",
         testFonnteConfigured: "WhatsApp configuration is available",
         testFonnteMissing: "WhatsApp service is not configured",
-        testAllowlistEmpty: "Enter the destination number above",
         testAllowlistLoadFailed: "The test destination could not be checked",
         testGpsChecking: "Checking device location...",
         testGpsInside: "Location is within the school radius and accuracy meets the limit.",
@@ -492,9 +488,8 @@ const EXTRA_T = {
         heroFactDevicesTitle: "استخدام عبر الأجهزة", heroFactDevicesDesc: "الهاتف · اللوحي · الحاسوب",
         heroVisualLabel: "معاينة واجهة الحضور",
         welcomeTitle: "حضور مدرسي أكثر سهولة.",
-        welcomeDesc: "تسجل أمانة.id الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
-        welcomeDesc: "تسجل أمانة الحضور بالتحقق من الوجه وGPS. دون أجهزة بصمة أو RFID، وتساعد على منع تسجيل الحضور بالنيابة.",
-        loginAccessNote: "يستخدم المديرون والمعلمون والطلاب نموذج تسجيل الدخول نفسه. يحدد النظام الدور تلقائيًا من حساب المدرسة المسجل.",
+        welcomeDesc: "أمانة ID يسهّل تسجيل الحضور بالتحقق من الوجه وموقع GPS، ومن غير أجهزة بصمة أو RFID، ويساعد على تقليل تسجيل الحضور بالنيابة.",
+        loginAccessNote: "الإدارة والمعلّمون والطلبة يقدرون يدخلون من نفس النموذج. النظام يحدّد دور كل حساب تلقائيًا.",
         captchaLabel: "تحقق أمني سريع", captchaAnswerPlaceholder: "اكتب الإجابة",
         captchaHelp: "أكمل التحدي القصير. يمكنك تغييره، ويتم إصدار تحدٍّ جديد بعد كل محاولة دخول.",
         captchaRefresh: "تحديث تحدي الأمان", captchaLoading: "جارٍ تحميل التحدي الأمني…",
@@ -505,7 +500,7 @@ const EXTRA_T = {
         mockRolesUsersDesc: "نموذج دخول واحد", mockRoleActive: "نشط",
         heroFaceVerified: "مطابقة الوجه عبر الخادم", heroSchoolDistance: "تحديد نطاق المدرسة عبر GPS",
         registeredStudentsHint: "بيانات الوجه محفوظة في Supabase",
-        historyDesc: "يُحفظ سجل الحضور في السحابة ويمكن الوصول إليه من أجهزة متعددة.",
+        historyDesc: "سجلات الحضور محفوظة بالسحابة وتقدر توصل لها من أكثر من جهاز.",
         privacyFirst: "واصفات الوجه، وليس الصور",
         privacyDesc: "تُحفظ واصفات الوجه ذات 128 بُعدًا في Supabase عبر الخادم. لا تُحفظ الصور الأصلية.",
         heroFeatureFaceGps: "الوجه + GPS",
@@ -521,19 +516,19 @@ const EXTRA_T = {
         captureSample: "حفظ عينة الكاميرا",
         faceSamplesCount: "{count} عينات وجه",
         faceSampleLimit: "الحد الأقصى 5 عينات وجه لكل طالب.",
-        duplicateFaceSample: "العينة مشابهة جدًا. غيّر زاوية الوجه أو ارفع صورة أخرى.",
+        duplicateFaceSample: "العينة تشبه عينة سابقة وايد. غيّر زاوية وجهك أو جرّب صورة ثانية.",
         locationAccuracyBad: "دقة منخفضة",
         fakeLocation: "يبدو أن موقع GPS غير طبيعي. فعّل الموقع الحقيقي للجهاز ثم أعد المحاولة.",
-        cloudLoadFailed: "تعذر تحميل بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
-        cloudRequestFailed: "تعذر إكمال الطلب. تحقق من الاتصال وحاول مرة أخرى أو تواصل مع المسؤول.",
-         accessDenied: "ليست لديك صلاحية لتنفيذ هذا الإجراء. تحقق من حسابك أو تواصل مع إدارة المدرسة.", recordNotFound: "تعذر العثور على البيانات المطلوبة.", duplicateRecord: "هذا السجل موجود بالفعل. لا حاجة لإرساله مرة أخرى.",
-        cloudSaveFailed: "تعذر حفظ البيانات في السحابة. تحقق من الاتصال وحاول مرة أخرى.",
-        cloudDeleteFailed: "تعذر حذف بيانات السحابة. تحقق من الاتصال وحاول مرة أخرى.",
-        attendanceNetworkFailed: "تعذر إرسال الحضور. تحقق من الاتصال وحاول مرة أخرى.",
-        rateLimitWait: "محاولات كثيرة جدًا. يرجى الانتظار دقيقة واحدة.",
-        serverBusyReconnect: "الخادم مشغول. جارٍ إعادة الاتصال...",
-        networkReconnecting: "جارٍ إعادة الاتصال...",
-        attendanceWhatsappFailed: "تم تسجيل الحضور، لكن تعذر إرسال إشعار ولي الأمر. يمكن للمسؤول محاولة الإرسال مرة أخرى.",
+        cloudLoadFailed: "ما قدرنا نحمّل بيانات السحابة. تأكد من الاتصال وجرب مرة ثانية.",
+        cloudRequestFailed: "ما قدرنا ننفّذ الطلب. تأكد من الاتصال وجرب مرة ثانية أو تواصل مع مسؤول المدرسة.",
+         accessDenied: "ما عندك صلاحية تسوي هالإجراء. راجع حسابك أو تواصل مع مسؤول المدرسة.", recordNotFound: "تعذر العثور على البيانات المطلوبة.", duplicateRecord: "هذا السجل موجود بالفعل. لا حاجة لإرساله مرة أخرى.",
+        cloudSaveFailed: "ما قدرنا نحفظ البيانات بالسحابة. تأكد من الاتصال وجرب مرة ثانية.",
+        cloudDeleteFailed: "ما قدرنا نحذف البيانات من السحابة. تأكد من الاتصال وجرب مرة ثانية.",
+        attendanceNetworkFailed: "ما قدرنا نرسل طلب الحضور. تأكد من الاتصال وجرب مرة ثانية.",
+        rateLimitWait: "حاولت أكثر من مرة خلال وقت قصير. انتظر دقيقة وجرب مرة ثانية.",
+        serverBusyReconnect: "الخادم مشغول الحين، بنحاول نتصل مرة ثانية...",
+        networkReconnecting: "جاري إعادة الاتصال...",
+        attendanceWhatsappFailed: "تم تسجيل حضورك، بس ما قدرنا نرسل إشعار ولي الأمر. يقدر المسؤول يحاول يرسله مرة ثانية.",
         absenceFormNav: "نموذج الغياب",
         absenceFormKicker: "طلب غياب",
         absenceFormTitle: "نموذج طلب الغياب",
@@ -566,30 +561,30 @@ const EXTRA_T = {
         rejectAbsence: "رفض",
         absenceReviewSaved: "تم تحديث حالة الطلب.",
         absenceReviewFailed: "تعذر تحديث حالة الطلب.",
-        faceTurnAngle: "انظر إلى الأمام ثم التقط زوايا الوجه: اليسار واليمين والأعلى والأسفل.",
-        faceDetectedAngle: "تم اكتشاف الوجه. الزاوية: {angle}. ابقَ ثابتًا قليلًا.",
+        faceTurnAngle: "خلّ وجهك جدام الكاميرا، وبعدها خذ زوايا اليسار واليمين وفوق وتحت.",
+        faceDetectedAngle: "اكتشفنا وجهك. الزاوية: {angle}. اثبت شوي.",
         faceAngleAlreadyCaptured: "تم التقاط زاوية {angle} بالفعل. غيّر اتجاه الوجه.",
         faceAngleSaved: "تم حفظ زاوية {angle}.",
-        faceAngle_front: "الأمام",
-        faceAngle_left: "اليسار",
-        faceAngle_right: "اليمين",
-        faceAngle_up: "الأعلى",
-        faceAngle_down: "الأسفل",
-        faceSampleDesc: "التقط الوجه من الأمام ثم أدره قليلًا إلى اليسار واليمين والأعلى والأسفل. تُجمع كل زاوية تلقائيًا.",
+        faceAngle_front: "جدام",
+        faceAngle_left: "يسار",
+        faceAngle_right: "يمين",
+        faceAngle_up: "فوق",
+        faceAngle_down: "تحت",
+        faceSampleDesc: "ابدأ بوجهك جدام الكاميرا، وبعدها لفّه شوي لليسار واليمين وفوق وتحت. النظام يجمع كل زاوية تلقائيًا.",
         duplicateImageFile: "تم اختيار ملف الصورة نفسه من قبل.",
         replaceFace: "استبدال الوجه",
-        faceUpdateMode: "وضع استبدال الوجه نشط. التقط زوايا الوجه الخمس.",
+        faceUpdateMode: "وضع تحديث بيانات الوجه شغّال. خذ زوايا الوجه الخمس.",
         faceUpdateSaved: "تم تحديث بيانات وجه الطالب.",
         faceUpdateFailed: "تعذر تحديث بيانات وجه الطالب.",
         adminTestTools: "اختبارات النظام",
         adminTestToolsTitle: "مختبر الاختبار",
         adminTestToolsDesc: "اختبر الكاميرا وGPS وأرسل رسالة تجريبية واحدة دون تغيير إعدادات إشعارات الحضور التلقائية.",
         testCameraTitle: "اختبار اكتشاف الوجه",
-        testCameraDesc: "يكتشف الوجوه من الكاميرا فقط، ولا يسجل عينات أو يحفظ الصور.",
-        testCameraStart: "بدء اختبار الكاميرا",
-        testCameraStop: "إيقاف الاختبار",
+        testCameraDesc: "يفحص الوجوه من الكاميرا بس. ما يسجّل عينات ولا يحفظ صور.",
+        testCameraStart: "ابدأ اختبار الكاميرا",
+        testCameraStop: "أوقف الاختبار",
         testCameraStatus: "لم يتم اختبار الكاميرا بعد.",
-        testCameraNoFace: "لم يتم اكتشاف وجه بعد.",
+        testCameraNoFace: "ما اكتشفنا أي وجه للحين.",
         testCameraOneFace: "تم اكتشاف وجه واحد.",
         testCameraMultipleFaces: "تم اكتشاف أكثر من وجه.",
         testModelLoading: "جارٍ تحميل نموذج الذكاء الاصطناعي...",
@@ -608,21 +603,20 @@ const EXTRA_T = {
         testWhatsappFailed: "تعذر إرسال رسالة الاختبار.",
         testWhatsappBlocked: "هذا الرقم غير موجود في قائمة أرقام الاختبار المعتمدة.",
         testGpsTitle: "اختبار GPS والنطاق الجغرافي",
-        testGpsDesc: "تحقق من إحداثيات الجهاز والمسافة عن موقع المدرسة المحفوظ.",
-        testGpsRun: "اختبار الموقع الحالي",
+        testGpsDesc: "افحص إحداثيات جهازك والمسافة بينها وبين موقع المدرسة المحفوظ.",
+        testGpsRun: "افحص موقعك الحالي",
         testGpsOpenSettings: "تعديل موقع GPS للمدرسة",
         testGpsStatus: "لم يتم اختبار الموقع بعد.",
         testOtherTitle: "فحوصات الخدمة",
         testOtherRun: "فحص الخدمات",
-        testOtherStatus: "لم يتم إجراء الفحوصات بعد.",
-        testOtherPass: "استجابت الخدمة.",
-        testOtherNotConfigured: "غير مُعدّ.",
-        testOtherFail: "لم تستجب الخدمة.",
+        testOtherStatus: "ما تم تشغيل الفحص للحين.",
+        testOtherPass: "الخدمة ترد بشكل طبيعي.",
+        testOtherNotConfigured: "مو مهيّأ للحين.",
+        testOtherFail: "الخدمة ما ردّت.",
         testPhoneInvalid: "أدخل رقم اختبار صالحًا بالتنسيق 628xxxxxxxxxx.",
         testWhatsappNoConsent: "أكد الموافقة قبل إرسال رسالة الاختبار.",
         testFonnteConfigured: "إعداد WhatsApp متاح",
         testFonnteMissing: "لم يتم إعداد خدمة WhatsApp",
-        testAllowlistEmpty: "أدخل رقم الوجهة أعلاه",
         testAllowlistLoadFailed: "تعذر التحقق من رقم الوجهة",
         testGpsChecking: "جارٍ التحقق من موقع الجهاز...",
         testGpsInside: "الموقع داخل نطاق المدرسة والدقة ضمن الحد المسموح.",
@@ -753,7 +747,7 @@ const T = {
         authEyebrow: "CONNECTED ATTENDANCE · AL FITYAN SCHOOL", welcomeTitle: "Attendance, made safer.", welcomeDesc: "Sign in to manage attendance and student records.", login: "Log in", signup: "Sign up", email: "Email", password: "Password", demoAccount: "Demo account", fullName: "Full name", confirmPassword: "Confirm password", terms: "I agree to the demo terms of use.", workspace: "WORKSPACE", dashboard: "Dashboard", database: "Database", formulir: "Registration", geofenceEnabled: "GPS geofencing active", viewProfile: "View profile", schoolWorkspace: "AL FITYAN SCHOOL", dailyAttendance: "DAILY ATTENDANCE", cameraTitle: "Attendance camera", cameraDesc: "Verify your school location, then verify your face to record attendance.", viewMap: "View map", secureCamera: "Attendance camera", modelLoading: "Loading AI...", cameraOff: "Camera is off", cameraOffDesc: "Enable the switch after your location is verified.", cameraReady: "Camera ready", fullscreen: "Fullscreen", locationVerification: "Location verification", locationNotChecked: "Location not checked", locationPending: "Not checked", attendanceSwitch: "Attendance switch", switchOffHint: "Camera is off. Your location will be checked when enabled.", off: "OFF", on: "ON", waitingFace: "Waiting for camera", livenessWaiting: "Face and movement checks begin after location verification.", recordsCenter: "RECORDS CENTER", attendanceDatabase: "Attendance database", databaseDesc: "Search, filter, and export attendance history and student records.", exportCsv: "Export CSV", registeredStudents: "Registered students", registeredStudentsHint: "Face data in this session", todayAttendance: "Today's attendance", todayAttendanceHint: "Attendance records today", totalRecords: "Total records", totalRecordsHint: "All records in this session", attendanceHistory: "Attendance history", historyDesc: "Demo data stays while this page is open.", deleteAll: "Delete all data", searchPlaceholder: "Search name, NISN, or class...", fromDate: "From", toDate: "To", number: "No.", nisn: "NISN", name: "Name", class: "Class", status: "Status", date: "Date", time: "Time", method: "Method", confidence: "Confidence", action: "Action", noRecords: "No records yet", noRecordsDesc: "Attendance history appears here after successful verification.", studentRegistry: "Student registry", studentRegistryDesc: "Students with registered face samples.", registeredAt: "Registered at", noStudents: "No registered students yet", registerFromForm: "Add students from the Registration menu.", studentManagement: "STUDENT MANAGEMENT", studentRegistration: "Student registration form", formDesc: "Register student details and a face sample for attendance recognition.", studentIdentity: "Student identity", studentIdentityDesc: "Enter the correct information before saving.", faceSample: "Face sample", faceSampleDesc: "Use the camera or upload a photo with one clearly visible face.", openCamera: "Open camera", closeCamera: "Close camera", uploadPhoto: "Upload face photo", noFaceSample: "No face sample yet.", saveStudent: "Save student", clearFace: "Face must be clear", clearFaceDesc: "Ensure only one face is visible, lighting is sufficient, and the face is unobstructed.", privacyFirst: "Temporary data", privacyDesc: "This demo stores face descriptors only in browser memory. Data disappears after reload.", accountSettings: "ACCOUNT SETTINGS", myProfile: "My profile", appearance: "Appearance", lightTheme: "Light", darkTheme: "Dark", language: "Language", saveSettings: "Save settings", logout: "Log out", locationSecurity: "LOCATION SECURITY", schoolMap: "School area map", mapDesc: "School point and your device location.", schoolPoint: "School location", yourLocation: "Your location", allowedRadius: "Allowed radius: 50 m", mapLocationPending: "Check your location to show your device position.", refreshLocation: "Check location again", confirmDeleteTitle: "Delete all data?", confirmDeleteDesc: "All attendance records and registered students in this session will be deleted.", cancel: "Cancel", locationChecking: "Checking location...", locationInside: "Inside school area", locationOutside: "Outside school area", locationError: "Location check failed", gpsDenied: "Location permission was denied. Enable location/GPS permissions in your browser and try again.", gpsUnavailable: "Position unavailable. Enable GPS and ensure your device can receive location signals.", gpsTimeout: "Location check timed out. Try again where GPS reception is better.", gpsUnsupported: "This browser does not support geolocation. Use a modern browser with location permission.", gpsFailed: "Could not check location. Review your device location settings and try again.", outsideMessage: "Attendance denied. You are {distance} m from school; the maximum allowed radius is {radius} m.", insideMessage: "Location accepted: {distance} m from school, GPS accuracy ±{accuracy} m.", accuracyWarning: "You are inside the radius, but GPS accuracy is too low ({accuracy} m). Try again in an open area.", checkingBeforeCamera: "Checking GPS before enabling the camera...", cameraPermission: "Camera permission denied. Allow camera access in your browser settings.", cameraUnavailable: "Camera unavailable or already in use by another app.", cameraUnsupported: "This browser does not support camera access.", modelFailed: "AI model failed to load. Check your internet connection and reload the page.", retryModel: "Reload the page to try again.", faceNoMatch: "Face does not match a registered student.", faceTooMany: "More than one face detected. Ensure only one person is in front of the camera.", faceNotFound: "No face detected. Position your face inside the frame.", livenessMove: "Move your head slightly to complete the liveness check.", attendanceSuccess: "Attendance recorded for {name}.", alreadyPresent: "Attendance is already recorded for this student today.", cameraStopped: "Camera turned off.", locationRequired: "Location is not verified. The camera will remain off.", fullscreenError: "Fullscreen mode is unavailable on this device.", mapFailed: "Map failed to load. Check your internet connection.", mapLocationFailed: "Your position is unavailable. Check your location first.", studentExists: "This NISN is already registered.", invalidNisn: "Enter a valid NISN.", needFace: "Capture or upload a face sample first.", studentSaved: "Student registered successfully.", studentDeleted: "Student deleted successfully.", attendanceDeleted: "Attendance record deleted.", allDeleted: "All attendance and student data deleted.", settingsSaved: "Settings saved.", loginFailed: "Email or password is incorrect.", sessionExpired: "Your session has expired. Please sign in again.", signupSuccess: "Demo account created. You can now log in.", passwordMismatch: "Password confirmation does not match.", termsRequired: "Accept the terms before signing up.", emailExists: "Email is already registered.", loggedOut: "You have logged out.", emptyCsv: "There is no data to export.", csvSaved: "CSV file prepared successfully.", cameraFormReady: "Registration camera is active.", cameraFormOff: "Registration camera turned off.", faceSampleReady: "Face sample is ready.", modelReady: "AI ready", modelLoadingLong: "Preparing AI models...", faceDetected: "Face detected", faceRegistered: "Face registered", faceNotRegistered: "Face not registered", attendanceInProgress: "Verifying face...", attendanceWaiting: "Waiting for a registered face...", attendanceReady: "Location verified. Camera ready.", methodFaceGps: "Face + GPS", delete: "Delete", recordsCount: "{count} records", studentsCount: "{count} students", unknownClass: "Not provided", mapSchoolPopup: "Al Fityan School · 50 m radius", mapUserPopup: "Your device location", mapDistance: "Distance from school: {distance} m", mapAccuracy: "GPS accuracy: ±{accuracy} m", registeredAlready: "This NISN is already registered.", locationMapReady: "Map ready. Your device position will appear after GPS verification.", noLocationForMap: "Check your location first to display your device marker.", faceUploadError: "Unable to process photo. Use a valid JPG, PNG, or WebP image.", faceSampleCapture: "Face detected. Sample can be used.", cameraStartFailed: "Could not start camera. Check browser permissions and secure HTTPS connection.", cameraStarting: "Starting camera...", locationVerified: "Location verified.", confidenceLabel: "Confidence", student: "Student", attendance: "Present"
     },
     ar: {
-        authEyebrow: "حضور متكامل · مدرسة الفتيان", welcomeTitle: "حضور أكثر أمانًا.", welcomeDesc: "سجّل الدخول لإدارة الحضور وبيانات الطلاب.", login: "تسجيل الدخول", signup: "إنشاء حساب", email: "البريد الإلكتروني", password: "كلمة المرور", demoAccount: "حساب تجريبي", fullName: "الاسم الكامل", confirmPassword: "تأكيد كلمة المرور", terms: "أوافق على شروط استخدام النسخة التجريبية.", workspace: "مساحة العمل", dashboard: "الرئيسية", database: "قاعدة البيانات", formulir: "التسجيل", geofenceEnabled: "تحديد الموقع مفعّل", viewProfile: "عرض الملف الشخصي", schoolWorkspace: "مدرسة الفتيان", dailyAttendance: "الحضور اليومي", cameraTitle: "كاميرا الحضور", cameraDesc: "تحقق من وجودك داخل المدرسة ثم تحقق من الوجه لتسجيل الحضور.", viewMap: "عرض الخريطة", secureCamera: "كاميرا الحضور", modelLoading: "جارٍ تحميل الذكاء الاصطناعي...", cameraOff: "الكاميرا متوقفة", cameraOffDesc: "فعّل المفتاح بعد التحقق من الموقع.", cameraReady: "الكاميرا جاهزة", fullscreen: "ملء الشاشة", locationVerification: "التحقق من الموقع", locationNotChecked: "لم يتم التحقق من الموقع", locationPending: "لم يتم التحقق", attendanceSwitch: "مفتاح الحضور", switchOffHint: "الكاميرا متوقفة. سيتم التحقق من موقعك عند التفعيل.", off: "إيقاف", on: "تشغيل", waitingFace: "بانتظار الكاميرا", livenessWaiting: "يبدأ التحقق من الوجه والحركة بعد التحقق من الموقع.", recordsCenter: "مركز السجلات", attendanceDatabase: "قاعدة بيانات الحضور", databaseDesc: "ابحث عن سجل الحضور وبيانات الطلاب وصفِّها وصدرها.", exportCsv: "تصدير CSV", registeredStudents: "الطلاب المسجلون", registeredStudentsHint: "بيانات الوجه في هذه الجلسة", todayAttendance: "حضور اليوم", todayAttendanceHint: "سجلات الحضور اليوم", totalRecords: "إجمالي السجلات", totalRecordsHint: "جميع سجلات هذه الجلسة", attendanceHistory: "سجل الحضور", historyDesc: "تظل البيانات التجريبية متاحة أثناء فتح الصفحة.", deleteAll: "حذف جميع البيانات", searchPlaceholder: "ابحث بالاسم أو رقم الطالب أو الفصل...", fromDate: "من", toDate: "إلى", number: "رقم", nisn: "رقم الطالب", name: "الاسم", class: "الفصل", status: "الحالة", date: "التاريخ", time: "الوقت", method: "الطريقة", confidence: "نسبة الثقة", action: "الإجراء", noRecords: "لا توجد سجلات بعد", noRecordsDesc: "سيظهر سجل الحضور هنا بعد نجاح التحقق.", studentRegistry: "سجل الطلاب", studentRegistryDesc: "الطلاب الذين لديهم عينات وجه مسجلة.", registeredAt: "تاريخ التسجيل", noStudents: "لا يوجد طلاب مسجلون بعد", registerFromForm: "أضف الطلاب من قائمة التسجيل.", studentManagement: "إدارة الطلاب", studentRegistration: "نموذج تسجيل الطلاب", formDesc: "سجّل بيانات الطالب وعينة الوجه للتعرف على الحضور.", studentIdentity: "بيانات الطالب", studentIdentityDesc: "أدخل المعلومات الصحيحة قبل الحفظ.", faceSample: "عينة الوجه", faceSampleDesc: "استخدم الكاميرا أو ارفع صورة يظهر فيها وجه واحد بوضوح.", openCamera: "فتح الكاميرا", closeCamera: "إغلاق الكاميرا", uploadPhoto: "رفع صورة الوجه", noFaceSample: "لا توجد عينة وجه بعد.", saveStudent: "حفظ الطالب", clearFace: "يجب أن يكون الوجه واضحًا", clearFaceDesc: "تأكد من ظهور وجه واحد فقط ومن الإضاءة الجيدة وعدم تغطية الوجه.", privacyFirst: "بيانات مؤقتة", privacyDesc: "تحفظ هذه النسخة التجريبية بيانات الوجه في ذاكرة المتصفح فقط، وتختفي عند إعادة تحميل الصفحة.", accountSettings: "إعدادات الحساب", myProfile: "ملفي الشخصي", appearance: "المظهر", lightTheme: "فاتح", darkTheme: "داكن", language: "اللغة", saveSettings: "حفظ الإعدادات", logout: "تسجيل الخروج", locationSecurity: "أمان الموقع", schoolMap: "خريطة منطقة المدرسة", mapDesc: "موقع المدرسة وموقع جهازك.", schoolPoint: "موقع المدرسة", yourLocation: "موقعك", allowedRadius: "نطاق السماح: 50 مترًا", mapLocationPending: "تحقق من موقعك لإظهار موقع الجهاز.", refreshLocation: "التحقق من الموقع مجددًا", confirmDeleteTitle: "حذف جميع البيانات؟", confirmDeleteDesc: "سيتم حذف سجلات الحضور والطلاب المسجلين في هذه الجلسة.", cancel: "إلغاء", locationChecking: "جارٍ التحقق من الموقع...", locationInside: "داخل نطاق المدرسة", locationOutside: "خارج نطاق المدرسة", locationError: "فشل التحقق من الموقع", gpsDenied: "تم رفض إذن الموقع. فعّل إذن الموقع أو GPS في المتصفح ثم حاول مجددًا.", gpsUnavailable: "الموقع غير متاح. فعّل GPS وتأكد من استقبال الجهاز لإشارة الموقع.", gpsTimeout: "انتهت مهلة التحقق من الموقع. حاول مجددًا في مكان تكون فيه إشارة GPS أفضل.", gpsUnsupported: "هذا المتصفح لا يدعم تحديد الموقع. استخدم متصفحًا حديثًا مع السماح بالوصول إلى الموقع.", gpsFailed: "تعذر التحقق من الموقع. راجع إعدادات الموقع في جهازك ثم حاول مجددًا.", outsideMessage: "تم رفض الحضور. تبعد عن المدرسة {distance} مترًا، بينما النطاق الأقصى المسموح هو {radius} مترًا.", insideMessage: "تم قبول الموقع: البعد {distance} مترًا، ودقة GPS نحو ±{accuracy} متر.", accuracyWarning: "أنت داخل النطاق لكن دقة GPS منخفضة ({accuracy} متر). حاول مجددًا في مكان مفتوح.", checkingBeforeCamera: "جارٍ التحقق من GPS قبل تشغيل الكاميرا...", cameraPermission: "تم رفض إذن الكاميرا. اسمح للمتصفح باستخدام الكاميرا.", cameraUnavailable: "الكاميرا غير متاحة أو تستخدمها تطبيقات أخرى.", cameraUnsupported: "هذا المتصفح لا يدعم الوصول إلى الكاميرا.", modelFailed: "تعذر تحميل نموذج الذكاء الاصطناعي. تحقق من الإنترنت وأعد تحميل الصفحة.", retryModel: "أعد تحميل الصفحة للمحاولة مجددًا.", faceNoMatch: "الوجه لا يطابق أي طالب مسجل.", faceTooMany: "تم اكتشاف أكثر من وجه. تأكد من وجود شخص واحد أمام الكاميرا.", faceNotFound: "لم يتم اكتشاف وجه. ضع وجهك داخل الإطار.", livenessMove: "حرّك رأسك قليلًا لإكمال التحقق من الحيوية.", attendanceSuccess: "تم تسجيل الحضور للطالب {name}.", alreadyPresent: "تم تسجيل حضور هذا الطالب اليوم بالفعل.", cameraStopped: "تم إيقاف الكاميرا.", locationRequired: "لم يتم التحقق من الموقع. ستظل الكاميرا متوقفة.", fullscreenError: "وضع ملء الشاشة غير متاح على هذا الجهاز.", mapFailed: "تعذر تحميل الخريطة. تحقق من اتصال الإنترنت.", mapLocationFailed: "موقعك غير متاح. تحقق من الموقع أولًا.", studentExists: "رقم الطالب مسجل بالفعل.", invalidNisn: "أدخل رقم طالب صحيحًا.", needFace: "التقط عينة وجه أو ارفعها أولًا.", studentSaved: "تم تسجيل الطالب بنجاح.", studentDeleted: "تم حذف الطالب بنجاح.", attendanceDeleted: "تم حذف سجل الحضور.", allDeleted: "تم حذف جميع بيانات الحضور والطلاب.", settingsSaved: "تم حفظ الإعدادات.", loginFailed: "البريد الإلكتروني أو كلمة المرور غير صحيحة.", sessionExpired: "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.", signupSuccess: "تم إنشاء الحساب التجريبي. يمكنك تسجيل الدخول الآن.", passwordMismatch: "تأكيد كلمة المرور غير مطابق.", termsRequired: "وافق على الشروط قبل التسجيل.", emailExists: "البريد الإلكتروني مسجل بالفعل.", loggedOut: "تم تسجيل الخروج.", emptyCsv: "لا توجد بيانات لتصديرها.", csvSaved: "تم تجهيز ملف CSV.", cameraFormReady: "كاميرا التسجيل تعمل.", cameraFormOff: "تم إيقاف كاميرا التسجيل.", faceSampleReady: "عينة الوجه جاهزة.", modelReady: "الذكاء الاصطناعي جاهز", modelLoadingLong: "جارٍ تجهيز نماذج الذكاء الاصطناعي...", faceDetected: "تم اكتشاف الوجه", faceRegistered: "الوجه مسجل", faceNotRegistered: "الوجه غير مسجل", attendanceInProgress: "جارٍ التحقق من الوجه...", attendanceWaiting: "بانتظار وجه مسجل...", attendanceReady: "تم التحقق من الموقع. الكاميرا جاهزة.", methodFaceGps: "الوجه + GPS", delete: "حذف", recordsCount: "{count} سجل", studentsCount: "{count} طالب", unknownClass: "غير محدد", mapSchoolPopup: "مدرسة الفتيان · نطاق 50 مترًا", mapUserPopup: "موقع جهازك", mapDistance: "المسافة من المدرسة: {distance} متر", mapAccuracy: "دقة GPS: ±{accuracy} متر", registeredAlready: "رقم الطالب مسجل بالفعل.", locationMapReady: "الخريطة جاهزة. سيظهر موقع جهازك بعد التحقق من GPS.", noLocationForMap: "تحقق من موقعك أولًا لإظهار علامة الجهاز.", faceUploadError: "تعذرت معالجة الصورة. استخدم صورة JPG أو PNG أو WebP صالحة.", faceSampleCapture: "تم اكتشاف الوجه. يمكن استخدام العينة.", cameraStartFailed: "تعذر تشغيل الكاميرا. تحقق من أذونات المتصفح واتصال HTTPS الآمن.", cameraStarting: "جارٍ تشغيل الكاميرا...", locationVerified: "تم التحقق من الموقع.", confidenceLabel: "الثقة", student: "الطالب", attendance: "حاضر"
+        authEyebrow: "حضور متكامل · مدرسة الفتيان", welcomeTitle: "حضورك صار أسهل وأأمن.", welcomeDesc: "سجّل دخولك عشان تدير الحضور وبيانات الطلبة.", login: "تسجيل الدخول", signup: "إنشاء حساب", email: "البريد الإلكتروني", password: "كلمة المرور", demoAccount: "حساب تجريبي", fullName: "الاسم الكامل", confirmPassword: "تأكيد كلمة المرور", terms: "أوافق على شروط استخدام النسخة التجريبية.", workspace: "مساحة العمل", dashboard: "الرئيسية", database: "قاعدة البيانات", formulir: "التسجيل", geofenceEnabled: "تحديد الموقع مفعّل", viewProfile: "عرض الملف الشخصي", schoolWorkspace: "مدرسة الفتيان", dailyAttendance: "الحضور اليومي", cameraTitle: "كاميرا الحضور", cameraDesc: "تأكد إنك داخل المدرسة، وبعدها تحقّق من وجهك عشان تسجّل حضورك.", viewMap: "عرض الخريطة", secureCamera: "كاميرا الحضور", modelLoading: "جارٍ تحميل الذكاء الاصطناعي...", cameraOff: "الكاميرا متوقفة", cameraOffDesc: "فعّل المفتاح عقب ما نتأكد من موقعك.", cameraReady: "الكاميرا جاهزة", fullscreen: "ملء الشاشة", locationVerification: "التحقق من الموقع", locationNotChecked: "الموقع للحين ما تم التحقق منه.", locationPending: "بانتظار التحقق.", attendanceSwitch: "مفتاح الحضور", switchOffHint: "الكاميرا مطفّية. بنتحقق من موقعك أول ما تشغّلها.", off: "إيقاف", on: "تشغيل", waitingFace: "بانتظار تشغيل الكاميرا.", livenessWaiting: "التحقق من الوجه والحركة يبدأ عقب ما نتأكد من موقعك.", recordsCenter: "مركز السجلات", attendanceDatabase: "قاعدة بيانات الحضور", databaseDesc: "ابحث عن سجل الحضور وبيانات الطلاب وصفِّها وصدرها.", exportCsv: "تصدير CSV", registeredStudents: "الطلاب المسجلون", registeredStudentsHint: "بيانات الوجه في هذه الجلسة", todayAttendance: "حضور اليوم", todayAttendanceHint: "سجلات الحضور اليوم", totalRecords: "إجمالي السجلات", totalRecordsHint: "جميع سجلات هذه الجلسة", attendanceHistory: "سجل الحضور", historyDesc: "تظل البيانات التجريبية متاحة أثناء فتح الصفحة.", deleteAll: "حذف جميع البيانات", searchPlaceholder: "ابحث بالاسم أو رقم الطالب أو الفصل...", fromDate: "من", toDate: "إلى", number: "رقم", nisn: "رقم الطالب", name: "الاسم", class: "الفصل", status: "الحالة", date: "التاريخ", time: "الوقت", method: "الطريقة", confidence: "نسبة الثقة", action: "الإجراء", noRecords: "لا توجد سجلات بعد", noRecordsDesc: "سيظهر سجل الحضور هنا بعد نجاح التحقق.", studentRegistry: "سجل الطلاب", studentRegistryDesc: "الطلاب الذين لديهم عينات وجه مسجلة.", registeredAt: "تاريخ التسجيل", noStudents: "لا يوجد طلاب مسجلون بعد", registerFromForm: "أضف الطلاب من قائمة التسجيل.", studentManagement: "إدارة الطلاب", studentRegistration: "نموذج تسجيل الطلاب", formDesc: "سجّل بيانات الطالب وعينة الوجه للتعرف على الحضور.", studentIdentity: "بيانات الطالب", studentIdentityDesc: "أدخل المعلومات الصحيحة قبل الحفظ.", faceSample: "عينة الوجه", faceSampleDesc: "استخدم الكاميرا أو ارفع صورة يظهر فيها وجه واحد بوضوح.", openCamera: "فتح الكاميرا", closeCamera: "إغلاق الكاميرا", uploadPhoto: "رفع صورة الوجه", noFaceSample: "ما عندك عينة وجه للحين.", saveStudent: "حفظ الطالب", clearFace: "يجب أن يكون الوجه واضحًا", clearFaceDesc: "تأكد إن وجه واحد بس ظاهر، والإضاءة زينة، ووجهك مو مغطى.", privacyFirst: "بيانات مؤقتة", privacyDesc: "تحفظ هذه النسخة التجريبية بيانات الوجه في ذاكرة المتصفح فقط، وتختفي عند إعادة تحميل الصفحة.", accountSettings: "إعدادات الحساب", myProfile: "ملفي الشخصي", appearance: "المظهر", lightTheme: "فاتح", darkTheme: "داكن", language: "اللغة", saveSettings: "حفظ الإعدادات", logout: "تسجيل الخروج", locationSecurity: "أمان الموقع", schoolMap: "خريطة منطقة المدرسة", mapDesc: "موقع المدرسة وموقع جهازك.", schoolPoint: "موقع المدرسة", yourLocation: "موقعك", allowedRadius: "نطاق السماح: 50 مترًا", mapLocationPending: "تحقق من موقعك لإظهار موقع الجهاز.", refreshLocation: "التحقق من الموقع مجددًا", confirmDeleteTitle: "حذف جميع البيانات؟", confirmDeleteDesc: "سيتم حذف سجلات الحضور والطلاب المسجلين في هذه الجلسة.", cancel: "إلغاء", locationChecking: "جارٍ التحقق من الموقع...", locationInside: "داخل نطاق المدرسة", locationOutside: "خارج نطاق المدرسة", locationError: "فشل التحقق من الموقع", gpsDenied: "ما عندك إذن للموقع. فعّل إذن الموقع أو GPS من المتصفح وجرب مرة ثانية.", gpsUnavailable: "الموقع مو متوفر. فعّل GPS وتأكد إن جهازك يقدر يحدد موقعه.", gpsTimeout: "انتهى وقت التحقق من الموقع. جرّب مرة ثانية بمكان إشارة GPS فيه أوضح.", gpsUnsupported: "المتصفح هذا ما يدعم تحديد الموقع. استخدم متصفح حديث واسمح له يوصل للموقع.", gpsFailed: "ما قدرنا نتحقق من الموقع. راجع إعدادات الموقع بجهازك وجرب مرة ثانية.", outsideMessage: "ما نقدر نسجّل حضورك. موقعك يبعد عن المدرسة {distance} م، والحد المسموح {radius} م.", insideMessage: "موقعك مقبول: تبعد {distance} م عن المدرسة، ودقة GPS حوالي ±{accuracy} م.", accuracyWarning: "أنت داخل النطاق، بس دقة GPS ضعيفة ({accuracy} م). جرّب مرة ثانية بمكان مفتوح.", checkingBeforeCamera: "جارٍ التحقق من GPS قبل تشغيل الكاميرا...", cameraPermission: "إذن الكاميرا مرفوض. اسمح للمتصفح يستخدم الكاميرا من الإعدادات.", cameraUnavailable: "الكاميرا مو متوفرة أو فيه تطبيق ثاني يستخدمها.", cameraUnsupported: "المتصفح هذا ما يدعم تشغيل الكاميرا.", modelFailed: "ما قدرنا نحمّل نموذج الذكاء الاصطناعي. تأكد من الإنترنت وأعد تحميل الصفحة.", retryModel: "أعد تحميل الصفحة للمحاولة مجددًا.", faceNoMatch: "الوجه مو مطابق لأي طالب مسجّل.", faceTooMany: "اكتشفنا أكثر من وجه. تأكد إن شخص واحد بس واقف جدام الكاميرا.", faceNotFound: "ما اكتشفنا أي وجه. حط وجهك داخل الإطار.", livenessMove: "حرّك راسك شوي عشان يكتمل التحقق من الحيوية.", attendanceSuccess: "تم تسجيل الحضور للطالب {name}.", alreadyPresent: "حضور هالطالب مسجّل اليوم من قبل.", cameraStopped: "تم إيقاف الكاميرا.", locationRequired: "الموقع مو متحقق منه، فالكاميرا بتظل مطفّية.", fullscreenError: "وضع ملء الشاشة غير متاح على هذا الجهاز.", mapFailed: "ما قدرنا نحمّل الخريطة. تأكد من الإنترنت وجرب مرة ثانية.", mapLocationFailed: "موقعك مو متوفر. تحقق من الموقع أول.", studentExists: "رقم الطالب مسجل بالفعل.", invalidNisn: "أدخل رقم طالب صحيحًا.", needFace: "خذ عينة من وجهك بالكاميرا أو ارفع صورة أول.", studentSaved: "تم تسجيل الطالب بنجاح.", studentDeleted: "تم حذف الطالب بنجاح.", attendanceDeleted: "تم حذف سجل الحضور.", allDeleted: "تم حذف جميع بيانات الحضور والطلاب.", settingsSaved: "تم حفظ الإعدادات.", loginFailed: "البريد الإلكتروني أو كلمة المرور غير صحيحة.", sessionExpired: "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.", signupSuccess: "تم إنشاء الحساب التجريبي. يمكنك تسجيل الدخول الآن.", passwordMismatch: "تأكيد كلمة المرور غير مطابق.", termsRequired: "وافق على الشروط قبل التسجيل.", emailExists: "البريد الإلكتروني مسجل بالفعل.", loggedOut: "تم تسجيل الخروج.", emptyCsv: "لا توجد بيانات لتصديرها.", csvSaved: "تم تجهيز ملف CSV.", cameraFormReady: "كاميرا التسجيل تعمل.", cameraFormOff: "تم إيقاف كاميرا التسجيل.", faceSampleReady: "عينة الوجه جاهزة.", modelReady: "الذكاء الاصطناعي جاهز", modelLoadingLong: "جارٍ تجهيز نماذج الذكاء الاصطناعي...", faceDetected: "تم اكتشاف الوجه", faceRegistered: "الوجه مسجل", faceNotRegistered: "الوجه غير مسجل", attendanceInProgress: "جارٍ التحقق من الوجه...", attendanceWaiting: "بانتظار وجه مسجل...", attendanceReady: "تم التحقق من الموقع. الكاميرا جاهزة.", methodFaceGps: "الوجه + GPS", delete: "حذف", recordsCount: "{count} سجل", studentsCount: "{count} طالب", unknownClass: "غير محدد", mapSchoolPopup: "مدرسة الفتيان · نطاق 50 مترًا", mapUserPopup: "موقع جهازك", mapDistance: "المسافة من المدرسة: {distance} متر", mapAccuracy: "دقة GPS: ±{accuracy} متر", registeredAlready: "رقم الطالب مسجل بالفعل.", locationMapReady: "الخريطة جاهزة. سيظهر موقع جهازك بعد التحقق من GPS.", noLocationForMap: "تحقق من موقعك أولًا لإظهار علامة الجهاز.", faceUploadError: "ما قدرنا نعالج الصورة. استخدم صورة JPG أو PNG أو WebP صالحة.", faceSampleCapture: "تم اكتشاف الوجه. يمكن استخدام العينة.", cameraStartFailed: "ما قدرنا نشغّل الكاميرا. تأكد من صلاحيات المتصفح واتصال HTTPS الآمن.", cameraStarting: "جارٍ تشغيل الكاميرا...", locationVerified: "تم التحقق من الموقع.", confidenceLabel: "الثقة", student: "الطالب", attendance: "حاضر"
     }
 };
 
@@ -824,13 +818,13 @@ const LANDING_T = {
     ar: {
         brandName: "أمانة.id", splashSubtitle: "الحضور المدرسي الرقمي",
         heroTitleFirst: "حضور مدرسي،", heroTitleSecond: "أوضح وأكثر موثوقية.",
-        heroDescription: "اجمع تسجيل الحضور والتحقق من الوجه وفحص الموقع ضمن مسار رقمي واحد. يمكن للإدارة والمعلمين والطلاب استخدام النظام من أجهزتهم.",
+        heroDescription: "يجمع أمانة ID تسجيل الحضور والتحقق من الوجه والموقع ضمن خطوات رقمية وحدة. الإدارة والمعلّمون والطلبة يقدرون يستخدمونه من أجهزتهم.",
         heroBenefitsLabel: "ميزات أمانة.id", heroBenefitAccuracy: "تتم مطابقة الوجه من خلال الخادم",
         heroBenefitGps: "يُفحص الموقع وفق نطاق المدرسة",
-        heroBenefitPhone: "يعمل على الهاتف واللوحي والحاسوب",
+        heroBenefitPhone: "تقدر تستخدمه من الهاتف أو الجهاز اللوحي أو اللابتوب.",
         aboutTitle: "عن أمانة.id",
-        aboutDescription: "تساعد أمانة.id المدارس على تسجيل الحضور بالتحقق من الوجه والموقع.",
-        chooseAccess: "اختر طريقة الدخول", heroDashboardLabel: "معاينة لوحة الحضور في أمانة.id",
+        aboutDescription: "أمانة ID يساعد المدرسة تسجّل الحضور بالتحقق من الوجه والموقع.",
+        chooseAccess: "اختَر طريقة الدخول.", heroDashboardLabel: "معاينة لوحة الحضور في أمانة.id",
         mockDashboard: "لوحة الحضور", mockGreeting: "صباح الخير 👋",
         mockAttendanceLabel: "حالة الحضور", mockPresentToday: "حاضر اليوم",
         mockTotalStudents: "إجمالي الطلاب", mockRegistered: "مسجل", mockCheckedIn: "سجلوا الحضور",
@@ -1090,7 +1084,7 @@ function syncAdminSettingsMap({ center = false } = {}) {
 function formatMapDistance(meters) {
     if (!Number.isFinite(meters) || meters < 0) return "—";
     if (meters < 1000) return `${Math.round(meters)} m`;
-    const locale = state.lang === "id" ? "id-ID" : state.lang === "ar" ? "ar" : "en-US";
+    const locale = state.lang === "id" ? "id-ID" : state.lang === "ar" ? "ar-KW" : "en-US";
     return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(meters / 1000)} km`;
 }
 
@@ -1119,7 +1113,7 @@ function updateAdminMapDistanceSummary() {
     if (distanceEl) distanceEl.textContent = formatMapDistance(distance);
     if (accuracyEl) accuracyEl.textContent = `±${formatMapDistance(fix.accuracy)}`;
     if (radiusEl) radiusEl.textContent = formatMapDistance(radius);
-    const locale = state.lang === "id" ? "id-ID" : state.lang === "ar" ? "ar" : "en-US";
+    const locale = state.lang === "id" ? "id-ID" : state.lang === "ar" ? "ar-KW" : "en-US";
     const checkedAt = new Intl.DateTimeFormat(locale, {
         hour: "2-digit", minute: "2-digit", second: "2-digit"
     }).format(new Date(fix.timestamp));
@@ -1303,7 +1297,7 @@ function setupAppDialog() {
 function setLanguage(lang) {
     if (!T[lang]) return;
     state.lang = lang;
-    document.documentElement.lang = lang;
+    document.documentElement.lang = lang === "ar" ? "ar-KW" : lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
 
     document.querySelectorAll("[data-i18n]").forEach(el => {
@@ -2336,7 +2330,7 @@ function localDateKey(date = new Date()) {
 }
 
 function localTime(date = new Date()) {
-    return date.toLocaleTimeString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID", {
+    return date.toLocaleTimeString(state.lang === "ar" ? "ar-KW" : state.lang === "en" ? "en-GB" : "id-ID", {
         hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
     });
 }
@@ -2344,7 +2338,7 @@ function localTime(date = new Date()) {
 function formatDate(dateString) {
     const parts = dateString.split("-").map(Number);
     const date = new Date(parts[0], parts[1] - 1, parts[2]);
-    return date.toLocaleDateString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID", {
+    return date.toLocaleDateString(state.lang === "ar" ? "ar-KW" : state.lang === "en" ? "en-GB" : "id-ID", {
         day: "2-digit", month: "short", year: "numeric"
     });
 }
@@ -2636,7 +2630,7 @@ function normalizeCloudStudent(student) {
         homeroomTeacherName: student.homeroom_teacher?.name || "",
         parentWhatsApp: student.parent_whatsapp || "",
         registeredDate: student.created_at
-            ? new Date(student.created_at).toLocaleString(state.lang === "ar" ? "ar" : state.lang === "en" ? "en-GB" : "id-ID")
+            ? new Date(student.created_at).toLocaleString(state.lang === "ar" ? "ar-KW" : state.lang === "en" ? "en-GB" : "id-ID")
             : ""
     };
 }
