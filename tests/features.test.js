@@ -104,19 +104,20 @@ test("face, GPS map, and WhatsApp testing strings exist in all three app languag
 });
 
 
+
 function extractTopLevelObjectKeys(source, objectName, language) {
-    const start = source.indexOf(`const ${objectName} =`);
-    const stopMarker = objectName === "EXTRA_T" ? "\\nconst state =" : null;
+    const start = source.indexOf("const " + objectName + " =");
+    const stopMarker = objectName === "EXTRA_T" ? "\nconst state =" : null;
     const open = source.indexOf("{", start);
     const end = stopMarker ? source.indexOf(stopMarker, open) : -1;
-    assert.ok(start >= 0 && open > start && end > open, `Could not locate ${objectName}`);
+    assert.ok(start >= 0 && open > start && end > open, "Could not locate " + objectName);
 
     const block = source.slice(open + 1, end);
-    const languageMatch = new RegExp(`\\\\b${language}\\\\s*:\\\\\s*\\\\{`).exec(block);
-    assert.ok(languageMatch, `Missing ${language} in ${objectName}`);
+    const languageMatch = new RegExp("\\b" + language + "\\s*:\\s*\\{").exec(block);
+    assert.ok(languageMatch, "Missing " + language + " in " + objectName);
     const bodyStart = languageMatch.index + languageMatch[0].length;
     const remaining = block.slice(bodyStart);
-    const nextLanguage = /\\b(?:en|ar)\\s*:\\s*\\{/g;
+    const nextLanguage = /\b(?:en|ar)\s*:\s*\{/g;
     const nextMatch = nextLanguage.exec(remaining);
     const body = remaining.slice(0, nextMatch ? nextMatch.index : remaining.length);
 
@@ -127,12 +128,12 @@ function extractTopLevelObjectKeys(source, objectName, language) {
         const char = body[i];
         if (quote) {
             if (escaped) { escaped = false; i++; continue; }
-            if (char === "\\\\") { escaped = true; i++; continue; }
+            if (char === "\\") { escaped = true; i++; continue; }
             if (char === quote) quote = null;
             i++;
             continue;
         }
-        if (char === "\\"" || char === "'" || char === "`") {
+        if (char === '"' || char === "'") {
             quote = char;
             i++;
             continue;
@@ -141,7 +142,7 @@ function extractTopLevelObjectKeys(source, objectName, language) {
             let j = i + 1;
             while (j < body.length && /[A-Za-z0-9_$]/.test(body[j])) j++;
             let k = j;
-            while (k < body.length && /\\s/.test(body[k])) k++;
+            while (k < body.length && /\s/.test(body[k])) k++;
             if (body[k] === ":") keys.push(body.slice(i, j));
             i = j;
             continue;
@@ -154,23 +155,23 @@ function extractTopLevelObjectKeys(source, objectName, language) {
 test("application language dictionaries are complete and preserve interpolation placeholders", () => {
     const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
     const dictionaries = [
-        ["ROLE_T", "\\nconst EXTRA_T ="],
-        ["EXTRA_T", "\\nconst state ="],
-        ["T", "\\nObject.keys(ROLE_T)"],
-        ["LANDING_T", "\\nObject.keys(LANDING_T)"],
-        ["ADMIN_T", "\\nObject.keys(ADMIN_T)"]
+        ["ROLE_T", "\nconst EXTRA_T ="],
+        ["EXTRA_T", "\nconst state ="],
+        ["T", "\nObject.keys(ROLE_T)"],
+        ["LANDING_T", "\nObject.keys(LANDING_T)"],
+        ["ADMIN_T", "\nObject.keys(ADMIN_T)"]
     ];
 
     for (const [name, nextDeclaration] of dictionaries) {
         const dictionary = evaluateFrontendConstant(source, name, nextDeclaration);
         const canonicalKeys = Object.keys(dictionary.id).sort();
-        assert.deepEqual(Object.keys(dictionary.en).sort(), canonicalKeys, `${name}: EN keys differ from ID`);
-        assert.deepEqual(Object.keys(dictionary.ar).sort(), canonicalKeys, `${name}: AR keys differ from ID`);
+        assert.deepEqual(Object.keys(dictionary.en).sort(), canonicalKeys, name + ": EN keys differ from ID");
+        assert.deepEqual(Object.keys(dictionary.ar).sort(), canonicalKeys, name + ": AR keys differ from ID");
 
         for (const key of canonicalKeys) {
-            const placeholders = value => Array.from(String(value).matchAll(/\\{([A-Za-z0-9_]+)\\}/g), match => match[1]).sort();
-            assert.deepEqual(placeholders(dictionary.en[key]), placeholders(dictionary.id[key]), `${name}.${key}: EN placeholders differ`);
-            assert.deepEqual(placeholders(dictionary.ar[key]), placeholders(dictionary.id[key]), `${name}.${key}: AR placeholders differ`);
+            const placeholders = value => Array.from(String(value).matchAll(/\{([A-Za-z0-9_]+)\}/g), match => match[1]).sort();
+            assert.deepEqual(placeholders(dictionary.en[key]), placeholders(dictionary.id[key]), name + "." + key + ": EN placeholders differ");
+            assert.deepEqual(placeholders(dictionary.ar[key]), placeholders(dictionary.id[key]), name + "." + key + ": AR placeholders differ");
         }
     }
 });
@@ -179,7 +180,7 @@ test("EXTRA_T has no duplicate translation keys in Indonesian, English, or Kuwai
     const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
     for (const language of ["id", "en", "ar"]) {
         const keys = extractTopLevelObjectKeys(source, "EXTRA_T", language);
-        assert.equal(new Set(keys).size, keys.length, `Duplicate property in EXTRA_T.${language}`);
+        assert.equal(new Set(keys).size, keys.length, "Duplicate property in EXTRA_T." + language);
     }
 });
 
@@ -194,5 +195,5 @@ test("Arabic locale metadata uses Kuwait regional formatting and keeps right-to-
     assert.equal((html.match(/data-lang="ar" lang="ar-KW"/g) ?? []).length, 4);
     assert.equal((html.match(/option value="ar" lang="ar-KW"/g) ?? []).length, 2);
     assert.match(html, /العربية \(الكويت\)/);
-    assert.match(css, /html\\[dir="rtl"\\]/);
+    assert.match(css, /html\[dir="rtl"\]/);
 });
