@@ -107,7 +107,7 @@ test("face, GPS map, and WhatsApp testing strings exist in all three app languag
     ];
     for (const language of ["id", "en", "ar"]) {
         for (const key of required) {
-            assert.ok(typeof extra[language]?.[key] === "string" && extra[language][key].length > 0,
+            assert.ok(typeof roleTranslations[language]?.[key] === "string" && roleTranslations[language][key].length > 0,
                 `Missing ${language} translation for ${key}`);
         }
     }
@@ -239,7 +239,7 @@ test("GPS defaults and user-facing GPS errors stay consistent across the attenda
     assert.match(html, /id="allowed-radius"[^>]*>Radius diizinkan: 50 m/);
     assert.doesNotMatch(source, /FACE_MATCH_THRESHOLD\s*=\s*0\.45/);
 
-    const extra = evaluateFrontendConstant(source, "EXTRA_T", "\\nconst state =");
+    const roleTranslations = evaluateFrontendConstant(source, "ROLE_T", "\nconst EXTRA_T =");
     for (const language of ["id", "en", "ar"]) {
         for (const key of [
             "dispensationGpsUnsupported",
