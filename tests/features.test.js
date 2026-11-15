@@ -107,7 +107,7 @@ test("face, GPS map, and WhatsApp testing strings exist in all three app languag
     ];
     for (const language of ["id", "en", "ar"]) {
         for (const key of required) {
-            assert.ok(typeof roleTranslations[language]?.[key] === "string" && roleTranslations[language][key].length > 0,
+            assert.ok(typeof extra[language]?.[key] === "string" && extra[language][key].length > 0,
                 `Missing ${language} translation for ${key}`);
         }
     }
@@ -248,7 +248,7 @@ test("GPS defaults and user-facing GPS errors stay consistent across the attenda
             "dispensationGpsTimeout",
             "dispensationGpsAccuracy"
         ]) {
-            assert.ok(typeof extra[language]?.[key] === "string" && extra[language][key].length > 0,
+            assert.ok(typeof roleTranslations[language]?.[key] === "string" && roleTranslations[language][key].length > 0,
                 "Missing " + language + " translation for " + key);
         }
     }
