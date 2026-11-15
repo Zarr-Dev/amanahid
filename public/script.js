@@ -14,7 +14,6 @@ let SCHOOL_LOCATION = {
     name: "Al Fityan School"
 };
 const MAX_GPS_ACCURACY_METERS = 35;
-const FACE_MATCH_THRESHOLD = 0.45;
 const MAX_FACE_SAMPLES = 5;
 
 const ROLE_T = {
@@ -42,6 +41,11 @@ const ROLE_T = {
         studentAttendanceSuccess: "Presensi berhasil dicatat.",
         whatsappQueued: "Pemberitahuan untuk orang tua sudah masuk antrean pengiriman.", whatsappUnknown: "Presensi tercatat, tetapi status WhatsApp belum dapat dipastikan. Admin perlu memeriksa riwayat Fonnte.", whatsappNoParent: "Nomor WhatsApp orang tua belum terdaftar. Hubungi Admin sekolah.",
         gpsFixStale: "Lokasi sudah terlalu lama. Periksa GPS kembali lalu coba lagi.", gpsSpeedAnomaly: "Perubahan lokasi tidak wajar. Periksa GPS dan coba lagi.", gpsBoundaryUncertain: "Posisi terlalu dekat dengan batas area sekolah untuk dipastikan. Periksa lokasi kembali.",
+        dispensationGpsUnsupported: "Perangkat ini tidak mendukung pemeriksaan GPS.",
+        dispensationGpsDenied: "Izin lokasi ditolak. Aktifkan izin lokasi pada browser.",
+        dispensationGpsUnavailable: "Lokasi perangkat belum tersedia. Coba lagi di area terbuka.",
+        dispensationGpsTimeout: "Pemeriksaan GPS melewati batas waktu. Coba lagi.",
+        dispensationGpsAccuracy: "Akurasi GPS harus {accuracy} meter atau lebih baik untuk mengajukan dispensasi.",
         gpsAccuracyStatus: "Akurasi GPS ±{accuracy} m",
         studentMissingWa: "Nomor WhatsApp orang tua belum tersedia pada data siswa.",
         parentAttendanceMessage: "Assalamu'alaikum, presensi {name} ({nisn}) tercatat pada {date} pukul {time} di Al Fityan School."
@@ -70,6 +74,11 @@ const ROLE_T = {
         studentAttendanceSuccess: "Attendance recorded successfully.",
         whatsappQueued: "The parent notification has been added to the sending queue.", whatsappUnknown: "Attendance was recorded, but the WhatsApp status could not be confirmed. An Admin should check Fonnte history.", whatsappNoParent: "A parent WhatsApp number is not registered. Please contact the school Admin.",
         gpsFixStale: "The location reading is too old. Refresh GPS and try again.", gpsSpeedAnomaly: "The location change looks unusual. Check GPS and try again.", gpsBoundaryUncertain: "Your location is too close to the school boundary to confirm. Refresh the location.",
+        dispensationGpsUnsupported: "This device does not support GPS checks.",
+        dispensationGpsDenied: "Location permission was denied. Allow location access in your browser.",
+        dispensationGpsUnavailable: "The device location is unavailable. Try again in an open area.",
+        dispensationGpsTimeout: "The GPS check timed out. Please try again.",
+        dispensationGpsAccuracy: "GPS accuracy must be {accuracy} metres or better to submit a dispensation request.",
         gpsAccuracyStatus: "GPS accuracy ±{accuracy} m",
         studentMissingWa: "The student record does not have a parent's WhatsApp number.",
         parentAttendanceMessage: "Attendance for {name} ({nisn}) was recorded on {date} at {time} at Al Fityan School."
@@ -98,6 +107,11 @@ const ROLE_T = {
         studentAttendanceSuccess: "تم تسجيل حضورك بنجاح.",
         whatsappQueued: "تمت إضافة إشعار ولي الأمر إلى قائمة الإرسال.", whatsappUnknown: "تم تسجيل الحضور، بس حالة واتساب للحين مو مؤكدة. على المسؤول يراجع سجل Fonnte.", whatsappNoParent: "رقم واتساب ولي الأمر مو مسجّل. تواصل مع إدارة المدرسة.",
         gpsFixStale: "قراءة الموقع قديمة. حدّث GPS وجرب مرة ثانية.", gpsSpeedAnomaly: "تغيّر الموقع مو طبيعي. تأكد من GPS وجرب مرة ثانية.", gpsBoundaryUncertain: "موقعك قريب من حدود المدرسة وما نقدر نأكد وجودك داخلها. حدّث موقعك وجرب مرة ثانية.",
+        dispensationGpsUnsupported: "الجهاز هذا ما يدعم التحقق من GPS.",
+        dispensationGpsDenied: "تم رفض إذن الموقع. فعّل إذن الموقع من المتصفح.",
+        dispensationGpsUnavailable: "موقع الجهاز مو متوفر. جرّب مرة ثانية بمكان مفتوح.",
+        dispensationGpsTimeout: "انتهى وقت التحقق من GPS. جرّب مرة ثانية.",
+        dispensationGpsAccuracy: "لازم دقة GPS تكون {accuracy} متر أو أفضل عشان ترسل طلب التصريح.",
         gpsAccuracyStatus: "دقة GPS ±{accuracy} م",
         studentMissingWa: "لا يوجد رقم واتساب لولي الأمر في سجل الطالب.",
         parentAttendanceMessage: "تم تسجيل حضور {name} ({nisn}) بتاريخ {date} الساعة {time} في مدرسة الفتيان."
@@ -4068,21 +4082,21 @@ function updateAbsenceTypeFields() {
 }
 
 async function getFreshDispensationLocation() {
-    if (!navigator.geolocation) throw new Error("Perangkat ini tidak mendukung pemeriksaan GPS.");
+    if (!navigator.geolocation) throw new Error(tr("dispensationGpsUnsupported"));
     const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, error => {
             const messages = {
-                1: "Izin lokasi ditolak. Aktifkan izin lokasi pada browser.",
-                2: "Lokasi perangkat belum tersedia. Coba lagi di area terbuka.",
-                3: "Pemeriksaan GPS melewati batas waktu. Coba lagi."
+                1: "dispensationGpsDenied",
+                2: "dispensationGpsUnavailable",
+                3: "dispensationGpsTimeout"
             };
-            reject(new Error(messages[error.code] || "Lokasi perangkat gagal diperiksa."));
+            reject(new Error(tr(messages[error.code] || "gpsFailed")));
         }, { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 });
     });
     const coords = position.coords;
     if (![coords.latitude, coords.longitude, coords.accuracy].every(Number.isFinite) ||
-        coords.accuracy <= 0 || coords.accuracy > 35) {
-        throw new Error("Akurasi GPS harus 35 meter atau lebih baik untuk mengajukan dispensasi.");
+        coords.accuracy <= 0 || coords.accuracy > MAX_GPS_ACCURACY_METERS) {
+        throw new Error(tr("dispensationGpsAccuracy", { accuracy: MAX_GPS_ACCURACY_METERS }));
     }
     return {
         lat: coords.latitude,
