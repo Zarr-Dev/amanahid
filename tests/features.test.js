@@ -225,3 +225,31 @@ test("remaining student and system labels are wired to the three-language dictio
         assert.ok(html.includes('data-i18n="' + key + '"'), "Missing data-i18n binding for " + key);
     }
 });
+
+
+test("GPS defaults and user-facing GPS errors stay consistent across the attendance UI", () => {
+    const source = readFileSync(new URL("../public/script.js", import.meta.url), "utf8");
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+    const attendanceApi = readFileSync(new URL("../api/attendance.js", import.meta.url), "utf8");
+
+    assert.match(source, /radius:\s*50/);
+    assert.match(source, /const MAX_GPS_ACCURACY_METERS = 35;/);
+    assert.match(attendanceApi, /const MAX_ACCURACY = 35;/);
+    assert.match(html, /id="school-radius-slider"[^>]*value="50"/);
+    assert.match(html, /id="allowed-radius"[^>]*>Radius diizinkan: 50 m/);
+    assert.doesNotMatch(source, /FACE_MATCH_THRESHOLD\s*=\s*0\.45/);
+
+    const extra = evaluateFrontendConstant(source, "EXTRA_T", "\\nconst state =");
+    for (const language of ["id", "en", "ar"]) {
+        for (const key of [
+            "dispensationGpsUnsupported",
+            "dispensationGpsDenied",
+            "dispensationGpsUnavailable",
+            "dispensationGpsTimeout",
+            "dispensationGpsAccuracy"
+        ]) {
+            assert.ok(typeof extra[language]?.[key] === "string" && extra[language][key].length > 0,
+                "Missing " + language + " translation for " + key);
+        }
+    }
+});
