@@ -14,6 +14,8 @@ let SCHOOL_LOCATION = {
     name: "Al Fityan School"
 };
 const MAX_GPS_ACCURACY_METERS = 35;
+// Reuse a fresh, high-quality fix briefly while a teacher scans a class.
+const GPS_FIX_REUSE_MS = 5000;
 const MAX_FACE_SAMPLES = 5;
 
 const ROLE_T = {
@@ -2725,6 +2727,10 @@ async function loadSchoolSettings({ preserveOnError = false } = {}) {
         }
         SCHOOL_LOCATION = { ...SCHOOL_LOCATION, ...settings };
         state.schoolSettingsLoaded = true;
+        // Re-evaluate the displayed fix against the latest server settings so
+        // a changed radius cannot leave a stale "outside" decision on screen.
+        refreshLastLocationAssessment();
+        if (state.lastLocation?.lat !== undefined) renderLocationBadge();
         if (state.schoolMarker && state.schoolCircle) {
             state.schoolMarker.setLatLng([SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng]);
             state.schoolMarker.setPopupContent(tr("mapSchoolPopup", { radius: SCHOOL_LOCATION.radius }));
@@ -2974,6 +2980,37 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
     return 2 * earthRadius * Math.atan2(Math.sqrt(clamped), Math.sqrt(1 - clamped));
 }
 
+function assessGeofence(distance, accuracy, radius) {
+    if (![distance, accuracy, radius].every(Number.isFinite) ||
+        distance < 0 || accuracy <= 0 || radius <= 0) {
+        return { clearlyInside: false, clearlyOutside: false, boundaryUncertain: true };
+    }
+    const clearlyInside = distance + accuracy <= radius;
+    const clearlyOutside = Math.max(0, distance - accuracy) > radius;
+    return {
+        clearlyInside,
+        clearlyOutside,
+        boundaryUncertain: !clearlyInside && !clearlyOutside
+    };
+}
+
+function refreshLastLocationAssessment() {
+    const fix = state.lastLocation;
+    if (!fix || !Number.isFinite(fix.lat) || !Number.isFinite(fix.lng) ||
+        !Number.isFinite(fix.accuracy)) return;
+    const distanceExact = calculateDistance(
+        fix.lat, fix.lng, SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng
+    );
+    if (!Number.isFinite(distanceExact)) return;
+    const assessment = assessGeofence(distanceExact, fix.accuracy, SCHOOL_LOCATION.radius);
+    state.lastLocation = {
+        ...fix,
+        distance: Math.round(distanceExact),
+        inside: assessment.clearlyInside,
+        boundaryUncertain: assessment.boundaryUncertain
+    };
+}
+
 function geolocationErrorKey(error) {
     if (!navigator.geolocation) return "gpsUnsupported";
     if (error?.code === 1) return "gpsDenied";
@@ -2983,8 +3020,38 @@ function geolocationErrorKey(error) {
 }
 
 async function checkGeofence() {
+    if (!state.schoolSettingsLoaded ||
+        ![SCHOOL_LOCATION.lat, SCHOOL_LOCATION.lng, SCHOOL_LOCATION.radius].every(Number.isFinite)) {
+        return setLocationError("schoolSettingsFailed");
+    }
     if (!navigator.geolocation?.getCurrentPosition) {
         return setLocationError("gpsUnsupported");
+    }
+
+    // Homeroom attendance scans several students from one device. Reuse only a
+    // very recent, accurate, unambiguous GPS fix to reduce repeated GPS latency.
+    const cachedFix = state.lastLocation;
+    const cacheAge = cachedFix?.checkedAt ? Date.now() - cachedFix.checkedAt : Infinity;
+    if (cacheAge >= 0 && cacheAge <= GPS_FIX_REUSE_MS &&
+        Number.isFinite(cachedFix.lat) && Number.isFinite(cachedFix.lng) &&
+        Number.isFinite(cachedFix.accuracy) && cachedFix.accuracy <= MAX_GPS_ACCURACY_METERS &&
+        Number.isFinite(cachedFix.positionTimestamp) &&
+        Math.abs(Date.now() - cachedFix.positionTimestamp) <= 30_000 &&
+        cachedFix.inside === true && cachedFix.boundaryUncertain !== true &&
+        !cachedFix.error) {
+        return {
+            inside: true,
+            boundaryUncertain: false,
+            distance: cachedFix.distance,
+            accuracy: cachedFix.accuracy,
+            lat: cachedFix.lat,
+            lng: cachedFix.lng,
+            positionTimestamp: cachedFix.positionTimestamp,
+            speed: cachedFix.speed || 0,
+            error: null,
+            fakeLocation: false,
+            reused: true
+        };
     }
 
     return new Promise(resolve => {
@@ -3029,16 +3096,17 @@ async function checkGeofence() {
                     return;
                 }
                 const roundedDistance = Math.round(distanceExact);
-                const roundedAccuracy = Math.round(accuracy);
-                const clearlyInside = distanceExact + accuracy <= SCHOOL_LOCATION.radius;
-                const clearlyOutside = Math.max(0, distanceExact - accuracy) > SCHOOL_LOCATION.radius;
-                const boundaryUncertain = !clearlyInside && !clearlyOutside;
-                const inside = clearlyInside;
+                const assessment = assessGeofence(distanceExact, accuracy, SCHOOL_LOCATION.radius);
+                const inside = assessment.clearlyInside;
 
                 state.lastLocation = {
                     lat: latitude, lng: longitude, accuracy,
-                    distance: roundedDistance, inside, boundaryUncertain, checkedAt: Date.now(),
-                    positionTimestamp: timestamp, speed: reportedSpeed
+                    distance: roundedDistance,
+                    inside,
+                    boundaryUncertain: assessment.boundaryUncertain,
+                    checkedAt: Date.now(),
+                    positionTimestamp: timestamp,
+                    speed: reportedSpeed
                 };
 
                 renderLocationBadge();
@@ -3047,9 +3115,13 @@ async function checkGeofence() {
                 updateMapText();
                 finish({
                     inside,
-                    boundaryUncertain,
+                    boundaryUncertain: assessment.boundaryUncertain,
                     distance: roundedDistance,
                     accuracy,
+                    lat: latitude,
+                    lng: longitude,
+                    positionTimestamp: timestamp,
+                    speed: reportedSpeed,
                     error: null,
                     fakeLocation: false
                 });
